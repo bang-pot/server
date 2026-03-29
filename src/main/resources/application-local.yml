@@ -1,0 +1,14 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+    import:
+      - optional:classpath:application-local-secret.yml
+  datasource:
+    url: ${BANGPOT_DB_URL:jdbc:postgresql://localhost:5432/bangpot_local}
+    username: ${BANGPOT_DB_USERNAME:postgres}
+    password: ${BANGPOT_DB_PASSWORD:${DB_PASSWORD:}}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
