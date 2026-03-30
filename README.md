@@ -8,7 +8,6 @@ Round 1 bootstrap for the BangPot backend repository.
 - Spring Boot
 - Gradle
 - PostgreSQL
-- Flyway
 
 ## Local setup
 
@@ -29,11 +28,10 @@ The application exposes `GET /api/health` as the bootstrap smoke endpoint.
 
 ## Profiles
 
-- `local`: locally installed PostgreSQL connection, SQL logging enabled, `ddl-auto=validate`
+- `local`: locally installed PostgreSQL connection, SQL logging enabled, `ddl-auto=update`
 - `prod`: environment-variable driven PostgreSQL connection, SQL logging disabled, `ddl-auto=validate`
 
-The YAML setup is intentionally minimal for round 1: datasource, JPA, Flyway, and profile separation only.
-Schema changes should be tracked with Flyway migrations instead of JPA auto-update.
+The YAML setup is intentionally minimal for round 1: datasource, JPA, and profile separation only.
 
 ## Verification commands
 

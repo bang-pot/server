@@ -8,16 +8,11 @@ spring:
       - optional:file:.env[.properties]
   jpa:
     open-in-view: false
-    hibernate:
-      ddl-auto: validate
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
   datasource:
     driver-class-name: org.postgresql.Driver
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
 server:
   port: ${SERVER_PORT:8080}

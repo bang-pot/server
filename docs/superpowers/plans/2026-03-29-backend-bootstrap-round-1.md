@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Create a runnable backend bootstrap for BangPot using Spring Boot, Gradle, PostgreSQL, and Flyway so later domain builders can start from an already-verified base.
+**Goal:** Create a runnable backend bootstrap for BangPot using Spring Boot, Gradle, and PostgreSQL so later domain builders can start from an already-verified base.
 
-**Architecture:** Start with a single Spring Boot application, a local PostgreSQL connection driven by environment variables, and a Flyway baseline migration. Expose only a health endpoint and create empty domain-first package boundaries for `auth`, `crew`, `explore`, and `meeting` without implementing domain behavior.
+**Architecture:** Start with a single Spring Boot application, a local PostgreSQL connection driven by environment variables, and profile-based JPA schema handling for local versus production usage. Expose only a health endpoint and create empty domain-first package boundaries for `auth`, `crew`, `explore`, and `meeting` without implementing domain behavior.
 
-**Tech Stack:** Java 21, Spring Boot, Gradle, PostgreSQL, Flyway, JUnit 5, GitHub Actions
+**Tech Stack:** Java 21, Spring Boot, Gradle, PostgreSQL, JUnit 5, GitHub Actions
 
 ---
 
@@ -33,11 +33,10 @@
 - Create: `src/main/resources/application.yml`
 - Create: `src/main/resources/application-local.yml`
 - Create: `.env.example`
-- Create: `src/main/resources/db/migration/V1__init.sql`
 
 - [ ] **Step 1: Write the failing configuration test for the health endpoint or startup path that depends on the datasource config**
 - [ ] **Step 2: Run the test to verify it fails for the expected missing configuration reason**
-- [ ] **Step 3: Add environment-driven datasource config and the first Flyway migration**
+- [ ] **Step 3: Add environment-driven datasource config for local and production profiles**
 - [ ] **Step 4: Re-run the focused tests to verify startup behavior is green**
 - [ ] **Step 5: Commit the runtime configuration**
 

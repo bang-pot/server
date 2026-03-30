@@ -1,9 +1,0 @@
-CREATE TABLE IF NOT EXISTS bootstrap_marker (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    marker_key VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-INSERT INTO bootstrap_marker (marker_key)
-VALUES ('round-1-bootstrap')
-ON CONFLICT (marker_key) DO NOTHING;
