@@ -81,7 +81,7 @@ class SecurityWiringLocationTest {
 	@Test
 	void doesNotKeepLegacySecurityJwtConfigurationBlock() throws IOException {
 		String applicationYaml = Files.readString(Path.of(
-			"C:/bangpot/backend/src/main/resources/application.yml"
+			"src/main/resources/application.yml"
 		));
 
 		assertThat(applicationYaml)
@@ -92,7 +92,7 @@ class SecurityWiringLocationTest {
 	@Test
 	void doesNotLeaveAllApiRoutesOpenByDefault() throws IOException {
 		String securityConfig = Files.readString(Path.of(
-			"C:/bangpot/backend/src/main/java/com/bangpot/common/config/SecurityConfig.java"
+			"src/main/java/com/bangpot/common/config/SecurityConfig.java"
 		));
 
 		assertThat(securityConfig)

@@ -13,19 +13,19 @@ class AuthObjectCreationEncapsulationTest {
 	@Test
 	void avoidsDirectIntermediateDtoInstantiationInControllerAndService() throws IOException {
 		String authControllerSource = readSource(
-			"C:/bangpot/backend/src/main/java/com/bangpot/auth/presentation/AuthController.java"
+			"src/main/java/com/bangpot/auth/presentation/AuthController.java"
 		);
 		String loginWithProviderServiceSource = readSource(
-			"C:/bangpot/backend/src/main/java/com/bangpot/auth/application/service/LoginWithProviderService.java"
+			"src/main/java/com/bangpot/auth/application/service/LoginWithProviderService.java"
 		);
 		String completeTempUserServiceSource = readSource(
-			"C:/bangpot/backend/src/main/java/com/bangpot/auth/application/service/CompleteTempUserService.java"
+			"src/main/java/com/bangpot/auth/application/service/CompleteTempUserService.java"
 		);
 		String checkNicknameAvailabilityServiceSource = readSource(
-			"C:/bangpot/backend/src/main/java/com/bangpot/auth/application/service/CheckNicknameAvailabilityService.java"
+			"src/main/java/com/bangpot/auth/application/service/CheckNicknameAvailabilityService.java"
 		);
 		String getCurrentAuthUserServiceSource = readSource(
-			"C:/bangpot/backend/src/main/java/com/bangpot/auth/application/service/GetCurrentAuthUserService.java"
+			"src/main/java/com/bangpot/auth/application/service/GetCurrentAuthUserService.java"
 		);
 
 		assertThat(authControllerSource)
@@ -42,7 +42,7 @@ class AuthObjectCreationEncapsulationTest {
 			.doesNotContain("new AuthenticatedUserView(");
 	}
 
-	private String readSource(String path) throws IOException {
-		return Files.readString(Path.of(path));
+	private String readSource(String relativePath) throws IOException {
+		return Files.readString(Path.of(relativePath));
 	}
 }
