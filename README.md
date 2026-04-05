@@ -125,5 +125,5 @@ bangpot:
 
 ## Operations doc
 
-- 운영 env / logging 정책, health check, 배포 후 smoke check 기준은 [C:\bangpot\backend\docs\operations\backend-common-ops-round-01.md](C:\bangpot\backend\docs\operations\backend-common-ops-round-01.md)에 정리되어 있습니다.
-- Slack 운영 알림 정책, appender 구조, payload 필드, 제외 이벤트 기준은 [C:\bangpot\backend\docs\operations\backend-common-ops-round-02.md](C:\bangpot\backend\docs\operations\backend-common-ops-round-02.md)에 정리되어 있습니다.
+- 운영 env / logging 정책, health check, 배포 후 smoke check 기준은 [C:\bangpot\workdocs-repo\docs\plans\results\common-ops\00-common-ops-backend-round-01-result.md](C:\bangpot\workdocs-repo\docs\plans\results\common-ops\00-common-ops-backend-round-01-result.md)와 관련 handoff 문서에서 확인합니다.
+- Slack 운영 알림 정책, appender 구조, payload 필드, 제외 이벤트 기준은 [C:\bangpot\workdocs-repo\docs\plans\results\common-ops\00-common-ops-backend-round-02-result.md](C:\bangpot\workdocs-repo\docs\plans\results\common-ops\00-common-ops-backend-round-02-result.md)와 관련 handoff 문서에서 확인합니다.
