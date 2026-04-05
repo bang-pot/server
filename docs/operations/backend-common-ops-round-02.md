@@ -9,6 +9,7 @@ Round 02는 Round 01에서 정리한 로그, requestId, health 기준 위에 Sla
 
 - `all-log`
   - startup 완료 로그
+  - `3초 이상` 느린 요청 경고 로그
   - 요청 처리 중 `5xx` 서버 오류 로그
   - 인증/권한 치명 이벤트 로그
 - `error-log`
@@ -41,6 +42,9 @@ payload는 `SlackWebhookAppender`가 로그 이벤트에서 필요한 값을 추
 
 현재 Slack으로 전달되는 대상은 아래와 같다.
 
+- `request.slow`
+  - `RequestTracingFilter`가 `durationMs >= 3000`이면 `WARN` 로그를 남긴다.
+  - `all-log`에서 확인 가능하다.
 - backend `5xx`
   - `ServerErrorLoggingFilter`가 `event=request.failed` `ERROR` 로그를 남긴다.
   - `all-log`와 `error-log` 모두 확인 가능하다.

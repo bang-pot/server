@@ -55,6 +55,10 @@
 		<appender-ref ref="ALL_LOG_SLACK_APPENDER"/>
 	</logger>
 
+	<logger name="com.bangpot.common.logging.RequestTracingFilter" level="INFO" additivity="true">
+		<appender-ref ref="ALL_LOG_SLACK_APPENDER"/>
+	</logger>
+
 	<logger name="com.bangpot.common.logging.ServerErrorLoggingFilter" level="INFO" additivity="true">
 		<appender-ref ref="ALL_LOG_SLACK_APPENDER"/>
 	</logger>

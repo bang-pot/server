@@ -58,6 +58,27 @@ class SlackWebhookAppenderTest {
 	}
 
 	@Test
+	void buildsSlowRequestPayloadWithDuration() {
+		SlackWebhookAppender appender = appender();
+		LoggingEvent event = loggingEvent(
+			Level.WARN,
+			"com.bangpot.common.logging.RequestTracingFilter",
+			"event=request.slow message=\"느린 요청 감지\" path=/api/auth/me context=request.slow durationMs=3200 thresholdMs=3000"
+		);
+		event.setMDCPropertyMap(Map.of("requestId", "req-slow-1"));
+
+		String payload = appender.buildPayload(event);
+
+		assertThat(payload)
+			.contains("\"text\":\"[WARN] 느린 요청 감지\\n")
+			.contains("- requestId: req-slow-1\\n")
+			.contains("- path: /api/auth/me\\n")
+			.contains("- context: request.slow\\n")
+			.contains("- durationMs: 3200\\n")
+			.contains("- summary: 느린 요청 감지");
+	}
+
+	@Test
 	void buildsStartupFailurePayloadWithShortSummaryAndDescriptionReason() {
 		SlackWebhookAppender appender = appender();
 		LoggingEvent event = loggingEvent(

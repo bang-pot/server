@@ -48,6 +48,7 @@ Round 02부터 Slack 운영 알림은 appender 기반으로 동작합니다.
 
 - `all-log` 채널
   - startup 완료 로그
+  - `3초 이상` 느린 요청 경고 로그
   - 요청 처리 중 `5xx` 서버 오류 로그
   - 인증/권한 치명 이벤트 로그
 - `error-log` 채널
@@ -57,6 +58,8 @@ Round 02부터 Slack 운영 알림은 appender 기반으로 동작합니다.
 
 현재 Slack 대상 이벤트는 아래 범위로 제한합니다.
 
+- `request.slow`
+  - `durationMs >= 3000`
 - backend `5xx`
 - 운영 서버 startup 실패
 - startup 직후 데이터베이스 확인 실패

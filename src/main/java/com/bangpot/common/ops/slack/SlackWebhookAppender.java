@@ -33,6 +33,7 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 	private static final Pattern PATH_PATTERN = Pattern.compile("path=([^\\s]+)");
 	private static final Pattern CONTEXT_PATTERN = Pattern.compile("context=([^\\s]+)");
 	private static final Pattern REASON_PATTERN = Pattern.compile("(?:exceptionType|failureType)=([^\\s]+)");
+	private static final Pattern DURATION_PATTERN = Pattern.compile("durationMs=([^\\s]+)");
 	private static final Pattern DESCRIPTION_PATTERN = Pattern.compile("Description:\\s*(.+?)(?:\\s+Action:|$)", Pattern.DOTALL);
 
 	private final HttpClient httpClient = HttpClient.newBuilder()
@@ -93,6 +94,7 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		String path = sanitizePath(extract(PATH_PATTERN, formattedMessage));
 		String context = firstNonBlank(sanitize(extract(CONTEXT_PATTERN, formattedMessage)), resolveContext(event));
 		String reason = resolveReason(event, formattedMessage);
+		String durationMs = extract(DURATION_PATTERN, formattedMessage);
 
 		StringBuilder text = new StringBuilder();
 		text.append('[')
@@ -105,6 +107,7 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		appendLine(text, "requestId", requestId);
 		appendLine(text, "path", path);
 		appendLine(text, "context", context);
+		appendLine(text, "durationMs", durationMs);
 		appendLine(text, "reason", reason);
 		appendLine(text, "summary", summary);
 

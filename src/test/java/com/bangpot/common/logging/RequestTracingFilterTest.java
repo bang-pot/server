@@ -19,8 +19,6 @@ import jakarta.servlet.ServletException;
 @ExtendWith(OutputCaptureExtension.class)
 class RequestTracingFilterTest {
 
-	private final RequestTracingFilter filter = new RequestTracingFilter();
-
 	@AfterEach
 	void clearMdc() {
 		MDC.clear();
@@ -29,6 +27,7 @@ class RequestTracingFilterTest {
 	@Test
 	void reusesIncomingRequestIdAndWritesCompletionLog(CapturedOutput output)
 		throws ServletException, IOException {
+		RequestTracingFilter filter = new RequestTracingFilter();
 		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/auth/me");
 		request.addHeader("X-Request-Id", "req-health-1");
 		MockHttpServletResponse response = new MockHttpServletResponse();
@@ -48,6 +47,7 @@ class RequestTracingFilterTest {
 	@Test
 	void generatesRequestIdWhenHeaderIsMissing(CapturedOutput output)
 		throws ServletException, IOException {
+		RequestTracingFilter filter = new RequestTracingFilter();
 		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/auth/me");
 		MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -57,5 +57,32 @@ class RequestTracingFilterTest {
 		assertThat(output.getOut())
 			.contains("event=request.completed")
 			.contains("message=\"요청 처리 완료\"");
+	}
+
+	@Test
+	void writesSlowRequestWarningWhenDurationExceedsThreshold(CapturedOutput output)
+		throws ServletException, IOException {
+		RequestTracingFilter filter = new RequestTracingFilter() {
+			private final long[] nanoTimes = {0L, 3_200_000_000L};
+			private int index = 0;
+
+			@Override
+			long currentNanoTime() {
+				return nanoTimes[index++];
+			}
+		};
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/auth/me");
+		request.addHeader("X-Request-Id", "req-slow-1");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+
+		filter.doFilter(request, response, new MockFilterChain());
+
+		assertThat(output.getOut())
+			.contains("event=request.slow")
+			.contains("message=\"느린 요청 감지\"")
+			.contains("requestId=req-slow-1")
+			.contains("durationMs=3200")
+			.contains("thresholdMs=3000")
+			.contains("context=request.slow");
 	}
 }
