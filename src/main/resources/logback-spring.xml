@@ -12,6 +12,16 @@
 		source="bangpot.ops.environment-name"
 		defaultValue="unknown"
 	/>
+	<springProperty
+		scope="context"
+		name="allLogSlackWebhookUrl"
+		source="bangpot.ops.slack.all-log-webhook-url"
+	/>
+	<springProperty
+		scope="context"
+		name="errorLogSlackWebhookUrl"
+		source="bangpot.ops.slack.error-log-webhook-url"
+	/>
 
 	<property
 		name="CONSOLE_LOG_PATTERN"
@@ -21,7 +31,35 @@
 	<include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 	<include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
+	<appender name="ALL_LOG_SLACK_APPENDER" class="com.bangpot.common.ops.slack.SlackWebhookAppender">
+		<url>${allLogSlackWebhookUrl}</url>
+		<service>${serviceName}</service>
+		<environment>${environmentName}</environment>
+	</appender>
+
+	<appender name="ERROR_LOG_SLACK_APPENDER" class="com.bangpot.common.ops.slack.SlackWebhookAppender">
+		<url>${errorLogSlackWebhookUrl}</url>
+		<service>${serviceName}</service>
+		<environment>${environmentName}</environment>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>ERROR</level>
+		</filter>
+	</appender>
+
 	<root level="${ROOT_LOG_LEVEL:-INFO}">
 		<appender-ref ref="CONSOLE"/>
+		<appender-ref ref="ERROR_LOG_SLACK_APPENDER"/>
 	</root>
+
+	<logger name="com.bangpot.common.logging.StartupLifecycleLogger" level="INFO" additivity="true">
+		<appender-ref ref="ALL_LOG_SLACK_APPENDER"/>
+	</logger>
+
+	<logger name="com.bangpot.common.logging.ServerErrorLoggingFilter" level="INFO" additivity="true">
+		<appender-ref ref="ALL_LOG_SLACK_APPENDER"/>
+	</logger>
+
+	<logger name="com.bangpot.auth.infrastructure.logging.AuthAuditLogger" level="INFO" additivity="true">
+		<appender-ref ref="ALL_LOG_SLACK_APPENDER"/>
+	</logger>
 </configuration>

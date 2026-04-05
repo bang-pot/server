@@ -2,7 +2,6 @@ package com.bangpot.auth.infrastructure.oauth;
 
 import java.io.IOException;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -11,6 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.bangpot.auth.infrastructure.config.AuthFrontendProperties;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 
+import lombok.RequiredArgsConstructor;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

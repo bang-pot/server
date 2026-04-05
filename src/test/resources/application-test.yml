@@ -27,3 +27,6 @@ bangpot:
       secure-cookie: false
   ops:
     environment-name: test
+    slack:
+      all-log-webhook-url: ""
+      error-log-webhook-url: ""

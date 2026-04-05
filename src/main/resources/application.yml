@@ -42,7 +42,10 @@ bangpot:
       access-token-validity-seconds: ${BANGPOT_AUTH_JWT_ACCESS_TOKEN_VALIDITY_SECONDS:604800}
       secure-cookie: ${BANGPOT_AUTH_JWT_SECURE_COOKIE:true}
   ops:
-    environment-name: default
+    environment-name: ${BANGPOT_OPS_ENVIRONMENT_NAME:default}
+    slack:
+      all-log-webhook-url: ${BANGPOT_OPS_SLACK_ALL_LOG_WEBHOOK_URL:}
+      error-log-webhook-url: ${BANGPOT_OPS_SLACK_ERROR_LOG_WEBHOOK_URL:}
 
 management:
   endpoints:

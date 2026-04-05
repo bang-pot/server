@@ -1,17 +1,15 @@
 package com.bangpot.auth.infrastructure.logging;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.common.logging.RequestTrace;
 
+@Slf4j
 @Component
 public class AuthAuditLogger {
-
-	private static final Logger log = LoggerFactory.getLogger(AuthAuditLogger.class);
 
 	public void loginSucceeded(
 		AuthProvider provider,

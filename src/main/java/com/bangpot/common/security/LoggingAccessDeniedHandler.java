@@ -9,17 +9,15 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 
+import lombok.RequiredArgsConstructor;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+@RequiredArgsConstructor
 public class LoggingAccessDeniedHandler implements AccessDeniedHandler {
 
 	private final AuthAuditLogger authAuditLogger;
-
-	public LoggingAccessDeniedHandler(AuthAuditLogger authAuditLogger) {
-		this.authAuditLogger = authAuditLogger;
-	}
 
 	@Override
 	public void handle(

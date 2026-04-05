@@ -56,13 +56,13 @@ class AuthControllerTest {
 	void returnsTempStatusWithCompletionRoutingHints() throws Exception {
 		when(getCurrentAuthUserUseCase.handle(GetCurrentAuthUserUseCase.Query.of(55L))).thenReturn(
 			GetCurrentAuthUserUseCase.View.authenticated(
-			GetCurrentAuthUserUseCase.AuthStatus.TEMP,
-			true,
-			"/protected-demo",
-			"2026-03-25",
-			GetCurrentAuthUserUseCase.AuthenticatedUserView.of(55L, null),
-			null
-		));
+				GetCurrentAuthUserUseCase.AuthStatus.TEMP,
+				true,
+				"/protected-demo",
+				"2026-03-25",
+				GetCurrentAuthUserUseCase.AuthenticatedUserView.of(55L, null),
+				null
+			));
 
 		mockMvc.perform(
 			get("/api/auth/me")
@@ -81,13 +81,13 @@ class AuthControllerTest {
 	void returnsFullStatusForCompletedUser() throws Exception {
 		when(getCurrentAuthUserUseCase.handle(GetCurrentAuthUserUseCase.Query.of(77L))).thenReturn(
 			GetCurrentAuthUserUseCase.View.authenticated(
-			GetCurrentAuthUserUseCase.AuthStatus.FULL,
-			false,
-			null,
-			"2026-03-25",
-			GetCurrentAuthUserUseCase.AuthenticatedUserView.of(77L, "bangpot"),
-			Instant.parse("2026-03-31T00:00:00Z")
-		));
+				GetCurrentAuthUserUseCase.AuthStatus.FULL,
+				false,
+				null,
+				"2026-03-25",
+				GetCurrentAuthUserUseCase.AuthenticatedUserView.of(77L, "bangpot"),
+				Instant.parse("2026-03-31T00:00:00Z")
+			));
 
 		mockMvc.perform(
 			get("/api/auth/me")

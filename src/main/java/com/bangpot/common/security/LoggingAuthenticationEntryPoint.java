@@ -2,6 +2,7 @@ package com.bangpot.common.security;
 
 import java.io.IOException;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
@@ -11,13 +12,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+@RequiredArgsConstructor
 public class LoggingAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 	private final AuthAuditLogger authAuditLogger;
-
-	public LoggingAuthenticationEntryPoint(AuthAuditLogger authAuditLogger) {
-		this.authAuditLogger = authAuditLogger;
-	}
 
 	@Override
 	public void commence(
