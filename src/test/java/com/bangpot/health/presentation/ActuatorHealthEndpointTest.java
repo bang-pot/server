@@ -7,23 +7,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+@SpringBootTest
 @ActiveProfiles("test")
-@AutoConfigureMockMvc(addFilters = false)
-@WebMvcTest(controllers = HealthController.class)
-class HealthControllerTest {
+@AutoConfigureMockMvc
+class ActuatorHealthEndpointTest {
 
 	@Autowired
 	private MockMvc mockMvc;
 
 	@Test
-	void returnsBootstrapHealthPayload() throws Exception {
-		mockMvc.perform(get("/api/health"))
+	void exposesLivenessHealthGroup() throws Exception {
+		mockMvc.perform(get("/actuator/health/liveness"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("UP"));
+	}
+
+	@Test
+	void exposesReadinessHealthGroupWithDatabaseComponent() throws Exception {
+		mockMvc.perform(get("/actuator/health/readiness"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("UP"))
-			.andExpect(jsonPath("$.application").value("bangpot-backend"));
+			.andExpect(jsonPath("$.components.db.status").value("UP"));
 	}
 }

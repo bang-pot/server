@@ -2,6 +2,8 @@ package com.bangpot.auth.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -27,6 +29,7 @@ import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
+import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
 
 class AuthUseCaseServicesTest {
@@ -38,19 +41,22 @@ class AuthUseCaseServicesTest {
 	private CompleteTempUserUseCase completeTempUserUseCase;
 	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	private GetCurrentAuthUserUseCase getCurrentAuthUserUseCase;
+	private AuthAuditLogger authAuditLogger;
 
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
 		Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
+		authAuditLogger = org.mockito.Mockito.mock(AuthAuditLogger.class);
 		AuthRequiredTermsProperties authRequiredTermsProperties = new AuthRequiredTermsProperties();
 		authRequiredTermsProperties.setRequiredTermsVersion("2026-03-25");
 
-		loginWithProviderUseCase = new LoginWithProviderService(authUserRepository);
+		loginWithProviderUseCase = new LoginWithProviderService(authUserRepository, authAuditLogger);
 		completeTempUserUseCase = new CompleteTempUserService(
 			authUserRepository,
 			clock,
-			authRequiredTermsProperties
+			authRequiredTermsProperties,
+			authAuditLogger
 		);
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(authUserRepository);
 		getCurrentAuthUserUseCase = new GetCurrentAuthUserService(
@@ -82,6 +88,12 @@ class AuthUseCaseServicesTest {
 		assertThat(result.authStatus()).isEqualTo(AuthUserStatus.FULL);
 		assertThat(result.completionRequired()).isFalse();
 		assertThat(result.nextPath()).isEqualTo("/protected-demo");
+		verify(authAuditLogger).loginSucceeded(
+			AuthProvider.KAKAO,
+			existingUser.getId(),
+			AuthUserStatus.FULL,
+			false
+		);
 	}
 
 	@Test
@@ -103,6 +115,12 @@ class AuthUseCaseServicesTest {
 		assertThat(secondLogin.completionRequired()).isTrue();
 		assertThat(secondLogin.nextPath()).isEqualTo("/auth/complete");
 		assertThat(secondLogin.pendingRedirectPath()).isEqualTo("/protected-demo");
+		verify(authAuditLogger, times(2)).loginSucceeded(
+			AuthProvider.KAKAO,
+			firstLogin.userId(),
+			AuthUserStatus.TEMP,
+			true
+		);
 	}
 
 	@Test
@@ -126,6 +144,12 @@ class AuthUseCaseServicesTest {
 		assertThat(meView.user()).isNotNull();
 		assertThat(meView.user().nickname()).isEqualTo("potmaster");
 		assertThat(meView.requiredTermsVersion()).isEqualTo("2026-03-25");
+		verify(authAuditLogger).authStateChanged(
+			loginResult.userId(),
+			AuthUserStatus.TEMP,
+			AuthUserStatus.FULL,
+			"profile_completed"
+		);
 	}
 
 	@Test

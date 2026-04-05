@@ -3,10 +3,6 @@ spring:
     name: bangpot-backend
   profiles:
     default: local
-  config:
-    import:
-      - optional:file:.env[.properties]
-      - optional:classpath:application-local-secret.yml
   jpa:
     open-in-view: false
     properties:
@@ -21,10 +17,10 @@ spring:
       client:
         registration:
           kakao:
-            client-id: ${KAKAO_CLIENT_ID:kakao-client-id-not-configured}
-            client-secret: ${KAKAO_CLIENT_SECRET:}
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
             client-authentication-method: ${KAKAO_CLIENT_AUTHENTICATION_METHOD:client_secret_post}
-            redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/login/oauth2/code/kakao}
+            redirect-uri: ${KAKAO_REDIRECT_URI}
             authorization-grant-type: authorization_code
             client-name: Kakao
         provider:
@@ -36,15 +32,33 @@ spring:
 
 bangpot:
   auth:
-    required-terms-version: ${BANGPOT_AUTH_REQUIRED_TERMS_VERSION:2026-03-25}
+    required-terms-version: ${BANGPOT_AUTH_REQUIRED_TERMS_VERSION}
     frontend:
-      base-url: ${BANGPOT_AUTH_FRONTEND_BASE_URL:http://localhost:3000}
+      base-url: ${BANGPOT_AUTH_FRONTEND_BASE_URL}
     jwt:
       issuer: ${BANGPOT_AUTH_JWT_ISSUER:bangpot}
-      secret: ${BANGPOT_AUTH_JWT_SECRET:local-local-local-local-local-local-secret-12345}
+      secret: ${BANGPOT_AUTH_JWT_SECRET}
       cookie-name: ${BANGPOT_AUTH_JWT_COOKIE_NAME:access_token}
       access-token-validity-seconds: ${BANGPOT_AUTH_JWT_ACCESS_TOKEN_VALIDITY_SECONDS:604800}
-      secure-cookie: ${BANGPOT_AUTH_JWT_SECURE_COOKIE:false}
+      secure-cookie: ${BANGPOT_AUTH_JWT_SECURE_COOKIE:true}
+  ops:
+    environment-name: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+      group:
+        liveness:
+          include: ping
+        readiness:
+          include: db
 
 server:
   port: ${SERVER_PORT:8080}

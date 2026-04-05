@@ -15,8 +15,10 @@ import com.bangpot.auth.application.exception.MissingRequiredTermsAgreementExcep
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.domain.AuthUser;
+import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
+import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 
 @Service
 @Transactional
@@ -28,6 +30,7 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 	private final AuthUserRepository authUserRepository;
 	private final Clock clock;
 	private final AuthRequiredTermsProperties authRequiredTermsProperties;
+	private final AuthAuditLogger authAuditLogger;
 
 	@Override
 	public Result handle(Command command) {
@@ -57,6 +60,12 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 		);
 		String nextPath = user.consumePendingRedirectPathOrDefault(DEFAULT_NEXT_PATH);
 		authUserRepository.save(user);
+		authAuditLogger.authStateChanged(
+			user.getId(),
+			AuthUserStatus.TEMP,
+			AuthUserStatus.FULL,
+			"profile_completed"
+		);
 		return Result.completed(user.getId(), nextPath);
 	}
 

@@ -22,10 +22,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.bangpot.auth.infrastructure.AuthSessionTokenService;
 import com.bangpot.auth.infrastructure.config.AuthFrontendProperties;
 import com.bangpot.auth.infrastructure.config.AuthJwtProperties;
+import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2AuthenticationFailureHandler;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2AuthenticationSuccessHandler;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2UserService;
 import com.bangpot.common.security.JwtAuthenticationFilter;
+import com.bangpot.common.security.LoggingAccessDeniedHandler;
+import com.bangpot.common.security.LoggingAuthenticationEntryPoint;
 import com.bangpot.common.security.oauth.KakaoAuthorizationRequestResolver;
 
 @Configuration
@@ -37,6 +40,16 @@ public class SecurityConfig {
 		AuthSessionTokenService authSessionTokenService
 	) {
 		return new JwtAuthenticationFilter(authJwtProperties, authSessionTokenService);
+	}
+
+	@Bean
+	LoggingAuthenticationEntryPoint loggingAuthenticationEntryPoint(AuthAuditLogger authAuditLogger) {
+		return new LoggingAuthenticationEntryPoint(authAuditLogger);
+	}
+
+	@Bean
+	LoggingAccessDeniedHandler loggingAccessDeniedHandler(AuthAuditLogger authAuditLogger) {
+		return new LoggingAccessDeniedHandler(authAuditLogger);
 	}
 
 	@Bean
@@ -86,16 +99,23 @@ public class SecurityConfig {
 	SecurityFilterChain appSecurityFilterChain(
 		HttpSecurity http,
 		JwtAuthenticationFilter jwtAuthenticationFilter,
-		CorsConfigurationSource corsConfigurationSource
+		CorsConfigurationSource corsConfigurationSource,
+		LoggingAuthenticationEntryPoint loggingAuthenticationEntryPoint,
+		LoggingAccessDeniedHandler loggingAccessDeniedHandler
 	) throws Exception {
 		http
 			.csrf(AbstractHttpConfigurer::disable)
+			.httpBasic(AbstractHttpConfigurer::disable)
+			.formLogin(AbstractHttpConfigurer::disable)
+			.logout(AbstractHttpConfigurer::disable)
+			.oauth2Login(AbstractHttpConfigurer::disable)
 			.cors(cors -> cors.configurationSource(corsConfigurationSource))
 			.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers(
 					"/api/auth/me",
+					"/api/auth/logout",
 					"/api/auth/nickname-availability",
 					"/actuator/health",
 					"/actuator/health/**"
@@ -103,11 +123,11 @@ public class SecurityConfig {
 				.requestMatchers("/api/**").authenticated()
 				.anyRequest().permitAll()
 			)
-			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-			.httpBasic(AbstractHttpConfigurer::disable)
-			.formLogin(AbstractHttpConfigurer::disable)
-			.logout(AbstractHttpConfigurer::disable)
-			.oauth2Login(AbstractHttpConfigurer::disable);
+			.exceptionHandling(ex -> ex
+				.authenticationEntryPoint(loggingAuthenticationEntryPoint)
+				.accessDeniedHandler(loggingAccessDeniedHandler)
+			)
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}

@@ -11,5 +11,5 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "bangpot.auth.frontend")
 public class AuthFrontendProperties {
 
-	private String baseUrl = "http://localhost:3000";
+	private String baseUrl;
 }

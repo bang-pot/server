@@ -2,11 +2,40 @@ spring:
   config:
     activate:
       on-profile: local
+    import:
+      - optional:file:.env[.properties]
+      - optional:classpath:application-local-secret.yml
   datasource:
     url: ${BANGPOT_DB_URL:jdbc:postgresql://localhost:5432/bangpot_local}
     username: ${BANGPOT_DB_USERNAME:postgres}
     password: ${BANGPOT_DB_PASSWORD:${DB_PASSWORD:}}
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID:kakao-client-id-not-configured}
+            client-secret: ${KAKAO_CLIENT_SECRET:}
+            client-authentication-method: ${KAKAO_CLIENT_AUTHENTICATION_METHOD:client_secret_post}
+            redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/login/oauth2/code/kakao}
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+bangpot:
+  auth:
+    required-terms-version: ${BANGPOT_AUTH_REQUIRED_TERMS_VERSION:2026-03-25}
+    frontend:
+      base-url: ${BANGPOT_AUTH_FRONTEND_BASE_URL:http://localhost:3000}
+    jwt:
+      secret: ${BANGPOT_AUTH_JWT_SECRET:local-local-local-local-local-local-secret-12345}
+      secure-cookie: ${BANGPOT_AUTH_JWT_SECURE_COOKIE:false}
+  ops:
+    environment-name: local
+
+logging:
+  level:
+    root: INFO
+    com.bangpot: DEBUG
+    org.hibernate.SQL: DEBUG

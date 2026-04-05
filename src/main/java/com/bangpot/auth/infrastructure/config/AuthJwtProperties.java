@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 public class AuthJwtProperties {
 
 	private String issuer = "bangpot";
-	private String secret = "local-local-local-local-local-local-secret-12345";
-	private String cookieName = "BANGPOT_ACCESS_TOKEN";
+	private String secret;
+	private String cookieName = "access_token";
 	private long accessTokenValiditySeconds = 604800;
 	private boolean secureCookie;
 }

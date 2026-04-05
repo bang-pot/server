@@ -1,5 +1,6 @@
 HELP.md
 .env
+application-local-secret.yml
 src/main/resources/application-local-secret.yml
 .gradle
 build/

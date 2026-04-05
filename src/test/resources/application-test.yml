@@ -8,7 +8,22 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: test-kakao-client
+            client-secret: test-kakao-secret
+            client-authentication-method: client_secret_post
+            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
 bangpot:
   auth:
+    required-terms-version: 2026-03-25
+    frontend:
+      base-url: http://localhost:3000
     jwt:
       secret: test-secret-key-test-secret-key-test-secret-key-1234
+      secure-cookie: false
+  ops:
+    environment-name: test

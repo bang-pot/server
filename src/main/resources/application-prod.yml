@@ -10,3 +10,12 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+
+bangpot:
+  ops:
+    environment-name: prod
+
+logging:
+  level:
+    root: INFO
+    com.bangpot: INFO
