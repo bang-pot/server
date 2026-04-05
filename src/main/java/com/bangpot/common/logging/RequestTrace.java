@@ -14,7 +14,7 @@ public final class RequestTrace {
 
 	public static String currentRequestId() {
 		String requestId = MDC.get(REQUEST_ID_MDC_KEY);
-		return requestId == null || requestId.isBlank() ? "n/a" : requestId;
+		return requestId == null || requestId.isBlank() ? "na" : requestId;
 	}
 
 	public static String resolveRequestId(String headerValue) {

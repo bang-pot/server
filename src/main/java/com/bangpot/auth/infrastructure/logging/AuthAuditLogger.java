@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUserStatus;
+import com.bangpot.auth.error.AuthErrorCode;
 import com.bangpot.common.logging.RequestTrace;
 
 @Slf4j
@@ -47,7 +48,8 @@ public class AuthAuditLogger {
 
 	public void protectedResourceAccessFailed(String method, String path) {
 		log.warn(
-			"event=auth.protected_resource_access_failed message=\"보호 자원 접근 실패\" requestId={} method={} path={}",
+			"event=auth.protected_resource_access_failed code={} message=\"보호 자원 접근 실패\" requestId={} method={} path={}",
+			AuthErrorCode.AUTH_UNAUTHENTICATED.code(),
 			RequestTrace.currentRequestId(),
 			method,
 			RequestTrace.sanitizePath(path)
@@ -56,7 +58,8 @@ public class AuthAuditLogger {
 
 	public void accessDenied(Long userId, String method, String path) {
 		log.warn(
-			"event=auth.access_denied message=\"권한 거부\" requestId={} userId={} method={} path={}",
+			"event=auth.access_denied code={} message=\"권한 거부\" requestId={} userId={} method={} path={}",
+			AuthErrorCode.AUTH_ACCESS_DENIED.code(),
 			RequestTrace.currentRequestId(),
 			userId == null ? "unknown" : userId,
 			method,

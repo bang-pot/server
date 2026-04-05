@@ -7,6 +7,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
+import com.bangpot.auth.error.AuthErrorCode;
+import com.bangpot.common.error.ApiErrorResponseWriter;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class LoggingAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 	private final AuthAuditLogger authAuditLogger;
+	private final ApiErrorResponseWriter apiErrorResponseWriter;
 
 	@Override
 	public void commence(
@@ -24,6 +27,6 @@ public class LoggingAuthenticationEntryPoint implements AuthenticationEntryPoint
 		AuthenticationException authException
 	) throws IOException, ServletException {
 		authAuditLogger.protectedResourceAccessFailed(request.getMethod(), request.getRequestURI());
-		response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+		apiErrorResponseWriter.write(response, AuthErrorCode.AUTH_UNAUTHENTICATED);
 	}
 }

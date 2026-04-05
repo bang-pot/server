@@ -12,16 +12,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.bangpot.auth.application.usecase.LogoutUseCase;
+import com.bangpot.common.error.ApiErrorResponseFactory;
+import com.bangpot.common.error.GlobalApiExceptionHandler;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
 @WebMvcTest(controllers = AuthLogoutController.class)
+@Import({GlobalApiExceptionHandler.class, ApiErrorResponseFactory.class})
 class AuthLogoutControllerTest {
 
 	@Autowired

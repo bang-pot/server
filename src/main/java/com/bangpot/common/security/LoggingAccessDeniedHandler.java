@@ -8,6 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
+import com.bangpot.auth.error.AuthErrorCode;
+import com.bangpot.common.error.ApiErrorResponseWriter;
 
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.ServletException;
@@ -18,6 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class LoggingAccessDeniedHandler implements AccessDeniedHandler {
 
 	private final AuthAuditLogger authAuditLogger;
+	private final ApiErrorResponseWriter apiErrorResponseWriter;
 
 	@Override
 	public void handle(
@@ -26,7 +29,7 @@ public class LoggingAccessDeniedHandler implements AccessDeniedHandler {
 		AccessDeniedException accessDeniedException
 	) throws IOException, ServletException {
 		authAuditLogger.accessDenied(resolveUserId(request.getUserPrincipal()), request.getMethod(), request.getRequestURI());
-		response.sendError(HttpServletResponse.SC_FORBIDDEN);
+		apiErrorResponseWriter.write(response, AuthErrorCode.AUTH_ACCESS_DENIED);
 	}
 
 	private Long resolveUserId(Principal principal) {

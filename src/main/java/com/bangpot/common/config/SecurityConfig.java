@@ -26,6 +26,7 @@ import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2AuthenticationFailureHandler;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2AuthenticationSuccessHandler;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2UserService;
+import com.bangpot.common.error.ApiErrorResponseWriter;
 import com.bangpot.common.security.JwtAuthenticationFilter;
 import com.bangpot.common.security.LoggingAccessDeniedHandler;
 import com.bangpot.common.security.LoggingAuthenticationEntryPoint;
@@ -43,13 +44,19 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	LoggingAuthenticationEntryPoint loggingAuthenticationEntryPoint(AuthAuditLogger authAuditLogger) {
-		return new LoggingAuthenticationEntryPoint(authAuditLogger);
+	LoggingAuthenticationEntryPoint loggingAuthenticationEntryPoint(
+		AuthAuditLogger authAuditLogger,
+		ApiErrorResponseWriter apiErrorResponseWriter
+	) {
+		return new LoggingAuthenticationEntryPoint(authAuditLogger, apiErrorResponseWriter);
 	}
 
 	@Bean
-	LoggingAccessDeniedHandler loggingAccessDeniedHandler(AuthAuditLogger authAuditLogger) {
-		return new LoggingAccessDeniedHandler(authAuditLogger);
+	LoggingAccessDeniedHandler loggingAccessDeniedHandler(
+		AuthAuditLogger authAuditLogger,
+		ApiErrorResponseWriter apiErrorResponseWriter
+	) {
+		return new LoggingAccessDeniedHandler(authAuditLogger, apiErrorResponseWriter);
 	}
 
 	@Bean

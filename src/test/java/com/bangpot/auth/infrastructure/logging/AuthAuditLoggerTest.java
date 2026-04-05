@@ -51,8 +51,10 @@ class AuthAuditLoggerTest {
 
 		assertThat(output.getOut())
 			.contains("event=auth.protected_resource_access_failed")
+			.contains("code=AUTH_UNAUTHENTICATED")
 			.contains("message=\"보호 자원 접근 실패\"")
 			.contains("event=auth.access_denied")
+			.contains("code=AUTH_ACCESS_DENIED")
 			.contains("message=\"권한 거부\"")
 			.contains("event=auth.logout")
 			.contains("message=\"로그아웃 완료\"")
