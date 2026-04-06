@@ -3,7 +3,6 @@ spring:
     activate:
       on-profile: local
     import:
-      - optional:file:.env[.properties]
       - optional:classpath:application-local-secret.yml
   datasource:
     url: ${BANGPOT_DB_URL:jdbc:postgresql://localhost:5432/bangpot_local}

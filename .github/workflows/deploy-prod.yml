@@ -1,0 +1,174 @@
+name: backend-deploy-prod
+
+on:
+  push:
+    branches:
+      - prod
+  workflow_dispatch:
+
+concurrency:
+  group: backend-deploy-prod
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Grant execute permission for Gradle wrapper
+        run: chmod +x gradlew
+
+      - name: Verify backend
+        run: ./gradlew lint test build --no-daemon
+
+      - name: Configure SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf "%s" "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -p "${EC2_PORT:-22}" -H "$EC2_HOST" >> ~/.ssh/known_hosts
+
+      - name: Ensure deploy directory exists
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
+        run: |
+          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" "${EC2_USER}@${EC2_HOST}" \
+            "mkdir -p '${EC2_DEPLOY_PATH}'"
+
+      - name: Sync project to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
+        run: |
+          rsync -az --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude ".gradle/" \
+            --exclude ".idea/" \
+            --exclude "build/" \
+            --exclude "src/main/resources/application-local-secret.yml" \
+            -e "ssh -i ~/.ssh/ec2_key -p ${EC2_PORT:-22}" \
+            ./ "${EC2_USER}@${EC2_HOST}:${EC2_DEPLOY_PATH}/"
+
+      - name: Create prod env file
+        env:
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          BANGPOT_AUTH_JWT_SECRET: ${{ secrets.BANGPOT_AUTH_JWT_SECRET }}
+          BANGPOT_AUTH_FRONTEND_BASE_URL: ${{ secrets.BANGPOT_AUTH_FRONTEND_BASE_URL }}
+          BANGPOT_AUTH_REQUIRED_TERMS_VERSION: ${{ secrets.BANGPOT_AUTH_REQUIRED_TERMS_VERSION }}
+          BANGPOT_AUTH_JWT_ISSUER: ${{ secrets.BANGPOT_AUTH_JWT_ISSUER }}
+          BANGPOT_AUTH_JWT_COOKIE_NAME: ${{ secrets.BANGPOT_AUTH_JWT_COOKIE_NAME }}
+          BANGPOT_AUTH_JWT_ACCESS_TOKEN_VALIDITY_SECONDS: ${{ secrets.BANGPOT_AUTH_JWT_ACCESS_TOKEN_VALIDITY_SECONDS }}
+          BANGPOT_AUTH_JWT_SECURE_COOKIE: ${{ secrets.BANGPOT_AUTH_JWT_SECURE_COOKIE }}
+          KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_CLIENT_AUTHENTICATION_METHOD: ${{ secrets.KAKAO_CLIENT_AUTHENTICATION_METHOD }}
+          KAKAO_REDIRECT_URI: ${{ secrets.KAKAO_REDIRECT_URI }}
+          BANGPOT_OPS_ENVIRONMENT_NAME: ${{ secrets.BANGPOT_OPS_ENVIRONMENT_NAME }}
+          BANGPOT_OPS_SLACK_ALL_LOG_WEBHOOK_URL: ${{ secrets.BANGPOT_OPS_SLACK_ALL_LOG_WEBHOOK_URL }}
+          BANGPOT_OPS_SLACK_ERROR_LOG_WEBHOOK_URL: ${{ secrets.BANGPOT_OPS_SLACK_ERROR_LOG_WEBHOOK_URL }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          cat <<EOF > .env.prod
+          DB_NAME=${DB_NAME}
+          DB_USERNAME=${DB_USERNAME}
+          DB_PASSWORD=${DB_PASSWORD}
+          BANGPOT_AUTH_JWT_SECRET=${BANGPOT_AUTH_JWT_SECRET}
+          BANGPOT_AUTH_FRONTEND_BASE_URL=${BANGPOT_AUTH_FRONTEND_BASE_URL}
+          BANGPOT_AUTH_REQUIRED_TERMS_VERSION=${BANGPOT_AUTH_REQUIRED_TERMS_VERSION}
+          BANGPOT_AUTH_JWT_ISSUER=${BANGPOT_AUTH_JWT_ISSUER}
+          BANGPOT_AUTH_JWT_COOKIE_NAME=${BANGPOT_AUTH_JWT_COOKIE_NAME}
+          BANGPOT_AUTH_JWT_ACCESS_TOKEN_VALIDITY_SECONDS=${BANGPOT_AUTH_JWT_ACCESS_TOKEN_VALIDITY_SECONDS}
+          BANGPOT_AUTH_JWT_SECURE_COOKIE=${BANGPOT_AUTH_JWT_SECURE_COOKIE}
+          KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
+          KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
+          KAKAO_CLIENT_AUTHENTICATION_METHOD=${KAKAO_CLIENT_AUTHENTICATION_METHOD}
+          KAKAO_REDIRECT_URI=${KAKAO_REDIRECT_URI}
+          BANGPOT_OPS_ENVIRONMENT_NAME=${BANGPOT_OPS_ENVIRONMENT_NAME}
+          BANGPOT_OPS_SLACK_ALL_LOG_WEBHOOK_URL=${BANGPOT_OPS_SLACK_ALL_LOG_WEBHOOK_URL}
+          BANGPOT_OPS_SLACK_ERROR_LOG_WEBHOOK_URL=${BANGPOT_OPS_SLACK_ERROR_LOG_WEBHOOK_URL}
+          SERVER_PORT=${SERVER_PORT}
+          EOF
+
+      - name: Upload prod env file
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
+        run: |
+          scp -i ~/.ssh/ec2_key -P "${EC2_PORT:-22}" .env.prod \
+            "${EC2_USER}@${EC2_HOST}:${EC2_DEPLOY_PATH}/.env"
+
+      - name: Deploy with Docker Compose
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
+        run: |
+          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" "${EC2_USER}@${EC2_HOST}" <<EOF
+          set -e
+          cd '${EC2_DEPLOY_PATH}'
+          docker compose -p bangpot down --remove-orphans || true
+          docker compose -p bangpot up -d --build --remove-orphans
+          docker image prune -f
+          EOF
+
+      - name: Verify liveness, readiness, smoke, and logs
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+        run: |
+          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" "${EC2_USER}@${EC2_HOST}" <<EOF
+          set -e
+          cd '${EC2_DEPLOY_PATH}'
+          export SERVER_PORT="${SERVER_PORT:-8080}"
+          for path in /actuator/health/liveness /actuator/health/readiness /api/auth/me; do
+            for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if [ "\$path" = "/api/auth/me" ]; then
+                if curl -fsS -H 'X-Request-Id: deploy-smoke-001' "http://127.0.0.1:\${SERVER_PORT}\$path" >/tmp/auth-me.json; then
+                  break
+                fi
+              else
+                if curl -fsS "http://127.0.0.1:\${SERVER_PORT}\$path" >/tmp/health.json; then
+                  break
+                fi
+              fi
+              sleep 5
+              if [ "\$attempt" -eq 12 ]; then
+                echo "failed to verify \$path"
+                exit 1
+              fi
+            done
+          done
+          docker compose -p bangpot logs --tail 200 app | grep -q 'event=application.startup.completed'
+          docker compose -p bangpot logs --tail 200 app | grep -q 'requestId=deploy-smoke-001'
+          EOF

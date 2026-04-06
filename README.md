@@ -13,24 +13,21 @@ BangPot의 `auth` 기능과 공통 운영 기반을 관리하는 backend 저장�
 
 ## Local setup
 
-1. `.env.example`을 `.env`로 복사합니다.
-2. 로컬 PostgreSQL 접속 정보, JWT, Kakao OAuth, frontend base URL, required terms version 값을 채웁니다.
-3. 로컬 secret 값은 `src/main/resources/application-local-secret.yml`에 작성합니다.
-4. Kakao developer console에 `http://localhost:8080/login/oauth2/code/kakao`를 등록합니다.
-5. 기본 `local` profile로 애플리케이션을 실행합니다.
+1. 로컬 PostgreSQL 접속 정보, JWT, Kakao OAuth, frontend base URL, required terms version 값을 `src/main/resources/application-local-secret.yml`에 작성합니다.
+2. Kakao developer console에 `http://localhost:8080/login/oauth2/code/kakao`를 등록합니다.
+3. 기본 `local` profile로 애플리케이션을 실행합니다.
 
 `local` profile은 `src/main/resources/application-local-secret.yml`을 직접 읽습니다.
 
 ### PowerShell example
 
 ```powershell
-Copy-Item .env.example .env
 ./gradlew.bat bootRun
 ```
 
 ## Profiles
 
-- `local`: 로컬 `.env`와 `src/main/resources/application-local-secret.yml`을 함께 읽고, SQL logging을 켜고, `ddl-auto=update`, JWT secure cookie 기본값은 `false`를 사용합니다.
+- `local`: `src/main/resources/application-local-secret.yml`만 읽고, SQL logging을 켜고, `ddl-auto=update`, JWT secure cookie 기본값은 `false`를 사용합니다.
 - `prod`: environment variable 기반 datasource / auth 설정을 사용하고, SQL logging을 끄고, `ddl-auto=validate`, JWT secure cookie는 운영 기준값을 따릅니다.
 
 ## Operational logging
@@ -115,6 +112,49 @@ bangpot:
 - `GET /oauth2/authorization/kakao`
 - `GET /login/oauth2/code/kakao`
 
+## Common API error contract
+
+Backend API는 성공 응답을 별도 envelope로 감싸지 않고 resource JSON을 그대로 반환합니다.
+대신 실패 응답은 전역 공통 JSON 계약을 사용합니다.
+
+### Failure response shape
+
+```json
+{
+  "code": "COMMON_VALIDATION_ERROR",
+  "message": "입력값이 올바르지 않습니다.",
+  "requestId": "req-123",
+  "fieldErrors": [
+    {
+      "field": "nickname",
+      "message": "닉네임은 비어 있을 수 없습니다."
+    }
+  ]
+}
+```
+
+### Rules
+
+- 최소 필드는 `code`, `message`, `requestId`, `fieldErrors` 입니다.
+- HTTP status는 body가 아니라 transport 수준에서 확인합니다.
+- validation 실패가 아니면 `fieldErrors`는 빈 배열입니다.
+- 현재 공통 계약은 `auth/common security` 경로에 먼저 반영돼 있습니다.
+- `requestId`는 `X-Request-Id` 추적 기준과 연결됩니다.
+
+### Current code groups
+
+- `COMMON_*`
+  - `COMMON_VALIDATION_ERROR`
+  - `COMMON_INTERNAL_ERROR`
+- `AUTH_*`
+  - `AUTH_UNAUTHENTICATED`
+  - `AUTH_ACCESS_DENIED`
+  - `AUTH_INVALID_NICKNAME`
+  - `AUTH_REQUIRED_TERMS_AGREEMENT`
+  - `AUTH_DUPLICATE_NICKNAME`
+  - `AUTH_USER_NOT_FOUND`
+  - `AUTH_COMPLETION_NOT_ALLOWED`
+
 ## Verification commands
 
 ```powershell
@@ -123,7 +163,20 @@ bangpot:
 ./gradlew.bat build
 ```
 
+## Production deployment
+
+- 운영 배포는 GitHub Actions workflow [C:\bangpot\backend\.github\workflows\deploy-prod.yml](C:/bangpot/backend/.github/workflows/deploy-prod.yml) 기준으로 수행합니다.
+- `prod` 브랜치 push 또는 `workflow_dispatch`로 배포를 실행합니다.
+- workflow는 EC2에 소스를 동기화하고, `.env`를 생성한 뒤, `docker compose`로 backend와 PostgreSQL을 함께 기동합니다.
+- 배포 직후 아래를 자동 확인합니다.
+  - `/actuator/health/liveness`
+  - `/actuator/health/readiness`
+  - `/api/auth/me`
+  - startup 로그
+  - smoke check requestId 로그
+
 ## Operations doc
 
 - 운영 env / logging 정책, health check, 배포 후 smoke check 기준은 [C:\bangpot\workdocs-repo\docs\plans\results\common-ops\00-common-ops-backend-round-01-result.md](C:\bangpot\workdocs-repo\docs\plans\results\common-ops\00-common-ops-backend-round-01-result.md)와 관련 handoff 문서에서 확인합니다.
 - Slack 운영 알림 정책, appender 구조, payload 필드, 제외 이벤트 기준은 [C:\bangpot\workdocs-repo\docs\plans\results\common-ops\00-common-ops-backend-round-02-result.md](C:\bangpot\workdocs-repo\docs\plans\results\common-ops\00-common-ops-backend-round-02-result.md)와 관련 handoff 문서에서 확인합니다.
+- 공통 실패 응답 계약, `COMMON_* / AUTH_*` 코드, `auth/common security` 적용 범위는 [C:\bangpot\workdocs-repo\docs\plans\results\common-error\00-common-error-contract-backend-round-01-result.md](C:\bangpot\workdocs-repo\docs\plans\results\common-error\00-common-error-contract-backend-round-01-result.md)와 관련 handoff 문서에서 확인합니다.

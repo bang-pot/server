@@ -1,0 +1,6 @@
+.git
+.github
+.gradle
+.idea
+build
+src/main/resources/application-local-secret.yml
