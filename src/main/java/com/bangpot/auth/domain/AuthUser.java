@@ -156,6 +156,10 @@ public class AuthUser {
 		this.status = AuthUserStatus.FULL;
 	}
 
+	public void updateNickname(String nickname) {
+		this.nickname = nickname;
+	}
+
 	public String consumePendingRedirectPathOrDefault(String defaultPath) {
 		String nextPath = pendingRedirectPath == null || pendingRedirectPath.isBlank()
 			? defaultPath

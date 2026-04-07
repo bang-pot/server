@@ -20,11 +20,15 @@ import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.auth.application.service.CompleteTempUserService;
 import com.bangpot.auth.application.service.GetCurrentAuthUserService;
+import com.bangpot.auth.application.service.GetMyProfileService;
 import com.bangpot.auth.application.service.LoginWithProviderService;
+import com.bangpot.auth.application.service.UpdateMyProfileService;
 import com.bangpot.auth.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
+import com.bangpot.auth.application.usecase.GetMyProfileUseCase;
 import com.bangpot.auth.application.usecase.LoginWithProviderUseCase;
+import com.bangpot.auth.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
@@ -41,6 +45,8 @@ class AuthUseCaseServicesTest {
 	private CompleteTempUserUseCase completeTempUserUseCase;
 	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	private GetCurrentAuthUserUseCase getCurrentAuthUserUseCase;
+	private GetMyProfileUseCase getMyProfileUseCase;
+	private UpdateMyProfileUseCase updateMyProfileUseCase;
 	private AuthAuditLogger authAuditLogger;
 
 	@BeforeEach
@@ -63,6 +69,8 @@ class AuthUseCaseServicesTest {
 			authUserRepository,
 			authRequiredTermsProperties
 		);
+		getMyProfileUseCase = new GetMyProfileService(authUserRepository);
+		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository);
 	}
 
 	@Test
@@ -174,6 +182,85 @@ class AuthUseCaseServicesTest {
 		).available()).isFalse();
 		assertThatThrownBy(() -> completeTempUserUseCase.handle(
 			CompleteTempUserUseCase.Command.of(loginResult.userId(), "dupe-name", true)
+		))
+			.isInstanceOf(DuplicateNicknameException.class);
+	}
+
+	@Test
+	void returnsCurrentProfileForFullUser() {
+		AuthUser fullUser = AuthUser.rehydrate(
+			1L,
+			AuthProvider.KAKAO,
+			"full-user",
+			AuthUserStatus.FULL,
+			"bangpot",
+			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
+			null,
+			NOW.minusSeconds(3600),
+			NOW.minusSeconds(60)
+		);
+		authUserRepository.save(fullUser);
+
+		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(fullUser.getId()));
+
+		assertThat(result.id()).isEqualTo(fullUser.getId());
+		assertThat(result.nickname()).isEqualTo("bangpot");
+	}
+
+	@Test
+	void updatesNicknameForCurrentFullUser() {
+		AuthUser fullUser = AuthUser.rehydrate(
+			1L,
+			AuthProvider.KAKAO,
+			"full-user",
+			AuthUserStatus.FULL,
+			"before",
+			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
+			null,
+			NOW.minusSeconds(3600),
+			NOW.minusSeconds(60)
+		);
+		authUserRepository.save(fullUser);
+
+		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
+			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "  after  ")
+		);
+
+		assertThat(result.id()).isEqualTo(fullUser.getId());
+		assertThat(result.nickname()).isEqualTo("after");
+		assertThat(authUserRepository.findById(fullUser.getId())).get()
+			.extracting(AuthUser::getNickname)
+			.isEqualTo("after");
+	}
+
+	@Test
+	void rejectsDuplicateNicknameWhenUpdatingProfile() {
+		authUserRepository.save(AuthUser.rehydrate(
+			10L,
+			AuthProvider.KAKAO,
+			"existing",
+			AuthUserStatus.FULL,
+			"dupe-name",
+			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(10)),
+			null,
+			NOW.minusSeconds(100),
+			NOW.minusSeconds(10)
+		));
+		AuthUser fullUser = AuthUser.rehydrate(
+			11L,
+			AuthProvider.KAKAO,
+			"updating-user",
+			AuthUserStatus.FULL,
+			"before",
+			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(10)),
+			null,
+			NOW.minusSeconds(100),
+			NOW.minusSeconds(10)
+		);
+		authUserRepository.save(fullUser);
+
+		assertThatThrownBy(() -> updateMyProfileUseCase.handle(
+			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "dupe-name")
 		))
 			.isInstanceOf(DuplicateNicknameException.class);
 	}
