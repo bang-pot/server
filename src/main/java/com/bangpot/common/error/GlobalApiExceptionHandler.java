@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -55,6 +56,11 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(AuthCompletionNotAllowedException.class)
 	ResponseEntity<ApiErrorResponse> handleAuthCompletionNotAllowed(AuthCompletionNotAllowedException exception) {
 		return error(AuthErrorCode.AUTH_COMPLETION_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException exception) {
+		return error(AuthErrorCode.AUTH_ACCESS_DENIED);
 	}
 
 	@ExceptionHandler(Exception.class)

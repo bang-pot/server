@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bangpot.auth.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
+import com.bangpot.auth.application.usecase.GetMyProfileUseCase;
+import com.bangpot.auth.application.usecase.UpdateMyProfileUseCase;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -27,6 +30,8 @@ class AuthController {
 	private final GetCurrentAuthUserUseCase getCurrentAuthUserUseCase;
 	private final CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	private final CompleteTempUserUseCase completeTempUserUseCase;
+	private final GetMyProfileUseCase getMyProfileUseCase;
+	private final UpdateMyProfileUseCase updateMyProfileUseCase;
 
 	@GetMapping("/me")
 	ResponseEntity<GetCurrentAuthUserUseCase.View> me(Authentication authentication) {
@@ -34,6 +39,14 @@ class AuthController {
 		return ResponseEntity.ok(getCurrentAuthUserUseCase.handle(
 			GetCurrentAuthUserUseCase.Query.of(userId)
 		));
+	}
+
+	@GetMapping("/profile")
+	ResponseEntity<AuthProfileResponse> profile(Authentication authentication) {
+		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(
+			GetMyProfileUseCase.Query.of(requireAuthenticatedUserId(authentication))
+		);
+		return ResponseEntity.ok(AuthDtoMapper.toResponse(result));
 	}
 
 	@GetMapping("/nickname-availability")
@@ -50,14 +63,28 @@ class AuthController {
 		Authentication authentication,
 		@Valid @RequestBody AuthCompletionRequest completionRequest
 	) {
-		if (authentication == null || authentication.getPrincipal() == null) {
-			throw new UnauthenticatedException();
-		}
-		Long userId = (Long) authentication.getPrincipal();
 		CompleteTempUserUseCase.Result result = completeTempUserUseCase.handle(
-			AuthDtoMapper.toCommand(userId, completionRequest)
+			AuthDtoMapper.toCommand(requireAuthenticatedUserId(authentication), completionRequest)
 		);
 		return ResponseEntity.ok(AuthDtoMapper.toResponse(result));
+	}
+
+	@PatchMapping("/profile")
+	ResponseEntity<AuthProfileResponse> updateProfile(
+		Authentication authentication,
+		@Valid @RequestBody UpdateMyProfileRequest request
+	) {
+		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
+			AuthDtoMapper.toCommand(requireAuthenticatedUserId(authentication), request)
+		);
+		return ResponseEntity.ok(AuthDtoMapper.toResponse(result));
+	}
+
+	private Long requireAuthenticatedUserId(Authentication authentication) {
+		if (authentication == null || !(authentication.getPrincipal() instanceof Long userId)) {
+			throw new UnauthenticatedException();
+		}
+		return userId;
 	}
 
 	record AuthCompletionResponse(
@@ -71,5 +98,13 @@ class AuthController {
 		@NotBlank(message = "닉네임은 비어 있을 수 없습니다.") String nickname,
 		boolean agreedToRequiredTerms
 	) {
+	}
+
+	record UpdateMyProfileRequest(
+		@NotBlank(message = "닉네임은 비어 있을 수 없습니다.") String nickname
+	) {
+	}
+
+	record AuthProfileResponse(Long id, String nickname) {
 	}
 }

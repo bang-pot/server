@@ -104,6 +104,8 @@ bangpot:
 ## Auth and health endpoints
 
 - `GET /api/auth/me`
+- `GET /api/auth/profile`
+- `PATCH /api/auth/profile`
 - `GET /api/auth/nickname-availability`
 - `POST /api/auth/complete`
 - `POST /api/auth/logout`
