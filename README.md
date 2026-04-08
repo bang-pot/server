@@ -118,6 +118,8 @@ bangpot:
 - `GET /oauth2/authorization/kakao`
 - `GET /login/oauth2/code/kakao`
 
+`GET /api/crews/public` and `GET /api/crews/{crewId}/join` are public read endpoints and do not require authentication.
+
 ## Common API error contract
 
 Backend API는 성공 응답을 별도 envelope로 감싸지 않고 resource JSON을 그대로 반환합니다.
