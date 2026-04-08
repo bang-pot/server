@@ -14,7 +14,6 @@ import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
-import com.bangpot.crew.domain.CrewVisibility;
 
 import lombok.RequiredArgsConstructor;
 

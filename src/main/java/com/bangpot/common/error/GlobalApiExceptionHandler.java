@@ -19,6 +19,10 @@ import com.bangpot.auth.application.exception.InvalidNicknameException;
 import com.bangpot.auth.application.exception.MissingRequiredTermsAgreementException;
 import com.bangpot.auth.error.AuthErrorCode;
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.crew.application.exception.CrewAlreadyJoinedException;
+import com.bangpot.crew.application.exception.CrewJoinRequestAlreadyPendingException;
+import com.bangpot.crew.application.exception.CrewJoinRequestNotAllowedException;
+import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
@@ -68,6 +72,28 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 				List.of(new ApiErrorField("visibility", "공개/비공개 설정값이 올바르지 않습니다."))
 			)
 		);
+	}
+
+	@ExceptionHandler(CrewNotFoundException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewNotFound(CrewNotFoundException exception) {
+		return error(CrewErrorCode.CREW_NOT_FOUND);
+	}
+
+	@ExceptionHandler(CrewJoinRequestNotAllowedException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewJoinRequestNotAllowed(CrewJoinRequestNotAllowedException exception) {
+		return error(CrewErrorCode.CREW_JOIN_REQUEST_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(CrewAlreadyJoinedException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewAlreadyJoined(CrewAlreadyJoinedException exception) {
+		return error(CrewErrorCode.CREW_ALREADY_JOINED);
+	}
+
+	@ExceptionHandler(CrewJoinRequestAlreadyPendingException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewJoinRequestAlreadyPending(
+		CrewJoinRequestAlreadyPendingException exception
+	) {
+		return error(CrewErrorCode.CREW_JOIN_REQUEST_ALREADY_PENDING);
 	}
 
 	@ExceptionHandler(AuthUserNotFoundException.class)

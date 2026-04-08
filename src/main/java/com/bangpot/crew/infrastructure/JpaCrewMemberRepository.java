@@ -17,4 +17,9 @@ class JpaCrewMemberRepository implements CrewMemberRepository {
 	public CrewMember save(CrewMember crewMember) {
 		return crewMemberJpaRepository.save(crewMember);
 	}
+
+	@Override
+	public boolean existsByCrewIdAndUserId(Long crewId, Long userId) {
+		return crewMemberJpaRepository.existsByCrewIdAndUserId(crewId, userId);
+	}
 }

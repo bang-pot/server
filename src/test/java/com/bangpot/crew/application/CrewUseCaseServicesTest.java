@@ -191,6 +191,12 @@ class CrewUseCaseServicesTest {
 			return crewMember;
 		}
 
+		@Override
+		public boolean existsByCrewIdAndUserId(Long crewId, Long userId) {
+			return membersById.values().stream()
+				.anyMatch(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()));
+		}
+
 		Optional<CrewMember> findLeaderByCrewId(Long crewId) {
 			return membersById.values().stream()
 				.filter(member -> crewId.equals(member.getCrewId()) && member.getRole() == CrewRole.LEADER)

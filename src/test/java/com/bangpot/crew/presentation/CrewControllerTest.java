@@ -1,6 +1,7 @@
 package com.bangpot.crew.presentation;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,6 +22,9 @@ import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
+import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
+import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
+import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewRole;
 
 @ActiveProfiles("test")
@@ -35,15 +39,21 @@ class CrewControllerTest {
 	@MockitoBean
 	private CreateCrewUseCase createCrewUseCase;
 
+	@MockitoBean
+	private GetCrewJoinViewUseCase getCrewJoinViewUseCase;
+
+	@MockitoBean
+	private RequestCrewJoinUseCase requestCrewJoinUseCase;
+
 	@Test
 	void createsCrewForAuthenticatedFullUser() throws Exception {
 		when(createCrewUseCase.handle(CreateCrewUseCase.Command.of(
 			77L,
-			"방팟 야식 크루",
-			"같이 먹고 같이 달리기",
+			"Crew Alpha",
+			"public crew",
 			null,
 			null
-		))).thenReturn(CreateCrewUseCase.Result.of(1L, "방팟 야식 크루", CrewRole.LEADER));
+		))).thenReturn(CreateCrewUseCase.Result.of(1L, "Crew Alpha", CrewRole.LEADER));
 
 		mockMvc.perform(
 			post("/api/crews")
@@ -51,14 +61,14 @@ class CrewControllerTest {
 				.contentType("application/json")
 				.content("""
 					{
-					  "name": "방팟 야식 크루",
-					  "description": "같이 먹고 같이 달리기"
+					  "name": "Crew Alpha",
+					  "description": "public crew"
 					}
 					""")
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.crewId").value(1))
-			.andExpect(jsonPath("$.name").value("방팟 야식 크루"))
+			.andExpect(jsonPath("$.name").value("Crew Alpha"))
 			.andExpect(jsonPath("$.myRole").value("LEADER"));
 	}
 
@@ -69,7 +79,7 @@ class CrewControllerTest {
 				.contentType("application/json")
 				.content("""
 					{
-					  "name": "방팟 야식 크루"
+					  "name": "Crew Alpha"
 					}
 					""")
 		)
@@ -102,7 +112,7 @@ class CrewControllerTest {
 				.contentType("application/json")
 				.content("""
 					{
-					  "name": "방팟 야식 크루",
+					  "name": "Crew Alpha",
 					  "visibility": "SECRET"
 					}
 					""")
@@ -116,11 +126,11 @@ class CrewControllerTest {
 	void returnsFieldErrorWhenCrewNameIsDuplicate() throws Exception {
 		when(createCrewUseCase.handle(CreateCrewUseCase.Command.of(
 			77L,
-			"방팟 야식 크루",
+			"Crew Alpha",
 			null,
 			null,
 			null
-		))).thenThrow(new DuplicateCrewNameException("방팟 야식 크루"));
+		))).thenThrow(new DuplicateCrewNameException("Crew Alpha"));
 
 		mockMvc.perform(
 			post("/api/crews")
@@ -128,12 +138,84 @@ class CrewControllerTest {
 				.contentType("application/json")
 				.content("""
 					{
-					  "name": "방팟 야식 크루"
+					  "name": "Crew Alpha"
 					}
 					""")
 		)
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.code").value("CREW_DUPLICATE_NAME"))
 			.andExpect(jsonPath("$.fieldErrors[0].field").value("name"));
+	}
+
+	@Test
+	void returnsCrewJoinViewForGuestUser() throws Exception {
+		when(getCrewJoinViewUseCase.handle(GetCrewJoinViewUseCase.Query.of(1L, null)))
+			.thenReturn(GetCrewJoinViewUseCase.Result.of(
+				1L,
+				"Crew Alpha",
+				"public crew",
+				"PUBLIC",
+				null,
+				CrewJoinViewStatus.GUEST
+			));
+
+		mockMvc.perform(get("/api/crews/1/join"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.name").value("Crew Alpha"))
+			.andExpect(jsonPath("$.visibility").value("PUBLIC"))
+			.andExpect(jsonPath("$.myStatus").value("GUEST"));
+	}
+
+	@Test
+	void createsJoinRequestForAuthenticatedUser() throws Exception {
+		when(requestCrewJoinUseCase.handle(RequestCrewJoinUseCase.Command.of(1L, 77L, "let me join")))
+			.thenReturn(RequestCrewJoinUseCase.Result.of(1L, CrewJoinViewStatus.PENDING));
+
+		mockMvc.perform(
+			post("/api/crews/1/join-requests")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "message": "let me join"
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.myStatus").value("PENDING"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenJoinMessageIsTooLong() throws Exception {
+		mockMvc.perform(
+			post("/api/crews/1/join-requests")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "message": "%s"
+					}
+					""".formatted("a".repeat(201)))
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("message"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenJoinRequestIsSubmittedWithoutAuthentication() throws Exception {
+		mockMvc.perform(
+			post("/api/crews/1/join-requests")
+				.contentType("application/json")
+				.content("""
+					{
+					  "message": "let me join"
+					}
+					""")
+		)
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
 }
