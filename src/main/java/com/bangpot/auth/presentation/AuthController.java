@@ -1,6 +1,5 @@
 package com.bangpot.auth.presentation;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
@@ -19,7 +18,7 @@ import com.bangpot.auth.application.usecase.GetMyProfileUseCase;
 import com.bangpot.auth.application.usecase.UpdateMyProfileUseCase;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
+import lombok.RequiredArgsConstructor;
 
 @Validated
 @RestController
@@ -42,7 +41,7 @@ class AuthController {
 	}
 
 	@GetMapping("/profile")
-	ResponseEntity<AuthProfileResponse> profile(Authentication authentication) {
+	ResponseEntity<AuthDto.AuthProfileResponse> profile(Authentication authentication) {
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(
 			GetMyProfileUseCase.Query.of(requireAuthenticatedUserId(authentication))
 		);
@@ -59,9 +58,9 @@ class AuthController {
 	}
 
 	@PostMapping("/complete")
-	ResponseEntity<AuthCompletionResponse> complete(
+	ResponseEntity<AuthDto.AuthCompletionResponse> complete(
 		Authentication authentication,
-		@Valid @RequestBody AuthCompletionRequest completionRequest
+		@Valid @RequestBody AuthDto.AuthCompletionRequest completionRequest
 	) {
 		CompleteTempUserUseCase.Result result = completeTempUserUseCase.handle(
 			AuthDtoMapper.toCommand(requireAuthenticatedUserId(authentication), completionRequest)
@@ -70,9 +69,9 @@ class AuthController {
 	}
 
 	@PatchMapping("/profile")
-	ResponseEntity<AuthProfileResponse> updateProfile(
+	ResponseEntity<AuthDto.AuthProfileResponse> updateProfile(
 		Authentication authentication,
-		@Valid @RequestBody UpdateMyProfileRequest request
+		@Valid @RequestBody AuthDto.UpdateMyProfileRequest request
 	) {
 		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
 			AuthDtoMapper.toCommand(requireAuthenticatedUserId(authentication), request)
@@ -85,26 +84,5 @@ class AuthController {
 			throw new UnauthenticatedException();
 		}
 		return userId;
-	}
-
-	record AuthCompletionResponse(
-		String authStatus,
-		boolean completionRequired,
-		String nextPath
-	) {
-	}
-
-	record AuthCompletionRequest(
-		@NotBlank(message = "닉네임은 비어 있을 수 없습니다.") String nickname,
-		boolean agreedToRequiredTerms
-	) {
-	}
-
-	record UpdateMyProfileRequest(
-		@NotBlank(message = "닉네임은 비어 있을 수 없습니다.") String nickname
-	) {
-	}
-
-	record AuthProfileResponse(Long id, String nickname) {
 	}
 }

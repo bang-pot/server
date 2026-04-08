@@ -18,27 +18,30 @@ import lombok.Getter;
 @Entity
 @Getter
 @Table(
-	name = "crews",
-	uniqueConstraints = @UniqueConstraint(name = "uk_crews_name", columnNames = "name")
+	name = "crew_join_requests",
+	uniqueConstraints = @UniqueConstraint(
+		name = "uk_crew_join_requests_crew_user",
+		columnNames = {"crew_id", "user_id"}
+	)
 )
-public class Crew {
+public class CrewJoinRequest {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "name", nullable = false)
-	private String name;
+	@Column(name = "crew_id", nullable = false)
+	private Long crewId;
 
-	@Column(name = "description")
-	private String description;
+	@Column(name = "user_id", nullable = false)
+	private Long userId;
+
+	@Column(name = "message", length = 200)
+	private String message;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "visibility", nullable = false)
-	private CrewVisibility visibility;
-
-	@Column(name = "image_url")
-	private String imageUrl;
+	@Column(name = "status", nullable = false)
+	private CrewJoinRequestStatus status;
 
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
@@ -46,41 +49,29 @@ public class Crew {
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
-	protected Crew() {
+	protected CrewJoinRequest() {
 	}
 
-	private Crew(
+	private CrewJoinRequest(
 		Long id,
-		String name,
-		String description,
-		CrewVisibility visibility,
-		String imageUrl,
+		Long crewId,
+		Long userId,
+		String message,
+		CrewJoinRequestStatus status,
 		Instant createdAt,
 		Instant updatedAt
 	) {
 		this.id = id;
-		this.name = name;
-		this.description = description;
-		this.visibility = visibility;
-		this.imageUrl = imageUrl;
+		this.crewId = crewId;
+		this.userId = userId;
+		this.message = message;
+		this.status = status;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
 	}
 
-	public static Crew create(String name, String description, CrewVisibility visibility, String imageUrl) {
-		return new Crew(
-			null,
-			name,
-			description,
-			visibility == null ? CrewVisibility.PUBLIC : visibility,
-			imageUrl,
-			null,
-			null
-		);
-	}
-
-	public boolean allowsDirectJoinRequest() {
-		return visibility == CrewVisibility.PUBLIC;
+	public static CrewJoinRequest createPending(Long crewId, Long userId, String message) {
+		return new CrewJoinRequest(null, crewId, userId, message, CrewJoinRequestStatus.PENDING, null, null);
 	}
 
 	public void assignId(Long id) {

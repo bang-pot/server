@@ -11,7 +11,7 @@ final class AuthDtoMapper {
 
 	static CompleteTempUserUseCase.Command toCommand(
 		Long userId,
-		AuthController.AuthCompletionRequest request
+		AuthDto.AuthCompletionRequest request
 	) {
 		return CompleteTempUserUseCase.Command.of(
 			userId,
@@ -22,24 +22,24 @@ final class AuthDtoMapper {
 
 	static UpdateMyProfileUseCase.Command toCommand(
 		Long userId,
-		AuthController.UpdateMyProfileRequest request
+		AuthDto.UpdateMyProfileRequest request
 	) {
 		return UpdateMyProfileUseCase.Command.of(userId, request.nickname());
 	}
 
-	static AuthController.AuthCompletionResponse toResponse(CompleteTempUserUseCase.Result result) {
-		return new AuthController.AuthCompletionResponse(
+	static AuthDto.AuthCompletionResponse toResponse(CompleteTempUserUseCase.Result result) {
+		return new AuthDto.AuthCompletionResponse(
 			result.authStatus().name(),
 			result.completionRequired(),
 			result.nextPath()
 		);
 	}
 
-	static AuthController.AuthProfileResponse toResponse(GetMyProfileUseCase.View result) {
-		return new AuthController.AuthProfileResponse(result.id(), result.nickname());
+	static AuthDto.AuthProfileResponse toResponse(GetMyProfileUseCase.View result) {
+		return new AuthDto.AuthProfileResponse(result.id(), result.nickname());
 	}
 
-	static AuthController.AuthProfileResponse toResponse(UpdateMyProfileUseCase.Result result) {
-		return new AuthController.AuthProfileResponse(result.id(), result.nickname());
+	static AuthDto.AuthProfileResponse toResponse(UpdateMyProfileUseCase.Result result) {
+		return new AuthDto.AuthProfileResponse(result.id(), result.nickname());
 	}
 }
