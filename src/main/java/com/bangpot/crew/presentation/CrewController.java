@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
+import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ class CrewController {
 
 	private final CreateCrewUseCase createCrewUseCase;
 	private final GetCrewJoinViewUseCase getCrewJoinViewUseCase;
+	private final GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 
 	@PostMapping
@@ -37,6 +39,11 @@ class CrewController {
 			CrewDtoMapper.toCommand(requireAuthenticatedUserId(authentication), request)
 		);
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/public")
+	ResponseEntity<java.util.List<CrewDto.PublicCrewCardResponse>> getPublicCrewCards() {
+		return ResponseEntity.ok(CrewDtoMapper.toResponses(getPublicCrewCardsUseCase.handle()));
 	}
 
 	@GetMapping("/{crewId}/join")

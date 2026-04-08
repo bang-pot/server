@@ -110,6 +110,7 @@ bangpot:
 - `POST /api/auth/complete`
 - `POST /api/auth/logout`
 - `POST /api/crews`
+- `GET /api/crews/public`
 - `GET /api/crews/{crewId}/join`
 - `POST /api/crews/{crewId}/join-requests`
 - `GET /actuator/health/liveness`

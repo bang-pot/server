@@ -23,6 +23,7 @@ import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
+import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewRole;
@@ -41,6 +42,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private GetCrewJoinViewUseCase getCrewJoinViewUseCase;
+
+	@MockitoBean
+	private GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 
 	@MockitoBean
 	private RequestCrewJoinUseCase requestCrewJoinUseCase;
@@ -165,6 +169,24 @@ class CrewControllerTest {
 			.andExpect(jsonPath("$.name").value("Crew Alpha"))
 			.andExpect(jsonPath("$.visibility").value("PUBLIC"))
 			.andExpect(jsonPath("$.myStatus").value("GUEST"));
+	}
+
+	@Test
+	void returnsPublicCrewCardsForCardList() throws Exception {
+		when(getPublicCrewCardsUseCase.handle()).thenReturn(List.of(
+			GetPublicCrewCardsUseCase.View.of(1L, "Crew Alpha", "public crew", "PUBLIC", null),
+			GetPublicCrewCardsUseCase.View.of(2L, "Crew Beta", "night runners", "PUBLIC", "https://image.example/beta.png")
+		));
+
+		mockMvc.perform(get("/api/crews/public"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].crewId").value(1))
+			.andExpect(jsonPath("$[0].name").value("Crew Alpha"))
+			.andExpect(jsonPath("$[0].description").value("public crew"))
+			.andExpect(jsonPath("$[0].visibility").value("PUBLIC"))
+			.andExpect(jsonPath("$[0].imageUrl").doesNotExist())
+			.andExpect(jsonPath("$[1].crewId").value(2))
+			.andExpect(jsonPath("$[1].imageUrl").value("https://image.example/beta.png"));
 	}
 
 	@Test
