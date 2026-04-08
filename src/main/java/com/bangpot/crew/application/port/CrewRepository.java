@@ -1,5 +1,6 @@
 package com.bangpot.crew.application.port;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.crew.domain.Crew;
@@ -11,4 +12,6 @@ public interface CrewRepository {
 	Crew save(Crew crew);
 
 	Optional<Crew> findById(Long crewId);
+
+	List<Crew> findPublicCrews();
 }

@@ -297,6 +297,13 @@ class CrewJoinUseCaseServicesTest {
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
+
+		@Override
+		public java.util.List<Crew> findPublicCrews() {
+			return crewsById.values().stream()
+				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
+				.toList();
+		}
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {

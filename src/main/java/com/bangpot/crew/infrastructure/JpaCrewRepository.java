@@ -1,11 +1,13 @@
 package com.bangpot.crew.infrastructure;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewVisibility;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,5 +30,10 @@ class JpaCrewRepository implements CrewRepository {
 	@Override
 	public Optional<Crew> findById(Long crewId) {
 		return crewJpaRepository.findById(crewId);
+	}
+
+	@Override
+	public List<Crew> findPublicCrews() {
+		return crewJpaRepository.findAllByVisibilityOrderByIdAsc(CrewVisibility.PUBLIC);
 	}
 }

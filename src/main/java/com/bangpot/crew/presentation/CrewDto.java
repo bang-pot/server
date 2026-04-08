@@ -22,6 +22,15 @@ final class CrewDto {
 	record CreateCrewResponse(Long crewId, String name, CrewRole myRole) {
 	}
 
+	record PublicCrewCardResponse(
+		Long crewId,
+		String name,
+		String description,
+		String visibility,
+		String imageUrl
+	) {
+	}
+
 	record CrewJoinViewResponse(
 		Long crewId,
 		String name,
