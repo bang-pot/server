@@ -19,6 +19,9 @@ import com.bangpot.auth.application.exception.InvalidNicknameException;
 import com.bangpot.auth.application.exception.MissingRequiredTermsAgreementException;
 import com.bangpot.auth.error.AuthErrorCode;
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.crew.application.exception.DuplicateCrewNameException;
+import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
+import com.bangpot.crew.error.CrewErrorCode;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,6 +49,25 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(DuplicateNicknameException.class)
 	ResponseEntity<ApiErrorResponse> handleDuplicateNickname(DuplicateNicknameException exception) {
 		return error(AuthErrorCode.AUTH_DUPLICATE_NICKNAME);
+	}
+
+	@ExceptionHandler(DuplicateCrewNameException.class)
+	ResponseEntity<ApiErrorResponse> handleDuplicateCrewName(DuplicateCrewNameException exception) {
+		return ResponseEntity.status(CrewErrorCode.CREW_DUPLICATE_NAME.status())
+			.body(apiErrorResponseFactory.create(
+				CrewErrorCode.CREW_DUPLICATE_NAME,
+				List.of(new ApiErrorField("name", CrewErrorCode.CREW_DUPLICATE_NAME.message()))
+			));
+	}
+
+	@ExceptionHandler(InvalidCrewVisibilityException.class)
+	ResponseEntity<ApiErrorResponse> handleInvalidCrewVisibility(InvalidCrewVisibilityException exception) {
+		return ResponseEntity.badRequest().body(
+			apiErrorResponseFactory.create(
+				CommonErrorCode.COMMON_VALIDATION_ERROR,
+				List.of(new ApiErrorField("visibility", "공개/비공개 설정값이 올바르지 않습니다."))
+			)
+		);
 	}
 
 	@ExceptionHandler(AuthUserNotFoundException.class)
