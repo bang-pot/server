@@ -109,6 +109,7 @@ bangpot:
 - `GET /api/auth/nickname-availability`
 - `POST /api/auth/complete`
 - `POST /api/auth/logout`
+- `POST /api/crews`
 - `GET /actuator/health/liveness`
 - `GET /actuator/health/readiness`
 - `GET /oauth2/authorization/kakao`
