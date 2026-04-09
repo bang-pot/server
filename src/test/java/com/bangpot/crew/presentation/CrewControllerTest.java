@@ -23,6 +23,7 @@ import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
@@ -54,6 +55,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
+
+	@MockitoBean
+	private GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
 
 	@MockitoBean
 	private ApproveCrewJoinRequestUseCase approveCrewJoinRequestUseCase;
@@ -273,6 +277,27 @@ class CrewControllerTest {
 	}
 
 	@Test
+	void returnsJoinRequestsForLeaderManagementView() throws Exception {
+		when(getCrewJoinRequestsUseCase.handle(GetCrewJoinRequestsUseCase.Query.of(1L, 77L)))
+			.thenReturn(java.util.List.of(
+				GetCrewJoinRequestsUseCase.View.of(10L, 201L, "bangpot-user", "같이 달리고 싶어요", "PENDING"),
+				GetCrewJoinRequestsUseCase.View.of(11L, 202L, "runner", "아침 러닝 가능합니다", "APPROVED")
+			));
+
+		mockMvc.perform(
+			get("/api/crews/1/join-requests")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].requestId").value(10))
+			.andExpect(jsonPath("$[0].userId").value(201))
+			.andExpect(jsonPath("$[0].nickname").value("bangpot-user"))
+			.andExpect(jsonPath("$[0].message").value("같이 달리고 싶어요"))
+			.andExpect(jsonPath("$[0].status").value("PENDING"))
+			.andExpect(jsonPath("$[1].status").value("APPROVED"));
+	}
+
+	@Test
 	void approvesPendingJoinRequestForLeader() throws Exception {
 		when(approveCrewJoinRequestUseCase.handle(ApproveCrewJoinRequestUseCase.Command.of(1L, 10L, 77L)))
 			.thenReturn(ApproveCrewJoinRequestUseCase.Result.of(1L, 10L, 201L, CrewRole.MEMBER));
@@ -305,6 +330,13 @@ class CrewControllerTest {
 	@Test
 	void returnsUnauthorizedWhenPendingJoinRequestsAreQueriedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/crews/1/join-requests/pending"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenJoinRequestsAreQueriedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/crews/1/join-requests"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

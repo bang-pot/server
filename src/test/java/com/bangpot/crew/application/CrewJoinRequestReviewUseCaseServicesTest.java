@@ -23,9 +23,11 @@ import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.ApproveCrewJoinRequestService;
+import com.bangpot.crew.application.service.GetCrewJoinRequestsService;
 import com.bangpot.crew.application.service.GetPendingCrewJoinRequestsService;
 import com.bangpot.crew.application.service.RejectCrewJoinRequestService;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.domain.Crew;
@@ -43,6 +45,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
+	private GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
 	private GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
 	private ApproveCrewJoinRequestUseCase approveCrewJoinRequestUseCase;
 	private RejectCrewJoinRequestUseCase rejectCrewJoinRequestUseCase;
@@ -53,6 +56,12 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
+		getCrewJoinRequestsUseCase = new GetCrewJoinRequestsService(
+			authUserRepository,
+			crewRepository,
+			crewMemberRepository,
+			crewJoinRequestRepository
+		);
 		getPendingCrewJoinRequestsUseCase = new GetPendingCrewJoinRequestsService(
 			authUserRepository,
 			crewRepository,
@@ -69,6 +78,48 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 			crewMemberRepository,
 			crewJoinRequestRepository
 		);
+	}
+
+	@Test
+	void returnsAllJoinRequestsForLeaderManagementView() {
+		Crew crew = crewRepository.save(Crew.create("방팟 야식 크루", "crew", CrewVisibility.PUBLIC, null));
+		AuthUser leader = fullUser(1L, "leader-provider", "leader");
+		AuthUser pendingUser = fullUser(2L, "pending-provider", "runner");
+		AuthUser rejectedUser = fullUser(3L, "rejected-provider", "guest");
+		authUserRepository.save(leader);
+		authUserRepository.save(pendingUser);
+		authUserRepository.save(rejectedUser);
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
+		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), pendingUser.getId(), "같이 뛰고 싶어요"));
+		CrewJoinRequest rejectedRequest = crewJoinRequestRepository.save(
+			CrewJoinRequest.createPending(crew.getId(), rejectedUser.getId(), "저녁 러닝 가능합니다")
+		);
+		rejectedRequest.reject();
+		crewJoinRequestRepository.save(rejectedRequest);
+
+		List<GetCrewJoinRequestsUseCase.View> result = getCrewJoinRequestsUseCase.handle(
+			GetCrewJoinRequestsUseCase.Query.of(crew.getId(), leader.getId())
+		);
+
+		assertThat(result).hasSize(2);
+		assertThat(result.get(0))
+			.extracting(
+				GetCrewJoinRequestsUseCase.View::requestId,
+				GetCrewJoinRequestsUseCase.View::userId,
+				GetCrewJoinRequestsUseCase.View::nickname,
+				GetCrewJoinRequestsUseCase.View::message,
+				GetCrewJoinRequestsUseCase.View::status
+			)
+			.containsExactly(1L, 2L, "runner", "같이 뛰고 싶어요", "PENDING");
+		assertThat(result.get(1))
+			.extracting(
+				GetCrewJoinRequestsUseCase.View::requestId,
+				GetCrewJoinRequestsUseCase.View::userId,
+				GetCrewJoinRequestsUseCase.View::nickname,
+				GetCrewJoinRequestsUseCase.View::message,
+				GetCrewJoinRequestsUseCase.View::status
+			)
+			.containsExactly(2L, 3L, "guest", "저녁 러닝 가능합니다", "REJECTED");
 	}
 
 	@Test
@@ -314,6 +365,14 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 					userId.equals(request.getUserId()) &&
 					request.getStatus() == CrewJoinRequestStatus.PENDING
 				);
+		}
+
+		@Override
+		public List<CrewJoinRequest> findByCrewId(Long crewId) {
+			return requestsById.values().stream()
+				.filter(request -> crewId.equals(request.getCrewId()))
+				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+				.toList();
 		}
 
 		@Override
