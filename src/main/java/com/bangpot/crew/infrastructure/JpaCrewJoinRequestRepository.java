@@ -1,5 +1,8 @@
 package com.bangpot.crew.infrastructure;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
@@ -24,6 +27,23 @@ class JpaCrewJoinRequestRepository implements CrewJoinRequestRepository {
 		return crewJoinRequestJpaRepository.existsByCrewIdAndUserIdAndStatus(
 			crewId,
 			userId,
+			CrewJoinRequestStatus.PENDING
+		);
+	}
+
+	@Override
+	public List<CrewJoinRequest> findPendingByCrewId(Long crewId) {
+		return crewJoinRequestJpaRepository.findAllByCrewIdAndStatusOrderByIdAsc(
+			crewId,
+			CrewJoinRequestStatus.PENDING
+		);
+	}
+
+	@Override
+	public Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
+		return crewJoinRequestJpaRepository.findByIdAndCrewIdAndStatus(
+			requestId,
+			crewId,
 			CrewJoinRequestStatus.PENDING
 		);
 	}

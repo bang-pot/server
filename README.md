@@ -113,6 +113,9 @@ bangpot:
 - `GET /api/crews/public`
 - `GET /api/crews/{crewId}/join`
 - `POST /api/crews/{crewId}/join-requests`
+- `GET /api/crews/{crewId}/join-requests/pending`
+- `POST /api/crews/{crewId}/join-requests/{requestId}/approve`
+- `POST /api/crews/{crewId}/join-requests/{requestId}/reject`
 - `GET /actuator/health/liveness`
 - `GET /actuator/health/readiness`
 - `GET /oauth2/authorization/kakao`

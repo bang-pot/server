@@ -48,4 +48,13 @@ final class CrewDto {
 
 	record RequestCrewJoinResponse(Long crewId, CrewJoinViewStatus myStatus) {
 	}
+
+	record PendingCrewJoinRequestResponse(Long requestId, Long userId, String nickname) {
+	}
+
+	record ApproveCrewJoinRequestResponse(Long crewId, Long requestId, Long userId, CrewRole role) {
+	}
+
+	record RejectCrewJoinRequestResponse(Long crewId, Long requestId) {
+	}
 }

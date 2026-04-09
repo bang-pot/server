@@ -1,5 +1,7 @@
 package com.bangpot.crew.domain;
 
 public enum CrewJoinRequestStatus {
-	PENDING
+	PENDING,
+	APPROVED,
+	REJECTED
 }

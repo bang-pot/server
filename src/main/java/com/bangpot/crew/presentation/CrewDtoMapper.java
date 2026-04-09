@@ -2,9 +2,12 @@ package com.bangpot.crew.presentation;
 
 import java.util.List;
 
+import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
+import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
+import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 
 final class CrewDtoMapper {
@@ -59,5 +62,42 @@ final class CrewDtoMapper {
 
 	static CrewDto.RequestCrewJoinResponse toResponse(RequestCrewJoinUseCase.Result result) {
 		return new CrewDto.RequestCrewJoinResponse(result.crewId(), result.myStatus());
+	}
+
+	static GetPendingCrewJoinRequestsUseCase.Query toQuery(Long crewId, Long leaderUserId) {
+		return GetPendingCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId);
+	}
+
+	static List<CrewDto.PendingCrewJoinRequestResponse> toPendingResponses(
+		List<GetPendingCrewJoinRequestsUseCase.View> views
+	) {
+		return views.stream()
+			.map(view -> new CrewDto.PendingCrewJoinRequestResponse(
+				view.requestId(),
+				view.userId(),
+				view.nickname()
+			))
+			.toList();
+	}
+
+	static ApproveCrewJoinRequestUseCase.Command toApproveCommand(Long crewId, Long requestId, Long leaderUserId) {
+		return ApproveCrewJoinRequestUseCase.Command.of(crewId, requestId, leaderUserId);
+	}
+
+	static CrewDto.ApproveCrewJoinRequestResponse toResponse(ApproveCrewJoinRequestUseCase.Result result) {
+		return new CrewDto.ApproveCrewJoinRequestResponse(
+			result.crewId(),
+			result.requestId(),
+			result.userId(),
+			result.role()
+		);
+	}
+
+	static RejectCrewJoinRequestUseCase.Command toRejectCommand(Long crewId, Long requestId, Long leaderUserId) {
+		return RejectCrewJoinRequestUseCase.Command.of(crewId, requestId, leaderUserId);
+	}
+
+	static CrewDto.RejectCrewJoinRequestResponse toResponse(RejectCrewJoinRequestUseCase.Result result) {
+		return new CrewDto.RejectCrewJoinRequestResponse(result.crewId(), result.requestId());
 	}
 }
