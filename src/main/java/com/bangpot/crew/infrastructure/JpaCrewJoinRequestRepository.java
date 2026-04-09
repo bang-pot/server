@@ -32,6 +32,11 @@ class JpaCrewJoinRequestRepository implements CrewJoinRequestRepository {
 	}
 
 	@Override
+	public List<CrewJoinRequest> findByCrewId(Long crewId) {
+		return crewJoinRequestJpaRepository.findAllByCrewIdOrderByIdAsc(crewId);
+	}
+
+	@Override
 	public List<CrewJoinRequest> findPendingByCrewId(Long crewId) {
 		return crewJoinRequestJpaRepository.findAllByCrewIdAndStatusOrderByIdAsc(
 			crewId,

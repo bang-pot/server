@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
@@ -33,6 +34,7 @@ class CrewController {
 	private final GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
+	private final GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
 	private final ApproveCrewJoinRequestUseCase approveCrewJoinRequestUseCase;
 	private final RejectCrewJoinRequestUseCase rejectCrewJoinRequestUseCase;
 
@@ -49,7 +51,7 @@ class CrewController {
 
 	@GetMapping("/public")
 	ResponseEntity<java.util.List<CrewDto.PublicCrewCardResponse>> getPublicCrewCards() {
-		return ResponseEntity.ok(CrewDtoMapper.toResponses(getPublicCrewCardsUseCase.handle()));
+		return ResponseEntity.ok(CrewDtoMapper.toPublicCardResponses(getPublicCrewCardsUseCase.handle()));
 	}
 
 	@GetMapping("/{crewId}/join")
@@ -83,6 +85,18 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toPendingResponses(
 			getPendingCrewJoinRequestsUseCase.handle(
 				CrewDtoMapper.toQuery(crewId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@GetMapping("/{crewId}/join-requests")
+	ResponseEntity<java.util.List<CrewDto.CrewJoinRequestResponse>> getJoinRequests(
+		@PathVariable Long crewId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toJoinRequestResponses(
+			getCrewJoinRequestsUseCase.handle(
+				CrewDtoMapper.toManagementQuery(crewId, requireAuthenticatedUserId(authentication))
 			)
 		));
 	}

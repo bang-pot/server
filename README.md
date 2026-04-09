@@ -112,6 +112,7 @@ bangpot:
 - `POST /api/crews`
 - `GET /api/crews/public`
 - `GET /api/crews/{crewId}/join`
+- `GET /api/crews/{crewId}/join-requests`
 - `POST /api/crews/{crewId}/join-requests`
 - `GET /api/crews/{crewId}/join-requests/pending`
 - `POST /api/crews/{crewId}/join-requests/{requestId}/approve`
@@ -122,6 +123,7 @@ bangpot:
 - `GET /login/oauth2/code/kakao`
 
 `GET /api/crews/public` and `GET /api/crews/{crewId}/join` are public read endpoints and do not require authentication.
+`GET /api/crews/{crewId}/join-requests/pending` is the leader main-page summary endpoint, and `GET /api/crews/{crewId}/join-requests` is the leader management endpoint with message and status included.
 
 ## Common API error contract
 

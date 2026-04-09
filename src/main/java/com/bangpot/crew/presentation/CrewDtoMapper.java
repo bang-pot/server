@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
+import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
@@ -29,7 +30,7 @@ final class CrewDtoMapper {
 		return new CrewDto.CreateCrewResponse(result.crewId(), result.name(), result.myRole());
 	}
 
-	static List<CrewDto.PublicCrewCardResponse> toResponses(List<GetPublicCrewCardsUseCase.View> views) {
+	static List<CrewDto.PublicCrewCardResponse> toPublicCardResponses(List<GetPublicCrewCardsUseCase.View> views) {
 		return views.stream()
 			.map(view -> new CrewDto.PublicCrewCardResponse(
 				view.crewId(),
@@ -68,6 +69,10 @@ final class CrewDtoMapper {
 		return GetPendingCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId);
 	}
 
+	static GetCrewJoinRequestsUseCase.Query toManagementQuery(Long crewId, Long leaderUserId) {
+		return GetCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId);
+	}
+
 	static List<CrewDto.PendingCrewJoinRequestResponse> toPendingResponses(
 		List<GetPendingCrewJoinRequestsUseCase.View> views
 	) {
@@ -76,6 +81,18 @@ final class CrewDtoMapper {
 				view.requestId(),
 				view.userId(),
 				view.nickname()
+			))
+			.toList();
+	}
+
+	static List<CrewDto.CrewJoinRequestResponse> toJoinRequestResponses(List<GetCrewJoinRequestsUseCase.View> views) {
+		return views.stream()
+			.map(view -> new CrewDto.CrewJoinRequestResponse(
+				view.requestId(),
+				view.userId(),
+				view.nickname(),
+				view.message(),
+				view.status()
 			))
 			.toList();
 	}

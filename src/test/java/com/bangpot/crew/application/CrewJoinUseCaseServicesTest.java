@@ -368,6 +368,14 @@ class CrewJoinUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.List<CrewJoinRequest> findByCrewId(Long crewId) {
+			return requestsById.values().stream()
+				.filter(request -> crewId.equals(request.getCrewId()))
+				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+				.toList();
+		}
+
+		@Override
 		public java.util.List<CrewJoinRequest> findPendingByCrewId(Long crewId) {
 			return requestsById.values().stream()
 				.filter(request -> crewId.equals(request.getCrewId()) && request.getStatus() == CrewJoinRequestStatus.PENDING)

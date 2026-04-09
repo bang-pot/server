@@ -11,6 +11,8 @@ public interface CrewJoinRequestRepository {
 
 	boolean existsPendingByCrewIdAndUserId(Long crewId, Long userId);
 
+	List<CrewJoinRequest> findByCrewId(Long crewId);
+
 	List<CrewJoinRequest> findPendingByCrewId(Long crewId);
 
 	Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId);
