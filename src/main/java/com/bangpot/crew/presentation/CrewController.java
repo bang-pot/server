@@ -12,8 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
+import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
+import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
+import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 
 import jakarta.validation.Valid;
@@ -29,6 +32,9 @@ class CrewController {
 	private final GetCrewJoinViewUseCase getCrewJoinViewUseCase;
 	private final GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
+	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
+	private final ApproveCrewJoinRequestUseCase approveCrewJoinRequestUseCase;
+	private final RejectCrewJoinRequestUseCase rejectCrewJoinRequestUseCase;
 
 	@PostMapping
 	ResponseEntity<CrewDto.CreateCrewResponse> create(
@@ -65,6 +71,42 @@ class CrewController {
 	) {
 		RequestCrewJoinUseCase.Result result = requestCrewJoinUseCase.handle(
 			CrewDtoMapper.toCommand(crewId, requireAuthenticatedUserId(authentication), request)
+		);
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/{crewId}/join-requests/pending")
+	ResponseEntity<java.util.List<CrewDto.PendingCrewJoinRequestResponse>> getPendingJoinRequests(
+		@PathVariable Long crewId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toPendingResponses(
+			getPendingCrewJoinRequestsUseCase.handle(
+				CrewDtoMapper.toQuery(crewId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PostMapping("/{crewId}/join-requests/{requestId}/approve")
+	ResponseEntity<CrewDto.ApproveCrewJoinRequestResponse> approveJoinRequest(
+		@PathVariable Long crewId,
+		@PathVariable Long requestId,
+		Authentication authentication
+	) {
+		ApproveCrewJoinRequestUseCase.Result result = approveCrewJoinRequestUseCase.handle(
+			CrewDtoMapper.toApproveCommand(crewId, requestId, requireAuthenticatedUserId(authentication))
+		);
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
+	}
+
+	@PostMapping("/{crewId}/join-requests/{requestId}/reject")
+	ResponseEntity<CrewDto.RejectCrewJoinRequestResponse> rejectJoinRequest(
+		@PathVariable Long crewId,
+		@PathVariable Long requestId,
+		Authentication authentication
+	) {
+		RejectCrewJoinRequestUseCase.Result result = rejectCrewJoinRequestUseCase.handle(
+			CrewDtoMapper.toRejectCommand(crewId, requestId, requireAuthenticatedUserId(authentication))
 		);
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
 	}

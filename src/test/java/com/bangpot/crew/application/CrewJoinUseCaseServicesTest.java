@@ -325,6 +325,16 @@ class CrewJoinUseCaseServicesTest {
 			return membersById.values().stream()
 				.anyMatch(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()));
 		}
+
+		@Override
+		public boolean existsLeaderByCrewIdAndUserId(Long crewId, Long userId) {
+			return membersById.values().stream()
+				.anyMatch(member ->
+					crewId.equals(member.getCrewId()) &&
+					userId.equals(member.getUserId()) &&
+					member.getRole() == com.bangpot.crew.domain.CrewRole.LEADER
+				);
+		}
 	}
 
 	private static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
@@ -356,5 +366,22 @@ class CrewJoinUseCaseServicesTest {
 				.filter(request -> crewId.equals(request.getCrewId()) && userId.equals(request.getUserId()))
 				.findFirst();
 		}
+
+		@Override
+		public java.util.List<CrewJoinRequest> findPendingByCrewId(Long crewId) {
+			return requestsById.values().stream()
+				.filter(request -> crewId.equals(request.getCrewId()) && request.getStatus() == CrewJoinRequestStatus.PENDING)
+				.toList();
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
+			CrewJoinRequest request = requestsById.get(requestId);
+			if (request == null || !crewId.equals(request.getCrewId()) || request.getStatus() != CrewJoinRequestStatus.PENDING) {
+				return Optional.empty();
+			}
+			return Optional.of(request);
+		}
+
 	}
 }

@@ -21,6 +21,7 @@ import com.bangpot.auth.error.AuthErrorCode;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.exception.CrewAlreadyJoinedException;
 import com.bangpot.crew.application.exception.CrewJoinRequestAlreadyPendingException;
+import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotAllowedException;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
@@ -94,6 +95,11 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 		CrewJoinRequestAlreadyPendingException exception
 	) {
 		return error(CrewErrorCode.CREW_JOIN_REQUEST_ALREADY_PENDING);
+	}
+
+	@ExceptionHandler(CrewJoinRequestNotFoundException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewJoinRequestNotFound(CrewJoinRequestNotFoundException exception) {
+		return error(CrewErrorCode.CREW_JOIN_REQUEST_NOT_FOUND);
 	}
 
 	@ExceptionHandler(AuthUserNotFoundException.class)

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Repository;
 
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.domain.CrewMember;
+import com.bangpot.crew.domain.CrewRole;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,5 +22,10 @@ class JpaCrewMemberRepository implements CrewMemberRepository {
 	@Override
 	public boolean existsByCrewIdAndUserId(Long crewId, Long userId) {
 		return crewMemberJpaRepository.existsByCrewIdAndUserId(crewId, userId);
+	}
+
+	@Override
+	public boolean existsLeaderByCrewIdAndUserId(Long crewId, Long userId) {
+		return crewMemberJpaRepository.existsByCrewIdAndUserIdAndRole(crewId, userId, CrewRole.LEADER);
 	}
 }

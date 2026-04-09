@@ -54,6 +54,10 @@ public class CrewMember {
 		return new CrewMember(null, crewId, userId, CrewRole.LEADER, null);
 	}
 
+	public static CrewMember createMember(Long crewId, Long userId) {
+		return new CrewMember(null, crewId, userId, CrewRole.MEMBER, null);
+	}
+
 	public void assignId(Long id) {
 		this.id = id;
 	}

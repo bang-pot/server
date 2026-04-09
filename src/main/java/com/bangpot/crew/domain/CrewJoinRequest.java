@@ -74,6 +74,14 @@ public class CrewJoinRequest {
 		return new CrewJoinRequest(null, crewId, userId, message, CrewJoinRequestStatus.PENDING, null, null);
 	}
 
+	public void approve() {
+		status = CrewJoinRequestStatus.APPROVED;
+	}
+
+	public void reject() {
+		status = CrewJoinRequestStatus.REJECTED;
+	}
+
 	public void assignId(Long id) {
 		this.id = id;
 	}
