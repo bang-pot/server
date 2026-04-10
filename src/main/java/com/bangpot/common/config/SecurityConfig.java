@@ -123,7 +123,7 @@ public class SecurityConfig {
 				.requestMatchers(
 					"/api/auth/me",
 					"/api/auth/logout",
-					"/api/auth/nickname-availability",
+					"/api/users/nickname-availability",
 					"/actuator/health",
 					"/actuator/health/**"
 				).permitAll()

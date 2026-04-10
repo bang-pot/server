@@ -16,32 +16,35 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.bangpot.auth.application.exception.DuplicateNicknameException;
 import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.auth.application.service.CompleteTempUserService;
 import com.bangpot.auth.application.service.GetCurrentAuthUserService;
-import com.bangpot.auth.application.service.GetMyProfileService;
 import com.bangpot.auth.application.service.LoginWithProviderService;
-import com.bangpot.auth.application.service.UpdateMyProfileService;
-import com.bangpot.auth.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
-import com.bangpot.auth.application.usecase.GetMyProfileUseCase;
 import com.bangpot.auth.application.usecase.LoginWithProviderUseCase;
-import com.bangpot.auth.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
+import com.bangpot.user.application.exception.DuplicateNicknameException;
+import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
+import com.bangpot.user.application.service.GetMyProfileService;
+import com.bangpot.user.application.service.UpdateMyProfileService;
+import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
+import com.bangpot.user.application.usecase.GetMyProfileUseCase;
+import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
+import com.bangpot.user.domain.User;
 
 class AuthUseCaseServicesTest {
 
 	private static final Instant NOW = Instant.parse("2026-03-31T00:00:00Z");
 
 	private InMemoryAuthUserRepository authUserRepository;
+	private InMemoryUserRepository userRepository;
 	private LoginWithProviderUseCase loginWithProviderUseCase;
 	private CompleteTempUserUseCase completeTempUserUseCase;
 	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
@@ -53,6 +56,7 @@ class AuthUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
+		userRepository = new InMemoryUserRepository(authUserRepository);
 		Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 		authAuditLogger = org.mockito.Mockito.mock(AuthAuditLogger.class);
 		AuthRequiredTermsProperties authRequiredTermsProperties = new AuthRequiredTermsProperties();
@@ -61,17 +65,18 @@ class AuthUseCaseServicesTest {
 		loginWithProviderUseCase = new LoginWithProviderService(authUserRepository, authAuditLogger);
 		completeTempUserUseCase = new CompleteTempUserService(
 			authUserRepository,
+			userRepository,
 			clock,
 			authRequiredTermsProperties,
 			authAuditLogger
 		);
-		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(authUserRepository);
+		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		getCurrentAuthUserUseCase = new GetCurrentAuthUserService(
 			authUserRepository,
 			authRequiredTermsProperties
 		);
-		getMyProfileUseCase = new GetMyProfileService(authUserRepository);
-		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository);
+		getMyProfileUseCase = new GetMyProfileService(userRepository);
+		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
 	}
 
 	@Test
@@ -290,16 +295,6 @@ class AuthUseCaseServicesTest {
 		}
 
 		@Override
-		public List<AuthUser> findFullUsersByNicknameContaining(String nickname) {
-			String keyword = nickname == null ? null : nickname.toLowerCase();
-			return usersById.values().stream()
-				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
-				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
-				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
-				.toList();
-		}
-
-		@Override
 		public AuthUser save(AuthUser user) {
 			if (user.getId() == null) {
 				user.assignId(sequence++);
@@ -307,6 +302,52 @@ class AuthUseCaseServicesTest {
 			usersById.put(user.getId(), user);
 			idsByProviderId.put(user.getProvider().name() + ":" + user.getProviderId(), user.getId());
 			return user;
+		}
+	}
+
+	private static final class InMemoryUserRepository implements UserRepository {
+
+		private final InMemoryAuthUserRepository authUserRepository;
+
+		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
+			this.authUserRepository = authUserRepository;
+		}
+
+		@Override
+		public Optional<User> findById(Long userId) {
+			return authUserRepository.findById(userId).map(this::toDomain);
+		}
+
+		@Override
+		public boolean existsByNickname(String nickname) {
+			return authUserRepository.existsByNickname(nickname);
+		}
+
+		@Override
+		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
+			String normalizedKeyword = nickname == null ? null : nickname.trim().toLowerCase();
+			if (normalizedKeyword != null && normalizedKeyword.isEmpty()) {
+				normalizedKeyword = null;
+			}
+			final String keyword = normalizedKeyword;
+			return authUserRepository.usersById.values().stream()
+				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
+				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
+				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+				.map(this::toDomain)
+				.toList();
+		}
+
+		@Override
+		public User save(User user) {
+			AuthUser authUser = authUserRepository.findById(user.getId()).orElseThrow();
+			authUser.updateNickname(user.getNickname());
+			authUserRepository.save(authUser);
+			return toDomain(authUser);
+		}
+
+		private User toDomain(AuthUser authUser) {
+			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
 		}
 	}
 }

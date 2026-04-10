@@ -9,8 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.auth.application.exception.AuthCompletionNotAllowedException;
 import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.exception.DuplicateNicknameException;
-import com.bangpot.auth.application.exception.InvalidNicknameException;
 import com.bangpot.auth.application.exception.MissingRequiredTermsAgreementException;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
@@ -19,6 +17,9 @@ import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
+import com.bangpot.user.application.exception.DuplicateNicknameException;
+import com.bangpot.user.application.exception.InvalidNicknameException;
+import com.bangpot.user.application.port.UserRepository;
 
 @Service
 @Transactional
@@ -28,6 +29,7 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 	private static final String DEFAULT_NEXT_PATH = "/";
 
 	private final AuthUserRepository authUserRepository;
+	private final UserRepository userRepository;
 	private final Clock clock;
 	private final AuthRequiredTermsProperties authRequiredTermsProperties;
 	private final AuthAuditLogger authAuditLogger;
@@ -47,7 +49,7 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 		if (!command.agreedToRequiredTerms()) {
 			throw new MissingRequiredTermsAgreementException();
 		}
-		if (authUserRepository.existsByNickname(normalizedNickname)) {
+		if (userRepository.existsByNickname(normalizedNickname)) {
 			throw new DuplicateNicknameException(normalizedNickname);
 		}
 

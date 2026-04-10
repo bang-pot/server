@@ -1,18 +1,19 @@
-package com.bangpot.auth.application.service;
+package com.bangpot.user.application.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.application.usecase.CheckNicknameAvailabilityUseCase;
+import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CheckNicknameAvailabilityService implements CheckNicknameAvailabilityUseCase {
 
-	private final AuthUserRepository authUserRepository;
+	private final UserRepository userRepository;
 
 	@Override
 	public Result handle(Query query) {
@@ -20,10 +21,7 @@ public class CheckNicknameAvailabilityService implements CheckNicknameAvailabili
 		if (normalizedNickname == null) {
 			return Result.invalid();
 		}
-		return Result.of(
-			normalizedNickname,
-			!authUserRepository.existsByNickname(normalizedNickname)
-		);
+		return Result.of(normalizedNickname, !userRepository.existsByNickname(normalizedNickname));
 	}
 
 	private String normalizeNickname(String nickname) {

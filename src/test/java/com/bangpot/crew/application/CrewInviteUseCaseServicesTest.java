@@ -33,12 +33,15 @@ import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.domain.User;
 
 class CrewInviteUseCaseServicesTest {
 
 	private static final Instant NOW = Instant.parse("2026-04-10T00:00:00Z");
 
 	private InMemoryAuthUserRepository authUserRepository;
+	private InMemoryUserRepository userRepository;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryCrewInviteRepository crewInviteRepository;
@@ -48,17 +51,20 @@ class CrewInviteUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
+		userRepository = new InMemoryUserRepository(authUserRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewInviteRepository = new InMemoryCrewInviteRepository();
 		getCrewInviteCandidatesUseCase = new GetCrewInviteCandidatesService(
 			authUserRepository,
+			userRepository,
 			crewRepository,
 			crewMemberRepository,
 			crewInviteRepository
 		);
 		createCrewInviteUseCase = new CreateCrewInviteService(
 			authUserRepository,
+			userRepository,
 			crewRepository,
 			crewMemberRepository,
 			crewInviteRepository
@@ -247,19 +253,55 @@ class CrewInviteUseCaseServicesTest {
 		}
 
 		@Override
-		public List<AuthUser> findFullUsersByNicknameContaining(String nickname) {
-			String keyword = nickname == null ? null : nickname.toLowerCase();
-			return usersById.values().stream()
+		public AuthUser save(AuthUser user) {
+			usersById.put(user.getId(), user);
+			return user;
+		}
+	}
+
+	private static final class InMemoryUserRepository implements UserRepository {
+
+		private final InMemoryAuthUserRepository authUserRepository;
+
+		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
+			this.authUserRepository = authUserRepository;
+		}
+
+		@Override
+		public Optional<User> findById(Long userId) {
+			return authUserRepository.findById(userId).map(this::toDomain);
+		}
+
+		@Override
+		public boolean existsByNickname(String nickname) {
+			return authUserRepository.existsByNickname(nickname);
+		}
+
+		@Override
+		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
+			String normalizedKeyword = nickname == null ? null : nickname.trim().toLowerCase();
+			if (normalizedKeyword != null && normalizedKeyword.isEmpty()) {
+				normalizedKeyword = null;
+			}
+			final String keyword = normalizedKeyword;
+			return authUserRepository.usersById.values().stream()
 				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
 				.filter(user -> keyword == null || user.getNickname().toLowerCase().contains(keyword))
 				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+				.map(this::toDomain)
 				.toList();
 		}
 
 		@Override
-		public AuthUser save(AuthUser user) {
-			usersById.put(user.getId(), user);
-			return user;
+		public User save(User user) {
+			AuthUser authUser = authUserRepository.findById(user.getId()).orElseThrow();
+			authUser.updateNickname(user.getNickname());
+			authUserRepository.save(authUser);
+			return toDomain(authUser);
+		}
+
+		private User toDomain(AuthUser authUser) {
+			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
 		}
 	}
 

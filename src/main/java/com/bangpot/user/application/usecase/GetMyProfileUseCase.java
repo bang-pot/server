@@ -1,4 +1,4 @@
-package com.bangpot.auth.application.usecase;
+package com.bangpot.user.application.usecase;
 
 public interface GetMyProfileUseCase {
 

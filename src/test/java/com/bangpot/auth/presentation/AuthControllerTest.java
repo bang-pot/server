@@ -2,7 +2,6 @@ package com.bangpot.auth.presentation;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,14 +20,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.bangpot.auth.application.exception.DuplicateNicknameException;
-import com.bangpot.auth.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
-import com.bangpot.auth.application.usecase.GetMyProfileUseCase;
-import com.bangpot.auth.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
+import com.bangpot.user.application.exception.DuplicateNicknameException;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -43,16 +39,7 @@ class AuthControllerTest {
 	private GetCurrentAuthUserUseCase getCurrentAuthUserUseCase;
 
 	@MockitoBean
-	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
-
-	@MockitoBean
 	private CompleteTempUserUseCase completeTempUserUseCase;
-
-	@MockitoBean
-	private GetMyProfileUseCase getMyProfileUseCase;
-
-	@MockitoBean
-	private UpdateMyProfileUseCase updateMyProfileUseCase;
 
 	@Test
 	void returnsGuestStatusWhenNoAuthenticatedUserExists() throws Exception {
@@ -113,74 +100,6 @@ class AuthControllerTest {
 			.andExpect(jsonPath("$.completionRequired").value(false))
 			.andExpect(jsonPath("$.user.nickname").value("bangpot"))
 			.andExpect(jsonPath("$.requiredTermsAcceptedAt").value("2026-03-31T00:00:00Z"));
-	}
-
-	@Test
-	void returnsCurrentFullUserProfile() throws Exception {
-		when(getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(77L)))
-			.thenReturn(GetMyProfileUseCase.View.of(77L, "bangpot"));
-
-		mockMvc.perform(
-			get("/api/auth/profile")
-				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(77))
-			.andExpect(jsonPath("$.nickname").value("bangpot"));
-	}
-
-	@Test
-	void returnsUnauthorizedWhenProfileUpdateIsRequestedWithoutAuthentication() throws Exception {
-		mockMvc.perform(
-			patch("/api/auth/profile")
-				.contentType("application/json")
-				.content("""
-					{
-					  "nickname": "bangpot"
-					}
-					""")
-		)
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
-			.andExpect(jsonPath("$.fieldErrors").isArray())
-			.andExpect(jsonPath("$.fieldErrors").isEmpty());
-	}
-
-	@Test
-	void updatesCurrentFullUserProfile() throws Exception {
-		when(updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(77L, "new-pot")))
-			.thenReturn(UpdateMyProfileUseCase.Result.of(77L, "new-pot"));
-
-		mockMvc.perform(
-			patch("/api/auth/profile")
-				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
-				.contentType("application/json")
-				.content("""
-					{
-					  "nickname": "new-pot"
-					}
-					""")
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(77))
-			.andExpect(jsonPath("$.nickname").value("new-pot"));
-	}
-
-	@Test
-	void returnsValidationErrorWhenProfileNicknameIsBlank() throws Exception {
-		mockMvc.perform(
-			patch("/api/auth/profile")
-				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
-				.contentType("application/json")
-				.content("""
-					{
-					  "nickname": "   "
-					}
-					""")
-		)
-			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
-			.andExpect(jsonPath("$.fieldErrors[0].field").value("nickname"));
 	}
 
 	@Test

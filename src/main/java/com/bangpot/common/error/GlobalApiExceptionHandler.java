@@ -14,8 +14,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import com.bangpot.auth.application.exception.AuthCompletionNotAllowedException;
 import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.exception.DuplicateNicknameException;
-import com.bangpot.auth.application.exception.InvalidNicknameException;
 import com.bangpot.auth.application.exception.MissingRequiredTermsAgreementException;
 import com.bangpot.auth.error.AuthErrorCode;
 import com.bangpot.auth.presentation.UnauthenticatedException;
@@ -29,6 +27,9 @@ import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
+import com.bangpot.user.application.exception.DuplicateNicknameException;
+import com.bangpot.user.application.exception.InvalidNicknameException;
+import com.bangpot.user.application.exception.UserNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -116,6 +117,11 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(AuthUserNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleAuthUserNotFound(AuthUserNotFoundException exception) {
+		return error(AuthErrorCode.AUTH_USER_NOT_FOUND);
+	}
+
+	@ExceptionHandler(UserNotFoundException.class)
+	ResponseEntity<ApiErrorResponse> handleUserNotFound(UserNotFoundException exception) {
 		return error(AuthErrorCode.AUTH_USER_NOT_FOUND);
 	}
 

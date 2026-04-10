@@ -21,11 +21,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.bangpot.auth.application.usecase.LogoutUseCase;
-import com.bangpot.auth.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
-import com.bangpot.auth.application.usecase.GetMyProfileUseCase;
-import com.bangpot.auth.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 
@@ -48,16 +45,7 @@ class AuthLogoutControllerTest {
 	private GetCurrentAuthUserUseCase getCurrentAuthUserUseCase;
 
 	@MockitoBean
-	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
-
-	@MockitoBean
 	private CompleteTempUserUseCase completeTempUserUseCase;
-
-	@MockitoBean
-	private GetMyProfileUseCase getMyProfileUseCase;
-
-	@MockitoBean
-	private UpdateMyProfileUseCase updateMyProfileUseCase;
 
 	@Test
 	void delegatesLogoutActionAndWritesExpiredCookie() throws Exception {

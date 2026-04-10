@@ -1,13 +1,7 @@
-package com.bangpot.auth.application.usecase;
+package com.bangpot.user.application.usecase;
 
-/**
- * 가입 완료 전에 입력한 닉네임이 현재 사용 가능한지 확인하는 유스케이스다.
- */
 public interface CheckNicknameAvailabilityUseCase {
 
-	/**
-	 * 닉네임 입력값을 기준으로 중복 여부를 조회한다.
-	 */
 	Result handle(Query query);
 
 	record Query(String nickname) {

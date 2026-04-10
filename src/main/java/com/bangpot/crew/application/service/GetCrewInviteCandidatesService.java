@@ -16,6 +16,7 @@ import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.user.application.port.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class GetCrewInviteCandidatesService implements GetCrewInviteCandidatesUseCase {
 
 	private final AuthUserRepository authUserRepository;
+	private final UserRepository userRepository;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final CrewInviteRepository crewInviteRepository;
@@ -46,7 +48,7 @@ public class GetCrewInviteCandidatesService implements GetCrewInviteCandidatesUs
 			throw new CrewInviteNotAllowedException(crew.getId());
 		}
 
-		return authUserRepository.findFullUsersByNicknameContaining(query.nickname()).stream()
+		return userRepository.findCompletedUsersByNicknameContaining(query.nickname()).stream()
 			.filter(candidate -> !candidate.getId().equals(leader.getId()))
 			.filter(candidate -> !crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), candidate.getId()))
 			.filter(candidate -> !crewInviteRepository.existsPendingByCrewIdAndTargetUserId(crew.getId(), candidate.getId()))

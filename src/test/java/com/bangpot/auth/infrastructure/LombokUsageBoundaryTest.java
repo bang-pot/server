@@ -26,7 +26,7 @@ class LombokUsageBoundaryTest {
 	@Test
 	void usesRequiredArgsConstructorForSimpleDependencyInjectionClasses() throws IOException {
 		assertUsesRequiredArgsConstructor(
-			"src/main/java/com/bangpot/auth/application/service/CheckNicknameAvailabilityService.java"
+			"src/main/java/com/bangpot/user/application/service/CheckNicknameAvailabilityService.java"
 		);
 		assertUsesRequiredArgsConstructor(
 			"src/main/java/com/bangpot/auth/application/service/LoginWithProviderService.java"
