@@ -3,7 +3,9 @@ package com.bangpot.crew.presentation;
 import java.util.List;
 
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
+import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
@@ -116,5 +118,33 @@ final class CrewDtoMapper {
 
 	static CrewDto.RejectCrewJoinRequestResponse toResponse(RejectCrewJoinRequestUseCase.Result result) {
 		return new CrewDto.RejectCrewJoinRequestResponse(result.crewId(), result.requestId());
+	}
+
+	static GetCrewInviteCandidatesUseCase.Query toInviteCandidatesQuery(
+		Long crewId,
+		Long leaderUserId,
+		String nickname
+	) {
+		return GetCrewInviteCandidatesUseCase.Query.of(crewId, leaderUserId, nickname);
+	}
+
+	static List<CrewDto.CrewInviteCandidateResponse> toInviteCandidateResponses(
+		List<GetCrewInviteCandidatesUseCase.View> views
+	) {
+		return views.stream()
+			.map(view -> new CrewDto.CrewInviteCandidateResponse(view.userId(), view.nickname()))
+			.toList();
+	}
+
+	static CreateCrewInviteUseCase.Command toCreateInviteCommand(
+		Long crewId,
+		Long inviterUserId,
+		CrewDto.CreateCrewInviteRequest request
+	) {
+		return CreateCrewInviteUseCase.Command.of(crewId, inviterUserId, request.targetUserId());
+	}
+
+	static CrewDto.CreateCrewInviteResponse toResponse(CreateCrewInviteUseCase.Result result) {
+		return new CrewDto.CreateCrewInviteResponse(result.crewId(), result.targetUserId(), result.status());
 	}
 }

@@ -4,6 +4,7 @@ import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewRole;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 final class CrewDto {
@@ -65,5 +66,14 @@ final class CrewDto {
 	}
 
 	record RejectCrewJoinRequestResponse(Long crewId, Long requestId) {
+	}
+
+	record CrewInviteCandidateResponse(Long userId, String nickname) {
+	}
+
+	record CreateCrewInviteRequest(@NotNull(message = "초대할 회원을 선택해야 합니다.") Long targetUserId) {
+	}
+
+	record CreateCrewInviteResponse(Long crewId, Long targetUserId, String status) {
 	}
 }

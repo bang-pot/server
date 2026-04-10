@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -286,6 +287,16 @@ class AuthUseCaseServicesTest {
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream()
 				.anyMatch(user -> nickname.equals(user.getNickname()));
+		}
+
+		@Override
+		public List<AuthUser> findFullUsersByNicknameContaining(String nickname) {
+			String keyword = nickname == null ? null : nickname.toLowerCase();
+			return usersById.values().stream()
+				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
+				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
+				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+				.toList();
 		}
 
 		@Override

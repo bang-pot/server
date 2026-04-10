@@ -23,6 +23,8 @@ import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
+import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
@@ -58,6 +60,12 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
+
+	@MockitoBean
+	private GetCrewInviteCandidatesUseCase getCrewInviteCandidatesUseCase;
+
+	@MockitoBean
+	private CreateCrewInviteUseCase createCrewInviteUseCase;
 
 	@MockitoBean
 	private ApproveCrewJoinRequestUseCase approveCrewJoinRequestUseCase;
@@ -260,7 +268,7 @@ class CrewControllerTest {
 	@Test
 	void returnsPendingJoinRequestsForLeader() throws Exception {
 		when(getPendingCrewJoinRequestsUseCase.handle(GetPendingCrewJoinRequestsUseCase.Query.of(1L, 77L)))
-			.thenReturn(java.util.List.of(
+			.thenReturn(List.of(
 				GetPendingCrewJoinRequestsUseCase.View.of(10L, 201L, "bangpot-user"),
 				GetPendingCrewJoinRequestsUseCase.View.of(11L, 202L, "runner")
 			));
@@ -279,7 +287,7 @@ class CrewControllerTest {
 	@Test
 	void returnsJoinRequestsForLeaderManagementView() throws Exception {
 		when(getCrewJoinRequestsUseCase.handle(GetCrewJoinRequestsUseCase.Query.of(1L, 77L)))
-			.thenReturn(java.util.List.of(
+			.thenReturn(List.of(
 				GetCrewJoinRequestsUseCase.View.of(10L, 201L, "bangpot-user", "같이 달리고 싶어요", "PENDING"),
 				GetCrewJoinRequestsUseCase.View.of(11L, 202L, "runner", "아침 러닝 가능합니다", "APPROVED")
 			));
@@ -337,6 +345,66 @@ class CrewControllerTest {
 	@Test
 	void returnsUnauthorizedWhenJoinRequestsAreQueriedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/crews/1/join-requests"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsInviteCandidatesForPrivateCrewLeader() throws Exception {
+		when(getCrewInviteCandidatesUseCase.handle(GetCrewInviteCandidatesUseCase.Query.of(1L, 77L, "bang")))
+			.thenReturn(List.of(
+				GetCrewInviteCandidatesUseCase.View.of(201L, "bangpot-user")
+			));
+
+		mockMvc.perform(
+			get("/api/crews/1/invite-candidates")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("nickname", "bang")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].userId").value(201))
+			.andExpect(jsonPath("$[0].nickname").value("bangpot-user"));
+	}
+
+	@Test
+	void createsPendingInviteForPrivateCrewLeader() throws Exception {
+		when(createCrewInviteUseCase.handle(CreateCrewInviteUseCase.Command.of(1L, 77L, 201L)))
+			.thenReturn(CreateCrewInviteUseCase.Result.of(1L, 201L, "PENDING"));
+
+		mockMvc.perform(
+			post("/api/crews/1/invites")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "targetUserId": 201
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.targetUserId").value(201))
+			.andExpect(jsonPath("$.status").value("PENDING"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenInviteCandidatesAreQueriedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/crews/1/invite-candidates"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenInviteIsCreatedWithoutAuthentication() throws Exception {
+		mockMvc.perform(
+			post("/api/crews/1/invites")
+				.contentType("application/json")
+				.content("""
+					{
+					  "targetUserId": 201
+					}
+					""")
+		)
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
