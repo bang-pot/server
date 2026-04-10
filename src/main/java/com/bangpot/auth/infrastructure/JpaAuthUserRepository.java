@@ -34,9 +34,13 @@ public class JpaAuthUserRepository implements AuthUserRepository {
 
 	@Override
 	public List<AuthUser> findFullUsersByNicknameContaining(String nickname) {
-		return authUserJpaRepository.findAllFullUsersByNicknameContaining(
+		String normalizedKeyword = normalizeKeyword(nickname);
+		if (normalizedKeyword == null) {
+			return authUserJpaRepository.findAllByStatusAndNicknameIsNotNullOrderByIdAsc(AuthUserStatus.FULL);
+		}
+		return authUserJpaRepository.findAllByStatusAndNicknameIsNotNullAndNicknameContainingIgnoreCaseOrderByIdAsc(
 			AuthUserStatus.FULL,
-			normalizeKeyword(nickname)
+			normalizedKeyword
 		);
 	}
 
