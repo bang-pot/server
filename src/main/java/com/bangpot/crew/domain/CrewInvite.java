@@ -18,27 +18,30 @@ import lombok.Getter;
 @Entity
 @Getter
 @Table(
-	name = "crews",
-	uniqueConstraints = @UniqueConstraint(name = "uk_crews_name", columnNames = "name")
+	name = "crew_invites",
+	uniqueConstraints = @UniqueConstraint(
+		name = "uk_crew_invites_crew_target_user",
+		columnNames = {"crew_id", "target_user_id"}
+	)
 )
-public class Crew {
+public class CrewInvite {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "name", nullable = false)
-	private String name;
+	@Column(name = "crew_id", nullable = false)
+	private Long crewId;
 
-	@Column(name = "description")
-	private String description;
+	@Column(name = "inviter_user_id", nullable = false)
+	private Long inviterUserId;
+
+	@Column(name = "target_user_id", nullable = false)
+	private Long targetUserId;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "visibility", nullable = false)
-	private CrewVisibility visibility;
-
-	@Column(name = "image_url")
-	private String imageUrl;
+	@Column(name = "status", nullable = false)
+	private CrewInviteStatus status;
 
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
@@ -46,45 +49,29 @@ public class Crew {
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
-	protected Crew() {
+	protected CrewInvite() {
 	}
 
-	private Crew(
+	private CrewInvite(
 		Long id,
-		String name,
-		String description,
-		CrewVisibility visibility,
-		String imageUrl,
+		Long crewId,
+		Long inviterUserId,
+		Long targetUserId,
+		CrewInviteStatus status,
 		Instant createdAt,
 		Instant updatedAt
 	) {
 		this.id = id;
-		this.name = name;
-		this.description = description;
-		this.visibility = visibility;
-		this.imageUrl = imageUrl;
+		this.crewId = crewId;
+		this.inviterUserId = inviterUserId;
+		this.targetUserId = targetUserId;
+		this.status = status;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
 	}
 
-	public static Crew create(String name, String description, CrewVisibility visibility, String imageUrl) {
-		return new Crew(
-			null,
-			name,
-			description,
-			visibility == null ? CrewVisibility.PUBLIC : visibility,
-			imageUrl,
-			null,
-			null
-		);
-	}
-
-	public boolean allowsDirectJoinRequest() {
-		return visibility == CrewVisibility.PUBLIC;
-	}
-
-	public boolean allowsDirectInvite() {
-		return visibility == CrewVisibility.PRIVATE;
+	public static CrewInvite createPending(Long crewId, Long inviterUserId, Long targetUserId) {
+		return new CrewInvite(null, crewId, inviterUserId, targetUserId, CrewInviteStatus.PENDING, null, null);
 	}
 
 	public void assignId(Long id) {

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -146,6 +147,16 @@ class CrewUseCaseServicesTest {
 		}
 
 		@Override
+		public List<AuthUser> findFullUsersByNicknameContaining(String nickname) {
+			String keyword = nickname == null ? null : nickname.toLowerCase();
+			return usersById.values().stream()
+				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
+				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
+				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+				.toList();
+		}
+
+		@Override
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
 			return user;
@@ -177,7 +188,7 @@ class CrewUseCaseServicesTest {
 		}
 
 		@Override
-		public java.util.List<Crew> findPublicCrews() {
+		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
 				.toList();

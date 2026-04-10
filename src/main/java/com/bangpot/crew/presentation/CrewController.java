@@ -8,11 +8,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
+import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
@@ -22,6 +25,8 @@ import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @Validated
 @RestController
@@ -35,6 +40,8 @@ class CrewController {
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
 	private final GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
+	private final GetCrewInviteCandidatesUseCase getCrewInviteCandidatesUseCase;
+	private final CreateCrewInviteUseCase createCrewInviteUseCase;
 	private final ApproveCrewJoinRequestUseCase approveCrewJoinRequestUseCase;
 	private final RejectCrewJoinRequestUseCase rejectCrewJoinRequestUseCase;
 
@@ -50,7 +57,7 @@ class CrewController {
 	}
 
 	@GetMapping("/public")
-	ResponseEntity<java.util.List<CrewDto.PublicCrewCardResponse>> getPublicCrewCards() {
+	ResponseEntity<List<CrewDto.PublicCrewCardResponse>> getPublicCrewCards() {
 		return ResponseEntity.ok(CrewDtoMapper.toPublicCardResponses(getPublicCrewCardsUseCase.handle()));
 	}
 
@@ -78,7 +85,7 @@ class CrewController {
 	}
 
 	@GetMapping("/{crewId}/join-requests/pending")
-	ResponseEntity<java.util.List<CrewDto.PendingCrewJoinRequestResponse>> getPendingJoinRequests(
+	ResponseEntity<List<CrewDto.PendingCrewJoinRequestResponse>> getPendingJoinRequests(
 		@PathVariable Long crewId,
 		Authentication authentication
 	) {
@@ -90,7 +97,7 @@ class CrewController {
 	}
 
 	@GetMapping("/{crewId}/join-requests")
-	ResponseEntity<java.util.List<CrewDto.CrewJoinRequestResponse>> getJoinRequests(
+	ResponseEntity<List<CrewDto.CrewJoinRequestResponse>> getJoinRequests(
 		@PathVariable Long crewId,
 		Authentication authentication
 	) {
@@ -99,6 +106,31 @@ class CrewController {
 				CrewDtoMapper.toManagementQuery(crewId, requireAuthenticatedUserId(authentication))
 			)
 		));
+	}
+
+	@GetMapping("/{crewId}/invite-candidates")
+	ResponseEntity<List<CrewDto.CrewInviteCandidateResponse>> getInviteCandidates(
+		@PathVariable Long crewId,
+		@RequestParam(required = false) String nickname,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toInviteCandidateResponses(
+			getCrewInviteCandidatesUseCase.handle(
+				CrewDtoMapper.toInviteCandidatesQuery(crewId, requireAuthenticatedUserId(authentication), nickname)
+			)
+		));
+	}
+
+	@PostMapping("/{crewId}/invites")
+	ResponseEntity<CrewDto.CreateCrewInviteResponse> createInvite(
+		@PathVariable Long crewId,
+		Authentication authentication,
+		@Valid @RequestBody CrewDto.CreateCrewInviteRequest request
+	) {
+		CreateCrewInviteUseCase.Result result = createCrewInviteUseCase.handle(
+			CrewDtoMapper.toCreateInviteCommand(crewId, requireAuthenticatedUserId(authentication), request)
+		);
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
 	}
 
 	@PostMapping("/{crewId}/join-requests/{requestId}/approve")

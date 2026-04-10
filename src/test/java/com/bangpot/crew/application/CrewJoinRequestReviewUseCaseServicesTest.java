@@ -274,6 +274,16 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 		}
 
 		@Override
+		public List<AuthUser> findFullUsersByNicknameContaining(String nickname) {
+			String keyword = nickname == null ? null : nickname.toLowerCase();
+			return usersById.values().stream()
+				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
+				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
+				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+				.toList();
+		}
+
+		@Override
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
 			return user;

@@ -20,6 +20,8 @@ import com.bangpot.auth.application.exception.MissingRequiredTermsAgreementExcep
 import com.bangpot.auth.error.AuthErrorCode;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.exception.CrewAlreadyJoinedException;
+import com.bangpot.crew.application.exception.CrewInviteAlreadyPendingException;
+import com.bangpot.crew.application.exception.CrewInviteNotAllowedException;
 import com.bangpot.crew.application.exception.CrewJoinRequestAlreadyPendingException;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotAllowedException;
@@ -95,6 +97,16 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 		CrewJoinRequestAlreadyPendingException exception
 	) {
 		return error(CrewErrorCode.CREW_JOIN_REQUEST_ALREADY_PENDING);
+	}
+
+	@ExceptionHandler(CrewInviteNotAllowedException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewInviteNotAllowed(CrewInviteNotAllowedException exception) {
+		return error(CrewErrorCode.CREW_INVITE_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(CrewInviteAlreadyPendingException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewInviteAlreadyPending(CrewInviteAlreadyPendingException exception) {
+		return error(CrewErrorCode.CREW_INVITE_ALREADY_PENDING);
 	}
 
 	@ExceptionHandler(CrewJoinRequestNotFoundException.class)
