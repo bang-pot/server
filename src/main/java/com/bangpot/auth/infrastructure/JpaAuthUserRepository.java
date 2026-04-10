@@ -1,6 +1,5 @@
 package com.bangpot.auth.infrastructure;
 
-import java.util.List;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.auth.domain.AuthUserStatus;
 
 @Repository
 @RequiredArgsConstructor
@@ -33,27 +31,7 @@ public class JpaAuthUserRepository implements AuthUserRepository {
 	}
 
 	@Override
-	public List<AuthUser> findFullUsersByNicknameContaining(String nickname) {
-		String normalizedKeyword = normalizeKeyword(nickname);
-		if (normalizedKeyword == null) {
-			return authUserJpaRepository.findAllByStatusAndNicknameIsNotNullOrderByIdAsc(AuthUserStatus.FULL);
-		}
-		return authUserJpaRepository.findAllByStatusAndNicknameIsNotNullAndNicknameContainingIgnoreCaseOrderByIdAsc(
-			AuthUserStatus.FULL,
-			normalizedKeyword
-		);
-	}
-
-	@Override
 	public AuthUser save(AuthUser user) {
 		return authUserJpaRepository.save(user);
-	}
-
-	private String normalizeKeyword(String keyword) {
-		if (keyword == null) {
-			return null;
-		}
-		String trimmed = keyword.trim();
-		return trimmed.isEmpty() ? null : trimmed;
 	}
 }

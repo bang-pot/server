@@ -1,6 +1,5 @@
 package com.bangpot.auth.application.port;
 
-import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.auth.domain.AuthProvider;
@@ -13,8 +12,6 @@ public interface AuthUserRepository {
 	Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId);
 
 	boolean existsByNickname(String nickname);
-
-	List<AuthUser> findFullUsersByNicknameContaining(String nickname);
 
 	AuthUser save(AuthUser user);
 }

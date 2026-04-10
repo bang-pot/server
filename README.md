@@ -104,9 +104,9 @@ bangpot:
 ## Auth and health endpoints
 
 - `GET /api/auth/me`
-- `GET /api/auth/profile`
-- `PATCH /api/auth/profile`
-- `GET /api/auth/nickname-availability`
+- `GET /api/users/me`
+- `PATCH /api/users/me`
+- `GET /api/users/nickname-availability`
 - `POST /api/auth/complete`
 - `POST /api/auth/logout`
 - `POST /api/crews`
@@ -127,6 +127,7 @@ bangpot:
 `GET /api/crews/public` and `GET /api/crews/{crewId}/join` are public read endpoints and do not require authentication.
 `GET /api/crews/{crewId}/join-requests/pending` is the leader main-page summary endpoint, and `GET /api/crews/{crewId}/join-requests` is the leader management endpoint with message and status included.
 `GET /api/crews/{crewId}/invite-candidates` and `POST /api/crews/{crewId}/invites` are private-crew leader endpoints for direct invite flow; candidate list excludes existing members, already pending invite targets, and the leader themself.
+Profile and nickname availability moved to `/api/users/...`; frontend consumers should stop calling legacy `/api/auth/profile` and `/api/auth/nickname-availability`.
 
 ## Common API error contract
 

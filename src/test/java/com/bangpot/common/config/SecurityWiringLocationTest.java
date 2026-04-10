@@ -52,7 +52,7 @@ class SecurityWiringLocationTest {
 
 	@Test
 	void keepsAuthApplicationExceptionsInDedicatedExceptionPackage() {
-		assertThatCode(() -> Class.forName("com.bangpot.auth.application.exception.DuplicateNicknameException"))
+		assertThatCode(() -> Class.forName("com.bangpot.user.application.exception.DuplicateNicknameException"))
 			.doesNotThrowAnyException();
 		assertThatThrownBy(() -> Class.forName("com.bangpot.auth.application.DuplicateNicknameException"))
 			.isInstanceOf(ClassNotFoundException.class);

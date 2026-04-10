@@ -22,7 +22,7 @@ class AuthObjectCreationEncapsulationTest {
 			"src/main/java/com/bangpot/auth/application/service/CompleteTempUserService.java"
 		);
 		String checkNicknameAvailabilityServiceSource = readSource(
-			"src/main/java/com/bangpot/auth/application/service/CheckNicknameAvailabilityService.java"
+			"src/main/java/com/bangpot/user/application/service/CheckNicknameAvailabilityService.java"
 		);
 		String getCurrentAuthUserServiceSource = readSource(
 			"src/main/java/com/bangpot/auth/application/service/GetCurrentAuthUserService.java"
