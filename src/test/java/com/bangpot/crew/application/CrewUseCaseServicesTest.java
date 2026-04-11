@@ -222,6 +222,13 @@ class CrewUseCaseServicesTest {
 				.findFirst();
 		}
 
+		@Override
+		public List<CrewMember> findAllByCrewId(Long crewId) {
+			return membersById.values().stream()
+				.filter(member -> crewId.equals(member.getCrewId()))
+				.toList();
+		}
+
 		Optional<CrewMember> findLeaderByCrewId(Long crewId) {
 			return membersById.values().stream()
 				.filter(member -> crewId.equals(member.getCrewId()) && member.getRole() == CrewRole.LEADER)

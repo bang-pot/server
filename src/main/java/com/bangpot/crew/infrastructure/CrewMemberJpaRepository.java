@@ -1,5 +1,6 @@
 package com.bangpot.crew.infrastructure;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,4 +15,6 @@ interface CrewMemberJpaRepository extends JpaRepository<CrewMember, Long> {
 	boolean existsByCrewIdAndUserIdAndRole(Long crewId, Long userId, CrewRole role);
 
 	Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId);
+
+	List<CrewMember> findAllByCrewId(Long crewId);
 }
