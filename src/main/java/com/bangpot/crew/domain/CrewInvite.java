@@ -74,6 +74,14 @@ public class CrewInvite {
 		return new CrewInvite(null, crewId, inviterUserId, targetUserId, CrewInviteStatus.PENDING, null, null);
 	}
 
+	public void approve() {
+		status = CrewInviteStatus.APPROVED;
+	}
+
+	public void reject() {
+		status = CrewInviteStatus.REJECTED;
+	}
+
 	public void assignId(Long id) {
 		this.id = id;
 	}

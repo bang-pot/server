@@ -1,5 +1,6 @@
 package com.bangpot.crew.infrastructure;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -37,5 +38,24 @@ class JpaCrewInviteRepository implements CrewInviteRepository {
 			targetUserId,
 			CrewInviteStatus.PENDING
 		);
+	}
+
+	@Override
+	public Optional<CrewInvite> findPendingByIdAndTargetUserId(Long inviteId, Long targetUserId) {
+		return crewInviteJpaRepository.findByIdAndTargetUserIdAndStatus(
+			inviteId,
+			targetUserId,
+			CrewInviteStatus.PENDING
+		);
+	}
+
+	@Override
+	public Optional<CrewInvite> findById(Long inviteId) {
+		return crewInviteJpaRepository.findById(inviteId);
+	}
+
+	@Override
+	public List<CrewInvite> findByTargetUserId(Long targetUserId) {
+		return crewInviteJpaRepository.findByTargetUserIdOrderByIdDesc(targetUserId);
 	}
 }

@@ -114,6 +114,9 @@ bangpot:
 - `GET /api/crews/{crewId}/join`
 - `GET /api/crews/{crewId}/invite-candidates`
 - `POST /api/crews/{crewId}/invites`
+- `GET /api/crew-invites/me`
+- `POST /api/crew-invites/{inviteId}/accept`
+- `POST /api/crew-invites/{inviteId}/reject`
 - `GET /api/crews/{crewId}/join-requests`
 - `POST /api/crews/{crewId}/join-requests`
 - `GET /api/crews/{crewId}/join-requests/pending`
@@ -127,6 +130,7 @@ bangpot:
 `GET /api/crews/public` and `GET /api/crews/{crewId}/join` are public read endpoints and do not require authentication.
 `GET /api/crews/{crewId}/join-requests/pending` is the leader main-page summary endpoint, and `GET /api/crews/{crewId}/join-requests` is the leader management endpoint with message and status included.
 `GET /api/crews/{crewId}/invite-candidates` and `POST /api/crews/{crewId}/invites` are private-crew leader endpoints for direct invite flow; candidate list excludes existing members, already pending invite targets, and the leader themself.
+`GET /api/crew-invites/me` returns the current full user's invite history, and `POST /api/crew-invites/{inviteId}/accept|reject` process only `PENDING` invites while keeping invite rows as status history.
 Profile and nickname availability moved to `/api/users/...`; frontend consumers should stop calling legacy `/api/auth/profile` and `/api/auth/nickname-availability`.
 
 ## Common API error contract
