@@ -32,6 +32,18 @@ final class CrewDto {
 	) {
 	}
 
+	record CrewHubResponse(
+		Long crewId,
+		String name,
+		String description,
+		String visibility,
+		String imageUrl,
+		CrewRole myRole,
+		boolean hasNotice,
+		Integer pendingJoinRequestCount
+	) {
+	}
+
 	record CrewJoinViewResponse(
 		Long crewId,
 		String name,

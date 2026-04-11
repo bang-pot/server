@@ -15,6 +15,7 @@ import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
+import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
@@ -37,6 +38,7 @@ class CrewController {
 	private final CreateCrewUseCase createCrewUseCase;
 	private final GetCrewJoinViewUseCase getCrewJoinViewUseCase;
 	private final GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
+	private final GetCrewHubUseCase getCrewHubUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
 	private final GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
@@ -59,6 +61,16 @@ class CrewController {
 	@GetMapping("/public")
 	ResponseEntity<List<CrewDto.PublicCrewCardResponse>> getPublicCrewCards() {
 		return ResponseEntity.ok(CrewDtoMapper.toPublicCardResponses(getPublicCrewCardsUseCase.handle()));
+	}
+
+	@GetMapping("/{crewId}")
+	ResponseEntity<CrewDto.CrewHubResponse> getCrewHub(
+		@PathVariable Long crewId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			getCrewHubUseCase.handle(CrewDtoMapper.toHubQuery(crewId, requireAuthenticatedUserId(authentication)))
+		));
 	}
 
 	@GetMapping("/{crewId}/join")

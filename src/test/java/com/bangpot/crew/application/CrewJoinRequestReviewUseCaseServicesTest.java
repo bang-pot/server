@@ -391,6 +391,13 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 					member.getRole() == CrewRole.LEADER
 				);
 		}
+
+		@Override
+		public Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId) {
+			return membersById.values().stream()
+				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
+				.findFirst();
+		}
 	}
 
 	private static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
