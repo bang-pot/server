@@ -44,6 +44,18 @@ final class CrewDto {
 	) {
 	}
 
+	record CrewMemberResponse(
+		Long userId,
+		String nickname,
+		String profileImageUrl,
+		String bio,
+		String gender,
+		int escapeCount,
+		CrewRole role,
+		String joinedAt
+	) {
+	}
+
 	record CrewJoinViewResponse(
 		Long crewId,
 		String name,

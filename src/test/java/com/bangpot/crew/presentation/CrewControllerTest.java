@@ -28,6 +28,7 @@ import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
+import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
@@ -55,6 +56,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private GetCrewHubUseCase getCrewHubUseCase;
+
+	@MockitoBean
+	private GetCrewMembersUseCase getCrewMembersUseCase;
 
 	@MockitoBean
 	private RequestCrewJoinUseCase requestCrewJoinUseCase;
@@ -270,6 +274,38 @@ class CrewControllerTest {
 	@Test
 	void returnsUnauthorizedWhenCrewHubIsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/crews/1"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsCrewMembersForJoinedMember() throws Exception {
+		when(getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(1L, 77L)))
+			.thenReturn(List.of(
+				GetCrewMembersUseCase.View.of(201L, "leader-pot", null, null, null, 0, CrewRole.LEADER, "2026-04-11T00:00:00Z"),
+				GetCrewMembersUseCase.View.of(202L, "member-pot", null, null, null, 0, CrewRole.MEMBER, "2026-04-10T00:00:00Z")
+			));
+
+		mockMvc.perform(
+			get("/api/crews/1/members")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].userId").value(201))
+			.andExpect(jsonPath("$[0].nickname").value("leader-pot"))
+			.andExpect(jsonPath("$[0].profileImageUrl").doesNotExist())
+			.andExpect(jsonPath("$[0].bio").doesNotExist())
+			.andExpect(jsonPath("$[0].gender").doesNotExist())
+			.andExpect(jsonPath("$[0].escapeCount").value(0))
+			.andExpect(jsonPath("$[0].role").value("LEADER"))
+			.andExpect(jsonPath("$[0].joinedAt").value("2026-04-11T00:00:00Z"))
+			.andExpect(jsonPath("$[1].userId").value(202))
+			.andExpect(jsonPath("$[1].role").value("MEMBER"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenCrewMembersAreRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/crews/1/members"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

@@ -398,6 +398,13 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
+
+		@Override
+		public List<CrewMember> findAllByCrewId(Long crewId) {
+			return membersById.values().stream()
+				.filter(member -> crewId.equals(member.getCrewId()))
+				.toList();
+		}
 	}
 
 	private static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
