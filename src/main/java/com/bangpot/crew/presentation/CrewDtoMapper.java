@@ -5,6 +5,7 @@ import java.util.List;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
+import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
@@ -42,6 +43,23 @@ final class CrewDtoMapper {
 				view.imageUrl()
 			))
 			.toList();
+	}
+
+	static GetCrewHubUseCase.Query toHubQuery(Long crewId, Long userId) {
+		return GetCrewHubUseCase.Query.of(crewId, userId);
+	}
+
+	static CrewDto.CrewHubResponse toResponse(GetCrewHubUseCase.Result result) {
+		return new CrewDto.CrewHubResponse(
+			result.crewId(),
+			result.name(),
+			result.description(),
+			result.visibility(),
+			result.imageUrl(),
+			result.myRole(),
+			result.hasNotice(),
+			result.pendingJoinRequestCount()
+		);
 	}
 
 	static CrewDto.CrewJoinViewResponse toResponse(GetCrewJoinViewUseCase.Result result) {

@@ -111,6 +111,7 @@ bangpot:
 - `POST /api/auth/logout`
 - `POST /api/crews`
 - `GET /api/crews/public`
+- `GET /api/crews/{crewId}`
 - `GET /api/crews/{crewId}/join`
 - `GET /api/crews/{crewId}/invite-candidates`
 - `POST /api/crews/{crewId}/invites`
@@ -128,6 +129,7 @@ bangpot:
 - `GET /login/oauth2/code/kakao`
 
 `GET /api/crews/public` and `GET /api/crews/{crewId}/join` are public read endpoints and do not require authentication.
+`GET /api/crews/{crewId}` is the internal crew hub endpoint and is available only to joined crew members; it returns the crew summary, current user's role, `hasNotice`, and leader-only `pendingJoinRequestCount`.
 `GET /api/crews/{crewId}/join-requests/pending` is the leader main-page summary endpoint, and `GET /api/crews/{crewId}/join-requests` is the leader management endpoint with message and status included.
 `GET /api/crews/{crewId}/invite-candidates` and `POST /api/crews/{crewId}/invites` are private-crew leader endpoints for direct invite flow; candidate list excludes existing members, already pending invite targets, and the leader themself.
 `GET /api/crew-invites/me` returns the current full user's invite history, and `POST /api/crew-invites/{inviteId}/accept|reject` process only `PENDING` invites while keeping invite rows as status history.

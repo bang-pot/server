@@ -1,5 +1,7 @@
 package com.bangpot.crew.infrastructure;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.crew.application.port.CrewMemberRepository;
@@ -27,5 +29,10 @@ class JpaCrewMemberRepository implements CrewMemberRepository {
 	@Override
 	public boolean existsLeaderByCrewIdAndUserId(Long crewId, Long userId) {
 		return crewMemberJpaRepository.existsByCrewIdAndUserIdAndRole(crewId, userId, CrewRole.LEADER);
+	}
+
+	@Override
+	public Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId) {
+		return crewMemberJpaRepository.findByCrewIdAndUserId(crewId, userId);
 	}
 }

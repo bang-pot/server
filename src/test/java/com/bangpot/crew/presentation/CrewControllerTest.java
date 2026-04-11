@@ -24,6 +24,7 @@ import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
+import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
@@ -51,6 +52,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
+
+	@MockitoBean
+	private GetCrewHubUseCase getCrewHubUseCase;
 
 	@MockitoBean
 	private RequestCrewJoinUseCase requestCrewJoinUseCase;
@@ -211,6 +215,63 @@ class CrewControllerTest {
 			.andExpect(jsonPath("$[0].imageUrl").doesNotExist())
 			.andExpect(jsonPath("$[1].crewId").value(2))
 			.andExpect(jsonPath("$[1].imageUrl").value("https://image.example/beta.png"));
+	}
+
+	@Test
+	void returnsCrewHubForMember() throws Exception {
+		when(getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(1L, 77L)))
+			.thenReturn(GetCrewHubUseCase.Result.of(
+				1L,
+				"Crew Alpha",
+				"public crew",
+				"PUBLIC",
+				null,
+				CrewRole.MEMBER,
+				false,
+				null
+			));
+
+		mockMvc.perform(
+			get("/api/crews/1")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.name").value("Crew Alpha"))
+			.andExpect(jsonPath("$.myRole").value("MEMBER"))
+			.andExpect(jsonPath("$.hasNotice").value(false))
+			.andExpect(jsonPath("$.pendingJoinRequestCount").doesNotExist());
+	}
+
+	@Test
+	void returnsCrewHubForLeaderWithPendingSummary() throws Exception {
+		when(getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(1L, 77L)))
+			.thenReturn(GetCrewHubUseCase.Result.of(
+				1L,
+				"Crew Alpha",
+				"public crew",
+				"PUBLIC",
+				null,
+				CrewRole.LEADER,
+				false,
+				2
+			));
+
+		mockMvc.perform(
+			get("/api/crews/1")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.myRole").value("LEADER"))
+			.andExpect(jsonPath("$.pendingJoinRequestCount").value(2));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenCrewHubIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/crews/1"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
 
 	@Test
