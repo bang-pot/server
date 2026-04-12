@@ -5,6 +5,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +26,7 @@ import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
+import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,7 @@ class CrewController {
 	private final GetCrewHubUseCase getCrewHubUseCase;
 	private final GetCrewMembersUseCase getCrewMembersUseCase;
 	private final GetCrewPoliciesUseCase getCrewPoliciesUseCase;
+	private final UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
 	private final GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
@@ -97,6 +100,19 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toPolicyResponses(
 			getCrewPoliciesUseCase.handle(
 				CrewDtoMapper.toPoliciesQuery(crewId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PatchMapping("/{crewId}/visibility")
+	ResponseEntity<CrewDto.UpdateCrewVisibilityResponse> updateCrewVisibility(
+		@PathVariable Long crewId,
+		Authentication authentication,
+		@RequestBody CrewDto.UpdateCrewVisibilityRequest request
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			updateCrewVisibilityUseCase.handle(
+				CrewDtoMapper.toVisibilityCommand(crewId, requireAuthenticatedUserId(authentication), request)
 			)
 		));
 	}

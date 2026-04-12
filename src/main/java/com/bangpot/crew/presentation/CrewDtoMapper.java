@@ -15,6 +15,7 @@ import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
+import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 
 final class CrewDtoMapper {
 
@@ -95,6 +96,18 @@ final class CrewDtoMapper {
 				view.content()
 			))
 			.toList();
+	}
+
+	static UpdateCrewVisibilityUseCase.Command toVisibilityCommand(
+		Long crewId,
+		Long leaderUserId,
+		CrewDto.UpdateCrewVisibilityRequest request
+	) {
+		return UpdateCrewVisibilityUseCase.Command.of(crewId, leaderUserId, request.visibility());
+	}
+
+	static CrewDto.UpdateCrewVisibilityResponse toResponse(UpdateCrewVisibilityUseCase.Result result) {
+		return new CrewDto.UpdateCrewVisibilityResponse(result.crewId(), result.visibility());
 	}
 
 	static CrewDto.CrewJoinViewResponse toResponse(GetCrewJoinViewUseCase.Result result) {

@@ -87,6 +87,13 @@ public class Crew {
 		return visibility == CrewVisibility.PRIVATE;
 	}
 
+	public void changeVisibility(CrewVisibility visibility) {
+		if (visibility == null) {
+			throw new IllegalArgumentException("visibility must not be null");
+		}
+		this.visibility = visibility;
+	}
+
 	public void assignId(Long id) {
 		this.id = id;
 	}
