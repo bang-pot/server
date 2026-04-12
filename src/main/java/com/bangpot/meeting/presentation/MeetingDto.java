@@ -1,0 +1,66 @@
+package com.bangpot.meeting.presentation;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+final class MeetingDto {
+
+	private MeetingDto() {
+	}
+
+	record CreateMeetingRequest(
+		@NotBlank(message = "모임 날짜는 필수입니다.") String date,
+		@NotBlank(message = "모임 시간은 필수입니다.") String time,
+		@NotBlank(message = "장소는 필수입니다.") String place,
+		@NotBlank(message = "테마명은 필수입니다.") String themeName,
+		@NotNull(message = "정원은 필수입니다.") @Min(value = 1, message = "정원은 1명 이상이어야 합니다.") Integer capacity,
+		Integer totalCost,
+		String reservationLink,
+		String openChatLink,
+		String description
+	) {
+	}
+
+	record CreateMeetingResponse(
+		Long meetingId,
+		Long crewId,
+		String themeName,
+		String place,
+		String date,
+		String time,
+		String status,
+		String result
+	) {
+	}
+
+	record MeetingListResponse(
+		Long meetingId,
+		String themeName,
+		String place,
+		String date,
+		String time,
+		String status,
+		String result,
+		Integer capacity
+	) {
+	}
+
+	record MeetingDetailResponse(
+		Long meetingId,
+		Long crewId,
+		Long hostUserId,
+		String themeName,
+		String place,
+		String date,
+		String time,
+		Integer capacity,
+		Integer totalCost,
+		String reservationLink,
+		String openChatLink,
+		String description,
+		String status,
+		String result
+	) {
+	}
+}

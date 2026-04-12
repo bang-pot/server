@@ -28,6 +28,8 @@ import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
+import com.bangpot.meeting.application.exception.MeetingNotFoundException;
+import com.bangpot.meeting.error.MeetingErrorCode;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.exception.UserNotFoundException;
@@ -119,6 +121,11 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(CrewJoinRequestNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleCrewJoinRequestNotFound(CrewJoinRequestNotFoundException exception) {
 		return error(CrewErrorCode.CREW_JOIN_REQUEST_NOT_FOUND);
+	}
+
+	@ExceptionHandler(MeetingNotFoundException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingNotFound(MeetingNotFoundException exception) {
+		return error(MeetingErrorCode.MEETING_NOT_FOUND);
 	}
 
 	@ExceptionHandler(AuthUserNotFoundException.class)
