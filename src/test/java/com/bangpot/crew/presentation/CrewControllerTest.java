@@ -2,6 +2,7 @@ package com.bangpot.crew.presentation;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,6 +35,7 @@ import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
+import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewRole;
 
@@ -84,6 +86,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private RejectCrewJoinRequestUseCase rejectCrewJoinRequestUseCase;
+
+	@MockitoBean
+	private UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
 
 	@Test
 	void createsCrewForAuthenticatedFullUser() throws Exception {
@@ -353,6 +358,58 @@ class CrewControllerTest {
 		mockMvc.perform(get("/api/crews/1/policies"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void updatesCrewVisibilityForLeader() throws Exception {
+		when(updateCrewVisibilityUseCase.handle(UpdateCrewVisibilityUseCase.Command.of(1L, 77L, "PRIVATE")))
+			.thenReturn(UpdateCrewVisibilityUseCase.Result.of(1L, "PRIVATE"));
+
+		mockMvc.perform(
+			patch("/api/crews/1/visibility")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "visibility": "PRIVATE"
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.visibility").value("PRIVATE"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenCrewVisibilityUpdateIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(
+			patch("/api/crews/1/visibility")
+				.contentType("application/json")
+				.content("""
+					{
+					  "visibility": "PRIVATE"
+					}
+					""")
+		)
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenCrewVisibilityUpdateIsInvalid() throws Exception {
+		mockMvc.perform(
+			patch("/api/crews/1/visibility")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "visibility": "SECRET"
+					}
+					""")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("visibility"));
 	}
 
 	@Test
