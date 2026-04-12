@@ -2,6 +2,7 @@ package com.bangpot.meeting.presentation;
 
 import java.util.List;
 
+import com.bangpot.meeting.application.usecase.CreateMeetingParticipationRequestUseCase;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
@@ -78,7 +79,16 @@ final class MeetingDtoMapper {
 			result.openChatLink(),
 			result.description(),
 			result.status(),
-			result.result()
+			result.result(),
+			result.myParticipationStatus()
 		);
+	}
+
+	static CreateMeetingParticipationRequestUseCase.Command toCommand(Long crewId, Long meetingId, Long userId) {
+		return CreateMeetingParticipationRequestUseCase.Command.of(crewId, meetingId, userId);
+	}
+
+	static MeetingDto.MeetingParticipationRequestResponse toResponse(CreateMeetingParticipationRequestUseCase.Result result) {
+		return new MeetingDto.MeetingParticipationRequestResponse(result.meetingId(), result.myParticipationStatus());
 	}
 }

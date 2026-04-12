@@ -24,7 +24,8 @@ public interface GetMeetingDetailUseCase {
 		String openChatLink,
 		String description,
 		String status,
-		String result
+		String result,
+		String myParticipationStatus
 	) {
 		public static Result of(
 			Long meetingId,
@@ -40,7 +41,8 @@ public interface GetMeetingDetailUseCase {
 			String openChatLink,
 			String description,
 			String status,
-			String result
+			String result,
+			String myParticipationStatus
 		) {
 			return new Result(
 				meetingId,
@@ -56,7 +58,8 @@ public interface GetMeetingDetailUseCase {
 				openChatLink,
 				description,
 				status,
-				result
+				result,
+				myParticipationStatus
 			);
 		}
 	}

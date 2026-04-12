@@ -11,9 +11,11 @@ import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
+import com.bangpot.meeting.application.port.MeetingParticipationRequestRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingParticipationStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +27,7 @@ public class GetMeetingDetailService implements GetMeetingDetailUseCase {
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
+	private final MeetingParticipationRequestRepository meetingParticipationRequestRepository;
 
 	@Override
 	@Transactional(readOnly = true)
@@ -43,6 +46,12 @@ public class GetMeetingDetailService implements GetMeetingDetailUseCase {
 		Meeting meeting = meetingRepository.findByIdAndCrewId(query.meetingId(), query.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(query.meetingId()));
 
+		String myParticipationStatus = meeting.getHostUserId().equals(query.userId())
+			? MeetingParticipationStatus.APPROVED.name()
+			: meetingParticipationRequestRepository.findByMeetingIdAndUserId(meeting.getId(), query.userId())
+				.map(request -> request.getStatus().name())
+				.orElse(MeetingParticipationStatus.NOT_REQUESTED.name());
+
 		return Result.of(
 			meeting.getId(),
 			meeting.getCrewId(),
@@ -57,7 +66,8 @@ public class GetMeetingDetailService implements GetMeetingDetailUseCase {
 			meeting.getOpenChatLink(),
 			meeting.getDescription(),
 			meeting.getStatus().name(),
-			meeting.getResult().name()
+			meeting.getResult().name(),
+			myParticipationStatus
 		);
 	}
 }
