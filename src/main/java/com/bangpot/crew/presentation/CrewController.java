@@ -20,6 +20,7 @@ import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
+import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
@@ -41,6 +42,7 @@ class CrewController {
 	private final GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 	private final GetCrewHubUseCase getCrewHubUseCase;
 	private final GetCrewMembersUseCase getCrewMembersUseCase;
+	private final GetCrewPoliciesUseCase getCrewPoliciesUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
 	private final GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
@@ -83,6 +85,18 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toMemberResponses(
 			getCrewMembersUseCase.handle(
 				CrewDtoMapper.toMembersQuery(crewId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@GetMapping("/{crewId}/policies")
+	ResponseEntity<List<CrewDto.CrewPolicyResponse>> getCrewPolicies(
+		@PathVariable Long crewId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toPolicyResponses(
+			getCrewPoliciesUseCase.handle(
+				CrewDtoMapper.toPoliciesQuery(crewId, requireAuthenticatedUserId(authentication))
 			)
 		));
 	}

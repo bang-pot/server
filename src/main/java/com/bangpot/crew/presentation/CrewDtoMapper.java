@@ -10,6 +10,7 @@ import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
+import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
@@ -78,6 +79,20 @@ final class CrewDtoMapper {
 				view.escapeCount(),
 				view.role(),
 				view.joinedAt()
+			))
+			.toList();
+	}
+
+	static GetCrewPoliciesUseCase.Query toPoliciesQuery(Long crewId, Long userId) {
+		return GetCrewPoliciesUseCase.Query.of(crewId, userId);
+	}
+
+	static List<CrewDto.CrewPolicyResponse> toPolicyResponses(List<GetCrewPoliciesUseCase.View> views) {
+		return views.stream()
+			.map(view -> new CrewDto.CrewPolicyResponse(
+				view.policyId(),
+				view.title(),
+				view.content()
 			))
 			.toList();
 	}

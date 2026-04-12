@@ -56,6 +56,13 @@ final class CrewDto {
 	) {
 	}
 
+	record CrewPolicyResponse(
+		Long policyId,
+		String title,
+		String content
+	) {
+	}
+
 	record CrewJoinViewResponse(
 		Long crewId,
 		String name,

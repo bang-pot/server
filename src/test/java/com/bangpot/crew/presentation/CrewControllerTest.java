@@ -29,6 +29,7 @@ import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
+import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
@@ -59,6 +60,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private GetCrewMembersUseCase getCrewMembersUseCase;
+
+	@MockitoBean
+	private GetCrewPoliciesUseCase getCrewPoliciesUseCase;
 
 	@MockitoBean
 	private RequestCrewJoinUseCase requestCrewJoinUseCase;
@@ -306,6 +310,47 @@ class CrewControllerTest {
 	@Test
 	void returnsUnauthorizedWhenCrewMembersAreRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/crews/1/members"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsCrewPoliciesForJoinedMember() throws Exception {
+		when(getCrewPoliciesUseCase.handle(GetCrewPoliciesUseCase.Query.of(1L, 77L)))
+			.thenReturn(List.of(
+				GetCrewPoliciesUseCase.View.of(301L, "모임 규칙", "시간 약속을 지켜주세요."),
+				GetCrewPoliciesUseCase.View.of(302L, "참여 기준", "노쇼는 금지합니다.\n불참 시 미리 알려주세요.")
+			));
+
+		mockMvc.perform(
+			get("/api/crews/1/policies")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].policyId").value(301))
+			.andExpect(jsonPath("$[0].title").value("모임 규칙"))
+			.andExpect(jsonPath("$[0].content").value("시간 약속을 지켜주세요."))
+			.andExpect(jsonPath("$[1].policyId").value(302))
+			.andExpect(jsonPath("$[1].content").value("노쇼는 금지합니다.\n불참 시 미리 알려주세요."));
+	}
+
+	@Test
+	void returnsEmptyCrewPoliciesWhenNoPolicyExists() throws Exception {
+		when(getCrewPoliciesUseCase.handle(GetCrewPoliciesUseCase.Query.of(1L, 77L)))
+			.thenReturn(List.of());
+
+		mockMvc.perform(
+			get("/api/crews/1/policies")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$").isArray())
+			.andExpect(jsonPath("$").isEmpty());
+	}
+
+	@Test
+	void returnsUnauthorizedWhenCrewPoliciesAreRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/crews/1/policies"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
