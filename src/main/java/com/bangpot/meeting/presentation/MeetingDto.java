@@ -60,7 +60,14 @@ final class MeetingDto {
 		String openChatLink,
 		String description,
 		String status,
-		String result
+		String result,
+		String myParticipationStatus
+	) {
+	}
+
+	record MeetingParticipationRequestResponse(
+		Long meetingId,
+		String myParticipationStatus
 	) {
 	}
 }

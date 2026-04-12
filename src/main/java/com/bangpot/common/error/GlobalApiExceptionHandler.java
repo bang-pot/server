@@ -29,6 +29,8 @@ import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
+import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyApprovedException;
+import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyPendingException;
 import com.bangpot.meeting.error.MeetingErrorCode;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
@@ -126,6 +128,20 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(MeetingNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleMeetingNotFound(MeetingNotFoundException exception) {
 		return error(MeetingErrorCode.MEETING_NOT_FOUND);
+	}
+
+	@ExceptionHandler(MeetingParticipationAlreadyPendingException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingParticipationAlreadyPending(
+		MeetingParticipationAlreadyPendingException exception
+	) {
+		return error(MeetingErrorCode.MEETING_PARTICIPATION_ALREADY_PENDING);
+	}
+
+	@ExceptionHandler(MeetingParticipationAlreadyApprovedException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingParticipationAlreadyApproved(
+		MeetingParticipationAlreadyApprovedException exception
+	) {
+		return error(MeetingErrorCode.MEETING_PARTICIPATION_ALREADY_APPROVED);
 	}
 
 	@ExceptionHandler(AuthUserNotFoundException.class)
