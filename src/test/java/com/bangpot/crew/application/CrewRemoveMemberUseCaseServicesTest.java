@@ -3,6 +3,7 @@ package com.bangpot.crew.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -18,36 +19,41 @@ import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
-import com.bangpot.crew.application.port.CrewMemberRepository;
+import com.bangpot.crew.application.exception.CrewRemoveMemberTargetNotAllowedException;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
+import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.GetCrewHubService;
-import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
-import com.bangpot.crew.application.service.LeaveCrewService;
+import com.bangpot.crew.application.service.RemoveCrewMemberService;
 import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
+import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequest;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
 
-class CrewLeaveUseCaseServicesTest {
+class CrewRemoveMemberUseCaseServicesTest {
 
-	private static final Instant NOW = Instant.parse("2026-04-13T00:00:00Z");
+	private static final Instant NOW = Instant.parse("2026-04-14T00:00:00Z");
 
 	private InMemoryAuthUserRepository authUserRepository;
 	private InMemoryUserRepository userRepository;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
-	private InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
 	private InMemoryMeetingRepository meetingRepository;
-	private LeaveCrewUseCase leaveCrewUseCase;
+	private InMemoryMeetingParticipantRepository meetingParticipantRepository;
+	private RemoveCrewMemberUseCase removeCrewMemberUseCase;
 	private GetCrewHubUseCase getCrewHubUseCase;
 
 	@BeforeEach
@@ -56,113 +62,115 @@ class CrewLeaveUseCaseServicesTest {
 		userRepository = new InMemoryUserRepository(authUserRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
-		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
 		meetingRepository = new InMemoryMeetingRepository();
+		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
-		leaveCrewUseCase = new LeaveCrewService(
+		removeCrewMemberUseCase = new RemoveCrewMemberService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository
+			meetingRepository,
+			meetingParticipantRepository
 		);
 		getCrewHubUseCase = new GetCrewHubService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			crewJoinRequestRepository
+			new InMemoryCrewJoinRequestRepository()
 		);
 	}
 
 	@Test
-	void leavesCrewForGeneralMember() {
-		AuthUser member = fullUser(1L, "member-provider", "member");
+	void removesCurrentMemberAndRevokesCrewAccess() {
+		AuthUser leader = fullUser(1L, "leader-provider", "leader");
+		AuthUser member = fullUser(2L, "member-provider", "member");
+		authUserRepository.save(leader);
 		authUserRepository.save(member);
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
 
-		LeaveCrewUseCase.Result result = leaveCrewUseCase.handle(LeaveCrewUseCase.Command.of(crew.getId(), member.getId()));
+		RemoveCrewMemberUseCase.Result result = removeCrewMemberUseCase.handle(
+			RemoveCrewMemberUseCase.Command.of(crew.getId(), leader.getId(), member.getId())
+		);
 
 		assertThat(result.crewId()).isEqualTo(crew.getId());
+		assertThat(result.removedUserId()).isEqualTo(member.getId());
 		assertThat(crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), member.getId())).isFalse();
 		assertThat(crewMemberRepository.findAnyByCrewIdAndUserId(crew.getId(), member.getId())).get()
 			.extracting(CrewMember::getStatus)
-			.isEqualTo(CrewMemberStatus.LEFT);
+			.isEqualTo(CrewMemberStatus.REMOVED);
 		assertThatThrownBy(() -> getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(crew.getId(), member.getId())))
 			.isInstanceOf(AccessDeniedException.class);
 	}
 
 	@Test
-	void rejectsLeaveForLeader() {
+	void cancelsHostedUnfinishedMeetingsAndMarksJoinedParticipationsLeft() {
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
+		AuthUser target = fullUser(2L, "target-provider", "target");
+		AuthUser anotherHost = fullUser(3L, "another-provider", "another");
 		authUserRepository.save(leader);
+		authUserRepository.save(target);
+		authUserRepository.save(anotherHost);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), target.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), anotherHost.getId()));
+
+		Meeting hostedRecruiting = meetingRepository.save(Meeting.create(
+			crew.getId(), target.getId(), "Theme A", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+		Meeting hostedClosed = meetingRepository.save(Meeting.create(
+			crew.getId(), target.getId(), "Theme B", "Hongdae", "2026-04-21", "20:00", 4, null, null, null, null
+		));
+		hostedClosed.closeRecruitment();
+		meetingRepository.save(hostedClosed);
+
+		Meeting joinedMeeting = meetingRepository.save(Meeting.create(
+			crew.getId(), anotherHost.getId(), "Theme C", "Kondae", "2026-04-22", "21:00", 4, null, null, null, null
+		));
+		meetingParticipantRepository.save(MeetingParticipant.join(joinedMeeting.getId(), target.getId()));
+
+		removeCrewMemberUseCase.handle(RemoveCrewMemberUseCase.Command.of(crew.getId(), leader.getId(), target.getId()));
+
+		assertThat(meetingRepository.findById(hostedRecruiting.getId())).get()
+			.extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.CANCELED);
+		assertThat(meetingRepository.findById(hostedClosed.getId())).get()
+			.extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.CANCELED);
+		assertThat(meetingParticipantRepository.findByMeetingIdAndUserId(joinedMeeting.getId(), target.getId())).get()
+			.extracting(MeetingParticipant::getStatus)
+			.isEqualTo(MeetingParticipationStatus.LEFT);
+	}
+
+	@Test
+	void rejectsRemoveWhenCurrentUserIsNotLeader() {
+		AuthUser member = fullUser(1L, "member-provider", "member");
+		AuthUser target = fullUser(2L, "target-provider", "target");
+		authUserRepository.save(member);
+		authUserRepository.save(target);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), target.getId()));
+
+		assertThatThrownBy(() -> removeCrewMemberUseCase.handle(
+			RemoveCrewMemberUseCase.Command.of(crew.getId(), member.getId(), target.getId())
+		)).isInstanceOf(AccessDeniedException.class);
+	}
+
+	@Test
+	void rejectsRemoveWhenTargetIsNotCurrentMember() {
+		AuthUser leader = fullUser(1L, "leader-provider", "leader");
+		AuthUser outsider = fullUser(2L, "outsider-provider", "outsider");
+		authUserRepository.save(leader);
+		authUserRepository.save(outsider);
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
 
-		assertThatThrownBy(() -> leaveCrewUseCase.handle(LeaveCrewUseCase.Command.of(crew.getId(), leader.getId())));
-	}
-
-	@Test
-	void rejectsLeaveWhenUserHasUnfinishedHostedMeeting() {
-		AuthUser member = fullUser(1L, "member-provider", "member");
-		authUserRepository.save(member);
-		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "crew", CrewVisibility.PUBLIC, null));
-		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
-		meetingRepository.save(Meeting.create(
-			crew.getId(),
-			member.getId(),
-			"Theme",
-			"Gangnam",
-			"2026-04-20",
-			"19:30",
-			4,
-			null,
-			null,
-			null,
-			null
-		));
-
-		assertThatThrownBy(() -> leaveCrewUseCase.handle(LeaveCrewUseCase.Command.of(crew.getId(), member.getId())));
-	}
-
-	@Test
-	void allowsLeaveWhenHostedMeetingIsCompleted() {
-		AuthUser member = fullUser(1L, "member-provider", "member");
-		authUserRepository.save(member);
-		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "crew", CrewVisibility.PUBLIC, null));
-		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
-		Meeting meeting = meetingRepository.save(Meeting.create(
-			crew.getId(),
-			member.getId(),
-			"Theme",
-			"Gangnam",
-			"2026-04-20",
-			"19:30",
-			4,
-			null,
-			null,
-			null,
-			null
-		));
-		meeting.closeRecruitment();
-		meeting.complete();
-
-		LeaveCrewUseCase.Result result = leaveCrewUseCase.handle(LeaveCrewUseCase.Command.of(crew.getId(), member.getId()));
-
-		assertThat(result.crewId()).isEqualTo(crew.getId());
-		assertThat(crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), member.getId())).isFalse();
-		assertThat(crewMemberRepository.findAnyByCrewIdAndUserId(crew.getId(), member.getId())).get()
-			.extracting(CrewMember::getStatus)
-			.isEqualTo(CrewMemberStatus.LEFT);
-	}
-
-	@Test
-	void rejectsLeaveForNonMember() {
-		AuthUser outsider = fullUser(1L, "outsider-provider", "outsider");
-		authUserRepository.save(outsider);
-		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "crew", CrewVisibility.PUBLIC, null));
-
-		assertThatThrownBy(() -> leaveCrewUseCase.handle(LeaveCrewUseCase.Command.of(crew.getId(), outsider.getId())))
-			.isInstanceOf(AccessDeniedException.class);
+		assertThatThrownBy(() -> removeCrewMemberUseCase.handle(
+			RemoveCrewMemberUseCase.Command.of(crew.getId(), leader.getId(), outsider.getId())
+		)).isInstanceOf(CrewRemoveMemberTargetNotAllowedException.class);
 	}
 
 	private AuthUser fullUser(Long id, String providerId, String nickname) {
@@ -286,8 +294,8 @@ class CrewLeaveUseCaseServicesTest {
 			return membersById.values().stream()
 				.anyMatch(member ->
 					crewId.equals(member.getCrewId()) &&
-					userId.equals(member.getUserId()) &&
-					member.getRole() == CrewRole.LEADER
+						userId.equals(member.getUserId()) &&
+						member.getRole() == CrewRole.LEADER
 				);
 		}
 
@@ -331,6 +339,7 @@ class CrewLeaveUseCaseServicesTest {
 		public List<Meeting> findAllByCrewId(Long crewId) {
 			return meetingsById.values().stream()
 				.filter(meeting -> crewId.equals(meeting.getCrewId()))
+				.sorted((left, right) -> left.getId().compareTo(right.getId()))
 				.toList();
 		}
 
@@ -341,27 +350,57 @@ class CrewLeaveUseCaseServicesTest {
 
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
-			return meetingsById.values().stream()
-				.filter(meeting -> meetingId.equals(meeting.getId()) && crewId.equals(meeting.getCrewId()))
+			return Optional.ofNullable(meetingsById.get(meetingId))
+				.filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+	}
+
+	private static final class InMemoryMeetingParticipantRepository implements MeetingParticipantRepository {
+
+		private final Map<Long, MeetingParticipant> participantsById = new HashMap<>();
+		private long sequence = 1L;
+
+		@Override
+		public MeetingParticipant save(MeetingParticipant participant) {
+			if (participant.getId() == null) {
+				participant.assignId(sequence++);
+			}
+			if (participant.getCreatedAt() == null) {
+				setField(participant, "createdAt", NOW);
+			}
+			setField(participant, "updatedAt", NOW);
+			participantsById.put(participant.getId(), participant);
+			return participant;
+		}
+
+		@Override
+		public Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId) {
+			return participantsById.values().stream()
+				.filter(participant -> meetingId.equals(participant.getMeetingId()) && userId.equals(participant.getUserId()))
 				.findFirst();
 		}
 
 		@Override
-		public boolean existsByCrewIdAndHostUserIdAndStatusIn(Long crewId, Long hostUserId, List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
-			return meetingsById.values().stream()
-				.anyMatch(meeting ->
-					crewId.equals(meeting.getCrewId()) &&
-					hostUserId.equals(meeting.getHostUserId()) &&
-					statuses.contains(meeting.getStatus())
-				);
+		public long countByMeetingId(Long meetingId) {
+			return participantsById.values().stream()
+				.filter(participant ->
+					meetingId.equals(participant.getMeetingId()) &&
+						participant.getStatus().representsJoined()
+				)
+				.count();
+		}
+
+		@Override
+		public void delete(MeetingParticipant participant) {
+			participantsById.remove(participant.getId());
 		}
 	}
 
 	private static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
 
 		@Override
-		public CrewJoinRequest save(CrewJoinRequest crewJoinRequest) {
-			return crewJoinRequest;
+		public CrewJoinRequest save(CrewJoinRequest request) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
@@ -370,8 +409,8 @@ class CrewLeaveUseCaseServicesTest {
 		}
 
 		@Override
-		public Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
-			return Optional.empty();
+		public List<CrewJoinRequest> findByCrewId(Long crewId) {
+			return List.of();
 		}
 
 		@Override
@@ -380,8 +419,18 @@ class CrewLeaveUseCaseServicesTest {
 		}
 
 		@Override
-		public List<CrewJoinRequest> findByCrewId(Long crewId) {
-			return List.of();
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
+			return Optional.empty();
+		}
+	}
+
+	private static void setField(Object target, String fieldName, Object value) {
+		try {
+			Field field = target.getClass().getDeclaredField(fieldName);
+			field.setAccessible(true);
+			field.set(target, value);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(exception);
 		}
 	}
 }

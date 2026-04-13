@@ -15,9 +15,9 @@ public interface CrewMemberRepository {
 
 	Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId);
 
-	List<CrewMember> findAllByCrewId(Long crewId);
-
-	default void deleteByCrewIdAndUserId(Long crewId, Long userId) {
-		throw new UnsupportedOperationException();
+	default Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+		return findByCrewIdAndUserId(crewId, userId);
 	}
+
+	List<CrewMember> findAllByCrewId(Long crewId);
 }

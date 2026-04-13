@@ -84,6 +84,14 @@ public class MeetingParticipant {
 		this.id = id;
 	}
 
+	public void leave() {
+		this.status = MeetingParticipationStatus.LEFT;
+	}
+
+	public void rejoin() {
+		this.status = MeetingParticipationStatus.JOINED;
+	}
+
 	@PrePersist
 	void onCreate() {
 		Instant now = Instant.now();

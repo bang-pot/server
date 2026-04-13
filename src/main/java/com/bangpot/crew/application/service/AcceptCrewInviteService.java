@@ -37,7 +37,14 @@ public class AcceptCrewInviteService implements AcceptCrewInviteUseCase {
 			.orElseThrow(() -> new CrewNotFoundException(invite.getCrewId()));
 
 		if (!crewMemberRepository.existsByCrewIdAndUserId(invite.getCrewId(), command.userId())) {
-			crewMemberRepository.save(CrewMember.createMember(invite.getCrewId(), command.userId()));
+			var existingMembership = crewMemberRepository.findAnyByCrewIdAndUserId(invite.getCrewId(), command.userId());
+			if (existingMembership.isPresent()) {
+				CrewMember crewMember = existingMembership.get();
+				crewMember.reactivateAsMember();
+				crewMemberRepository.save(crewMember);
+			} else {
+				crewMemberRepository.save(CrewMember.createMember(invite.getCrewId(), command.userId()));
+			}
 		}
 		invite.approve();
 		crewInviteRepository.save(invite);

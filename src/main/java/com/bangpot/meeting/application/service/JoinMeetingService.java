@@ -52,11 +52,17 @@ public class JoinMeetingService implements JoinMeetingUseCase {
 			throw new MeetingParticipationAlreadyJoinedException(meeting.getId(), command.userId());
 		}
 
-		if (meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), command.userId()).isPresent()) {
-			throw new MeetingParticipationAlreadyJoinedException(meeting.getId(), command.userId());
+		var existingParticipant = meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), command.userId());
+		if (existingParticipant.isPresent()) {
+			MeetingParticipant participant = existingParticipant.get();
+			if (participant.getStatus().representsJoined()) {
+				throw new MeetingParticipationAlreadyJoinedException(meeting.getId(), command.userId());
+			}
+			participant.rejoin();
+			meetingParticipantRepository.save(participant);
+		} else {
+			meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), command.userId()));
 		}
-
-		meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), command.userId()));
 		meetingAutomaticTransitionService.apply(meeting);
 		return Result.of(meeting.getId(), MeetingParticipationStatus.JOINED.name());
 	}

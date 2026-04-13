@@ -25,6 +25,7 @@ import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
+import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
@@ -49,6 +50,7 @@ class CrewController {
 	private final GetCrewPoliciesUseCase getCrewPoliciesUseCase;
 	private final UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
 	private final LeaveCrewUseCase leaveCrewUseCase;
+	private final RemoveCrewMemberUseCase removeCrewMemberUseCase;
 	private final TransferCrewLeadershipUseCase transferCrewLeadershipUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
@@ -129,6 +131,19 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(
 			leaveCrewUseCase.handle(
 				CrewDtoMapper.toLeaveCommand(crewId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PostMapping("/{crewId}/members/{targetUserId}/remove")
+	ResponseEntity<CrewDto.RemoveCrewMemberResponse> removeCrewMember(
+		@PathVariable Long crewId,
+		@PathVariable Long targetUserId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			removeCrewMemberUseCase.handle(
+				CrewDtoMapper.toRemoveMemberCommand(crewId, requireAuthenticatedUserId(authentication), targetUserId)
 			)
 		));
 	}

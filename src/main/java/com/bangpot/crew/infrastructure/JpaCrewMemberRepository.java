@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
+import com.bangpot.crew.domain.CrewMemberStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,26 +25,31 @@ class JpaCrewMemberRepository implements CrewMemberRepository {
 
 	@Override
 	public boolean existsByCrewIdAndUserId(Long crewId, Long userId) {
-		return crewMemberJpaRepository.existsByCrewIdAndUserId(crewId, userId);
+		return crewMemberJpaRepository.existsByCrewIdAndUserIdAndStatus(crewId, userId, CrewMemberStatus.ACTIVE);
 	}
 
 	@Override
 	public boolean existsLeaderByCrewIdAndUserId(Long crewId, Long userId) {
-		return crewMemberJpaRepository.existsByCrewIdAndUserIdAndRole(crewId, userId, CrewRole.LEADER);
+		return crewMemberJpaRepository.existsByCrewIdAndUserIdAndRoleAndStatus(
+			crewId,
+			userId,
+			CrewRole.LEADER,
+			CrewMemberStatus.ACTIVE
+		);
 	}
 
 	@Override
 	public Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId) {
+		return crewMemberJpaRepository.findByCrewIdAndUserIdAndStatus(crewId, userId, CrewMemberStatus.ACTIVE);
+	}
+
+	@Override
+	public Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
 		return crewMemberJpaRepository.findByCrewIdAndUserId(crewId, userId);
 	}
 
 	@Override
 	public List<CrewMember> findAllByCrewId(Long crewId) {
-		return crewMemberJpaRepository.findAllByCrewId(crewId);
-	}
-
-	@Override
-	public void deleteByCrewIdAndUserId(Long crewId, Long userId) {
-		crewMemberJpaRepository.deleteByCrewIdAndUserId(crewId, userId);
+		return crewMemberJpaRepository.findAllByCrewIdAndStatus(crewId, CrewMemberStatus.ACTIVE);
 	}
 }

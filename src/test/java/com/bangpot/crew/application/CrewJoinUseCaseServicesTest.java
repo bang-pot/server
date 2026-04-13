@@ -360,8 +360,7 @@ class CrewJoinUseCaseServicesTest {
 
 		@Override
 		public boolean existsByCrewIdAndUserId(Long crewId, Long userId) {
-			return membersById.values().stream()
-				.anyMatch(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()));
+			return findByCrewIdAndUserId(crewId, userId).isPresent();
 		}
 
 		@Override
@@ -377,6 +376,13 @@ class CrewJoinUseCaseServicesTest {
 		@Override
 		public Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId) {
 			return membersById.values().stream()
+				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()) && member.isActive())
+				.findFirst();
+		}
+
+		@Override
+		public Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return membersById.values().stream()
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
@@ -384,7 +390,7 @@ class CrewJoinUseCaseServicesTest {
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
 			return membersById.values().stream()
-				.filter(member -> crewId.equals(member.getCrewId()))
+				.filter(member -> crewId.equals(member.getCrewId()) && member.isActive())
 				.toList();
 		}
 	}
