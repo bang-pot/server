@@ -16,6 +16,7 @@ import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
+import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 
 final class CrewDtoMapper {
@@ -117,6 +118,18 @@ final class CrewDtoMapper {
 
 	static CrewDto.LeaveCrewResponse toResponse(LeaveCrewUseCase.Result result) {
 		return new CrewDto.LeaveCrewResponse(result.crewId());
+	}
+
+	static TransferCrewLeadershipUseCase.Command toTransferCommand(
+		Long crewId,
+		Long leaderUserId,
+		CrewDto.TransferCrewLeadershipRequest request
+	) {
+		return TransferCrewLeadershipUseCase.Command.of(crewId, leaderUserId, request.targetUserId());
+	}
+
+	static CrewDto.TransferCrewLeadershipResponse toResponse(TransferCrewLeadershipUseCase.Result result) {
+		return new CrewDto.TransferCrewLeadershipResponse(result.crewId(), result.leaderUserId());
 	}
 
 	static CrewDto.CrewJoinViewResponse toResponse(GetCrewJoinViewUseCase.Result result) {

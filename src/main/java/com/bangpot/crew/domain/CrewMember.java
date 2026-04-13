@@ -62,6 +62,14 @@ public class CrewMember {
 		this.id = id;
 	}
 
+	public void transferLeadershipToLeader() {
+		this.role = CrewRole.LEADER;
+	}
+
+	public void transferLeadershipToMember() {
+		this.role = CrewRole.MEMBER;
+	}
+
 	@PrePersist
 	void onCreate() {
 		if (createdAt == null) {

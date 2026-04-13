@@ -27,6 +27,7 @@ import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
+import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 
 import jakarta.validation.Valid;
@@ -48,6 +49,7 @@ class CrewController {
 	private final GetCrewPoliciesUseCase getCrewPoliciesUseCase;
 	private final UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
 	private final LeaveCrewUseCase leaveCrewUseCase;
+	private final TransferCrewLeadershipUseCase transferCrewLeadershipUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
 	private final GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
@@ -127,6 +129,19 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(
 			leaveCrewUseCase.handle(
 				CrewDtoMapper.toLeaveCommand(crewId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PostMapping("/{crewId}/transfer-leadership")
+	ResponseEntity<CrewDto.TransferCrewLeadershipResponse> transferLeadership(
+		@PathVariable Long crewId,
+		Authentication authentication,
+		@Valid @RequestBody CrewDto.TransferCrewLeadershipRequest request
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			transferCrewLeadershipUseCase.handle(
+				CrewDtoMapper.toTransferCommand(crewId, requireAuthenticatedUserId(authentication), request)
 			)
 		));
 	}

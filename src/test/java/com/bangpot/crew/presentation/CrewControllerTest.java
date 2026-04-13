@@ -36,6 +36,7 @@ import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
+import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewRole;
@@ -93,6 +94,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private LeaveCrewUseCase leaveCrewUseCase;
+
+	@MockitoBean
+	private TransferCrewLeadershipUseCase transferCrewLeadershipUseCase;
 
 	@Test
 	void createsCrewForAuthenticatedFullUser() throws Exception {
@@ -628,6 +632,41 @@ class CrewControllerTest {
 	@Test
 	void returnsUnauthorizedWhenLeaveCrewIsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(post("/api/crews/1/leave"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void transfersCrewLeadershipForCurrentLeader() throws Exception {
+		when(transferCrewLeadershipUseCase.handle(TransferCrewLeadershipUseCase.Command.of(1L, 77L, 201L)))
+			.thenReturn(TransferCrewLeadershipUseCase.Result.of(1L, 201L));
+
+		mockMvc.perform(
+			post("/api/crews/1/transfer-leadership")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "targetUserId": 201
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.leaderUserId").value(201));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenTransferLeadershipIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(
+			post("/api/crews/1/transfer-leadership")
+				.contentType("application/json")
+				.content("""
+					{
+					  "targetUserId": 201
+					}
+					""")
+		)
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

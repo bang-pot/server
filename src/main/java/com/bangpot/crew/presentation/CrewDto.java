@@ -72,6 +72,14 @@ final class CrewDto {
 	record LeaveCrewResponse(Long crewId) {
 	}
 
+	record TransferCrewLeadershipRequest(
+		@NotNull(message = "위임 대상 크루원을 선택해야 합니다.") Long targetUserId
+	) {
+	}
+
+	record TransferCrewLeadershipResponse(Long crewId, Long leaderUserId) {
+	}
+
 	record CrewJoinViewResponse(
 		Long crewId,
 		String name,
@@ -111,7 +119,7 @@ final class CrewDto {
 	record CrewInviteCandidateResponse(Long userId, String nickname) {
 	}
 
-	record CreateCrewInviteRequest(@NotNull(message = "초대할 회원을 선택해야 합니다.") Long targetUserId) {
+	record CreateCrewInviteRequest(@NotNull(message = "초대할 크루원을 선택해야 합니다.") Long targetUserId) {
 	}
 
 	record CreateCrewInviteResponse(Long crewId, Long targetUserId, String status) {
