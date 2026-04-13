@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
+import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
@@ -31,6 +33,7 @@ class MeetingController {
 	private final GetMeetingsUseCase getMeetingsUseCase;
 	private final GetMeetingDetailUseCase getMeetingDetailUseCase;
 	private final JoinMeetingUseCase joinMeetingUseCase;
+	private final CancelMeetingParticipationUseCase cancelMeetingParticipationUseCase;
 
 	@PostMapping
 	ResponseEntity<MeetingDto.CreateMeetingResponse> create(
@@ -79,6 +82,19 @@ class MeetingController {
 		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
 			joinMeetingUseCase.handle(
 				MeetingDtoMapper.toCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@DeleteMapping("/{meetingId}/join")
+	ResponseEntity<MeetingDto.MeetingJoinResponse> cancelJoin(
+		@PathVariable Long crewId,
+		@PathVariable Long meetingId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
+			cancelMeetingParticipationUseCase.handle(
+				MeetingDtoMapper.toCancelCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
 			)
 		));
 	}

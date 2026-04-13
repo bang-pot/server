@@ -1,6 +1,7 @@
 package com.bangpot.meeting.presentation;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
+import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
@@ -45,6 +47,9 @@ class MeetingControllerTest {
 
 	@MockitoBean
 	private JoinMeetingUseCase joinMeetingUseCase;
+
+	@MockitoBean
+	private CancelMeetingParticipationUseCase cancelMeetingParticipationUseCase;
 
 	@Test
 	void createsMeetingForJoinedCrewMember() throws Exception {
@@ -112,6 +117,21 @@ class MeetingControllerTest {
 	}
 
 	@Test
+	void cancelsJoinedMeetingParticipation() throws Exception {
+		when(cancelMeetingParticipationUseCase.handle(
+			CancelMeetingParticipationUseCase.Command.of(1L, 10L, 77L)
+		)).thenReturn(CancelMeetingParticipationUseCase.Result.of(10L, "NOT_JOINED"));
+
+		mockMvc.perform(
+			delete("/api/crews/1/meetings/10/join")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.meetingId").value(10))
+			.andExpect(jsonPath("$.myParticipationStatus").value("NOT_JOINED"));
+	}
+
+	@Test
 	void returnsValidationErrorWhenRequiredMeetingFieldIsMissing() throws Exception {
 		mockMvc.perform(
 			post("/api/crews/1/meetings")
@@ -154,6 +174,13 @@ class MeetingControllerTest {
 	@Test
 	void returnsUnauthorizedWhenJoinIsSubmittedWithoutAuthentication() throws Exception {
 		mockMvc.perform(post("/api/crews/1/meetings/10/join"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenCancelJoinIsSubmittedWithoutAuthentication() throws Exception {
+		mockMvc.perform(delete("/api/crews/1/meetings/10/join"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

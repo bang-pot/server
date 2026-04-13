@@ -3,6 +3,7 @@ package com.bangpot.meeting.presentation;
 import java.util.List;
 
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
+import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
@@ -89,6 +90,14 @@ final class MeetingDtoMapper {
 	}
 
 	static MeetingDto.MeetingJoinResponse toResponse(JoinMeetingUseCase.Result result) {
+		return new MeetingDto.MeetingJoinResponse(result.meetingId(), result.myParticipationStatus());
+	}
+
+	static CancelMeetingParticipationUseCase.Command toCancelCommand(Long crewId, Long meetingId, Long userId) {
+		return CancelMeetingParticipationUseCase.Command.of(crewId, meetingId, userId);
+	}
+
+	static MeetingDto.MeetingJoinResponse toResponse(CancelMeetingParticipationUseCase.Result result) {
 		return new MeetingDto.MeetingJoinResponse(result.meetingId(), result.myParticipationStatus());
 	}
 }

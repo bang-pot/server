@@ -27,12 +27,16 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyJoinedException;
+import com.bangpot.meeting.application.exception.MeetingParticipationNotJoinedException;
+import com.bangpot.meeting.application.exception.MeetingHostCannotCancelParticipationException;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.service.CancelMeetingParticipationService;
 import com.bangpot.meeting.application.service.CreateMeetingService;
 import com.bangpot.meeting.application.service.GetMeetingDetailService;
 import com.bangpot.meeting.application.service.GetMeetingsService;
 import com.bangpot.meeting.application.service.JoinMeetingService;
+import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
@@ -56,6 +60,7 @@ class MeetingUseCaseServicesTest {
 	private GetMeetingsUseCase getMeetingsUseCase;
 	private GetMeetingDetailUseCase getMeetingDetailUseCase;
 	private JoinMeetingUseCase joinMeetingUseCase;
+	private CancelMeetingParticipationUseCase cancelMeetingParticipationUseCase;
 
 	@BeforeEach
 	void setUp() {
@@ -74,6 +79,13 @@ class MeetingUseCaseServicesTest {
 			meetingParticipantRepository
 		);
 		joinMeetingUseCase = new JoinMeetingService(
+			authUserRepository,
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository,
+			meetingParticipantRepository
+		);
+		cancelMeetingParticipationUseCase = new CancelMeetingParticipationService(
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
@@ -317,6 +329,72 @@ class MeetingUseCaseServicesTest {
 	}
 
 	@Test
+	void cancelsJoinedParticipationForJoinedCrewMember() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		AuthUser member = fullUser(78L, "member-provider", "member");
+		authUserRepository.save(host);
+		authUserRepository.save(member);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(),
+			host.getId(),
+			"Test Theme",
+			"Gangnam",
+			"2026-04-20",
+			"19:30",
+			4,
+			null,
+			null,
+			null,
+			null
+		));
+		meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), member.getId()));
+
+		CancelMeetingParticipationUseCase.Result result = cancelMeetingParticipationUseCase.handle(
+			CancelMeetingParticipationUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
+		);
+
+		assertThat(result.meetingId()).isEqualTo(meeting.getId());
+		assertThat(result.myParticipationStatus()).isEqualTo("NOT_JOINED");
+		assertThat(meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), member.getId())).isEmpty();
+	}
+
+	@Test
+	void rejectsCancelWhenNotJoinedYet() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		AuthUser member = fullUser(78L, "member-provider", "member");
+		authUserRepository.save(host);
+		authUserRepository.save(member);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+
+		assertThatThrownBy(() -> cancelMeetingParticipationUseCase.handle(
+			CancelMeetingParticipationUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
+		)).isInstanceOf(MeetingParticipationNotJoinedException.class);
+	}
+
+	@Test
+	void rejectsCancelForMeetingHost() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+
+		assertThatThrownBy(() -> cancelMeetingParticipationUseCase.handle(
+			CancelMeetingParticipationUseCase.Command.of(crew.getId(), meeting.getId(), host.getId())
+		)).isInstanceOf(MeetingHostCannotCancelParticipationException.class);
+	}
+
+	@Test
 	void rejectsMeetingCreateForNonMember() {
 		AuthUser outsider = fullUser(88L, "outsider-provider", "outsider");
 		authUserRepository.save(outsider);
@@ -530,6 +608,11 @@ class MeetingUseCaseServicesTest {
 			return participantsById.values().stream()
 				.filter(participant -> meetingId.equals(participant.getMeetingId()) && userId.equals(participant.getUserId()))
 				.findFirst();
+		}
+
+		@Override
+		public void delete(MeetingParticipant participant) {
+			participantsById.remove(participant.getId());
 		}
 	}
 }
