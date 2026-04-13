@@ -24,7 +24,7 @@ import lombok.Getter;
 		columnNames = {"meeting_id", "user_id"}
 	)
 )
-public class MeetingParticipationRequest {
+public class MeetingParticipant {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,10 +46,10 @@ public class MeetingParticipationRequest {
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
-	protected MeetingParticipationRequest() {
+	protected MeetingParticipant() {
 	}
 
-	private MeetingParticipationRequest(
+	private MeetingParticipant(
 		Long id,
 		Long meetingId,
 		Long userId,
@@ -65,11 +65,11 @@ public class MeetingParticipationRequest {
 		this.updatedAt = updatedAt;
 	}
 
-	public static MeetingParticipationRequest createPending(Long meetingId, Long userId) {
-		return new MeetingParticipationRequest(null, meetingId, userId, MeetingParticipationStatus.PENDING, null, null);
+	public static MeetingParticipant join(Long meetingId, Long userId) {
+		return new MeetingParticipant(null, meetingId, userId, MeetingParticipationStatus.JOINED, null, null);
 	}
 
-	public static MeetingParticipationRequest rehydrate(
+	public static MeetingParticipant rehydrate(
 		Long id,
 		Long meetingId,
 		Long userId,
@@ -77,7 +77,7 @@ public class MeetingParticipationRequest {
 		Instant createdAt,
 		Instant updatedAt
 	) {
-		return new MeetingParticipationRequest(id, meetingId, userId, status, createdAt, updatedAt);
+		return new MeetingParticipant(id, meetingId, userId, status, createdAt, updatedAt);
 	}
 
 	public void assignId(Long id) {

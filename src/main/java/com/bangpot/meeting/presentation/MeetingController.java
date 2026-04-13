@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
-import com.bangpot.meeting.application.usecase.CreateMeetingParticipationRequestUseCase;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
+import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ class MeetingController {
 	private final CreateMeetingUseCase createMeetingUseCase;
 	private final GetMeetingsUseCase getMeetingsUseCase;
 	private final GetMeetingDetailUseCase getMeetingDetailUseCase;
-	private final CreateMeetingParticipationRequestUseCase createMeetingParticipationRequestUseCase;
+	private final JoinMeetingUseCase joinMeetingUseCase;
 
 	@PostMapping
 	ResponseEntity<MeetingDto.CreateMeetingResponse> create(
@@ -70,14 +70,14 @@ class MeetingController {
 		));
 	}
 
-	@PostMapping("/{meetingId}/participation-requests")
-	ResponseEntity<MeetingDto.MeetingParticipationRequestResponse> requestParticipation(
+	@PostMapping("/{meetingId}/join")
+	ResponseEntity<MeetingDto.MeetingJoinResponse> join(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
-			createMeetingParticipationRequestUseCase.handle(
+			joinMeetingUseCase.handle(
 				MeetingDtoMapper.toCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
 			)
 		));

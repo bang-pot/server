@@ -1,6 +1,6 @@
 package com.bangpot.meeting.application.usecase;
 
-public interface CreateMeetingParticipationRequestUseCase {
+public interface JoinMeetingUseCase {
 
 	Result handle(Command command);
 
