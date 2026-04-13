@@ -25,6 +25,7 @@ public class CloseMeetingRecruitmentService implements CloseMeetingRecruitmentUs
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
+	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
 
 	@Override
 	@Transactional
@@ -42,6 +43,7 @@ public class CloseMeetingRecruitmentService implements CloseMeetingRecruitmentUs
 
 		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
+		meetingAutomaticTransitionService.apply(meeting);
 		if (!meeting.getHostUserId().equals(command.userId())) {
 			throw new AccessDeniedException("모임 개설자만 모집마감을 할 수 있습니다.");
 		}

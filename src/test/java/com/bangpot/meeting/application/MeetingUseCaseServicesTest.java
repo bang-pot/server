@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
+import java.time.Clock;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +44,7 @@ import com.bangpot.meeting.application.service.CreateMeetingService;
 import com.bangpot.meeting.application.service.GetMeetingDetailService;
 import com.bangpot.meeting.application.service.GetMeetingsService;
 import com.bangpot.meeting.application.service.JoinMeetingService;
+import com.bangpot.meeting.application.service.MeetingAutomaticTransitionService;
 import com.bangpot.meeting.application.service.RecordMeetingResultService;
 import com.bangpot.meeting.application.service.ReopenMeetingRecruitmentService;
 import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
@@ -69,6 +72,8 @@ class MeetingUseCaseServicesTest {
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryMeetingRepository meetingRepository;
 	private InMemoryMeetingParticipantRepository meetingParticipantRepository;
+	private MutableClock clock;
+	private MeetingAutomaticTransitionService meetingAutomaticTransitionService;
 	private CreateMeetingUseCase createMeetingUseCase;
 	private GetMeetingsUseCase getMeetingsUseCase;
 	private GetMeetingDetailUseCase getMeetingDetailUseCase;
@@ -87,21 +92,35 @@ class MeetingUseCaseServicesTest {
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
+		clock = new MutableClock(NOW);
+		meetingAutomaticTransitionService = new MeetingAutomaticTransitionService(
+			meetingRepository,
+			meetingParticipantRepository,
+			clock
+		);
 		createMeetingUseCase = new CreateMeetingService(authUserRepository, crewRepository, crewMemberRepository, meetingRepository);
-		getMeetingsUseCase = new GetMeetingsService(authUserRepository, crewRepository, crewMemberRepository, meetingRepository);
+		getMeetingsUseCase = new GetMeetingsService(
+			authUserRepository,
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository,
+			meetingAutomaticTransitionService
+		);
 		getMeetingDetailUseCase = new GetMeetingDetailService(
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingParticipantRepository
+			meetingParticipantRepository,
+			meetingAutomaticTransitionService
 		);
 		joinMeetingUseCase = new JoinMeetingService(
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingParticipantRepository
+			meetingParticipantRepository,
+			meetingAutomaticTransitionService
 		);
 		cancelMeetingParticipationUseCase = new CancelMeetingParticipationService(
 			authUserRepository,
@@ -114,31 +133,36 @@ class MeetingUseCaseServicesTest {
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository
+			meetingRepository,
+			meetingAutomaticTransitionService
 		);
 		reopenMeetingRecruitmentUseCase = new ReopenMeetingRecruitmentService(
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository
+			meetingRepository,
+			meetingAutomaticTransitionService
 		);
 		cancelMeetingUseCase = new CancelMeetingService(
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository
+			meetingRepository,
+			meetingAutomaticTransitionService
 		);
 		completeMeetingUseCase = new CompleteMeetingService(
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository
+			meetingRepository,
+			meetingAutomaticTransitionService
 		);
 		recordMeetingResultUseCase = new RecordMeetingResultService(
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository
+			meetingRepository,
+			meetingAutomaticTransitionService
 		);
 	}
 
@@ -642,6 +666,61 @@ class MeetingUseCaseServicesTest {
 	}
 
 	@Test
+	void closesRecruitmentAutomaticallyWhenCapacityIsReachedAfterJoin() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		AuthUser member = fullUser(78L, "member-provider", "member");
+		authUserRepository.save(host);
+		authUserRepository.save(member);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Capacity Theme", "Gangnam", "2026-04-13", "20:00", 2, null, null, null, null
+		));
+
+		joinMeetingUseCase.handle(JoinMeetingUseCase.Command.of(crew.getId(), meeting.getId(), member.getId()));
+
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.RECRUITMENT_CLOSED);
+	}
+
+	@Test
+	void closesRecruitmentAutomaticallyWhenMeetingStartTimeHasPassedOnDetailRead() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Time Theme", "Gangnam", "2026-04-12", "17:00", 4, null, null, null, null
+		));
+
+		GetMeetingDetailUseCase.Result result = getMeetingDetailUseCase.handle(
+			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), host.getId())
+		);
+
+		assertThat(result.status()).isEqualTo("RECRUITMENT_CLOSED");
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.RECRUITMENT_CLOSED);
+	}
+
+	@Test
+	void completesMeetingAutomaticallyWhenSixHoursHavePassedOnListRead() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Complete Theme", "Gangnam", "2026-04-12", "10:00", 4, null, null, null, null
+		));
+
+		List<GetMeetingsUseCase.View> result = getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(crew.getId(), host.getId()));
+
+		assertThat(result).singleElement().extracting(GetMeetingsUseCase.View::status).isEqualTo("COMPLETED");
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.COMPLETED);
+	}
+
+	@Test
 	void rejectsMeetingCreateForNonMember() {
 		AuthUser outsider = fullUser(88L, "outsider-provider", "outsider");
 		authUserRepository.save(outsider);
@@ -858,8 +937,38 @@ class MeetingUseCaseServicesTest {
 		}
 
 		@Override
+		public long countByMeetingId(Long meetingId) {
+			return participantsById.values().stream()
+				.filter(participant -> meetingId.equals(participant.getMeetingId()))
+				.count();
+		}
+
+		@Override
 		public void delete(MeetingParticipant participant) {
 			participantsById.remove(participant.getId());
+		}
+	}
+
+	private static final class MutableClock extends Clock {
+		private Instant instant;
+
+		private MutableClock(Instant instant) {
+			this.instant = instant;
+		}
+
+		@Override
+		public ZoneId getZone() {
+			return ZoneId.of("UTC");
+		}
+
+		@Override
+		public Clock withZone(ZoneId zone) {
+			return this;
+		}
+
+		@Override
+		public Instant instant() {
+			return instant;
 		}
 	}
 }

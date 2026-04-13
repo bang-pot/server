@@ -1,6 +1,9 @@
 package com.bangpot.meeting.domain;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -186,6 +189,22 @@ public class Meeting {
 			throw new MeetingResultAlreadyRecordedException(id, result.name());
 		}
 		result = targetResult;
+	}
+
+	public void applyAutomaticTransition(LocalDateTime now, long joinedCount) {
+		if (status == MeetingStatus.CANCELED || status == MeetingStatus.COMPLETED) {
+			return;
+		}
+
+		LocalDateTime startAt = LocalDate.parse(meetingDate).atTime(LocalTime.parse(meetingTime));
+		if (!now.isBefore(startAt.plusHours(6))) {
+			status = MeetingStatus.COMPLETED;
+			return;
+		}
+
+		if (status == MeetingStatus.RECRUITING && (joinedCount >= capacity || !now.isBefore(startAt))) {
+			status = MeetingStatus.RECRUITMENT_CLOSED;
+		}
 	}
 
 	@PrePersist

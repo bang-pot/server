@@ -28,9 +28,10 @@ public class GetMeetingDetailService implements GetMeetingDetailUseCase {
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
 	private final MeetingParticipantRepository meetingParticipantRepository;
+	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
 
 	@Override
-	@Transactional(readOnly = true)
+	@Transactional
 	public Result handle(Query query) {
 		crewRepository.findById(query.crewId()).orElseThrow(() -> new CrewNotFoundException(query.crewId()));
 
@@ -45,6 +46,7 @@ public class GetMeetingDetailService implements GetMeetingDetailUseCase {
 
 		Meeting meeting = meetingRepository.findByIdAndCrewId(query.meetingId(), query.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(query.meetingId()));
+		meetingAutomaticTransitionService.apply(meeting);
 
 		String myParticipationStatus = meeting.getHostUserId().equals(query.userId())
 			? MeetingParticipationStatus.JOINED.name()
