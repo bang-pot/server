@@ -15,6 +15,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 
 import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
+import com.bangpot.meeting.application.exception.MeetingResultAlreadyRecordedException;
+import com.bangpot.meeting.application.exception.MeetingResultRecordNotAllowedException;
 
 @Entity
 @Getter
@@ -174,6 +176,16 @@ public class Meeting {
 			throw new MeetingInvalidStatusTransitionException(id, status.name(), MeetingStatus.COMPLETED.name());
 		}
 		status = MeetingStatus.COMPLETED;
+	}
+
+	public void recordResult(MeetingResult targetResult) {
+		if (status != MeetingStatus.COMPLETED) {
+			throw new MeetingResultRecordNotAllowedException(id, status.name());
+		}
+		if (result != MeetingResult.NOT_RECORDED) {
+			throw new MeetingResultAlreadyRecordedException(id, result.name());
+		}
+		result = targetResult;
 	}
 
 	@PrePersist

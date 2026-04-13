@@ -3,6 +3,7 @@ package com.bangpot.meeting.presentation;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 final class MeetingDto {
 
@@ -74,6 +75,19 @@ final class MeetingDto {
 	record MeetingStatusChangeResponse(
 		Long meetingId,
 		String status
+	) {
+	}
+
+	record RecordMeetingResultRequest(
+		@NotBlank(message = "결과는 필수입니다.")
+		@Pattern(regexp = "SUCCESS|FAILURE", message = "결과는 SUCCESS 또는 FAILURE만 입력할 수 있습니다.")
+		String result
+	) {
+	}
+
+	record MeetingResultRecordResponse(
+		Long meetingId,
+		String result
 	) {
 	}
 }

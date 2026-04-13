@@ -33,6 +33,8 @@ import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionE
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyJoinedException;
 import com.bangpot.meeting.application.exception.MeetingParticipationNotJoinedException;
+import com.bangpot.meeting.application.exception.MeetingResultAlreadyRecordedException;
+import com.bangpot.meeting.application.exception.MeetingResultRecordNotAllowedException;
 import com.bangpot.meeting.error.MeetingErrorCode;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
@@ -158,6 +160,20 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 		MeetingInvalidStatusTransitionException exception
 	) {
 		return error(MeetingErrorCode.MEETING_INVALID_STATUS_TRANSITION);
+	}
+
+	@ExceptionHandler(MeetingResultRecordNotAllowedException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingResultRecordNotAllowed(
+		MeetingResultRecordNotAllowedException exception
+	) {
+		return error(MeetingErrorCode.MEETING_RESULT_RECORD_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(MeetingResultAlreadyRecordedException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingResultAlreadyRecorded(
+		MeetingResultAlreadyRecordedException exception
+	) {
+		return error(MeetingErrorCode.MEETING_RESULT_ALREADY_RECORDED);
 	}
 
 	@ExceptionHandler(AuthUserNotFoundException.class)

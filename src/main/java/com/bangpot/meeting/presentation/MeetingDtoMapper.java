@@ -10,6 +10,7 @@ import com.bangpot.meeting.application.usecase.CompleteMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
+import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 
 final class MeetingDtoMapper {
@@ -135,5 +136,18 @@ final class MeetingDtoMapper {
 
 	static MeetingDto.MeetingStatusChangeResponse toResponse(CompleteMeetingUseCase.Result result) {
 		return new MeetingDto.MeetingStatusChangeResponse(result.meetingId(), result.status());
+	}
+
+	static RecordMeetingResultUseCase.Command toRecordResultCommand(
+		Long crewId,
+		Long meetingId,
+		Long userId,
+		MeetingDto.RecordMeetingResultRequest request
+	) {
+		return RecordMeetingResultUseCase.Command.of(crewId, meetingId, userId, request.result());
+	}
+
+	static MeetingDto.MeetingResultRecordResponse toResponse(RecordMeetingResultUseCase.Result result) {
+		return new MeetingDto.MeetingResultRecordResponse(result.meetingId(), result.result());
 	}
 }
