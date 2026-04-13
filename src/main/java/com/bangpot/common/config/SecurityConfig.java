@@ -145,7 +145,7 @@ public class SecurityConfig {
 	CorsConfigurationSource corsConfigurationSource(AuthFrontendProperties authFrontendProperties) {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(List.of(authFrontendProperties.getBaseUrl()));
-		configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "OPTIONS"));
+		configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);
 		configuration.setExposedHeaders(List.of("Set-Cookie"));
