@@ -23,9 +23,13 @@ import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
+import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
+import com.bangpot.meeting.application.usecase.CloseMeetingRecruitmentUseCase;
+import com.bangpot.meeting.application.usecase.CompleteMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
+import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -50,6 +54,18 @@ class MeetingControllerTest {
 
 	@MockitoBean
 	private CancelMeetingParticipationUseCase cancelMeetingParticipationUseCase;
+
+	@MockitoBean
+	private CloseMeetingRecruitmentUseCase closeMeetingRecruitmentUseCase;
+
+	@MockitoBean
+	private ReopenMeetingRecruitmentUseCase reopenMeetingRecruitmentUseCase;
+
+	@MockitoBean
+	private CancelMeetingUseCase cancelMeetingUseCase;
+
+	@MockitoBean
+	private CompleteMeetingUseCase completeMeetingUseCase;
 
 	@Test
 	void createsMeetingForJoinedCrewMember() throws Exception {
@@ -132,6 +148,66 @@ class MeetingControllerTest {
 	}
 
 	@Test
+	void closesMeetingRecruitment() throws Exception {
+		when(closeMeetingRecruitmentUseCase.handle(
+			CloseMeetingRecruitmentUseCase.Command.of(1L, 10L, 77L)
+		)).thenReturn(CloseMeetingRecruitmentUseCase.Result.of(10L, "RECRUITMENT_CLOSED"));
+
+		mockMvc.perform(
+			post("/api/crews/1/meetings/10/close-recruitment")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.meetingId").value(10))
+			.andExpect(jsonPath("$.status").value("RECRUITMENT_CLOSED"));
+	}
+
+	@Test
+	void reopensMeetingRecruitment() throws Exception {
+		when(reopenMeetingRecruitmentUseCase.handle(
+			ReopenMeetingRecruitmentUseCase.Command.of(1L, 10L, 77L)
+		)).thenReturn(ReopenMeetingRecruitmentUseCase.Result.of(10L, "RECRUITING"));
+
+		mockMvc.perform(
+			post("/api/crews/1/meetings/10/reopen-recruitment")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.meetingId").value(10))
+			.andExpect(jsonPath("$.status").value("RECRUITING"));
+	}
+
+	@Test
+	void cancelsMeeting() throws Exception {
+		when(cancelMeetingUseCase.handle(
+			CancelMeetingUseCase.Command.of(1L, 10L, 77L)
+		)).thenReturn(CancelMeetingUseCase.Result.of(10L, "CANCELED"));
+
+		mockMvc.perform(
+			post("/api/crews/1/meetings/10/cancel")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.meetingId").value(10))
+			.andExpect(jsonPath("$.status").value("CANCELED"));
+	}
+
+	@Test
+	void completesMeeting() throws Exception {
+		when(completeMeetingUseCase.handle(
+			CompleteMeetingUseCase.Command.of(1L, 10L, 77L)
+		)).thenReturn(CompleteMeetingUseCase.Result.of(10L, "COMPLETED"));
+
+		mockMvc.perform(
+			post("/api/crews/1/meetings/10/complete")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.meetingId").value(10))
+			.andExpect(jsonPath("$.status").value("COMPLETED"));
+	}
+
+	@Test
 	void returnsValidationErrorWhenRequiredMeetingFieldIsMissing() throws Exception {
 		mockMvc.perform(
 			post("/api/crews/1/meetings")
@@ -181,6 +257,13 @@ class MeetingControllerTest {
 	@Test
 	void returnsUnauthorizedWhenCancelJoinIsSubmittedWithoutAuthentication() throws Exception {
 		mockMvc.perform(delete("/api/crews/1/meetings/10/join"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenMeetingStatusChangeIsSubmittedWithoutAuthentication() throws Exception {
+		mockMvc.perform(post("/api/crews/1/meetings/10/close-recruitment"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

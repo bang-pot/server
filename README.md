@@ -120,6 +120,10 @@ bangpot:
 - `GET /api/crews/{crewId}/meetings/{meetingId}`
 - `POST /api/crews/{crewId}/meetings/{meetingId}/join`
 - `DELETE /api/crews/{crewId}/meetings/{meetingId}/join`
+- `POST /api/crews/{crewId}/meetings/{meetingId}/close-recruitment`
+- `POST /api/crews/{crewId}/meetings/{meetingId}/reopen-recruitment`
+- `POST /api/crews/{crewId}/meetings/{meetingId}/cancel`
+- `POST /api/crews/{crewId}/meetings/{meetingId}/complete`
 - `GET /api/crews/{crewId}/join`
 - `GET /api/crews/{crewId}/invite-candidates`
 - `POST /api/crews/{crewId}/invites`
@@ -144,6 +148,7 @@ bangpot:
 `POST /api/crews/{crewId}/meetings`, `GET /api/crews/{crewId}/meetings`, and `GET /api/crews/{crewId}/meetings/{meetingId}` are joined-member-only meeting endpoints; create defaults new meetings to `status=RECRUITING` and `result=NOT_RECORDED`, while detail now also returns `myParticipationStatus` as `NOT_JOINED` or `JOINED`.
 `POST /api/crews/{crewId}/meetings/{meetingId}/join` is the joined-member-only immediate join endpoint; a successful call persists `JOINED`, blocks duplicate joins, and treats the meeting host as already joined from creation time. Legacy `PENDING` and `APPROVED` rows from the old request-based round are still read as `JOINED` for compatibility.
 `DELETE /api/crews/{crewId}/meetings/{meetingId}/join` is the joined-member-only self-cancel endpoint; a joined member can return to `NOT_JOINED`, while the host is explicitly blocked from canceling participation in their own meeting.
+`POST /api/crews/{crewId}/meetings/{meetingId}/close-recruitment`, `/reopen-recruitment`, and `/complete` are host-only meeting state actions. `POST /cancel` is available to the meeting host or the crew leader. Allowed transitions are `RECRUITING -> RECRUITMENT_CLOSED`, `RECRUITMENT_CLOSED -> RECRUITING`, `RECRUITING|RECRUITMENT_CLOSED -> CANCELED`, and `RECRUITMENT_CLOSED -> COMPLETED`; disallowed transitions fail with `MEETING_INVALID_STATUS_TRANSITION`, and list/detail read the updated `meetings.status` immediately.
 `GET /api/crews/{crewId}/join-requests/pending` is the leader main-page summary endpoint, and `GET /api/crews/{crewId}/join-requests` is the leader management endpoint with message and status included.
 `GET /api/crews/{crewId}/invite-candidates` and `POST /api/crews/{crewId}/invites` are private-crew leader endpoints for direct invite flow; candidate list excludes existing members, already pending invite targets, and the leader themself.
 `GET /api/crew-invites/me` returns the current full user's invite history, and `POST /api/crew-invites/{inviteId}/accept|reject` process only `PENDING` invites while keeping invite rows as status history.
