@@ -14,7 +14,9 @@ public enum CrewErrorCode implements ApiErrorCode {
 	CREW_INVITE_NOT_ALLOWED(HttpStatus.FORBIDDEN, "비공개 크루에서만 직접 초대를 보낼 수 있습니다."),
 	CREW_ALREADY_JOINED(HttpStatus.CONFLICT, "이미 가입한 크루입니다."),
 	CREW_JOIN_REQUEST_ALREADY_PENDING(HttpStatus.CONFLICT, "이미 가입 신청 대기 중입니다."),
-	CREW_INVITE_ALREADY_PENDING(HttpStatus.CONFLICT, "이미 초대 대기 중입니다.");
+	CREW_INVITE_ALREADY_PENDING(HttpStatus.CONFLICT, "이미 초대 대기 중입니다."),
+	CREW_LEADER_LEAVE_NOT_ALLOWED(HttpStatus.CONFLICT, "크루장은 먼저 크루장을 위임한 뒤 탈퇴할 수 있습니다."),
+	CREW_LEAVE_NOT_ALLOWED_FOR_HOSTED_MEETING(HttpStatus.CONFLICT, "미완료 생성 모임이 있으면 크루를 탈퇴할 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String message;

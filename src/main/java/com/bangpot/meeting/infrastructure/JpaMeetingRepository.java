@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,5 +35,10 @@ class JpaMeetingRepository implements MeetingRepository {
 	@Override
 	public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 		return meetingJpaRepository.findByIdAndCrewId(meetingId, crewId);
+	}
+
+	@Override
+	public boolean existsByCrewIdAndHostUserIdAndStatusIn(Long crewId, Long hostUserId, List<MeetingStatus> statuses) {
+		return meetingJpaRepository.existsByCrewIdAndHostUserIdAndStatusIn(crewId, hostUserId, statuses);
 	}
 }

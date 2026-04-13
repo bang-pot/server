@@ -41,4 +41,9 @@ class JpaCrewMemberRepository implements CrewMemberRepository {
 	public List<CrewMember> findAllByCrewId(Long crewId) {
 		return crewMemberJpaRepository.findAllByCrewId(crewId);
 	}
+
+	@Override
+	public void deleteByCrewIdAndUserId(Long crewId, Long userId) {
+		crewMemberJpaRepository.deleteByCrewIdAndUserId(crewId, userId);
+	}
 }

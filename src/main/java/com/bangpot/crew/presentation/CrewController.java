@@ -24,6 +24,7 @@ import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
+import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
@@ -46,6 +47,7 @@ class CrewController {
 	private final GetCrewMembersUseCase getCrewMembersUseCase;
 	private final GetCrewPoliciesUseCase getCrewPoliciesUseCase;
 	private final UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
+	private final LeaveCrewUseCase leaveCrewUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
 	private final GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
@@ -113,6 +115,18 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(
 			updateCrewVisibilityUseCase.handle(
 				CrewDtoMapper.toVisibilityCommand(crewId, requireAuthenticatedUserId(authentication), request)
+			)
+		));
+	}
+
+	@PostMapping("/{crewId}/leave")
+	ResponseEntity<CrewDto.LeaveCrewResponse> leaveCrew(
+		@PathVariable Long crewId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			leaveCrewUseCase.handle(
+				CrewDtoMapper.toLeaveCommand(crewId, requireAuthenticatedUserId(authentication))
 			)
 		));
 	}

@@ -112,6 +112,7 @@ bangpot:
 - `POST /api/crews`
 - `GET /api/crews/public`
 - `GET /api/crews/{crewId}`
+- `POST /api/crews/{crewId}/leave`
 - `PATCH /api/crews/{crewId}/visibility`
 - `GET /api/crews/{crewId}/members`
 - `GET /api/crews/{crewId}/policies`
@@ -143,6 +144,7 @@ bangpot:
 
 `GET /api/crews/public` and `GET /api/crews/{crewId}/join` are public read endpoints and do not require authentication.
 `GET /api/crews/{crewId}` is the internal crew hub endpoint and is available only to joined crew members; it returns the crew summary, current user's role, `hasNotice`, and leader-only `pendingJoinRequestCount`.
+`POST /api/crews/{crewId}/leave` is the joined-member-only crew leave endpoint; it removes the caller's membership when the caller is not the leader and does not host unfinished meetings in that crew. After success, internal crew access is revoked because membership checks continue to read `crew_members`.
 `PATCH /api/crews/{crewId}/visibility` is the leader-only crew visibility toggle endpoint; it updates only the current `visibility` (`PUBLIC` or `PRIVATE`) and immediately affects new explore exposure and direct join request availability while leaving existing pending join requests untouched.
 `GET /api/crews/{crewId}/members` is the joined-member-only crew members list endpoint; it returns leader-first ordering and then remaining members by `joinedAt desc`, while currently unsupported profile fields use safe defaults (`profileImageUrl=null`, `bio=null`, `gender=null`, `escapeCount=0`).
 `GET /api/crews/{crewId}/policies` is the joined-member-only crew policy read endpoint; it returns `{policyId,title,content}` records and responds with `200 OK` plus `[]` when no policy exists.

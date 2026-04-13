@@ -19,6 +19,8 @@ import com.bangpot.auth.error.AuthErrorCode;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.exception.CrewAlreadyJoinedException;
 import com.bangpot.crew.application.exception.CrewInviteAlreadyPendingException;
+import com.bangpot.crew.application.exception.CrewLeaderLeaveNotAllowedException;
+import com.bangpot.crew.application.exception.CrewLeaveNotAllowedForHostedMeetingException;
 import com.bangpot.crew.application.exception.CrewInviteNotFoundException;
 import com.bangpot.crew.application.exception.CrewInviteNotAllowedException;
 import com.bangpot.crew.application.exception.CrewJoinRequestAlreadyPendingException;
@@ -122,6 +124,18 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(CrewInviteNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleCrewInviteNotFound(CrewInviteNotFoundException exception) {
 		return error(CrewErrorCode.CREW_INVITE_NOT_FOUND);
+	}
+
+	@ExceptionHandler(CrewLeaderLeaveNotAllowedException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewLeaderLeaveNotAllowed(CrewLeaderLeaveNotAllowedException exception) {
+		return error(CrewErrorCode.CREW_LEADER_LEAVE_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(CrewLeaveNotAllowedForHostedMeetingException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewLeaveNotAllowedForHostedMeeting(
+		CrewLeaveNotAllowedForHostedMeetingException exception
+	) {
+		return error(CrewErrorCode.CREW_LEAVE_NOT_ALLOWED_FOR_HOSTED_MEETING);
 	}
 
 	@ExceptionHandler(CrewJoinRequestNotFoundException.class)

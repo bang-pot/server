@@ -17,4 +17,6 @@ interface CrewMemberJpaRepository extends JpaRepository<CrewMember, Long> {
 	Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId);
 
 	List<CrewMember> findAllByCrewId(Long crewId);
+
+	void deleteByCrewIdAndUserId(Long crewId, Long userId);
 }
