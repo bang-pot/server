@@ -24,4 +24,9 @@ class JpaMeetingParticipantRepository implements MeetingParticipantRepository {
 	public Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId) {
 		return meetingParticipantJpaRepository.findByMeetingIdAndUserId(meetingId, userId);
 	}
+
+	@Override
+	public void delete(MeetingParticipant participant) {
+		meetingParticipantJpaRepository.delete(participant);
+	}
 }

@@ -30,6 +30,8 @@ import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyJoinedException;
+import com.bangpot.meeting.application.exception.MeetingParticipationNotJoinedException;
+import com.bangpot.meeting.application.exception.MeetingHostCannotCancelParticipationException;
 import com.bangpot.meeting.error.MeetingErrorCode;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
@@ -134,6 +136,20 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 		MeetingParticipationAlreadyJoinedException exception
 	) {
 		return error(MeetingErrorCode.MEETING_PARTICIPATION_ALREADY_JOINED);
+	}
+
+	@ExceptionHandler(MeetingParticipationNotJoinedException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingParticipationNotJoined(
+		MeetingParticipationNotJoinedException exception
+	) {
+		return error(MeetingErrorCode.MEETING_PARTICIPATION_NOT_JOINED);
+	}
+
+	@ExceptionHandler(MeetingHostCannotCancelParticipationException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingHostCannotCancelParticipation(
+		MeetingHostCannotCancelParticipationException exception
+	) {
+		return error(MeetingErrorCode.MEETING_HOST_CANNOT_CANCEL_PARTICIPATION);
 	}
 
 	@ExceptionHandler(AuthUserNotFoundException.class)

@@ -9,4 +9,6 @@ public interface MeetingParticipantRepository {
 	MeetingParticipant save(MeetingParticipant participant);
 
 	Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId);
+
+	void delete(MeetingParticipant participant);
 }
