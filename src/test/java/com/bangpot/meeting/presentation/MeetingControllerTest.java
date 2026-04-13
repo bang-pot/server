@@ -20,10 +20,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
-import com.bangpot.meeting.application.usecase.CreateMeetingParticipationRequestUseCase;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
+import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -44,7 +44,7 @@ class MeetingControllerTest {
 	private GetMeetingDetailUseCase getMeetingDetailUseCase;
 
 	@MockitoBean
-	private CreateMeetingParticipationRequestUseCase createMeetingParticipationRequestUseCase;
+	private JoinMeetingUseCase joinMeetingUseCase;
 
 	@Test
 	void createsMeetingForJoinedCrewMember() throws Exception {
@@ -97,18 +97,18 @@ class MeetingControllerTest {
 	}
 
 	@Test
-	void createsMeetingParticipationRequest() throws Exception {
-		when(createMeetingParticipationRequestUseCase.handle(
-			CreateMeetingParticipationRequestUseCase.Command.of(1L, 10L, 77L)
-		)).thenReturn(CreateMeetingParticipationRequestUseCase.Result.of(10L, "PENDING"));
+	void joinsMeetingImmediately() throws Exception {
+		when(joinMeetingUseCase.handle(
+			JoinMeetingUseCase.Command.of(1L, 10L, 77L)
+		)).thenReturn(JoinMeetingUseCase.Result.of(10L, "JOINED"));
 
 		mockMvc.perform(
-			post("/api/crews/1/meetings/10/participation-requests")
+			post("/api/crews/1/meetings/10/join")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.meetingId").value(10))
-			.andExpect(jsonPath("$.myParticipationStatus").value("PENDING"));
+			.andExpect(jsonPath("$.myParticipationStatus").value("JOINED"));
 	}
 
 	@Test
@@ -152,8 +152,8 @@ class MeetingControllerTest {
 	}
 
 	@Test
-	void returnsUnauthorizedWhenParticipationRequestIsSubmittedWithoutAuthentication() throws Exception {
-		mockMvc.perform(post("/api/crews/1/meetings/10/participation-requests"))
+	void returnsUnauthorizedWhenJoinIsSubmittedWithoutAuthentication() throws Exception {
+		mockMvc.perform(post("/api/crews/1/meetings/10/join"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
@@ -195,7 +195,7 @@ class MeetingControllerTest {
 				"Please arrive on time",
 				"RECRUITING",
 				"NOT_RECORDED",
-				"NOT_REQUESTED"
+				"NOT_JOINED"
 			));
 
 		mockMvc.perform(
@@ -209,7 +209,7 @@ class MeetingControllerTest {
 			.andExpect(jsonPath("$.themeName").value("Time Attack"))
 			.andExpect(jsonPath("$.status").value("RECRUITING"))
 			.andExpect(jsonPath("$.result").value("NOT_RECORDED"))
-			.andExpect(jsonPath("$.myParticipationStatus").value("NOT_REQUESTED"));
+			.andExpect(jsonPath("$.myParticipationStatus").value("NOT_JOINED"));
 	}
 
 	@Test

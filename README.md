@@ -118,7 +118,7 @@ bangpot:
 - `POST /api/crews/{crewId}/meetings`
 - `GET /api/crews/{crewId}/meetings`
 - `GET /api/crews/{crewId}/meetings/{meetingId}`
-- `POST /api/crews/{crewId}/meetings/{meetingId}/participation-requests`
+- `POST /api/crews/{crewId}/meetings/{meetingId}/join`
 - `GET /api/crews/{crewId}/join`
 - `GET /api/crews/{crewId}/invite-candidates`
 - `POST /api/crews/{crewId}/invites`
@@ -140,8 +140,8 @@ bangpot:
 `PATCH /api/crews/{crewId}/visibility` is the leader-only crew visibility toggle endpoint; it updates only the current `visibility` (`PUBLIC` or `PRIVATE`) and immediately affects new explore exposure and direct join request availability while leaving existing pending join requests untouched.
 `GET /api/crews/{crewId}/members` is the joined-member-only crew members list endpoint; it returns leader-first ordering and then remaining members by `joinedAt desc`, while currently unsupported profile fields use safe defaults (`profileImageUrl=null`, `bio=null`, `gender=null`, `escapeCount=0`).
 `GET /api/crews/{crewId}/policies` is the joined-member-only crew policy read endpoint; it returns `{policyId,title,content}` records and responds with `200 OK` plus `[]` when no policy exists.
-`POST /api/crews/{crewId}/meetings`, `GET /api/crews/{crewId}/meetings`, and `GET /api/crews/{crewId}/meetings/{meetingId}` are joined-member-only meeting endpoints; create defaults new meetings to `status=RECRUITING` and `result=NOT_RECORDED`, while detail now also returns `myParticipationStatus` as `NOT_REQUESTED`, `PENDING`, or `APPROVED`.
-`POST /api/crews/{crewId}/meetings/{meetingId}/participation-requests` is the joined-member-only meeting participation request endpoint; a successful request persists `PENDING`, blocks duplicate pending requests, blocks already approved participants, and treats the meeting host as already participating.
+`POST /api/crews/{crewId}/meetings`, `GET /api/crews/{crewId}/meetings`, and `GET /api/crews/{crewId}/meetings/{meetingId}` are joined-member-only meeting endpoints; create defaults new meetings to `status=RECRUITING` and `result=NOT_RECORDED`, while detail now also returns `myParticipationStatus` as `NOT_JOINED` or `JOINED`.
+`POST /api/crews/{crewId}/meetings/{meetingId}/join` is the joined-member-only immediate join endpoint; a successful call persists `JOINED`, blocks duplicate joins, and treats the meeting host as already joined from creation time. Legacy `PENDING` and `APPROVED` rows from the old request-based round are still read as `JOINED` for compatibility.
 `GET /api/crews/{crewId}/join-requests/pending` is the leader main-page summary endpoint, and `GET /api/crews/{crewId}/join-requests` is the leader management endpoint with message and status included.
 `GET /api/crews/{crewId}/invite-candidates` and `POST /api/crews/{crewId}/invites` are private-crew leader endpoints for direct invite flow; candidate list excludes existing members, already pending invite targets, and the leader themself.
 `GET /api/crew-invites/me` returns the current full user's invite history, and `POST /api/crew-invites/{inviteId}/accept|reject` process only `PENDING` invites while keeping invite rows as status history.

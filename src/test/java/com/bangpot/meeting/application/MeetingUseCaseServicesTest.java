@@ -26,20 +26,19 @@ import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
-import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyApprovedException;
-import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyPendingException;
-import com.bangpot.meeting.application.port.MeetingParticipationRequestRepository;
-import com.bangpot.meeting.application.service.CreateMeetingParticipationRequestService;
+import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyJoinedException;
+import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.application.usecase.CreateMeetingParticipationRequestUseCase;
 import com.bangpot.meeting.application.service.CreateMeetingService;
 import com.bangpot.meeting.application.service.GetMeetingDetailService;
 import com.bangpot.meeting.application.service.GetMeetingsService;
+import com.bangpot.meeting.application.service.JoinMeetingService;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
+import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
-import com.bangpot.meeting.domain.MeetingParticipationRequest;
+import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingResult;
 import com.bangpot.meeting.domain.MeetingStatus;
@@ -52,11 +51,11 @@ class MeetingUseCaseServicesTest {
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryMeetingRepository meetingRepository;
-	private InMemoryMeetingParticipationRequestRepository meetingParticipationRequestRepository;
+	private InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	private CreateMeetingUseCase createMeetingUseCase;
 	private GetMeetingsUseCase getMeetingsUseCase;
 	private GetMeetingDetailUseCase getMeetingDetailUseCase;
-	private CreateMeetingParticipationRequestUseCase createMeetingParticipationRequestUseCase;
+	private JoinMeetingUseCase joinMeetingUseCase;
 
 	@BeforeEach
 	void setUp() {
@@ -64,7 +63,7 @@ class MeetingUseCaseServicesTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
-		meetingParticipationRequestRepository = new InMemoryMeetingParticipationRequestRepository();
+		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		createMeetingUseCase = new CreateMeetingService(authUserRepository, crewRepository, crewMemberRepository, meetingRepository);
 		getMeetingsUseCase = new GetMeetingsService(authUserRepository, crewRepository, crewMemberRepository, meetingRepository);
 		getMeetingDetailUseCase = new GetMeetingDetailService(
@@ -72,14 +71,14 @@ class MeetingUseCaseServicesTest {
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingParticipationRequestRepository
+			meetingParticipantRepository
 		);
-		createMeetingParticipationRequestUseCase = new CreateMeetingParticipationRequestService(
+		joinMeetingUseCase = new JoinMeetingService(
 			authUserRepository,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingParticipationRequestRepository
+			meetingParticipantRepository
 		);
 	}
 
@@ -95,13 +94,13 @@ class MeetingUseCaseServicesTest {
 			member.getId(),
 			"2026-04-20",
 			"19:30",
-			"강남점",
-			"타임 어택",
+			"Gangnam",
+			"Time Attack",
 			4,
 			120000,
 			"https://example.com/reserve",
 			"https://open.kakao.com/o/abc123",
-			"지각 없이 모일 분"
+			"Please arrive on time"
 		));
 
 		assertThat(result.meetingId()).isNotNull();
@@ -121,22 +120,22 @@ class MeetingUseCaseServicesTest {
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
 		meetingRepository.save(Meeting.create(
-			crew.getId(), member.getId(), "딥 블루", "홍대점", "2026-04-21", "20:00", 6, null, null, null, null
+			crew.getId(), member.getId(), "Deep Blue", "Hongdae", "2026-04-21", "20:00", 6, null, null, null, null
 		));
 		meetingRepository.save(Meeting.create(
-			crew.getId(), member.getId(), "타임 어택", "강남점", "2026-04-20", "19:30", 4, null, null, null, null
+			crew.getId(), member.getId(), "Time Attack", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
 		));
 
 		List<GetMeetingsUseCase.View> result = getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(crew.getId(), member.getId()));
 
 		assertThat(result).hasSize(2);
-		assertThat(result.get(0).themeName()).isEqualTo("타임 어택");
+		assertThat(result.get(0).themeName()).isEqualTo("Time Attack");
 		assertThat(result.get(0).status()).isEqualTo("RECRUITING");
-		assertThat(result.get(1).themeName()).isEqualTo("딥 블루");
+		assertThat(result.get(1).themeName()).isEqualTo("Deep Blue");
 	}
 
 	@Test
-	void returnsMeetingDetailForJoinedMember() {
+	void returnsMeetingDetailForHostAsJoined() {
 		AuthUser member = fullUser(77L, "member-provider", "member");
 		authUserRepository.save(member);
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
@@ -144,15 +143,15 @@ class MeetingUseCaseServicesTest {
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			member.getId(),
-			"타임 어택",
-			"강남점",
+			"Time Attack",
+			"Gangnam",
 			"2026-04-20",
 			"19:30",
 			4,
 			120000,
 			"https://example.com/reserve",
 			"https://open.kakao.com/o/abc123",
-			"지각 없이 모일 분"
+			"Please arrive on time"
 		));
 
 		GetMeetingDetailUseCase.Result result = getMeetingDetailUseCase.handle(
@@ -163,11 +162,11 @@ class MeetingUseCaseServicesTest {
 		assertThat(result.hostUserId()).isEqualTo(member.getId());
 		assertThat(result.status()).isEqualTo("RECRUITING");
 		assertThat(result.result()).isEqualTo("NOT_RECORDED");
-		assertThat(result.myParticipationStatus()).isEqualTo("APPROVED");
+		assertThat(result.myParticipationStatus()).isEqualTo("JOINED");
 	}
 
 	@Test
-	void returnsNotRequestedWhenCurrentUserHasNotApplied() {
+	void returnsNotJoinedWhenCurrentUserHasNotJoined() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		AuthUser member = fullUser(78L, "member-provider", "member");
 		authUserRepository.save(host);
@@ -178,8 +177,8 @@ class MeetingUseCaseServicesTest {
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			host.getId(),
-			"테스트 테마",
-			"강남점",
+			"Test Theme",
+			"Gangnam",
 			"2026-04-20",
 			"19:30",
 			4,
@@ -193,11 +192,11 @@ class MeetingUseCaseServicesTest {
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), member.getId())
 		);
 
-		assertThat(result.myParticipationStatus()).isEqualTo("NOT_REQUESTED");
+		assertThat(result.myParticipationStatus()).isEqualTo("NOT_JOINED");
 	}
 
 	@Test
-	void returnsPendingWhenCurrentUserHasPendingParticipationRequest() {
+	void returnsJoinedWhenCurrentUserHasJoinedMeeting() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		AuthUser member = fullUser(78L, "member-provider", "member");
 		authUserRepository.save(host);
@@ -208,8 +207,8 @@ class MeetingUseCaseServicesTest {
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			host.getId(),
-			"테스트 테마",
-			"강남점",
+			"Test Theme",
+			"Gangnam",
 			"2026-04-20",
 			"19:30",
 			4,
@@ -218,17 +217,17 @@ class MeetingUseCaseServicesTest {
 			null,
 			null
 		));
-		meetingParticipationRequestRepository.save(MeetingParticipationRequest.createPending(meeting.getId(), member.getId()));
+		meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), member.getId()));
 
 		GetMeetingDetailUseCase.Result result = getMeetingDetailUseCase.handle(
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), member.getId())
 		);
 
-		assertThat(result.myParticipationStatus()).isEqualTo("PENDING");
+		assertThat(result.myParticipationStatus()).isEqualTo("JOINED");
 	}
 
 	@Test
-	void createsPendingParticipationRequestForJoinedCrewMember() {
+	void joinsMeetingImmediatelyForJoinedCrewMember() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		AuthUser member = fullUser(78L, "member-provider", "member");
 		authUserRepository.save(host);
@@ -239,8 +238,8 @@ class MeetingUseCaseServicesTest {
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			host.getId(),
-			"테스트 테마",
-			"강남점",
+			"Test Theme",
+			"Gangnam",
 			"2026-04-20",
 			"19:30",
 			4,
@@ -250,21 +249,21 @@ class MeetingUseCaseServicesTest {
 			null
 		));
 
-		CreateMeetingParticipationRequestUseCase.Result result = createMeetingParticipationRequestUseCase.handle(
-			CreateMeetingParticipationRequestUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
+		JoinMeetingUseCase.Result result = joinMeetingUseCase.handle(
+			JoinMeetingUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
 		);
 
 		assertThat(result.meetingId()).isEqualTo(meeting.getId());
-		assertThat(result.myParticipationStatus()).isEqualTo("PENDING");
-		assertThat(meetingParticipationRequestRepository.findByMeetingIdAndUserId(meeting.getId(), member.getId()))
+		assertThat(result.myParticipationStatus()).isEqualTo("JOINED");
+		assertThat(meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), member.getId()))
 			.isPresent()
 			.get()
-			.extracting(MeetingParticipationRequest::getStatus)
-			.isEqualTo(MeetingParticipationStatus.PENDING);
+			.extracting(MeetingParticipant::getStatus)
+			.isEqualTo(MeetingParticipationStatus.JOINED);
 	}
 
 	@Test
-	void rejectsParticipationRequestWhenAlreadyPending() {
+	void rejectsJoinWhenAlreadyJoined() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		AuthUser member = fullUser(78L, "member-provider", "member");
 		authUserRepository.save(host);
@@ -275,8 +274,8 @@ class MeetingUseCaseServicesTest {
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			host.getId(),
-			"테스트 테마",
-			"강남점",
+			"Test Theme",
+			"Gangnam",
 			"2026-04-20",
 			"19:30",
 			4,
@@ -285,27 +284,24 @@ class MeetingUseCaseServicesTest {
 			null,
 			null
 		));
-		meetingParticipationRequestRepository.save(MeetingParticipationRequest.createPending(meeting.getId(), member.getId()));
+		meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), member.getId()));
 
-		assertThatThrownBy(() -> createMeetingParticipationRequestUseCase.handle(
-			CreateMeetingParticipationRequestUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
-		)).isInstanceOf(MeetingParticipationAlreadyPendingException.class);
+		assertThatThrownBy(() -> joinMeetingUseCase.handle(
+			JoinMeetingUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
+		)).isInstanceOf(MeetingParticipationAlreadyJoinedException.class);
 	}
 
 	@Test
-	void rejectsParticipationRequestWhenAlreadyApproved() {
+	void rejectsJoinForHostWhoIsAlreadyJoined() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
-		AuthUser member = fullUser(78L, "member-provider", "member");
 		authUserRepository.save(host);
-		authUserRepository.save(member);
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
-		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			host.getId(),
-			"테스트 테마",
-			"강남점",
+			"Test Theme",
+			"Gangnam",
 			"2026-04-20",
 			"19:30",
 			4,
@@ -314,18 +310,10 @@ class MeetingUseCaseServicesTest {
 			null,
 			null
 		));
-		meetingParticipationRequestRepository.save(MeetingParticipationRequest.rehydrate(
-			1L,
-			meeting.getId(),
-			member.getId(),
-			MeetingParticipationStatus.APPROVED,
-			NOW,
-			NOW
-		));
 
-		assertThatThrownBy(() -> createMeetingParticipationRequestUseCase.handle(
-			CreateMeetingParticipationRequestUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
-		)).isInstanceOf(MeetingParticipationAlreadyApprovedException.class);
+		assertThatThrownBy(() -> joinMeetingUseCase.handle(
+			JoinMeetingUseCase.Command.of(crew.getId(), meeting.getId(), host.getId())
+		)).isInstanceOf(MeetingParticipationAlreadyJoinedException.class);
 	}
 
 	@Test
@@ -335,7 +323,7 @@ class MeetingUseCaseServicesTest {
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> createMeetingUseCase.handle(CreateMeetingUseCase.Command.of(
-			crew.getId(), outsider.getId(), "2026-04-20", "19:30", "강남점", "타임 어택", 4, null, null, null, null
+			crew.getId(), outsider.getId(), "2026-04-20", "19:30", "Gangnam", "Time Attack", 4, null, null, null, null
 		))).isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -524,23 +512,23 @@ class MeetingUseCaseServicesTest {
 		}
 	}
 
-	private static final class InMemoryMeetingParticipationRequestRepository implements MeetingParticipationRequestRepository {
-		private final Map<Long, MeetingParticipationRequest> requestsById = new HashMap<>();
+	private static final class InMemoryMeetingParticipantRepository implements MeetingParticipantRepository {
+		private final Map<Long, MeetingParticipant> participantsById = new HashMap<>();
 		private long sequence = 1L;
 
 		@Override
-		public MeetingParticipationRequest save(MeetingParticipationRequest request) {
-			if (request.getId() == null) {
-				request.assignId(sequence++);
+		public MeetingParticipant save(MeetingParticipant participant) {
+			if (participant.getId() == null) {
+				participant.assignId(sequence++);
 			}
-			requestsById.put(request.getId(), request);
-			return request;
+			participantsById.put(participant.getId(), participant);
+			return participant;
 		}
 
 		@Override
-		public Optional<MeetingParticipationRequest> findByMeetingIdAndUserId(Long meetingId, Long userId) {
-			return requestsById.values().stream()
-				.filter(request -> meetingId.equals(request.getMeetingId()) && userId.equals(request.getUserId()))
+		public Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId) {
+			return participantsById.values().stream()
+				.filter(participant -> meetingId.equals(participant.getMeetingId()) && userId.equals(participant.getUserId()))
 				.findFirst();
 		}
 	}

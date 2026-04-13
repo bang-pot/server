@@ -65,7 +65,7 @@ final class MeetingDto {
 	) {
 	}
 
-	record MeetingParticipationRequestResponse(
+	record MeetingJoinResponse(
 		Long meetingId,
 		String myParticipationStatus
 	) {
