@@ -14,6 +14,8 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
+import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
+
 @Entity
 @Getter
 @Table(name = "meetings")
@@ -144,6 +146,34 @@ public class Meeting {
 
 	public void assignId(Long id) {
 		this.id = id;
+	}
+
+	public void closeRecruitment() {
+		if (status != MeetingStatus.RECRUITING) {
+			throw new MeetingInvalidStatusTransitionException(id, status.name(), MeetingStatus.RECRUITMENT_CLOSED.name());
+		}
+		status = MeetingStatus.RECRUITMENT_CLOSED;
+	}
+
+	public void reopenRecruitment() {
+		if (status != MeetingStatus.RECRUITMENT_CLOSED) {
+			throw new MeetingInvalidStatusTransitionException(id, status.name(), MeetingStatus.RECRUITING.name());
+		}
+		status = MeetingStatus.RECRUITING;
+	}
+
+	public void cancel() {
+		if (status != MeetingStatus.RECRUITING && status != MeetingStatus.RECRUITMENT_CLOSED) {
+			throw new MeetingInvalidStatusTransitionException(id, status.name(), MeetingStatus.CANCELED.name());
+		}
+		status = MeetingStatus.CANCELED;
+	}
+
+	public void complete() {
+		if (status != MeetingStatus.RECRUITMENT_CLOSED) {
+			throw new MeetingInvalidStatusTransitionException(id, status.name(), MeetingStatus.COMPLETED.name());
+		}
+		status = MeetingStatus.COMPLETED;
 	}
 
 	@PrePersist

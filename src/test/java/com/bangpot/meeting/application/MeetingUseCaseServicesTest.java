@@ -29,18 +29,27 @@ import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyJoinedException;
 import com.bangpot.meeting.application.exception.MeetingParticipationNotJoinedException;
 import com.bangpot.meeting.application.exception.MeetingHostCannotCancelParticipationException;
+import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.service.CancelMeetingService;
 import com.bangpot.meeting.application.service.CancelMeetingParticipationService;
+import com.bangpot.meeting.application.service.CloseMeetingRecruitmentService;
+import com.bangpot.meeting.application.service.CompleteMeetingService;
 import com.bangpot.meeting.application.service.CreateMeetingService;
 import com.bangpot.meeting.application.service.GetMeetingDetailService;
 import com.bangpot.meeting.application.service.GetMeetingsService;
 import com.bangpot.meeting.application.service.JoinMeetingService;
+import com.bangpot.meeting.application.service.ReopenMeetingRecruitmentService;
+import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
+import com.bangpot.meeting.application.usecase.CloseMeetingRecruitmentUseCase;
+import com.bangpot.meeting.application.usecase.CompleteMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
+import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
@@ -61,6 +70,10 @@ class MeetingUseCaseServicesTest {
 	private GetMeetingDetailUseCase getMeetingDetailUseCase;
 	private JoinMeetingUseCase joinMeetingUseCase;
 	private CancelMeetingParticipationUseCase cancelMeetingParticipationUseCase;
+	private CloseMeetingRecruitmentUseCase closeMeetingRecruitmentUseCase;
+	private ReopenMeetingRecruitmentUseCase reopenMeetingRecruitmentUseCase;
+	private CancelMeetingUseCase cancelMeetingUseCase;
+	private CompleteMeetingUseCase completeMeetingUseCase;
 
 	@BeforeEach
 	void setUp() {
@@ -91,6 +104,30 @@ class MeetingUseCaseServicesTest {
 			crewMemberRepository,
 			meetingRepository,
 			meetingParticipantRepository
+		);
+		closeMeetingRecruitmentUseCase = new CloseMeetingRecruitmentService(
+			authUserRepository,
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository
+		);
+		reopenMeetingRecruitmentUseCase = new ReopenMeetingRecruitmentService(
+			authUserRepository,
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository
+		);
+		cancelMeetingUseCase = new CancelMeetingService(
+			authUserRepository,
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository
+		);
+		completeMeetingUseCase = new CompleteMeetingService(
+			authUserRepository,
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository
 		);
 	}
 
@@ -392,6 +429,121 @@ class MeetingUseCaseServicesTest {
 		assertThatThrownBy(() -> cancelMeetingParticipationUseCase.handle(
 			CancelMeetingParticipationUseCase.Command.of(crew.getId(), meeting.getId(), host.getId())
 		)).isInstanceOf(MeetingHostCannotCancelParticipationException.class);
+	}
+
+	@Test
+	void closesRecruitmentForMeetingHost() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+
+		CloseMeetingRecruitmentUseCase.Result result = closeMeetingRecruitmentUseCase.handle(
+			CloseMeetingRecruitmentUseCase.Command.of(crew.getId(), meeting.getId(), host.getId())
+		);
+
+		assertThat(result.meetingId()).isEqualTo(meeting.getId());
+		assertThat(result.status()).isEqualTo("RECRUITMENT_CLOSED");
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.RECRUITMENT_CLOSED);
+	}
+
+	@Test
+	void reopensRecruitmentForMeetingHost() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+		meeting.closeRecruitment();
+
+		ReopenMeetingRecruitmentUseCase.Result result = reopenMeetingRecruitmentUseCase.handle(
+			ReopenMeetingRecruitmentUseCase.Command.of(crew.getId(), meeting.getId(), host.getId())
+		);
+
+		assertThat(result.status()).isEqualTo("RECRUITING");
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.RECRUITING);
+	}
+
+	@Test
+	void cancelsMeetingForCrewLeader() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		AuthUser leader = fullUser(78L, "leader-provider", "leader");
+		authUserRepository.save(host);
+		authUserRepository.save(leader);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), host.getId()));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+
+		CancelMeetingUseCase.Result result = cancelMeetingUseCase.handle(
+			CancelMeetingUseCase.Command.of(crew.getId(), meeting.getId(), leader.getId())
+		);
+
+		assertThat(result.status()).isEqualTo("CANCELED");
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.CANCELED);
+	}
+
+	@Test
+	void completesMeetingForHostWhenRecruitmentIsClosed() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+		meeting.closeRecruitment();
+
+		CompleteMeetingUseCase.Result result = completeMeetingUseCase.handle(
+			CompleteMeetingUseCase.Command.of(crew.getId(), meeting.getId(), host.getId())
+		);
+
+		assertThat(result.status()).isEqualTo("COMPLETED");
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.COMPLETED);
+	}
+
+	@Test
+	void rejectsMeetingCompletionFromRecruitingState() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+
+		assertThatThrownBy(() -> completeMeetingUseCase.handle(
+			CompleteMeetingUseCase.Command.of(crew.getId(), meeting.getId(), host.getId())
+		)).isInstanceOf(MeetingInvalidStatusTransitionException.class);
+	}
+
+	@Test
+	void rejectsRecruitmentCloseForNonHostMember() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		AuthUser member = fullUser(78L, "member-provider", "member");
+		authUserRepository.save(host);
+		authUserRepository.save(member);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+
+		assertThatThrownBy(() -> closeMeetingRecruitmentUseCase.handle(
+			CloseMeetingRecruitmentUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
+		)).isInstanceOf(AccessDeniedException.class);
 	}
 
 	@Test

@@ -9,7 +9,8 @@ public enum MeetingErrorCode implements ApiErrorCode {
 	MEETING_NOT_FOUND(HttpStatus.NOT_FOUND, "모임을 찾을 수 없습니다."),
 	MEETING_PARTICIPATION_ALREADY_JOINED(HttpStatus.CONFLICT, "이미 참여 중인 모임입니다."),
 	MEETING_PARTICIPATION_NOT_JOINED(HttpStatus.CONFLICT, "아직 참여하지 않은 모임입니다."),
-	MEETING_HOST_CANNOT_CANCEL_PARTICIPATION(HttpStatus.CONFLICT, "모임장은 자신의 모임에서 참여취소할 수 없습니다.");
+	MEETING_HOST_CANNOT_CANCEL_PARTICIPATION(HttpStatus.CONFLICT, "모임장은 자신의 모임에서 참여취소할 수 없습니다."),
+	MEETING_INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "허용되지 않은 모임 상태 전이입니다.");
 
 	private final HttpStatus status;
 	private final String message;

@@ -16,9 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
+import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
+import com.bangpot.meeting.application.usecase.CloseMeetingRecruitmentUseCase;
+import com.bangpot.meeting.application.usecase.CompleteMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
+import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +38,10 @@ class MeetingController {
 	private final GetMeetingDetailUseCase getMeetingDetailUseCase;
 	private final JoinMeetingUseCase joinMeetingUseCase;
 	private final CancelMeetingParticipationUseCase cancelMeetingParticipationUseCase;
+	private final CloseMeetingRecruitmentUseCase closeMeetingRecruitmentUseCase;
+	private final ReopenMeetingRecruitmentUseCase reopenMeetingRecruitmentUseCase;
+	private final CancelMeetingUseCase cancelMeetingUseCase;
+	private final CompleteMeetingUseCase completeMeetingUseCase;
 
 	@PostMapping
 	ResponseEntity<MeetingDto.CreateMeetingResponse> create(
@@ -95,6 +103,58 @@ class MeetingController {
 		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
 			cancelMeetingParticipationUseCase.handle(
 				MeetingDtoMapper.toCancelCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PostMapping("/{meetingId}/close-recruitment")
+	ResponseEntity<MeetingDto.MeetingStatusChangeResponse> closeRecruitment(
+		@PathVariable Long crewId,
+		@PathVariable Long meetingId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
+			closeMeetingRecruitmentUseCase.handle(
+				MeetingDtoMapper.toCloseRecruitmentCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PostMapping("/{meetingId}/reopen-recruitment")
+	ResponseEntity<MeetingDto.MeetingStatusChangeResponse> reopenRecruitment(
+		@PathVariable Long crewId,
+		@PathVariable Long meetingId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
+			reopenMeetingRecruitmentUseCase.handle(
+				MeetingDtoMapper.toReopenRecruitmentCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PostMapping("/{meetingId}/cancel")
+	ResponseEntity<MeetingDto.MeetingStatusChangeResponse> cancelMeeting(
+		@PathVariable Long crewId,
+		@PathVariable Long meetingId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
+			cancelMeetingUseCase.handle(
+				MeetingDtoMapper.toCancelMeetingCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PostMapping("/{meetingId}/complete")
+	ResponseEntity<MeetingDto.MeetingStatusChangeResponse> completeMeeting(
+		@PathVariable Long crewId,
+		@PathVariable Long meetingId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
+			completeMeetingUseCase.handle(
+				MeetingDtoMapper.toCompleteMeetingCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
 			)
 		));
 	}

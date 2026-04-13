@@ -70,4 +70,10 @@ final class MeetingDto {
 		String myParticipationStatus
 	) {
 	}
+
+	record MeetingStatusChangeResponse(
+		Long meetingId,
+		String status
+	) {
+	}
 }
