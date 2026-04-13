@@ -69,6 +69,9 @@ final class CrewDto {
 	record UpdateCrewVisibilityResponse(Long crewId, String visibility) {
 	}
 
+	record LeaveCrewResponse(Long crewId) {
+	}
+
 	record CrewJoinViewResponse(
 		Long crewId,
 		String name,

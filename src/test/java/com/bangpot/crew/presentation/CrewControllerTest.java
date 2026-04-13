@@ -33,6 +33,7 @@ import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
+import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
@@ -89,6 +90,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
+
+	@MockitoBean
+	private LeaveCrewUseCase leaveCrewUseCase;
 
 	@Test
 	void createsCrewForAuthenticatedFullUser() throws Exception {
@@ -604,6 +608,26 @@ class CrewControllerTest {
 					}
 					""")
 		)
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void leavesCrewForAuthenticatedMember() throws Exception {
+		when(leaveCrewUseCase.handle(LeaveCrewUseCase.Command.of(1L, 77L)))
+			.thenReturn(LeaveCrewUseCase.Result.of(1L));
+
+		mockMvc.perform(
+			post("/api/crews/1/leave")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenLeaveCrewIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(post("/api/crews/1/leave"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

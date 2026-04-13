@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingStatus;
 
 public interface MeetingRepository {
 
@@ -14,4 +15,12 @@ public interface MeetingRepository {
 	Optional<Meeting> findById(Long meetingId);
 
 	Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId);
+
+	default boolean existsByCrewIdAndHostUserIdAndStatusIn(
+		Long crewId,
+		Long hostUserId,
+		List<MeetingStatus> statuses
+	) {
+		return false;
+	}
 }
