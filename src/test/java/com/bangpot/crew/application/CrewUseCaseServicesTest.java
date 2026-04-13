@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
@@ -28,12 +27,16 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CompletedUserAccessService;
+import com.bangpot.user.domain.User;
 
 class CrewUseCaseServicesTest {
 
 	private static final Instant NOW = Instant.parse("2026-04-08T00:00:00Z");
 
 	private InMemoryAuthUserRepository authUserRepository;
+	private InMemoryUserRepository userRepository;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private CreateCrewUseCase createCrewUseCase;
@@ -41,9 +44,14 @@ class CrewUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
+		userRepository = new InMemoryUserRepository(authUserRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
-		createCrewUseCase = new CreateCrewService(authUserRepository, crewRepository, crewMemberRepository);
+		createCrewUseCase = new CreateCrewService(
+			new CompletedUserAccessService(userRepository),
+			crewRepository,
+			crewMemberRepository
+		);
 	}
 
 	@Test
@@ -94,7 +102,7 @@ class CrewUseCaseServicesTest {
 		assertThatThrownBy(() -> createCrewUseCase.handle(
 			CreateCrewUseCase.Command.of(99L, "방팟 야식 크루", null, "PUBLIC", null)
 		))
-			.isInstanceOf(AuthUserNotFoundException.class);
+			.isInstanceOf(AccessDeniedException.class);
 	}
 
 	private AuthUser fullUser(Long id, String providerId) {
@@ -141,7 +149,6 @@ class CrewUseCaseServicesTest {
 				.findFirst();
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}
@@ -182,6 +189,39 @@ class CrewUseCaseServicesTest {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
 				.toList();
+		}
+	}
+
+	private static final class InMemoryUserRepository implements UserRepository {
+
+		private final InMemoryAuthUserRepository authUserRepository;
+
+		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
+			this.authUserRepository = authUserRepository;
+		}
+
+		@Override
+		public Optional<User> findById(Long userId) {
+			return authUserRepository.findById(userId).map(this::toDomain);
+		}
+
+		@Override
+		public boolean existsByNickname(String nickname) {
+			return authUserRepository.existsByNickname(nickname);
+		}
+
+		@Override
+		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
+			return List.of();
+		}
+
+		@Override
+		public User save(User user) {
+			throw new UnsupportedOperationException();
+		}
+
+		private User toDomain(AuthUser authUser) {
+			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
 		}
 	}
 

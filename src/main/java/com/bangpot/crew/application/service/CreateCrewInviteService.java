@@ -4,9 +4,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.crew.application.exception.CrewAlreadyJoinedException;
 import com.bangpot.crew.application.exception.CrewInviteAlreadyPendingException;
 import com.bangpot.crew.application.exception.CrewInviteNotAllowedException;
@@ -20,6 +17,7 @@ import com.bangpot.crew.domain.CrewInvite;
 import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
@@ -28,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateCrewInviteService implements CreateCrewInviteUseCase {
 
-	private final AuthUserRepository authUserRepository;
+	private final CompletedUserAccessService completedUserAccessService;
 	private final UserRepository userRepository;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
@@ -39,15 +37,11 @@ public class CreateCrewInviteService implements CreateCrewInviteUseCase {
 	public Result handle(Command command) {
 		Crew crew = crewRepository.findById(command.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
-		AuthUser inviter = authUserRepository.findById(command.inviterUserId())
-			.orElseThrow(() -> new AuthUserNotFoundException(command.inviterUserId()));
+		completedUserAccessService.validateCompletedUser(command.inviterUserId(), "크루 초대를 보낼 권한이 없습니다.");
 		User target = userRepository.findById(command.targetUserId())
 			.orElseThrow(() -> new UserNotFoundException(command.targetUserId()));
 
-		if (inviter.requiresCompletion()) {
-			throw new AccessDeniedException("크루 초대를 보낼 권한이 없습니다.");
-		}
-		if (!crewMemberRepository.existsLeaderByCrewIdAndUserId(crew.getId(), inviter.getId())) {
+		if (!crewMemberRepository.existsLeaderByCrewIdAndUserId(crew.getId(), command.inviterUserId())) {
 			throw new AccessDeniedException("크루 초대를 보낼 권한이 없습니다.");
 		}
 		if (!crew.allowsDirectInvite()) {
@@ -60,7 +54,7 @@ public class CreateCrewInviteService implements CreateCrewInviteUseCase {
 			throw new CrewInviteAlreadyPendingException(crew.getId(), target.getId());
 		}
 
-		crewInviteRepository.save(CrewInvite.createPending(crew.getId(), inviter.getId(), target.getId()));
+		crewInviteRepository.save(CrewInvite.createPending(crew.getId(), command.inviterUserId(), target.getId()));
 		return Result.of(crew.getId(), target.getId(), CrewInviteStatus.PENDING.name());
 	}
 }

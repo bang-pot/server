@@ -5,9 +5,6 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.auth.domain.AuthUserStatus;
-import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.domain.User;
 
@@ -17,32 +14,29 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class JpaUserRepository implements UserRepository {
 
-	private final UserAuthUserJpaRepository userAuthUserJpaRepository;
+	private final UserJpaRepository userJpaRepository;
 
 	@Override
 	public Optional<User> findById(Long userId) {
-		return userAuthUserJpaRepository.findById(userId).map(this::toDomain);
+		return userJpaRepository.findById(userId).map(this::toDomain);
 	}
 
 	@Override
 	public boolean existsByNickname(String nickname) {
-		return userAuthUserJpaRepository.existsByNickname(nickname);
+		return userJpaRepository.existsByNickname(nickname);
 	}
 
 	@Override
 	public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 		String normalizedKeyword = normalizeKeyword(nickname);
 		if (normalizedKeyword == null) {
-			return userAuthUserJpaRepository.findAllByStatusAndNicknameIsNotNullOrderByIdAsc(AuthUserStatus.FULL)
+			return userJpaRepository.findAllByOrderByIdAsc()
 				.stream()
 				.map(this::toDomain)
 				.toList();
 		}
-		return userAuthUserJpaRepository
-			.findAllByStatusAndNicknameIsNotNullAndNicknameContainingIgnoreCaseOrderByIdAsc(
-				AuthUserStatus.FULL,
-				normalizedKeyword
-			)
+		return userJpaRepository
+			.findAllByNicknameContainingIgnoreCaseOrderByIdAsc(normalizedKeyword)
 			.stream()
 			.map(this::toDomain)
 			.toList();
@@ -50,18 +44,14 @@ public class JpaUserRepository implements UserRepository {
 
 	@Override
 	public User save(User user) {
-		AuthUser authUser = userAuthUserJpaRepository.findById(user.getId())
-			.orElseThrow(() -> new UserNotFoundException(user.getId()));
-		authUser.updateNickname(user.getNickname());
-		return toDomain(userAuthUserJpaRepository.save(authUser));
+		UserJpaEntity userJpaEntity = userJpaRepository.findById(user.getId())
+			.orElseGet(() -> UserJpaEntity.create(user.getId(), user.getNickname()));
+		userJpaEntity.updateNickname(user.getNickname());
+		return toDomain(userJpaRepository.save(userJpaEntity));
 	}
 
-	private User toDomain(AuthUser authUser) {
-		return User.rehydrate(
-			authUser.getId(),
-			authUser.getNickname(),
-			!authUser.requiresCompletion()
-		);
+	private User toDomain(UserJpaEntity userJpaEntity) {
+		return User.rehydrate(userJpaEntity.getId(), userJpaEntity.getNickname(), true);
 	}
 
 	private String normalizeKeyword(String keyword) {

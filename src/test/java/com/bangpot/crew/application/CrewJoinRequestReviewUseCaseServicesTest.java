@@ -272,7 +272,6 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 				.findFirst();
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}
@@ -287,19 +286,33 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 	private static final class InMemoryUserRepository implements UserRepository {
 
 		private final InMemoryAuthUserRepository authUserRepository;
+		private final Map<Long, User> usersById = new HashMap<>();
 
 		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
 			this.authUserRepository = authUserRepository;
+			authUserRepository.usersById.values().stream()
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
+				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), true))
+				.forEach(user -> usersById.put(user.getId(), user));
 		}
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId).map(this::toDomain);
+			User user = usersById.get(userId);
+			if (user != null) {
+				return Optional.of(user);
+			}
+			return authUserRepository.findById(userId)
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
+				.map(authUser -> {
+					User loaded = User.rehydrate(authUser.getId(), authUser.getNickname(), true);
+					usersById.put(loaded.getId(), loaded);
+					return loaded;
+				});
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
-			return authUserRepository.existsByNickname(nickname);
+			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}
 
 		@Override
@@ -308,25 +321,21 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 			if (normalizedKeyword != null && normalizedKeyword.isEmpty()) {
 				normalizedKeyword = null;
 			}
+			authUserRepository.usersById.values().stream()
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
+				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), true))
+				.forEach(user -> usersById.putIfAbsent(user.getId(), user));
 			final String keyword = normalizedKeyword;
-			return authUserRepository.usersById.values().stream()
-				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
+			return usersById.values().stream()
 				.filter(user -> keyword == null || user.getNickname().toLowerCase().contains(keyword))
 				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
-				.map(this::toDomain)
 				.toList();
 		}
 
 		@Override
 		public User save(User user) {
-			AuthUser authUser = authUserRepository.findById(user.getId()).orElseThrow();
-			authUser.updateNickname(user.getNickname());
-			authUserRepository.save(authUser);
-			return toDomain(authUser);
-		}
-
-		private User toDomain(AuthUser authUser) {
-			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
+			usersById.put(user.getId(), user);
+			return user;
 		}
 	}
 

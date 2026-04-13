@@ -10,6 +10,4 @@ import com.bangpot.auth.domain.AuthUser;
 interface AuthUserJpaRepository extends JpaRepository<AuthUser, Long> {
 
 	Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId);
-
-	boolean existsByNickname(String nickname);
 }

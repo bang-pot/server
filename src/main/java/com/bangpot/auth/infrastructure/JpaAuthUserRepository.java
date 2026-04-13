@@ -26,11 +26,6 @@ public class JpaAuthUserRepository implements AuthUserRepository {
 	}
 
 	@Override
-	public boolean existsByNickname(String nickname) {
-		return authUserJpaRepository.existsByNickname(nickname);
-	}
-
-	@Override
 	public AuthUser save(AuthUser user) {
 		return authUserJpaRepository.save(user);
 	}

@@ -11,7 +11,5 @@ public interface AuthUserRepository {
 
 	Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId);
 
-	boolean existsByNickname(String nickname);
-
 	AuthUser save(AuthUser user);
 }
