@@ -26,6 +26,11 @@ class JpaMeetingParticipantRepository implements MeetingParticipantRepository {
 	}
 
 	@Override
+	public long countByMeetingId(Long meetingId) {
+		return meetingParticipantJpaRepository.countByMeetingId(meetingId);
+	}
+
+	@Override
 	public void delete(MeetingParticipant participant) {
 		meetingParticipantJpaRepository.delete(participant);
 	}

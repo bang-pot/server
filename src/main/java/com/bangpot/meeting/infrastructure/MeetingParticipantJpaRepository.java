@@ -9,4 +9,6 @@ import com.bangpot.meeting.domain.MeetingParticipant;
 interface MeetingParticipantJpaRepository extends JpaRepository<MeetingParticipant, Long> {
 
 	Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId);
+
+	long countByMeetingId(Long meetingId);
 }

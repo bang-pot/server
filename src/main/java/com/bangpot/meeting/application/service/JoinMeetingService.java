@@ -30,6 +30,7 @@ public class JoinMeetingService implements JoinMeetingUseCase {
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
 	private final MeetingParticipantRepository meetingParticipantRepository;
+	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
 
 	@Override
 	@Transactional
@@ -47,6 +48,10 @@ public class JoinMeetingService implements JoinMeetingUseCase {
 
 		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
+		meetingAutomaticTransitionService.apply(meeting);
+		if (meeting.getStatus() != com.bangpot.meeting.domain.MeetingStatus.RECRUITING) {
+			throw new AccessDeniedException("모집 중인 모임만 참여할 수 있습니다.");
+		}
 
 		if (meeting.getHostUserId().equals(command.userId())) {
 			throw new MeetingParticipationAlreadyJoinedException(meeting.getId(), command.userId());
@@ -57,6 +62,7 @@ public class JoinMeetingService implements JoinMeetingUseCase {
 		}
 
 		meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), command.userId()));
+		meetingAutomaticTransitionService.apply(meeting);
 		return Result.of(meeting.getId(), MeetingParticipationStatus.JOINED.name());
 	}
 }

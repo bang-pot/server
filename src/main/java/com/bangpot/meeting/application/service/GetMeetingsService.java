@@ -25,9 +25,10 @@ public class GetMeetingsService implements GetMeetingsUseCase {
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
+	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
 
 	@Override
-	@Transactional(readOnly = true)
+	@Transactional
 	public List<View> handle(Query query) {
 		crewRepository.findById(query.crewId()).orElseThrow(() -> new CrewNotFoundException(query.crewId()));
 
@@ -41,6 +42,7 @@ public class GetMeetingsService implements GetMeetingsUseCase {
 		}
 
 		return meetingRepository.findAllByCrewId(query.crewId()).stream()
+			.map(meetingAutomaticTransitionService::apply)
 			.map(meeting -> View.of(
 				meeting.getId(),
 				meeting.getThemeName(),

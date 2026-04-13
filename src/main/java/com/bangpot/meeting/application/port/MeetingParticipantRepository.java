@@ -10,5 +10,7 @@ public interface MeetingParticipantRepository {
 
 	Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId);
 
+	long countByMeetingId(Long meetingId);
+
 	void delete(MeetingParticipant participant);
 }
