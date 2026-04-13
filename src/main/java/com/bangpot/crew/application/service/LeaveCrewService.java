@@ -56,7 +56,8 @@ public class LeaveCrewService implements LeaveCrewUseCase {
 			throw new CrewLeaveNotAllowedForHostedMeetingException(crew.getId(), command.userId());
 		}
 
-		crewMemberRepository.deleteByCrewIdAndUserId(crew.getId(), command.userId());
+		crewMember.leave();
+		crewMemberRepository.save(crewMember);
 		return Result.of(crew.getId());
 	}
 }

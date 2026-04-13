@@ -36,26 +36,31 @@ public class CrewMember {
 	@Column(name = "role", nullable = false)
 	private CrewRole role;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false)
+	private CrewMemberStatus status;
+
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
 	protected CrewMember() {
 	}
 
-	private CrewMember(Long id, Long crewId, Long userId, CrewRole role, Instant createdAt) {
+	private CrewMember(Long id, Long crewId, Long userId, CrewRole role, CrewMemberStatus status, Instant createdAt) {
 		this.id = id;
 		this.crewId = crewId;
 		this.userId = userId;
 		this.role = role;
+		this.status = status;
 		this.createdAt = createdAt;
 	}
 
 	public static CrewMember createLeader(Long crewId, Long userId) {
-		return new CrewMember(null, crewId, userId, CrewRole.LEADER, null);
+		return new CrewMember(null, crewId, userId, CrewRole.LEADER, CrewMemberStatus.ACTIVE, null);
 	}
 
 	public static CrewMember createMember(Long crewId, Long userId) {
-		return new CrewMember(null, crewId, userId, CrewRole.MEMBER, null);
+		return new CrewMember(null, crewId, userId, CrewRole.MEMBER, CrewMemberStatus.ACTIVE, null);
 	}
 
 	public void assignId(Long id) {
@@ -64,10 +69,30 @@ public class CrewMember {
 
 	public void transferLeadershipToLeader() {
 		this.role = CrewRole.LEADER;
+		this.status = CrewMemberStatus.ACTIVE;
 	}
 
 	public void transferLeadershipToMember() {
 		this.role = CrewRole.MEMBER;
+		this.status = CrewMemberStatus.ACTIVE;
+	}
+
+	public void leave() {
+		this.status = CrewMemberStatus.LEFT;
+	}
+
+	public void remove() {
+		this.status = CrewMemberStatus.REMOVED;
+	}
+
+	public void reactivateAsMember() {
+		this.role = CrewRole.MEMBER;
+		this.status = CrewMemberStatus.ACTIVE;
+		this.createdAt = Instant.now();
+	}
+
+	public boolean isActive() {
+		return status == CrewMemberStatus.ACTIVE;
 	}
 
 	@PrePersist

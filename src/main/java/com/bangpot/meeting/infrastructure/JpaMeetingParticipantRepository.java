@@ -1,11 +1,13 @@
 package com.bangpot.meeting.infrastructure;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.MeetingParticipationStatus;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,7 +29,14 @@ class JpaMeetingParticipantRepository implements MeetingParticipantRepository {
 
 	@Override
 	public long countByMeetingId(Long meetingId) {
-		return meetingParticipantJpaRepository.countByMeetingId(meetingId);
+		return meetingParticipantJpaRepository.countByMeetingIdAndStatusIn(
+			meetingId,
+			List.of(
+				MeetingParticipationStatus.JOINED,
+				MeetingParticipationStatus.PENDING,
+				MeetingParticipationStatus.APPROVED
+			)
+		);
 	}
 
 	@Override

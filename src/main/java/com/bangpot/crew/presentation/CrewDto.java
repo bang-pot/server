@@ -72,6 +72,9 @@ final class CrewDto {
 	record LeaveCrewResponse(Long crewId) {
 	}
 
+	record RemoveCrewMemberResponse(Long crewId, Long removedUserId) {
+	}
+
 	record TransferCrewLeadershipRequest(
 		@NotNull(message = "위임 대상 크루원을 선택해야 합니다.") Long targetUserId
 	) {

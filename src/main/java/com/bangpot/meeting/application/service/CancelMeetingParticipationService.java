@@ -47,8 +47,12 @@ public class CancelMeetingParticipationService implements CancelMeetingParticipa
 
 		var participant = meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), command.userId())
 			.orElseThrow(() -> new MeetingParticipationNotJoinedException(meeting.getId(), command.userId()));
+		if (!participant.getStatus().representsJoined()) {
+			throw new MeetingParticipationNotJoinedException(meeting.getId(), command.userId());
+		}
 
-		meetingParticipantRepository.delete(participant);
+		participant.leave();
+		meetingParticipantRepository.save(participant);
 		return Result.of(meeting.getId(), MeetingParticipationStatus.NOT_JOINED.name());
 	}
 }

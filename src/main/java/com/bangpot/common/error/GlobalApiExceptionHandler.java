@@ -26,6 +26,7 @@ import com.bangpot.crew.application.exception.CrewInviteNotAllowedException;
 import com.bangpot.crew.application.exception.CrewJoinRequestAlreadyPendingException;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotAllowedException;
+import com.bangpot.crew.application.exception.CrewRemoveMemberTargetNotAllowedException;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.exception.CrewTransferLeadershipTargetNotAllowedException;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
@@ -144,6 +145,13 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 		CrewTransferLeadershipTargetNotAllowedException exception
 	) {
 		return error(CrewErrorCode.CREW_TRANSFER_LEADERSHIP_TARGET_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(CrewRemoveMemberTargetNotAllowedException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewRemoveMemberTargetNotAllowed(
+		CrewRemoveMemberTargetNotAllowedException exception
+	) {
+		return error(CrewErrorCode.CREW_MEMBER_REMOVE_TARGET_NOT_ALLOWED);
 	}
 
 	@ExceptionHandler(CrewJoinRequestNotFoundException.class)
