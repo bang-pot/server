@@ -1,12 +1,8 @@
 package com.bangpot.crew.application.service;
 
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.stereotype.Service;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.crew.application.exception.CrewInviteNotFoundException;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.port.CrewInviteRepository;
@@ -16,6 +12,7 @@ import com.bangpot.crew.application.usecase.AcceptCrewInviteUseCase;
 import com.bangpot.crew.domain.CrewInvite;
 import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.crew.domain.CrewMember;
+import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AcceptCrewInviteService implements AcceptCrewInviteUseCase {
 
-	private final AuthUserRepository authUserRepository;
+	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final CrewInviteRepository crewInviteRepository;
@@ -31,11 +28,7 @@ public class AcceptCrewInviteService implements AcceptCrewInviteUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		AuthUser user = authUserRepository.findById(command.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(command.userId()));
-		if (user.requiresCompletion()) {
-			throw new AccessDeniedException("초대를 수락할 권한이 없습니다.");
-		}
+		completedUserAccessService.validateCompletedUser(command.userId(), "초대를 수락할 권한이 없습니다.");
 
 		CrewInvite invite = crewInviteRepository.findPendingByIdAndTargetUserId(command.inviteId(), command.userId())
 			.orElseThrow(() -> new CrewInviteNotFoundException(command.inviteId()));

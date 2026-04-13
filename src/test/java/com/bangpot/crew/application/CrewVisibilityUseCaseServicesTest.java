@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
@@ -37,12 +36,16 @@ import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CompletedUserAccessService;
+import com.bangpot.user.domain.User;
 
 class CrewVisibilityUseCaseServicesTest {
 
 	private static final Instant NOW = Instant.parse("2026-04-12T00:00:00Z");
 
 	private InMemoryAuthUserRepository authUserRepository;
+	private InMemoryUserRepository userRepository;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
@@ -53,17 +56,18 @@ class CrewVisibilityUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
+		userRepository = new InMemoryUserRepository(authUserRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
 		updateCrewVisibilityUseCase = new UpdateCrewVisibilityService(
-			authUserRepository,
+			new CompletedUserAccessService(userRepository),
 			crewRepository,
 			crewMemberRepository
 		);
 		getPublicCrewCardsUseCase = new GetPublicCrewCardsService(crewRepository);
 		requestCrewJoinUseCase = new RequestCrewJoinService(
-			authUserRepository,
+			new CompletedUserAccessService(userRepository),
 			crewRepository,
 			crewMemberRepository,
 			crewJoinRequestRepository
@@ -159,7 +163,7 @@ class CrewVisibilityUseCaseServicesTest {
 
 		assertThatThrownBy(() -> updateCrewVisibilityUseCase.handle(
 			UpdateCrewVisibilityUseCase.Command.of(crew.getId(), 999L, "PRIVATE")
-		)).isInstanceOf(AuthUserNotFoundException.class);
+		)).isInstanceOf(AccessDeniedException.class);
 	}
 
 	private AuthUser fullUser(Long id, String providerId, String nickname) {
@@ -206,7 +210,6 @@ class CrewVisibilityUseCaseServicesTest {
 				.findFirst();
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}
@@ -215,6 +218,39 @@ class CrewVisibilityUseCaseServicesTest {
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
 			return user;
+		}
+	}
+
+	private static final class InMemoryUserRepository implements UserRepository {
+
+		private final InMemoryAuthUserRepository authUserRepository;
+
+		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
+			this.authUserRepository = authUserRepository;
+		}
+
+		@Override
+		public Optional<User> findById(Long userId) {
+			return authUserRepository.findById(userId).map(this::toDomain);
+		}
+
+		@Override
+		public boolean existsByNickname(String nickname) {
+			return authUserRepository.existsByNickname(nickname);
+		}
+
+		@Override
+		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
+			return List.of();
+		}
+
+		@Override
+		public User save(User user) {
+			throw new UnsupportedOperationException();
+		}
+
+		private User toDomain(AuthUser authUser) {
+			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
 		}
 	}
 

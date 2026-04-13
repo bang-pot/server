@@ -34,6 +34,7 @@ import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
 
 class CrewInviteConsumerUseCaseServicesTest {
@@ -42,6 +43,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	private InMemoryAuthUserRepository authUserRepository;
 	private InMemoryUserRepository userRepository;
+	private CompletedUserAccessService completedUserAccessService;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryCrewInviteRepository crewInviteRepository;
@@ -53,23 +55,24 @@ class CrewInviteConsumerUseCaseServicesTest {
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository(authUserRepository);
+		completedUserAccessService = new CompletedUserAccessService(userRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewInviteRepository = new InMemoryCrewInviteRepository();
 		getMyCrewInvitesUseCase = new GetMyCrewInvitesService(
-			authUserRepository,
+			completedUserAccessService,
 			userRepository,
 			crewRepository,
 			crewInviteRepository
 		);
 		acceptCrewInviteUseCase = new AcceptCrewInviteService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			crewInviteRepository
 		);
 		rejectCrewInviteUseCase = new RejectCrewInviteService(
-			authUserRepository,
+			completedUserAccessService,
 			crewInviteRepository
 		);
 	}
@@ -218,7 +221,6 @@ class CrewInviteConsumerUseCaseServicesTest {
 				.findFirst();
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}

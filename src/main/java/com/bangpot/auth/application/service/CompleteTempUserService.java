@@ -20,6 +20,7 @@ import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.domain.User;
 
 @Service
 @Transactional
@@ -54,7 +55,6 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 		}
 
 		user.completeProfile(
-			normalizedNickname,
 			RequiredTermsAgreement.of(
 				authRequiredTermsProperties.getRequiredTermsVersion(),
 				Instant.now(clock)
@@ -62,6 +62,7 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 		);
 		String nextPath = user.consumePendingRedirectPathOrDefault(DEFAULT_NEXT_PATH);
 		authUserRepository.save(user);
+		userRepository.save(User.rehydrate(user.getId(), normalizedNickname, true));
 		authAuditLogger.authStateChanged(
 			user.getId(),
 			AuthUserStatus.TEMP,

@@ -1,12 +1,8 @@
 package com.bangpot.crew.application.service;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.crew.application.exception.CrewAlreadyJoinedException;
 import com.bangpot.crew.application.exception.CrewJoinRequestAlreadyPendingException;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotAllowedException;
@@ -18,6 +14,7 @@ import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequest;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
+import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RequestCrewJoinService implements RequestCrewJoinUseCase {
 
-	private final AuthUserRepository authUserRepository;
+	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final CrewJoinRequestRepository crewJoinRequestRepository;
@@ -35,24 +32,20 @@ public class RequestCrewJoinService implements RequestCrewJoinUseCase {
 	public Result handle(Command command) {
 		Crew crew = crewRepository.findById(command.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
-		AuthUser requester = authUserRepository.findById(command.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(command.userId()));
 
-		if (requester.requiresCompletion()) {
-			throw new AccessDeniedException("크루 가입 신청 권한이 없습니다.");
+		completedUserAccessService.validateCompletedUser(command.userId(), "크루 가입 신청 권한이 없습니다.");
+		if (crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), command.userId())) {
+			throw new CrewAlreadyJoinedException(crew.getId(), command.userId());
 		}
-		if (crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), requester.getId())) {
-			throw new CrewAlreadyJoinedException(crew.getId(), requester.getId());
-		}
-		if (crewJoinRequestRepository.existsPendingByCrewIdAndUserId(crew.getId(), requester.getId())) {
-			throw new CrewJoinRequestAlreadyPendingException(crew.getId(), requester.getId());
+		if (crewJoinRequestRepository.existsPendingByCrewIdAndUserId(crew.getId(), command.userId())) {
+			throw new CrewJoinRequestAlreadyPendingException(crew.getId(), command.userId());
 		}
 		if (!crew.allowsDirectJoinRequest()) {
 			throw new CrewJoinRequestNotAllowedException(crew.getId());
 		}
 
 		crewJoinRequestRepository.save(
-			CrewJoinRequest.createPending(crew.getId(), requester.getId(), normalizeOptional(command.message()))
+			CrewJoinRequest.createPending(crew.getId(), command.userId(), normalizeOptional(command.message()))
 		);
 		return Result.of(crew.getId(), CrewJoinViewStatus.PENDING);
 	}

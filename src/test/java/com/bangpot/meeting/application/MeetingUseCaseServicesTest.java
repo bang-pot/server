@@ -62,12 +62,17 @@ import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingResult;
 import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CompletedUserAccessService;
+import com.bangpot.user.domain.User;
 
 class MeetingUseCaseServicesTest {
 
 	private static final Instant NOW = Instant.parse("2026-04-12T10:00:00Z");
 
 	private InMemoryAuthUserRepository authUserRepository;
+	private InMemoryUserRepository userRepository;
+	private CompletedUserAccessService completedUserAccessService;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryMeetingRepository meetingRepository;
@@ -88,6 +93,8 @@ class MeetingUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
+		userRepository = new InMemoryUserRepository(authUserRepository);
+		completedUserAccessService = new CompletedUserAccessService(userRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
@@ -98,16 +105,16 @@ class MeetingUseCaseServicesTest {
 			meetingParticipantRepository,
 			clock
 		);
-		createMeetingUseCase = new CreateMeetingService(authUserRepository, crewRepository, crewMemberRepository, meetingRepository);
+		createMeetingUseCase = new CreateMeetingService(completedUserAccessService, crewRepository, crewMemberRepository, meetingRepository);
 		getMeetingsUseCase = new GetMeetingsService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
 			meetingAutomaticTransitionService
 		);
 		getMeetingDetailUseCase = new GetMeetingDetailService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
@@ -115,7 +122,7 @@ class MeetingUseCaseServicesTest {
 			meetingAutomaticTransitionService
 		);
 		joinMeetingUseCase = new JoinMeetingService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
@@ -123,42 +130,42 @@ class MeetingUseCaseServicesTest {
 			meetingAutomaticTransitionService
 		);
 		cancelMeetingParticipationUseCase = new CancelMeetingParticipationService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
 			meetingParticipantRepository
 		);
 		closeMeetingRecruitmentUseCase = new CloseMeetingRecruitmentService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
 			meetingAutomaticTransitionService
 		);
 		reopenMeetingRecruitmentUseCase = new ReopenMeetingRecruitmentService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
 			meetingAutomaticTransitionService
 		);
 		cancelMeetingUseCase = new CancelMeetingService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
 			meetingAutomaticTransitionService
 		);
 		completeMeetingUseCase = new CompleteMeetingService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
 			meetingAutomaticTransitionService
 		);
 		recordMeetingResultUseCase = new RecordMeetingResultService(
-			authUserRepository,
+			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
@@ -796,7 +803,6 @@ class MeetingUseCaseServicesTest {
 				.findFirst();
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}
@@ -836,6 +842,39 @@ class MeetingUseCaseServicesTest {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
 				.toList();
+		}
+	}
+
+	private static final class InMemoryUserRepository implements UserRepository {
+
+		private final InMemoryAuthUserRepository authUserRepository;
+
+		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
+			this.authUserRepository = authUserRepository;
+		}
+
+		@Override
+		public Optional<User> findById(Long userId) {
+			return authUserRepository.findById(userId).map(this::toDomain);
+		}
+
+		@Override
+		public boolean existsByNickname(String nickname) {
+			return authUserRepository.existsByNickname(nickname);
+		}
+
+		@Override
+		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
+			return List.of();
+		}
+
+		@Override
+		public User save(User user) {
+			throw new UnsupportedOperationException();
+		}
+
+		private User toDomain(AuthUser authUser) {
+			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
 		}
 	}
 

@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
@@ -31,6 +30,7 @@ import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
 
 class CrewMembersUseCaseServicesTest {
@@ -39,6 +39,7 @@ class CrewMembersUseCaseServicesTest {
 
 	private InMemoryAuthUserRepository authUserRepository;
 	private InMemoryUserRepository userRepository;
+	private CompletedUserAccessService completedUserAccessService;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private GetCrewMembersUseCase getCrewMembersUseCase;
@@ -47,10 +48,11 @@ class CrewMembersUseCaseServicesTest {
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
+		completedUserAccessService = new CompletedUserAccessService(userRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		getCrewMembersUseCase = new GetCrewMembersService(
-			authUserRepository,
+			completedUserAccessService,
 			userRepository,
 			crewRepository,
 			crewMemberRepository
@@ -143,7 +145,7 @@ class CrewMembersUseCaseServicesTest {
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), 999L)))
-			.isInstanceOf(AuthUserNotFoundException.class);
+			.isInstanceOf(AccessDeniedException.class);
 	}
 
 	private AuthUser fullAuthUser(Long id, String providerId, String nickname) {
@@ -202,7 +204,6 @@ class CrewMembersUseCaseServicesTest {
 				.findFirst();
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}

@@ -35,12 +35,16 @@ import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CompletedUserAccessService;
+import com.bangpot.user.domain.User;
 
 class CrewJoinUseCaseServicesTest {
 
 	private static final Instant NOW = Instant.parse("2026-04-08T00:00:00Z");
 
 	private InMemoryAuthUserRepository authUserRepository;
+	private InMemoryUserRepository userRepository;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
@@ -50,17 +54,18 @@ class CrewJoinUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
+		userRepository = new InMemoryUserRepository(authUserRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
 		getCrewJoinViewUseCase = new GetCrewJoinViewService(
-			authUserRepository,
+			new CompletedUserAccessService(userRepository),
 			crewRepository,
 			crewMemberRepository,
 			crewJoinRequestRepository
 		);
 		requestCrewJoinUseCase = new RequestCrewJoinService(
-			authUserRepository,
+			new CompletedUserAccessService(userRepository),
 			crewRepository,
 			crewMemberRepository,
 			crewJoinRequestRepository
@@ -263,7 +268,6 @@ class CrewJoinUseCaseServicesTest {
 				.findFirst();
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}
@@ -272,6 +276,39 @@ class CrewJoinUseCaseServicesTest {
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
 			return user;
+		}
+	}
+
+	private static final class InMemoryUserRepository implements UserRepository {
+
+		private final InMemoryAuthUserRepository authUserRepository;
+
+		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
+			this.authUserRepository = authUserRepository;
+		}
+
+		@Override
+		public Optional<User> findById(Long userId) {
+			return authUserRepository.findById(userId).map(this::toDomain);
+		}
+
+		@Override
+		public boolean existsByNickname(String nickname) {
+			return authUserRepository.existsByNickname(nickname);
+		}
+
+		@Override
+		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
+			return List.of();
+		}
+
+		@Override
+		public User save(User user) {
+			throw new UnsupportedOperationException();
+		}
+
+		private User toDomain(AuthUser authUser) {
+			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
 		}
 	}
 

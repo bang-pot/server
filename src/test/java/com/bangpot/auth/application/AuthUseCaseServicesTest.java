@@ -56,7 +56,7 @@ class AuthUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
-		userRepository = new InMemoryUserRepository(authUserRepository);
+		userRepository = new InMemoryUserRepository();
 		Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 		authAuditLogger = org.mockito.Mockito.mock(AuthAuditLogger.class);
 		AuthRequiredTermsProperties authRequiredTermsProperties = new AuthRequiredTermsProperties();
@@ -73,10 +73,11 @@ class AuthUseCaseServicesTest {
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		getCurrentAuthUserUseCase = new GetCurrentAuthUserService(
 			authUserRepository,
+			userRepository,
 			authRequiredTermsProperties
 		);
-		getMyProfileUseCase = new GetMyProfileService(userRepository);
-		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
+		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository);
+		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
 	}
 
 	@Test
@@ -93,6 +94,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(3600)
 		);
 		authUserRepository.save(existingUser);
+		userRepository.save(User.rehydrate(existingUser.getId(), "bangpot", true));
 
 		LoginWithProviderUseCase.Result result = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "1001", "/protected-demo")
@@ -150,6 +152,14 @@ class AuthUseCaseServicesTest {
 		assertThat(completionResult.authStatus()).isEqualTo(AuthUserStatus.FULL);
 		assertThat(completionResult.completionRequired()).isFalse();
 		assertThat(completionResult.nextPath()).isEqualTo("/protected-demo");
+		assertThat(userRepository.findById(loginResult.userId())).isPresent()
+			.get()
+			.extracting(User::getNickname)
+			.isEqualTo("potmaster");
+		assertThat(authUserRepository.findById(loginResult.userId())).isPresent()
+			.get()
+			.extracting(AuthUser::getNickname)
+			.isNull();
 
 		GetCurrentAuthUserUseCase.View meView = getCurrentAuthUserUseCase.handle(
 			GetCurrentAuthUserUseCase.Query.of(loginResult.userId())
@@ -179,6 +189,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
+		userRepository.save(User.rehydrate(10L, "dupe-name", true));
 		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "4004", null)
 		);
@@ -206,6 +217,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(60)
 		);
 		authUserRepository.save(fullUser);
+		userRepository.save(User.rehydrate(fullUser.getId(), "bangpot", true));
 
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(fullUser.getId()));
 
@@ -227,6 +239,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(60)
 		);
 		authUserRepository.save(fullUser);
+		userRepository.save(User.rehydrate(fullUser.getId(), "before", true));
 
 		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
 			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "  after  ")
@@ -234,8 +247,8 @@ class AuthUseCaseServicesTest {
 
 		assertThat(result.id()).isEqualTo(fullUser.getId());
 		assertThat(result.nickname()).isEqualTo("after");
-		assertThat(authUserRepository.findById(fullUser.getId())).get()
-			.extracting(AuthUser::getNickname)
+		assertThat(userRepository.findById(fullUser.getId())).get()
+			.extracting(User::getNickname)
 			.isEqualTo("after");
 	}
 
@@ -252,6 +265,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
+		userRepository.save(User.rehydrate(10L, "dupe-name", true));
 		AuthUser fullUser = AuthUser.rehydrate(
 			11L,
 			AuthProvider.KAKAO,
@@ -264,6 +278,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(10)
 		);
 		authUserRepository.save(fullUser);
+		userRepository.save(User.rehydrate(fullUser.getId(), "before", true));
 
 		assertThatThrownBy(() -> updateMyProfileUseCase.handle(
 			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "dupe-name")
@@ -288,7 +303,6 @@ class AuthUseCaseServicesTest {
 			return userId == null ? Optional.empty() : findById(userId);
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
 			return usersById.values().stream()
 				.anyMatch(user -> nickname.equals(user.getNickname()));
@@ -307,20 +321,16 @@ class AuthUseCaseServicesTest {
 
 	private static final class InMemoryUserRepository implements UserRepository {
 
-		private final InMemoryAuthUserRepository authUserRepository;
-
-		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
-			this.authUserRepository = authUserRepository;
-		}
+		private final Map<Long, User> usersById = new HashMap<>();
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId).map(this::toDomain);
+			return Optional.ofNullable(usersById.get(userId));
 		}
 
-		@Override
 		public boolean existsByNickname(String nickname) {
-			return authUserRepository.existsByNickname(nickname);
+			return usersById.values().stream()
+				.anyMatch(user -> nickname.equals(user.getNickname()));
 		}
 
 		@Override
@@ -330,24 +340,17 @@ class AuthUseCaseServicesTest {
 				normalizedKeyword = null;
 			}
 			final String keyword = normalizedKeyword;
-			return authUserRepository.usersById.values().stream()
-				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
+			return usersById.values().stream()
+				.filter(user -> !user.requiresCompletion())
 				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
 				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
-				.map(this::toDomain)
 				.toList();
 		}
 
 		@Override
 		public User save(User user) {
-			AuthUser authUser = authUserRepository.findById(user.getId()).orElseThrow();
-			authUser.updateNickname(user.getNickname());
-			authUserRepository.save(authUser);
-			return toDomain(authUser);
-		}
-
-		private User toDomain(AuthUser authUser) {
-			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
+			usersById.put(user.getId(), user);
+			return user;
 		}
 	}
 }

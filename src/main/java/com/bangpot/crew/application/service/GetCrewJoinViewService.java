@@ -3,9 +3,6 @@ package com.bangpot.crew.application.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
@@ -13,6 +10,7 @@ import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
+import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetCrewJoinViewService implements GetCrewJoinViewUseCase {
 
-	private final AuthUserRepository authUserRepository;
+	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final CrewJoinRequestRepository crewJoinRequestRepository;
@@ -47,10 +45,7 @@ public class GetCrewJoinViewService implements GetCrewJoinViewUseCase {
 			return CrewJoinViewStatus.GUEST;
 		}
 
-		AuthUser authUser = authUserRepository.findById(userId)
-			.orElseThrow(() -> new AuthUserNotFoundException(userId));
-
-		if (authUser.requiresCompletion()) {
+		if (!completedUserAccessService.isCompletedUser(userId)) {
 			return CrewJoinViewStatus.COMPLETION_REQUIRED;
 		}
 

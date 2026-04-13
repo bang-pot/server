@@ -157,6 +157,16 @@ Meeting automatic transitions do not add new public APIs in this round. Existing
 `GET /api/crew-invites/me` returns the current full user's invite history, and `POST /api/crew-invites/{inviteId}/accept|reject` process only `PENDING` invites while keeping invite rows as status history.
 Profile and nickname availability moved to `/api/users/...`; frontend consumers should stop calling legacy `/api/auth/profile` and `/api/auth/nickname-availability`.
 
+## User ownership split
+
+- `auth_users` is now the source of truth only for authentication and completion state.
+- `users` is now the source of truth for completed member profile data.
+- `users.id` uses the same identifier as `auth_users.id` (shared primary key).
+- A `users` row is created when temp completion succeeds and the user becomes `FULL`.
+- `nickname` ownership moved to `users.nickname`; application code should no longer trust `auth_users.nickname`.
+- Profile reads and writes under `/api/users/...` now use `users`.
+- Crew and meeting domains should use `User` for member/profile data and use completion checks only through the shared access service, not by directly depending on `AuthUser`.
+
 ## Common API error contract
 
 Backend API는 성공 응답을 별도 envelope로 감싸지 않고 resource JSON을 그대로 반환합니다.

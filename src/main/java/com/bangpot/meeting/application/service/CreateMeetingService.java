@@ -4,15 +4,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateMeetingService implements CreateMeetingUseCase {
 
-	private final AuthUserRepository authUserRepository;
+	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
@@ -30,11 +28,7 @@ public class CreateMeetingService implements CreateMeetingUseCase {
 	public Result handle(Command command) {
 		crewRepository.findById(command.crewId()).orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
-		AuthUser authUser = authUserRepository.findById(command.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(command.userId()));
-		if (authUser.requiresCompletion()) {
-			throw new AccessDeniedException("가입한 크루원만 모임을 생성할 수 있습니다.");
-		}
+		completedUserAccessService.validateCompletedUser(command.userId(), "가입한 크루원만 모임을 생성할 수 있습니다.");
 		if (crewMemberRepository.findByCrewIdAndUserId(command.crewId(), command.userId()).isEmpty()) {
 			throw new AccessDeniedException("가입한 크루원만 모임을 생성할 수 있습니다.");
 		}

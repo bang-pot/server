@@ -150,14 +150,9 @@ public class AuthUser {
 		}
 	}
 
-	public void completeProfile(String nickname, RequiredTermsAgreement agreement) {
-		this.nickname = nickname;
+	public void completeProfile(RequiredTermsAgreement agreement) {
 		this.requiredTermsAgreement = agreement;
 		this.status = AuthUserStatus.FULL;
-	}
-
-	public void updateNickname(String nickname) {
-		this.nickname = nickname;
 	}
 
 	public String consumePendingRedirectPathOrDefault(String defaultPath) {
