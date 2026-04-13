@@ -22,6 +22,7 @@ import com.bangpot.meeting.application.usecase.CompleteMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
+import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 
 import jakarta.validation.Valid;
@@ -42,6 +43,7 @@ class MeetingController {
 	private final ReopenMeetingRecruitmentUseCase reopenMeetingRecruitmentUseCase;
 	private final CancelMeetingUseCase cancelMeetingUseCase;
 	private final CompleteMeetingUseCase completeMeetingUseCase;
+	private final RecordMeetingResultUseCase recordMeetingResultUseCase;
 
 	@PostMapping
 	ResponseEntity<MeetingDto.CreateMeetingResponse> create(
@@ -155,6 +157,25 @@ class MeetingController {
 		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
 			completeMeetingUseCase.handle(
 				MeetingDtoMapper.toCompleteMeetingCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@PostMapping("/{meetingId}/result")
+	ResponseEntity<MeetingDto.MeetingResultRecordResponse> recordResult(
+		@PathVariable Long crewId,
+		@PathVariable Long meetingId,
+		Authentication authentication,
+		@Valid @RequestBody MeetingDto.RecordMeetingResultRequest request
+	) {
+		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
+			recordMeetingResultUseCase.handle(
+				MeetingDtoMapper.toRecordResultCommand(
+					crewId,
+					meetingId,
+					requireAuthenticatedUserId(authentication),
+					request
+				)
 			)
 		));
 	}

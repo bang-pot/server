@@ -29,6 +29,7 @@ import com.bangpot.meeting.application.usecase.CompleteMeetingUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
+import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 
 @ActiveProfiles("test")
@@ -66,6 +67,9 @@ class MeetingControllerTest {
 
 	@MockitoBean
 	private CompleteMeetingUseCase completeMeetingUseCase;
+
+	@MockitoBean
+	private RecordMeetingResultUseCase recordMeetingResultUseCase;
 
 	@Test
 	void createsMeetingForJoinedCrewMember() throws Exception {
@@ -208,6 +212,27 @@ class MeetingControllerTest {
 	}
 
 	@Test
+	void recordsMeetingResult() throws Exception {
+		when(recordMeetingResultUseCase.handle(
+			RecordMeetingResultUseCase.Command.of(1L, 10L, 77L, "SUCCESS")
+		)).thenReturn(RecordMeetingResultUseCase.Result.of(10L, "SUCCESS"));
+
+		mockMvc.perform(
+			post("/api/crews/1/meetings/10/result")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "result": "SUCCESS"
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.meetingId").value(10))
+			.andExpect(jsonPath("$.result").value("SUCCESS"));
+	}
+
+	@Test
 	void returnsValidationErrorWhenRequiredMeetingFieldIsMissing() throws Exception {
 		mockMvc.perform(
 			post("/api/crews/1/meetings")
@@ -264,6 +289,21 @@ class MeetingControllerTest {
 	@Test
 	void returnsUnauthorizedWhenMeetingStatusChangeIsSubmittedWithoutAuthentication() throws Exception {
 		mockMvc.perform(post("/api/crews/1/meetings/10/close-recruitment"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenMeetingResultIsSubmittedWithoutAuthentication() throws Exception {
+		mockMvc.perform(
+			post("/api/crews/1/meetings/10/result")
+				.contentType("application/json")
+				.content("""
+					{
+					  "result": "SUCCESS"
+					}
+					""")
+		)
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
