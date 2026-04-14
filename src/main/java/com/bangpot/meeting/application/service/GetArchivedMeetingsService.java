@@ -1,12 +1,12 @@
-package com.bangpot.archive.application.service;
+package com.bangpot.meeting.application.service;
 
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import com.bangpot.archive.application.port.ArchiveMeetingReadRepository;
-import com.bangpot.archive.application.usecase.GetArchivedMeetingsUseCase;
+import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
+import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
 import com.bangpot.explore.application.port.ExploreThemeReadRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
@@ -17,21 +17,21 @@ import lombok.RequiredArgsConstructor;
 public class GetArchivedMeetingsService implements GetArchivedMeetingsUseCase {
 
 	private final CompletedUserAccessService completedUserAccessService;
-	private final ArchiveMeetingReadRepository archiveMeetingReadRepository;
+	private final ArchivedMeetingReadRepository archiveMeetingReadRepository;
 	private final ExploreThemeReadRepository exploreThemeReadRepository;
 
 	@Override
 	public Result handle(Query query) {
 		completedUserAccessService.validateCompletedUser(query.userId(), "완료된 모임 아카이브를 조회할 수 없습니다.");
 
-		ArchiveMeetingReadRepository.SearchResult searchResult = archiveMeetingReadRepository.search(
+		ArchivedMeetingReadRepository.SearchResult searchResult = archiveMeetingReadRepository.search(
 			query.userId(),
 			query.page(),
 			query.size()
 		);
 		Map<String, String> postersByThemeName = exploreThemeReadRepository.getPosterImageUrlsByThemeNames(
 			searchResult.items().stream()
-				.map(ArchiveMeetingReadRepository.Item::themeName)
+				.map(ArchivedMeetingReadRepository.Item::themeName)
 				.distinct()
 				.toList()
 		);
@@ -59,3 +59,4 @@ public class GetArchivedMeetingsService implements GetArchivedMeetingsUseCase {
 		);
 	}
 }
+

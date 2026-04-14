@@ -1,4 +1,4 @@
-package com.bangpot.archive.presentation;
+package com.bangpot.meeting.presentation;
 
 import java.util.List;
 
@@ -32,3 +32,4 @@ final class ArchiveDto {
 	) {
 	}
 }
+

@@ -1,4 +1,4 @@
-package com.bangpot.archive.application.usecase;
+package com.bangpot.meeting.application.usecase;
 
 import java.util.List;
 
@@ -59,3 +59,4 @@ public interface GetArchivedMeetingsUseCase {
 		}
 	}
 }
+

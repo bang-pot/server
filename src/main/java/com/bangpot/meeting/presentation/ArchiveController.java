@@ -1,4 +1,4 @@
-package com.bangpot.archive.presentation;
+package com.bangpot.meeting.presentation;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bangpot.archive.application.usecase.GetArchivedMeetingsUseCase;
+import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 
 import jakarta.validation.constraints.Max;
@@ -45,3 +45,4 @@ class ArchiveController {
 		return userId;
 	}
 }
+
