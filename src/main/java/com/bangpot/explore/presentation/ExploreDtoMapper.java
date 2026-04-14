@@ -3,6 +3,7 @@ package com.bangpot.explore.presentation;
 import java.util.List;
 
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.application.usecase.GetExploreMeetingCreateCrewsUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 
@@ -59,6 +60,14 @@ final class ExploreDtoMapper {
 			result.externalLink(),
 			result.relatedThemes().stream()
 				.map(ExploreDtoMapper::toResponse)
+				.toList()
+		);
+	}
+
+	static ExploreDto.ExploreMeetingCreateCrewsResponse toResponse(GetExploreMeetingCreateCrewsUseCase.Result result) {
+		return new ExploreDto.ExploreMeetingCreateCrewsResponse(
+			result.crews().stream()
+				.map(crew -> new ExploreDto.ExploreMeetingCreateCrewResponse(crew.crewId(), crew.crewName()))
 				.toList()
 		);
 	}

@@ -20,4 +20,6 @@ interface CrewMemberJpaRepository extends JpaRepository<CrewMember, Long> {
 	Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId);
 
 	List<CrewMember> findAllByCrewIdAndStatus(Long crewId, CrewMemberStatus status);
+
+	List<CrewMember> findAllByUserIdAndStatusOrderByCrewIdAsc(Long userId, CrewMemberStatus status);
 }

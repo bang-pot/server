@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -20,6 +21,7 @@ import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.application.usecase.GetExploreMeetingCreateCrewsUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 
@@ -40,6 +42,9 @@ class ExploreControllerTest {
 
 	@MockitoBean
 	private GetExploreThemeDetailUseCase getExploreThemeDetailUseCase;
+
+	@MockitoBean
+	private GetExploreMeetingCreateCrewsUseCase getExploreMeetingCreateCrewsUseCase;
 
 	@Test
 	void returnsExploreThemeCardsWithoutAuthentication() throws Exception {
@@ -168,5 +173,32 @@ class ExploreControllerTest {
 		mockMvc.perform(get("/api/explore/themes/999"))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.code").value("EXPLORE_THEME_NOT_FOUND"));
+	}
+
+	@Test
+	void returnsMyCrewsForMeetingCreateWhenAuthenticated() throws Exception {
+		when(getExploreMeetingCreateCrewsUseCase.handle(GetExploreMeetingCreateCrewsUseCase.Query.of(7L)))
+			.thenReturn(GetExploreMeetingCreateCrewsUseCase.Result.of(
+				List.of(
+					GetExploreMeetingCreateCrewsUseCase.CrewItem.of(101L, "Alpha Crew"),
+					GetExploreMeetingCreateCrewsUseCase.CrewItem.of(202L, "Beta Crew")
+				)
+			));
+
+		mockMvc.perform(
+			get("/api/explore/meeting-create/crews")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crews[0].crewId").value(101))
+			.andExpect(jsonPath("$.crews[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.crews[1].crewId").value(202));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenMeetingCreateCrewsIsUnauthenticated() throws Exception {
+		mockMvc.perform(get("/api/explore/meeting-create/crews"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
 }

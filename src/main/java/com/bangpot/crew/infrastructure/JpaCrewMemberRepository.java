@@ -52,4 +52,9 @@ class JpaCrewMemberRepository implements CrewMemberRepository {
 	public List<CrewMember> findAllByCrewId(Long crewId) {
 		return crewMemberJpaRepository.findAllByCrewIdAndStatus(crewId, CrewMemberStatus.ACTIVE);
 	}
+
+	@Override
+	public List<CrewMember> findAllByUserId(Long userId) {
+		return crewMemberJpaRepository.findAllByUserIdAndStatusOrderByCrewIdAsc(userId, CrewMemberStatus.ACTIVE);
+	}
 }
