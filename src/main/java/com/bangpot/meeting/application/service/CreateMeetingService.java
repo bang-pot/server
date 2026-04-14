@@ -36,20 +36,21 @@ public class CreateMeetingService implements CreateMeetingUseCase {
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			command.crewId(),
 			command.userId(),
+			command.title(),
 			command.themeName(),
 			command.place(),
 			command.date(),
 			command.time(),
 			command.capacity(),
 			command.totalCost(),
-			command.reservationLink(),
-			command.openChatLink(),
+			command.contactLink(),
 			command.description()
 		));
 
 		return Result.of(
 			meeting.getId(),
 			meeting.getCrewId(),
+			meeting.getTitle(),
 			meeting.getThemeName(),
 			meeting.getPlace(),
 			meeting.getMeetingDate(),

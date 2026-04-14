@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,6 +25,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
+import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ import lombok.RequiredArgsConstructor;
 class MeetingController {
 
 	private final CreateMeetingUseCase createMeetingUseCase;
+	private final UpdateMeetingUseCase updateMeetingUseCase;
 	private final GetMeetingsUseCase getMeetingsUseCase;
 	private final GetMeetingDetailUseCase getMeetingDetailUseCase;
 	private final JoinMeetingUseCase joinMeetingUseCase;
@@ -54,6 +57,20 @@ class MeetingController {
 		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
 			createMeetingUseCase.handle(
 				MeetingDtoMapper.toCommand(crewId, requireAuthenticatedUserId(authentication), request)
+			)
+		));
+	}
+
+	@PatchMapping("/{meetingId}")
+	ResponseEntity<MeetingDto.UpdateMeetingResponse> update(
+		@PathVariable Long crewId,
+		@PathVariable Long meetingId,
+		Authentication authentication,
+		@Valid @RequestBody MeetingDto.UpdateMeetingRequest request
+	) {
+		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
+			updateMeetingUseCase.handle(
+				MeetingDtoMapper.toCommand(crewId, meetingId, requireAuthenticatedUserId(authentication), request)
 			)
 		));
 	}

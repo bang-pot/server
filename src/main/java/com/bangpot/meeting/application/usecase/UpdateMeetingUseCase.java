@@ -1,11 +1,12 @@
 package com.bangpot.meeting.application.usecase;
 
-public interface CreateMeetingUseCase {
+public interface UpdateMeetingUseCase {
 
 	Result handle(Command command);
 
 	record Command(
 		Long crewId,
+		Long meetingId,
 		Long userId,
 		String title,
 		String date,
@@ -19,6 +20,7 @@ public interface CreateMeetingUseCase {
 	) {
 		public static Command of(
 			Long crewId,
+			Long meetingId,
 			Long userId,
 			String title,
 			String date,
@@ -32,6 +34,7 @@ public interface CreateMeetingUseCase {
 		) {
 			return new Command(
 				crewId,
+				meetingId,
 				userId,
 				title,
 				date,
@@ -49,26 +52,51 @@ public interface CreateMeetingUseCase {
 	record Result(
 		Long meetingId,
 		Long crewId,
+		Long hostUserId,
 		String title,
 		String themeName,
 		String place,
 		String date,
 		String time,
+		Integer capacity,
+		Integer totalCost,
+		String contactLink,
+		String description,
 		String status,
 		String result
 	) {
 		public static Result of(
 			Long meetingId,
 			Long crewId,
+			Long hostUserId,
 			String title,
 			String themeName,
 			String place,
 			String date,
 			String time,
+			Integer capacity,
+			Integer totalCost,
+			String contactLink,
+			String description,
 			String status,
 			String result
 		) {
-			return new Result(meetingId, crewId, title, themeName, place, date, time, status, result);
+			return new Result(
+				meetingId,
+				crewId,
+				hostUserId,
+				title,
+				themeName,
+				place,
+				date,
+				time,
+				capacity,
+				totalCost,
+				contactLink,
+				description,
+				status,
+				result
+			);
 		}
 	}
 }

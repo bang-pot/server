@@ -27,18 +27,19 @@ class CreateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 		CreateMeetingUseCase.Result result = createMeetingUseCase.handle(CreateMeetingUseCase.Command.of(
 			crew.getId(),
 			member.getId(),
+			"Friday Escape",
 			"2026-04-20",
 			"19:30",
 			"Gangnam",
 			"Time Attack",
 			4,
 			120000,
-			"https://example.com/reserve",
 			"https://open.kakao.com/o/abc123",
 			"Please arrive on time"
 		));
 
 		assertThat(result.meetingId()).isNotNull();
+		assertThat(result.title()).isEqualTo("Friday Escape");
 		assertThat(result.status()).isEqualTo("RECRUITING");
 		assertThat(result.result()).isEqualTo("NOT_RECORDED");
 
@@ -46,6 +47,8 @@ class CreateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 		assertThat(saved.getStatus()).isEqualTo(MeetingStatus.RECRUITING);
 		assertThat(saved.getResult()).isEqualTo(MeetingResult.NOT_RECORDED);
 		assertThat(saved.getHostUserId()).isEqualTo(member.getId());
+		assertThat(saved.getTitle()).isEqualTo("Friday Escape");
+		assertThat(saved.getContactLink()).isEqualTo("https://open.kakao.com/o/abc123");
 	}
 
 	@Test
@@ -55,7 +58,7 @@ class CreateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> createMeetingUseCase.handle(CreateMeetingUseCase.Command.of(
-			crew.getId(), outsider.getId(), "2026-04-20", "19:30", "Gangnam", "Time Attack", 4, null, null, null, null
+			crew.getId(), outsider.getId(), "Friday Escape", "2026-04-20", "19:30", "Gangnam", "Time Attack", 4, null, null, null
 		))).isInstanceOf(AccessDeniedException.class);
 	}
 }

@@ -39,6 +39,7 @@ public class GetMeetingsService implements GetMeetingsUseCase {
 			.peek(meetingAutomaticTransitionService::apply)
 			.map(meeting -> View.of(
 				meeting.getId(),
+				meeting.getTitle(),
 				meeting.getThemeName(),
 				meeting.getPlace(),
 				meeting.getMeetingDate(),
