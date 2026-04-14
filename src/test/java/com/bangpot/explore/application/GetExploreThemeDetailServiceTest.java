@@ -3,7 +3,9 @@ package com.bangpot.explore.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -102,6 +104,11 @@ class GetExploreThemeDetailServiceTest {
 				return Optional.empty();
 			}
 			return Optional.of(detail);
+		}
+
+		@Override
+		public Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames) {
+			return new HashMap<>();
 		}
 	}
 }

@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -206,6 +208,11 @@ class ExploreThemeSearchServiceTest {
 		@Override
 		public Optional<ThemeDetail> getThemeDetail(Long themeId) {
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames) {
+			return new HashMap<>();
 		}
 
 		private boolean matchesKeyword(Row row, String keyword) {
