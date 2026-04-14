@@ -66,6 +66,17 @@ final class ExploreDto {
 	) {
 	}
 
+	record ExploreMeetingCreateCrewResponse(
+		Long crewId,
+		String crewName
+	) {
+	}
+
+	record ExploreMeetingCreateCrewsResponse(
+		List<ExploreMeetingCreateCrewResponse> crews
+	) {
+	}
+
 	record RegionFilterResponse(
 		String name,
 		List<String> districts

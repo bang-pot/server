@@ -20,4 +20,8 @@ public interface CrewMemberRepository {
 	}
 
 	List<CrewMember> findAllByCrewId(Long crewId);
+
+	default List<CrewMember> findAllByUserId(Long userId) {
+		throw new UnsupportedOperationException();
+	}
 }
