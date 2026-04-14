@@ -1,4 +1,4 @@
-package com.bangpot.archive.presentation;
+package com.bangpot.meeting.presentation;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -17,7 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.bangpot.archive.application.usecase.GetArchivedMeetingsUseCase;
+import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 
@@ -79,3 +79,4 @@ class ArchiveControllerTest {
 			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
 	}
 }
+

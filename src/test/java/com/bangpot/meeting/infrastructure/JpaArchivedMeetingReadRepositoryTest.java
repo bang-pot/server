@@ -1,4 +1,4 @@
-package com.bangpot.archive.infrastructure;
+package com.bangpot.meeting.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,21 +8,21 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
-import com.bangpot.archive.application.port.ArchiveMeetingReadRepository;
+import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 
 @DataJpaTest
-@Import(JpaArchiveMeetingReadRepository.class)
-class JpaArchiveMeetingReadRepositoryTest {
+@Import(JpaArchivedMeetingReadRepository.class)
+class JpaArchivedMeetingReadRepositoryTest {
 
 	@Autowired
 	private TestEntityManager entityManager;
 
 	@Autowired
-	private ArchiveMeetingReadRepository repository;
+	private ArchivedMeetingReadRepository repository;
 
 	@Test
 	void returnsOnlyCompletedMeetingsRelatedToCurrentUser() {
@@ -74,12 +74,13 @@ class JpaArchiveMeetingReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		ArchiveMeetingReadRepository.SearchResult result = repository.search(7L, 0, 10);
+		ArchivedMeetingReadRepository.SearchResult result = repository.search(7L, 0, 10);
 
-		assertThat(result.items()).extracting(ArchiveMeetingReadRepository.Item::meetingId)
+		assertThat(result.items()).extracting(ArchivedMeetingReadRepository.Item::meetingId)
 			.containsExactly(hosted.getId(), joined.getId(), left.getId(), legacyApproved.getId());
-		assertThat(result.items()).extracting(ArchiveMeetingReadRepository.Item::crewName)
+		assertThat(result.items()).extracting(ArchivedMeetingReadRepository.Item::crewName)
 			.contains("Deleted Crew");
 		assertThat(result.pageInfo().hasNext()).isFalse();
 	}
 }
+

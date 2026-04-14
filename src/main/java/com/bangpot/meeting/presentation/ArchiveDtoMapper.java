@@ -1,6 +1,6 @@
-package com.bangpot.archive.presentation;
+package com.bangpot.meeting.presentation;
 
-import com.bangpot.archive.application.usecase.GetArchivedMeetingsUseCase;
+import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
 
 final class ArchiveDtoMapper {
 
@@ -33,3 +33,4 @@ final class ArchiveDtoMapper {
 		);
 	}
 }
+

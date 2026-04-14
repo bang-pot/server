@@ -1,4 +1,4 @@
-package com.bangpot.archive.application;
+package com.bangpot.meeting.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -13,9 +13,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.archive.application.port.ArchiveMeetingReadRepository;
-import com.bangpot.archive.application.service.GetArchivedMeetingsService;
-import com.bangpot.archive.application.usecase.GetArchivedMeetingsUseCase;
+import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
+import com.bangpot.meeting.application.service.GetArchivedMeetingsService;
+import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
@@ -31,7 +31,7 @@ class GetArchivedMeetingsServiceTest {
 
 	private InMemoryUserRepository userRepository;
 	private CompletedUserAccessService completedUserAccessService;
-	private InMemoryArchiveMeetingReadRepository archiveMeetingReadRepository;
+	private InMemoryArchivedMeetingReadRepository archiveMeetingReadRepository;
 	private InMemoryExploreThemeReadRepository exploreThemeReadRepository;
 	private GetArchivedMeetingsUseCase getArchivedMeetingsUseCase;
 
@@ -39,7 +39,7 @@ class GetArchivedMeetingsServiceTest {
 	void setUp() {
 		userRepository = new InMemoryUserRepository();
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
-		archiveMeetingReadRepository = new InMemoryArchiveMeetingReadRepository();
+		archiveMeetingReadRepository = new InMemoryArchivedMeetingReadRepository();
 		exploreThemeReadRepository = new InMemoryExploreThemeReadRepository();
 		getArchivedMeetingsUseCase = new GetArchivedMeetingsService(
 			completedUserAccessService,
@@ -51,12 +51,12 @@ class GetArchivedMeetingsServiceTest {
 	@Test
 	void returnsCompletedArchiveCardsWithPosterFallback() {
 		userRepository.save(fullUser(7L, "member"));
-		archiveMeetingReadRepository.result = ArchiveMeetingReadRepository.SearchResult.of(
+		archiveMeetingReadRepository.result = ArchivedMeetingReadRepository.SearchResult.of(
 			List.of(
-				ArchiveMeetingReadRepository.Item.of(31L, 101L, "Alpha Crew", "Deep Blue", "Hongdae", "2026-04-12", "SUCCESS"),
-				ArchiveMeetingReadRepository.Item.of(30L, 102L, "Beta Crew", "Lost Harbor", "Busan", "2026-04-10", "FAILURE")
+				ArchivedMeetingReadRepository.Item.of(31L, 101L, "Alpha Crew", "Deep Blue", "Hongdae", "2026-04-12", "SUCCESS"),
+				ArchivedMeetingReadRepository.Item.of(30L, 102L, "Beta Crew", "Lost Harbor", "Busan", "2026-04-10", "FAILURE")
 			),
-			ArchiveMeetingReadRepository.PageInfo.of(0, 20, false)
+			ArchivedMeetingReadRepository.PageInfo.of(0, 20, false)
 		);
 		exploreThemeReadRepository.posters.put("Deep Blue", "https://image.example/deep-blue.jpg");
 
@@ -109,7 +109,7 @@ class GetArchivedMeetingsServiceTest {
 		);
 	}
 
-	private static final class InMemoryArchiveMeetingReadRepository implements ArchiveMeetingReadRepository {
+	private static final class InMemoryArchivedMeetingReadRepository implements ArchivedMeetingReadRepository {
 		private SearchResult result = SearchResult.of(List.of(), PageInfo.of(0, 20, false));
 		private Long lastUserId;
 
@@ -179,3 +179,4 @@ class GetArchivedMeetingsServiceTest {
 		}
 	}
 }
+

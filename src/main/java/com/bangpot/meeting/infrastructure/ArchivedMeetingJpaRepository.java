@@ -1,4 +1,4 @@
-package com.bangpot.archive.infrastructure;
+package com.bangpot.meeting.infrastructure;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
 
-interface ArchiveMeetingJpaRepository extends Repository<Meeting, Long> {
+interface ArchivedMeetingJpaRepository extends Repository<Meeting, Long> {
 
 	@Query("""
 		select m.id as meetingId,
@@ -60,3 +60,4 @@ interface ArchiveMeetingJpaRepository extends Repository<Meeting, Long> {
 		com.bangpot.meeting.domain.MeetingResult getResult();
 	}
 }
+

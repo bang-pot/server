@@ -1,8 +1,8 @@
-package com.bangpot.archive.application.port;
+package com.bangpot.meeting.application.port;
 
 import java.util.List;
 
-public interface ArchiveMeetingReadRepository {
+public interface ArchivedMeetingReadRepository {
 
 	SearchResult search(Long userId, int page, int size);
 
@@ -47,3 +47,4 @@ public interface ArchiveMeetingReadRepository {
 		}
 	}
 }
+

@@ -1,11 +1,11 @@
-package com.bangpot.archive.infrastructure;
+package com.bangpot.meeting.infrastructure;
 
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
-import com.bangpot.archive.application.port.ArchiveMeetingReadRepository;
+import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
 
@@ -13,9 +13,9 @@ import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
-class JpaArchiveMeetingReadRepository implements ArchiveMeetingReadRepository {
+class JpaArchivedMeetingReadRepository implements ArchivedMeetingReadRepository {
 
-	private final ArchiveMeetingJpaRepository archiveMeetingJpaRepository;
+	private final ArchivedMeetingJpaRepository archiveMeetingJpaRepository;
 
 	@Override
 	public SearchResult search(Long userId, int page, int size) {
@@ -47,3 +47,4 @@ class JpaArchiveMeetingReadRepository implements ArchiveMeetingReadRepository {
 		);
 	}
 }
+
