@@ -12,6 +12,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
+import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 
 final class MeetingDtoMapper {
 
@@ -22,14 +23,14 @@ final class MeetingDtoMapper {
 		return CreateMeetingUseCase.Command.of(
 			crewId,
 			userId,
+			request.title(),
 			request.date(),
 			request.time(),
 			request.place(),
 			request.themeName(),
 			request.capacity(),
 			request.totalCost(),
-			request.reservationLink(),
-			request.openChatLink(),
+			request.contactLink(),
 			request.description()
 		);
 	}
@@ -38,10 +39,52 @@ final class MeetingDtoMapper {
 		return new MeetingDto.CreateMeetingResponse(
 			result.meetingId(),
 			result.crewId(),
+			result.title(),
 			result.themeName(),
 			result.place(),
 			result.date(),
 			result.time(),
+			result.status(),
+			result.result()
+		);
+	}
+
+	static UpdateMeetingUseCase.Command toCommand(
+		Long crewId,
+		Long meetingId,
+		Long userId,
+		MeetingDto.UpdateMeetingRequest request
+	) {
+		return UpdateMeetingUseCase.Command.of(
+			crewId,
+			meetingId,
+			userId,
+			request.title(),
+			request.date(),
+			request.time(),
+			request.place(),
+			request.themeName(),
+			request.capacity(),
+			request.totalCost(),
+			request.contactLink(),
+			request.description()
+		);
+	}
+
+	static MeetingDto.UpdateMeetingResponse toResponse(UpdateMeetingUseCase.Result result) {
+		return new MeetingDto.UpdateMeetingResponse(
+			result.meetingId(),
+			result.crewId(),
+			result.hostUserId(),
+			result.title(),
+			result.themeName(),
+			result.place(),
+			result.date(),
+			result.time(),
+			result.capacity(),
+			result.totalCost(),
+			result.contactLink(),
+			result.description(),
 			result.status(),
 			result.result()
 		);
@@ -55,6 +98,7 @@ final class MeetingDtoMapper {
 		return views.stream()
 			.map(view -> new MeetingDto.MeetingListResponse(
 				view.meetingId(),
+				view.title(),
 				view.themeName(),
 				view.place(),
 				view.date(),
@@ -75,14 +119,14 @@ final class MeetingDtoMapper {
 			result.meetingId(),
 			result.crewId(),
 			result.hostUserId(),
+			result.title(),
 			result.themeName(),
 			result.place(),
 			result.date(),
 			result.time(),
 			result.capacity(),
 			result.totalCost(),
-			result.reservationLink(),
-			result.openChatLink(),
+			result.contactLink(),
 			result.description(),
 			result.status(),
 			result.result(),

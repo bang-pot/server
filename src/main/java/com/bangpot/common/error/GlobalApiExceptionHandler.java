@@ -36,6 +36,7 @@ import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
 import com.bangpot.meeting.application.exception.MeetingHostCannotCancelParticipationException;
+import com.bangpot.meeting.application.exception.MeetingEditNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyJoinedException;
@@ -212,6 +213,13 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 		MeetingInvalidStatusTransitionException exception
 	) {
 		return error(MeetingErrorCode.MEETING_INVALID_STATUS_TRANSITION);
+	}
+
+	@ExceptionHandler(MeetingEditNotAllowedException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingEditNotAllowed(
+		MeetingEditNotAllowedException exception
+	) {
+		return error(MeetingErrorCode.MEETING_EDIT_NOT_ALLOWED);
 	}
 
 	@ExceptionHandler(MeetingResultRecordNotAllowedException.class)

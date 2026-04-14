@@ -15,8 +15,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+
 import lombok.Getter;
 
+import com.bangpot.meeting.application.exception.MeetingEditNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
 import com.bangpot.meeting.application.exception.MeetingResultAlreadyRecordedException;
 import com.bangpot.meeting.application.exception.MeetingResultRecordNotAllowedException;
@@ -36,6 +38,9 @@ public class Meeting {
 	@Column(name = "host_user_id", nullable = false)
 	private Long hostUserId;
 
+	@Column(name = "title", nullable = false)
+	private String title;
+
 	@Column(name = "theme_name", nullable = false)
 	private String themeName;
 
@@ -54,11 +59,8 @@ public class Meeting {
 	@Column(name = "total_cost")
 	private Integer totalCost;
 
-	@Column(name = "reservation_link")
-	private String reservationLink;
-
-	@Column(name = "open_chat_link")
-	private String openChatLink;
+	@Column(name = "contact_link")
+	private String contactLink;
 
 	@Column(name = "description", columnDefinition = "text")
 	private String description;
@@ -84,14 +86,14 @@ public class Meeting {
 		Long id,
 		Long crewId,
 		Long hostUserId,
+		String title,
 		String themeName,
 		String place,
 		String meetingDate,
 		String meetingTime,
 		Integer capacity,
 		Integer totalCost,
-		String reservationLink,
-		String openChatLink,
+		String contactLink,
 		String description,
 		MeetingStatus status,
 		MeetingResult result,
@@ -101,19 +103,81 @@ public class Meeting {
 		this.id = id;
 		this.crewId = crewId;
 		this.hostUserId = hostUserId;
+		this.title = title;
 		this.themeName = themeName;
 		this.place = place;
 		this.meetingDate = meetingDate;
 		this.meetingTime = meetingTime;
 		this.capacity = capacity;
 		this.totalCost = totalCost;
-		this.reservationLink = reservationLink;
-		this.openChatLink = openChatLink;
+		this.contactLink = contactLink;
 		this.description = description;
 		this.status = status;
 		this.result = result;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
+	}
+
+	public static Meeting create(
+		Long crewId,
+		Long hostUserId,
+		String title,
+		String themeName,
+		String place,
+		String meetingDate,
+		String meetingTime,
+		Integer capacity,
+		Integer totalCost,
+		String contactLink,
+		String description
+	) {
+		return new Meeting(
+			null,
+			crewId,
+			hostUserId,
+			title,
+			themeName,
+			place,
+			meetingDate,
+			meetingTime,
+			capacity,
+			totalCost,
+			contactLink,
+			description,
+			MeetingStatus.RECRUITING,
+			MeetingResult.NOT_RECORDED,
+			null,
+			null
+		);
+	}
+
+	public static Meeting create(
+		Long crewId,
+		Long hostUserId,
+		String title,
+		String themeName,
+		String place,
+		String meetingDate,
+		String meetingTime,
+		Integer capacity,
+		Integer totalCost,
+		String reservationLink,
+		String openChatLink,
+		String description
+	) {
+		return create(
+			crewId,
+			hostUserId,
+			title,
+			themeName,
+			place,
+			meetingDate,
+			meetingTime,
+			capacity,
+			totalCost,
+			openChatLink != null ? openChatLink : reservationLink,
+			description
+		);
 	}
 
 	public static Meeting create(
@@ -129,23 +193,18 @@ public class Meeting {
 		String openChatLink,
 		String description
 	) {
-		return new Meeting(
-			null,
+		return create(
 			crewId,
 			hostUserId,
+			themeName,
 			themeName,
 			place,
 			meetingDate,
 			meetingTime,
 			capacity,
 			totalCost,
-			reservationLink,
-			openChatLink,
-			description,
-			MeetingStatus.RECRUITING,
-			MeetingResult.NOT_RECORDED,
-			null,
-			null
+			openChatLink != null ? openChatLink : reservationLink,
+			description
 		);
 	}
 
@@ -189,6 +248,31 @@ public class Meeting {
 			throw new MeetingResultAlreadyRecordedException(id, result.name());
 		}
 		result = targetResult;
+	}
+
+	public void edit(
+		String title,
+		String meetingDate,
+		String meetingTime,
+		String place,
+		String themeName,
+		Integer capacity,
+		Integer totalCost,
+		String contactLink,
+		String description
+	) {
+		if (status != MeetingStatus.RECRUITING && status != MeetingStatus.RECRUITMENT_CLOSED) {
+			throw new MeetingEditNotAllowedException(id, status.name());
+		}
+		this.title = title;
+		this.meetingDate = meetingDate;
+		this.meetingTime = meetingTime;
+		this.place = place;
+		this.themeName = themeName;
+		this.capacity = capacity;
+		this.totalCost = totalCost;
+		this.contactLink = contactLink;
+		this.description = description;
 	}
 
 	public void applyAutomaticTransition(LocalDateTime now, long joinedCount) {

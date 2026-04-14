@@ -14,6 +14,7 @@ public interface GetMeetingsUseCase {
 
 	record View(
 		Long meetingId,
+		String title,
 		String themeName,
 		String place,
 		String date,
@@ -24,6 +25,7 @@ public interface GetMeetingsUseCase {
 	) {
 		public static View of(
 			Long meetingId,
+			String title,
 			String themeName,
 			String place,
 			String date,
@@ -32,7 +34,7 @@ public interface GetMeetingsUseCase {
 			String result,
 			Integer capacity
 		) {
-			return new View(meetingId, themeName, place, date, time, status, result, capacity);
+			return new View(meetingId, title, themeName, place, date, time, status, result, capacity);
 		}
 	}
 }

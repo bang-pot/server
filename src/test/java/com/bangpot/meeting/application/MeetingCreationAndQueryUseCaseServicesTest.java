@@ -27,17 +27,19 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
 		meetingRepository.save(Meeting.create(
-			crew.getId(), member.getId(), "Deep Blue", "Hongdae", "2026-04-21", "20:00", 6, null, null, null, null
+			crew.getId(), member.getId(), "Saturday Escape", "Deep Blue", "Hongdae", "2026-04-21", "20:00", 6, null, null, null
 		));
 		meetingRepository.save(Meeting.create(
-			crew.getId(), member.getId(), "Time Attack", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+			crew.getId(), member.getId(), "Friday Escape", "Time Attack", "Gangnam", "2026-04-20", "19:30", 4, null, null, null
 		));
 
 		List<GetMeetingsUseCase.View> result = getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(crew.getId(), member.getId()));
 
 		assertThat(result).hasSize(2);
+		assertThat(result.get(0).title()).isEqualTo("Friday Escape");
 		assertThat(result.get(0).themeName()).isEqualTo("Time Attack");
 		assertThat(result.get(0).status()).isEqualTo("RECRUITING");
+		assertThat(result.get(1).title()).isEqualTo("Saturday Escape");
 		assertThat(result.get(1).themeName()).isEqualTo("Deep Blue");
 	}
 
@@ -50,13 +52,13 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			member.getId(),
+			"Friday Escape",
 			"Time Attack",
 			"Gangnam",
 			"2026-04-20",
 			"19:30",
 			4,
 			120000,
-			"https://example.com/reserve",
 			"https://open.kakao.com/o/abc123",
 			"Please arrive on time"
 		));
@@ -67,8 +69,10 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 
 		assertThat(result.meetingId()).isEqualTo(meeting.getId());
 		assertThat(result.hostUserId()).isEqualTo(member.getId());
+		assertThat(result.title()).isEqualTo("Friday Escape");
 		assertThat(result.status()).isEqualTo("RECRUITING");
 		assertThat(result.result()).isEqualTo("NOT_RECORDED");
+		assertThat(result.contactLink()).isEqualTo("https://open.kakao.com/o/abc123");
 		assertThat(result.myParticipationStatus()).isEqualTo("JOINED");
 	}
 
@@ -84,6 +88,7 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			host.getId(),
+			"Friday Escape",
 			"Test Theme",
 			"Gangnam",
 			"2026-04-20",
@@ -114,6 +119,7 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 		Meeting meeting = meetingRepository.save(Meeting.create(
 			crew.getId(),
 			host.getId(),
+			"Friday Escape",
 			"Test Theme",
 			"Gangnam",
 			"2026-04-20",

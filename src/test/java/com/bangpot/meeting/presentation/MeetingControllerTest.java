@@ -3,6 +3,7 @@ package com.bangpot.meeting.presentation;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,6 +32,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
+import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -71,23 +73,27 @@ class MeetingControllerTest {
 	@MockitoBean
 	private RecordMeetingResultUseCase recordMeetingResultUseCase;
 
+	@MockitoBean
+	private UpdateMeetingUseCase updateMeetingUseCase;
+
 	@Test
 	void createsMeetingForJoinedCrewMember() throws Exception {
 		when(createMeetingUseCase.handle(CreateMeetingUseCase.Command.of(
 			1L,
 			77L,
+			"Friday Escape",
 			"2026-04-20",
 			"19:30",
 			"Gangnam",
 			"Time Attack",
 			4,
 			120000,
-			"https://example.com/reserve",
 			"https://open.kakao.com/o/abc123",
 			"Please arrive on time"
 		))).thenReturn(CreateMeetingUseCase.Result.of(
 			10L,
 			1L,
+			"Friday Escape",
 			"Time Attack",
 			"Gangnam",
 			"2026-04-20",
@@ -102,14 +108,14 @@ class MeetingControllerTest {
 				.contentType("application/json")
 				.content("""
 					{
+					  "title": "Friday Escape",
 					  "date": "2026-04-20",
 					  "time": "19:30",
 					  "place": "Gangnam",
 					  "themeName": "Time Attack",
 					  "capacity": 4,
 					  "totalCost": 120000,
-					  "reservationLink": "https://example.com/reserve",
-					  "openChatLink": "https://open.kakao.com/o/abc123",
+					  "contactLink": "https://open.kakao.com/o/abc123",
 					  "description": "Please arrive on time"
 					}
 					""")
@@ -117,6 +123,7 @@ class MeetingControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.meetingId").value(10))
 			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.title").value("Friday Escape"))
 			.andExpect(jsonPath("$.status").value("RECRUITING"))
 			.andExpect(jsonPath("$.result").value("NOT_RECORDED"));
 	}
@@ -233,6 +240,73 @@ class MeetingControllerTest {
 	}
 
 	@Test
+	void updatesRecruitingMeetingForHost() throws Exception {
+		when(updateMeetingUseCase.handle(
+			UpdateMeetingUseCase.Command.of(
+				1L,
+				10L,
+				77L,
+				"Late Night Escape",
+				"2026-04-22",
+				"20:00",
+				"Hongdae",
+				"Deep Blue",
+				2,
+				90000,
+				"https://open.kakao.com/o/new123",
+				"Updated description"
+			)
+		)).thenReturn(UpdateMeetingUseCase.Result.of(
+			10L,
+			1L,
+			77L,
+			"Late Night Escape",
+			"Deep Blue",
+			"Hongdae",
+			"2026-04-22",
+			"20:00",
+			2,
+			90000,
+			"https://open.kakao.com/o/new123",
+			"Updated description",
+			"RECRUITING",
+			"NOT_RECORDED"
+		));
+
+		mockMvc.perform(
+			patch("/api/crews/1/meetings/10")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "title": "Late Night Escape",
+					  "date": "2026-04-22",
+					  "time": "20:00",
+					  "place": "Hongdae",
+					  "themeName": "Deep Blue",
+					  "capacity": 2,
+					  "totalCost": 90000,
+					  "contactLink": "https://open.kakao.com/o/new123",
+					  "description": "Updated description"
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.meetingId").value(10))
+			.andExpect(jsonPath("$.title").value("Late Night Escape"))
+			.andExpect(jsonPath("$.themeName").value("Deep Blue"))
+			.andExpect(jsonPath("$.place").value("Hongdae"))
+			.andExpect(jsonPath("$.date").value("2026-04-22"))
+			.andExpect(jsonPath("$.time").value("20:00"))
+			.andExpect(jsonPath("$.capacity").value(2))
+			.andExpect(jsonPath("$.totalCost").value(90000))
+			.andExpect(jsonPath("$.contactLink").value("https://open.kakao.com/o/new123"))
+			.andExpect(jsonPath("$.description").value("Updated description"))
+			.andExpect(jsonPath("$.status").value("RECRUITING"))
+			.andExpect(jsonPath("$.result").value("NOT_RECORDED"));
+	}
+
+	@Test
 	void returnsValidationErrorWhenRequiredMeetingFieldIsMissing() throws Exception {
 		mockMvc.perform(
 			post("/api/crews/1/meetings")
@@ -244,6 +318,7 @@ class MeetingControllerTest {
 					  "time": "19:30",
 					  "place": "",
 					  "themeName": "Time Attack",
+					  "title": "Friday Escape",
 					  "capacity": 4
 					}
 					""")
@@ -260,6 +335,7 @@ class MeetingControllerTest {
 				.contentType("application/json")
 				.content("""
 					{
+					  "title": "Friday Escape",
 					  "date": "2026-04-20",
 					  "time": "19:30",
 					  "place": "Gangnam",
@@ -309,10 +385,52 @@ class MeetingControllerTest {
 	}
 
 	@Test
+	void returnsValidationErrorWhenRequiredMeetingUpdateFieldIsMissing() throws Exception {
+		mockMvc.perform(
+			patch("/api/crews/1/meetings/10")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "title": "Late Night Escape",
+					  "date": "2026-04-22",
+					  "time": "20:00",
+					  "place": "",
+					  "themeName": "Deep Blue",
+					  "capacity": 2
+					}
+					""")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").exists());
+	}
+
+	@Test
+	void returnsUnauthorizedWhenMeetingUpdateIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(
+			patch("/api/crews/1/meetings/10")
+				.contentType("application/json")
+				.content("""
+					{
+					  "title": "Late Night Escape",
+					  "date": "2026-04-22",
+					  "time": "20:00",
+					  "place": "Hongdae",
+					  "themeName": "Deep Blue",
+					  "capacity": 2
+					}
+					""")
+		)
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
 	void returnsMeetingsForJoinedCrewMember() throws Exception {
 		when(getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(1L, 77L))).thenReturn(List.of(
-			GetMeetingsUseCase.View.of(10L, "Time Attack", "Gangnam", "2026-04-20", "19:30", "RECRUITING", "NOT_RECORDED", 4),
-			GetMeetingsUseCase.View.of(11L, "Deep Blue", "Hongdae", "2026-04-21", "20:00", "RECRUITING", "NOT_RECORDED", 6)
+			GetMeetingsUseCase.View.of(10L, "Friday Escape", "Time Attack", "Gangnam", "2026-04-20", "19:30", "RECRUITING", "NOT_RECORDED", 4),
+			GetMeetingsUseCase.View.of(11L, "Saturday Escape", "Deep Blue", "Hongdae", "2026-04-21", "20:00", "RECRUITING", "NOT_RECORDED", 6)
 		));
 
 		mockMvc.perform(
@@ -321,6 +439,7 @@ class MeetingControllerTest {
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].meetingId").value(10))
+			.andExpect(jsonPath("$[0].title").value("Friday Escape"))
 			.andExpect(jsonPath("$[0].themeName").value("Time Attack"))
 			.andExpect(jsonPath("$[0].status").value("RECRUITING"))
 			.andExpect(jsonPath("$[0].result").value("NOT_RECORDED"))
@@ -334,13 +453,13 @@ class MeetingControllerTest {
 				10L,
 				1L,
 				77L,
+				"Friday Escape",
 				"Time Attack",
 				"Gangnam",
 				"2026-04-20",
 				"19:30",
 				4,
 				120000,
-				"https://example.com/reserve",
 				"https://open.kakao.com/o/abc123",
 				"Please arrive on time",
 				"RECRUITING",
@@ -356,9 +475,11 @@ class MeetingControllerTest {
 			.andExpect(jsonPath("$.meetingId").value(10))
 			.andExpect(jsonPath("$.crewId").value(1))
 			.andExpect(jsonPath("$.hostUserId").value(77))
+			.andExpect(jsonPath("$.title").value("Friday Escape"))
 			.andExpect(jsonPath("$.themeName").value("Time Attack"))
 			.andExpect(jsonPath("$.status").value("RECRUITING"))
 			.andExpect(jsonPath("$.result").value("NOT_RECORDED"))
+			.andExpect(jsonPath("$.contactLink").value("https://open.kakao.com/o/abc123"))
 			.andExpect(jsonPath("$.myParticipationStatus").value("NOT_JOINED"));
 	}
 

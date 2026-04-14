@@ -35,6 +35,7 @@ import com.bangpot.meeting.application.service.JoinMeetingService;
 import com.bangpot.meeting.application.service.MeetingAutomaticTransitionService;
 import com.bangpot.meeting.application.service.RecordMeetingResultService;
 import com.bangpot.meeting.application.service.ReopenMeetingRecruitmentService;
+import com.bangpot.meeting.application.service.UpdateMeetingService;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CloseMeetingRecruitmentUseCase;
@@ -45,6 +46,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
+import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.user.application.port.UserRepository;
@@ -69,6 +71,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 	protected GetMeetingDetailUseCase getMeetingDetailUseCase;
 	protected JoinMeetingUseCase joinMeetingUseCase;
 	protected CancelMeetingParticipationUseCase cancelMeetingParticipationUseCase;
+	protected UpdateMeetingUseCase updateMeetingUseCase;
 	protected CloseMeetingRecruitmentUseCase closeMeetingRecruitmentUseCase;
 	protected ReopenMeetingRecruitmentUseCase reopenMeetingRecruitmentUseCase;
 	protected CancelMeetingUseCase cancelMeetingUseCase;
@@ -120,6 +123,13 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			crewMemberRepository,
 			meetingRepository,
 			meetingParticipantRepository
+		);
+		updateMeetingUseCase = new UpdateMeetingService(
+			completedUserAccessService,
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository,
+			meetingAutomaticTransitionService
 		);
 		closeMeetingRecruitmentUseCase = new CloseMeetingRecruitmentService(
 			completedUserAccessService,
