@@ -37,11 +37,10 @@ import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
 import com.bangpot.explore.error.ExploreErrorCode;
-import com.bangpot.gallerylog.application.exception.MeetingLogAlreadyExistsException;
-import com.bangpot.gallerylog.application.exception.MeetingLogNotFoundException;
-import com.bangpot.gallerylog.application.exception.MeetingLogRequestValidationException;
-import com.bangpot.gallerylog.application.exception.MeetingLogWriteNotAllowedException;
-import com.bangpot.gallerylog.error.GalleryLogErrorCode;
+import com.bangpot.meeting.application.exception.MeetingLogAlreadyExistsException;
+import com.bangpot.meeting.application.exception.MeetingLogNotFoundException;
+import com.bangpot.meeting.application.exception.MeetingLogRequestValidationException;
+import com.bangpot.meeting.application.exception.MeetingLogWriteNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingHostCannotCancelParticipationException;
 import com.bangpot.meeting.application.exception.MeetingEditNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
@@ -51,6 +50,7 @@ import com.bangpot.meeting.application.exception.MeetingParticipationNotJoinedEx
 import com.bangpot.meeting.application.exception.MeetingResultAlreadyRecordedException;
 import com.bangpot.meeting.application.exception.MeetingResultRecordNotAllowedException;
 import com.bangpot.meeting.error.MeetingErrorCode;
+import com.bangpot.meeting.error.MeetingLogErrorCode;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.exception.UserNotFoundException;
@@ -197,17 +197,17 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(MeetingLogNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleMeetingLogNotFound(MeetingLogNotFoundException exception) {
-		return error(GalleryLogErrorCode.LOG_NOT_FOUND);
+		return error(MeetingLogErrorCode.LOG_NOT_FOUND);
 	}
 
 	@ExceptionHandler(MeetingLogAlreadyExistsException.class)
 	ResponseEntity<ApiErrorResponse> handleMeetingLogAlreadyExists(MeetingLogAlreadyExistsException exception) {
-		return error(GalleryLogErrorCode.LOG_ALREADY_EXISTS);
+		return error(MeetingLogErrorCode.LOG_ALREADY_EXISTS);
 	}
 
 	@ExceptionHandler(MeetingLogWriteNotAllowedException.class)
 	ResponseEntity<ApiErrorResponse> handleMeetingLogWriteNotAllowed(MeetingLogWriteNotAllowedException exception) {
-		return error(GalleryLogErrorCode.LOG_WRITE_NOT_ALLOWED);
+		return error(MeetingLogErrorCode.LOG_WRITE_NOT_ALLOWED);
 	}
 
 	@ExceptionHandler(MeetingLogRequestValidationException.class)
