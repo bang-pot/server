@@ -11,6 +11,10 @@ spring:
           time_zone: UTC
   datasource:
     driver-class-name: org.postgresql.Driver
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 
   security:
     oauth2:
@@ -46,6 +50,8 @@ bangpot:
     slack:
       all-log-webhook-url: ${BANGPOT_OPS_SLACK_ALL_LOG_WEBHOOK_URL:}
       error-log-webhook-url: ${BANGPOT_OPS_SLACK_ERROR_LOG_WEBHOOK_URL:}
+  storage:
+    root-directory: ${BANGPOT_STORAGE_ROOT_DIRECTORY:${user.dir}/storage}
 
 management:
   endpoints:
