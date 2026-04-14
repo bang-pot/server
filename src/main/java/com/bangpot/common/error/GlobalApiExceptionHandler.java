@@ -48,6 +48,7 @@ import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.exception.UserNotFoundException;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 
 @RestControllerAdvice
@@ -261,6 +262,20 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return error(CommonErrorCode.COMMON_INTERNAL_ERROR);
 	}
 
+	@ExceptionHandler(ConstraintViolationException.class)
+	ResponseEntity<ApiErrorResponse> handleConstraintViolation(ConstraintViolationException exception) {
+		List<ApiErrorField> fieldErrors = exception.getConstraintViolations().stream()
+			.map(violation -> new ApiErrorField(
+				resolveConstraintField(violation.getPropertyPath() == null ? "" : violation.getPropertyPath().toString()),
+				violation.getMessage()
+			))
+			.toList();
+
+		return ResponseEntity.badRequest().body(
+			apiErrorResponseFactory.create(CommonErrorCode.COMMON_VALIDATION_ERROR, fieldErrors)
+		);
+	}
+
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(
 		MethodArgumentNotValidException exception,
@@ -285,5 +300,13 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	private ResponseEntity<ApiErrorResponse> error(ApiErrorCode errorCode) {
 		return ResponseEntity.status(errorCode.status())
 			.body(apiErrorResponseFactory.create(errorCode));
+	}
+
+	private String resolveConstraintField(String propertyPath) {
+		int separator = propertyPath.lastIndexOf('.');
+		if (separator < 0 || separator == propertyPath.length() - 1) {
+			return propertyPath;
+		}
+		return propertyPath.substring(separator + 1);
 	}
 }

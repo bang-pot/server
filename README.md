@@ -111,6 +111,8 @@ bangpot:
 - `POST /api/auth/logout`
 - `POST /api/crews`
 - `GET /api/crews/public`
+- `GET /api/explore/themes`
+- `GET /api/explore/filters`
 - `GET /api/crews/{crewId}`
 - `POST /api/crews/{crewId}/leave`
 - `POST /api/crews/{crewId}/members/{targetUserId}/remove`
@@ -147,6 +149,7 @@ bangpot:
 - `GET /login/oauth2/code/kakao`
 
 `GET /api/crews/public` and `GET /api/crews/{crewId}/join` are public read endpoints and do not require authentication.
+`GET /api/explore/themes` and `GET /api/explore/filters` are public read endpoints and do not require authentication. Explore search uses one keyword `q` across theme name, store name, region, and district; supports repeated `genres` params plus optional `region`, `district`, `page`, and `size`; and returns `{items, pageInfo}` with `hasNext` so the frontend can extend it to infinite scroll. `isFavorited` is fixed to `false` in this round because favorites are not implemented yet, and `favoriteCount` is served from the theme row with `0` as the default seed value when real favorite aggregation is missing.
 `GET /api/crews/{crewId}` is the internal crew hub endpoint and is available only to joined crew members; it returns the crew summary, current user's role, `hasNotice`, and leader-only `pendingJoinRequestCount`.
 `POST /api/crews/{crewId}/leave` is the joined-member-only crew leave endpoint; it removes the caller's membership when the caller is not the leader and does not host unfinished meetings in that crew. After success, internal crew access is revoked because membership checks continue to read `crew_members`.
 `POST /api/crews/{crewId}/members/{targetUserId}/remove` is the current-leader-only forced-remove endpoint; it accepts only current `MEMBER` targets, cancels that target's unfinished hosted meetings in the same crew, marks joined participation in same-crew meetings as `LEFT`, removes the crew membership, and immediately revokes internal crew access.
@@ -166,6 +169,15 @@ Meeting automatic transitions do not add new public APIs in this round. Existing
 `GET /api/crews/{crewId}/invite-candidates` and `POST /api/crews/{crewId}/invites` are private-crew leader endpoints for direct invite flow; candidate list excludes existing members, already pending invite targets, and the leader themself.
 `GET /api/crew-invites/me` returns the current full user's invite history, and `POST /api/crew-invites/{inviteId}/accept|reject` process only `PENDING` invites while keeping invite rows as status history.
 Profile and nickname availability moved to `/api/users/...`; frontend consumers should stop calling legacy `/api/auth/profile` and `/api/auth/nickname-availability`.
+
+## Explore source of truth
+
+- Explore Round 01 introduces `stores` and `themes` as the backend source of truth for public escape-room discovery.
+- `stores` owns branch-level information such as `name`, `region`, `district`, and `address`.
+- `themes` owns card-level information such as `name`, `genre`, `posterImageUrl`, `difficulty`, `activityLabel`, `recommendedPlayers`, `runningTimeMinutes`, `favoriteCount`, and `isActive`.
+- Search cards are theme-centered and join store information at read time.
+- This round does not implement theme detail, favorites, or meeting auto-fill from explore.
+- Missing optional card fields are returned as `null`; the frontend should handle poster fallbacks and truncation.
 
 ## Crew lifecycle status
 
