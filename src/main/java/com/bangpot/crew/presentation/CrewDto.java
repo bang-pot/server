@@ -75,6 +75,14 @@ final class CrewDto {
 	record RemoveCrewMemberResponse(Long crewId, Long removedUserId) {
 	}
 
+	record DeleteCrewRequest(
+		@NotBlank(message = "삭제할 크루명을 입력해야 합니다.") String crewName
+	) {
+	}
+
+	record DeleteCrewResponse(Long crewId) {
+	}
+
 	record TransferCrewLeadershipRequest(
 		@NotNull(message = "위임 대상 크루원을 선택해야 합니다.") Long targetUserId
 	) {

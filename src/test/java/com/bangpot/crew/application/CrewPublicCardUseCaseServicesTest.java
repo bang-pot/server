@@ -12,6 +12,7 @@ import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.GetPublicCrewCardsService;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 
 class CrewPublicCardUseCaseServicesTest {
@@ -42,6 +43,20 @@ class CrewPublicCardUseCaseServicesTest {
 		assertThat(result.get(1).imageUrl()).isEqualTo("https://image.example/beta.png");
 	}
 
+	@Test
+	void excludesDeletedPublicCrewFromCardList() {
+		Crew deletedCrew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		deletedCrew.delete();
+		crewRepository.save(deletedCrew);
+		crewRepository.save(Crew.create("Crew Beta", "night runners", CrewVisibility.PUBLIC, null));
+
+		List<GetPublicCrewCardsUseCase.View> result = getPublicCrewCardsUseCase.handle();
+
+		assertThat(result)
+			.extracting(GetPublicCrewCardsUseCase.View::name)
+			.containsExactly("Crew Beta");
+	}
+
 	private static final class InMemoryCrewRepository implements CrewRepository {
 
 		private final List<Crew> crews = new ArrayList<>();
@@ -63,12 +78,20 @@ class CrewPublicCardUseCaseServicesTest {
 
 		@Override
 		public java.util.Optional<Crew> findById(Long crewId) {
+			return crews.stream()
+				.filter(crew -> crewId.equals(crew.getId()) && crew.getStatus() == CrewStatus.ACTIVE)
+				.findFirst();
+		}
+
+		@Override
+		public java.util.Optional<Crew> findAnyById(Long crewId) {
 			return crews.stream().filter(crew -> crewId.equals(crew.getId())).findFirst();
 		}
 
 		@Override
 		public List<Crew> findPublicCrews() {
 			return crews.stream()
+				.filter(crew -> crew.getStatus() == CrewStatus.ACTIVE)
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
 				.toList();
 		}

@@ -37,6 +37,10 @@ public class Crew {
 	@Column(name = "visibility", nullable = false)
 	private CrewVisibility visibility;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false)
+	private CrewStatus status;
+
 	@Column(name = "image_url")
 	private String imageUrl;
 
@@ -54,6 +58,7 @@ public class Crew {
 		String name,
 		String description,
 		CrewVisibility visibility,
+		CrewStatus status,
 		String imageUrl,
 		Instant createdAt,
 		Instant updatedAt
@@ -62,6 +67,7 @@ public class Crew {
 		this.name = name;
 		this.description = description;
 		this.visibility = visibility;
+		this.status = status;
 		this.imageUrl = imageUrl;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
@@ -73,6 +79,7 @@ public class Crew {
 			name,
 			description,
 			visibility == null ? CrewVisibility.PUBLIC : visibility,
+			CrewStatus.ACTIVE,
 			imageUrl,
 			null,
 			null
@@ -92,6 +99,14 @@ public class Crew {
 			throw new IllegalArgumentException("visibility must not be null");
 		}
 		this.visibility = visibility;
+	}
+
+	public void delete() {
+		this.status = CrewStatus.DELETED;
+	}
+
+	public boolean isActive() {
+		return status == CrewStatus.ACTIVE;
 	}
 
 	public void assignId(Long id) {

@@ -33,6 +33,7 @@ import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
+import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
@@ -98,6 +99,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private RemoveCrewMemberUseCase removeCrewMemberUseCase;
+
+	@MockitoBean
+	private DeleteCrewUseCase deleteCrewUseCase;
 
 	@MockitoBean
 	private TransferCrewLeadershipUseCase transferCrewLeadershipUseCase;
@@ -652,6 +656,57 @@ class CrewControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.crewId").value(1))
 			.andExpect(jsonPath("$.removedUserId").value(201));
+	}
+
+	@Test
+	void deletesCrewForCurrentLeader() throws Exception {
+		when(deleteCrewUseCase.handle(DeleteCrewUseCase.Command.of(1L, 77L, "Crew Alpha")))
+			.thenReturn(DeleteCrewUseCase.Result.of(1L));
+
+		mockMvc.perform(
+			post("/api/crews/1/delete")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "crewName": "Crew Alpha"
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenDeleteCrewIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(
+			post("/api/crews/1/delete")
+				.contentType("application/json")
+				.content("""
+					{
+					  "crewName": "Crew Alpha"
+					}
+					""")
+		)
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenDeleteCrewNameIsBlank() throws Exception {
+		mockMvc.perform(
+			post("/api/crews/1/delete")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "crewName": "   "
+					}
+					""")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("crewName"));
 	}
 
 	@Test

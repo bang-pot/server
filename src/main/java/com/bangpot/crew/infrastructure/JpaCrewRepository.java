@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 
 import lombok.RequiredArgsConstructor;
@@ -29,11 +30,16 @@ class JpaCrewRepository implements CrewRepository {
 
 	@Override
 	public Optional<Crew> findById(Long crewId) {
+		return crewJpaRepository.findByIdAndStatus(crewId, CrewStatus.ACTIVE);
+	}
+
+	@Override
+	public Optional<Crew> findAnyById(Long crewId) {
 		return crewJpaRepository.findById(crewId);
 	}
 
 	@Override
 	public List<Crew> findPublicCrews() {
-		return crewJpaRepository.findAllByVisibilityOrderByIdAsc(CrewVisibility.PUBLIC);
+		return crewJpaRepository.findAllByStatusAndVisibilityOrderByIdAsc(CrewStatus.ACTIVE, CrewVisibility.PUBLIC);
 	}
 }
