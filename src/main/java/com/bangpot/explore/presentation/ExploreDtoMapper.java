@@ -3,6 +3,7 @@ package com.bangpot.explore.presentation;
 import java.util.List;
 
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 
 final class ExploreDtoMapper {
@@ -43,6 +44,25 @@ final class ExploreDtoMapper {
 		);
 	}
 
+	static ExploreDto.ExploreThemeDetailResponse toResponse(GetExploreThemeDetailUseCase.Result result) {
+		return new ExploreDto.ExploreThemeDetailResponse(
+			result.themeId(),
+			result.themeName(),
+			result.storeId(),
+			result.storeName(),
+			result.regionLabel(),
+			result.genre(),
+			result.posterImageUrl(),
+			result.difficulty(),
+			result.runningTimeMinutes(),
+			result.description(),
+			result.externalLink(),
+			result.relatedThemes().stream()
+				.map(ExploreDtoMapper::toResponse)
+				.toList()
+		);
+	}
+
 	private static ExploreDto.ExploreThemeCardResponse toResponse(GetExploreThemesUseCase.Item item) {
 		return new ExploreDto.ExploreThemeCardResponse(
 			item.themeId(),
@@ -58,6 +78,22 @@ final class ExploreDtoMapper {
 			item.runningTimeMinutes(),
 			item.favoriteCount(),
 			item.isFavorited()
+		);
+	}
+
+	private static ExploreDto.ExploreThemeDetailRelatedThemeResponse toResponse(
+		GetExploreThemeDetailUseCase.RelatedTheme item
+	) {
+		return new ExploreDto.ExploreThemeDetailRelatedThemeResponse(
+			item.themeId(),
+			item.themeName(),
+			item.storeId(),
+			item.storeName(),
+			item.regionLabel(),
+			item.genre(),
+			item.posterImageUrl(),
+			item.difficulty(),
+			item.runningTimeMinutes()
 		);
 	}
 }

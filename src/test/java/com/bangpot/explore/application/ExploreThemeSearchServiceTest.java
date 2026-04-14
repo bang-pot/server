@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,34 +32,12 @@ class ExploreThemeSearchServiceTest {
 	@Test
 	void searchesThemesByKeywordAcrossThemeStoreAndRegion() {
 		repository.append(
-			1L,
-			101L,
-			"Deep Blue",
-			"Seoul Escape Hongdae",
-			"Seoul",
-			"Mapo",
-			"HORROR",
-			"https://image.example/deep-blue.jpg",
-			4,
-			"HIGH",
-			"2-4인",
-			60,
-			0
+			1L, 101L, "Deep Blue", "Seoul Escape Hongdae", "Seoul", "Mapo",
+			"HORROR", "https://image.example/deep-blue.jpg", 4, "HIGH", "2-4 players", 60, 0
 		);
 		repository.append(
-			2L,
-			102L,
-			"Time Attack",
-			"Busan Escape Haeundae",
-			"Busan",
-			"Haeundae",
-			"THRILLER",
-			null,
-			3,
-			"MEDIUM",
-			"3-5인",
-			75,
-			0
+			2L, 102L, "Time Attack", "Busan Escape Haeundae", "Busan", "Haeundae",
+			"THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0
 		);
 
 		GetExploreThemesUseCase.Result result = getExploreThemesUseCase.handle(
@@ -85,12 +64,12 @@ class ExploreThemeSearchServiceTest {
 
 	@Test
 	void appliesGenreAndRegionFiltersWithPagination() {
-		repository.append(1L, 101L, "Deep Blue", "Store A", "서울", "강남구", "HORROR", null, 4, "HIGH", "2-4인", 60, 0);
-		repository.append(2L, 101L, "Lost Temple", "Store A", "서울", "강남구", "HORROR", null, 3, "MEDIUM", "3-5인", 75, 0);
-		repository.append(3L, 102L, "Comedy Room", "Store B", "서울", "마포구", "COMEDY", null, 2, "LOW", "2-3인", 50, 0);
+		repository.append(1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam", "HORROR", null, 4, "HIGH", "2-4 players", 60, 0);
+		repository.append(2L, 101L, "Lost Temple", "Store A", "Seoul", "Gangnam", "HORROR", null, 3, "MEDIUM", "3-5 players", 75, 0);
+		repository.append(3L, 102L, "Comedy Room", "Store B", "Seoul", "Mapo", "COMEDY", null, 2, "LOW", "2-3 players", 50, 0);
 
 		GetExploreThemesUseCase.Result firstPage = getExploreThemesUseCase.handle(
-			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "서울", "강남구", 0, 1)
+			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "Seoul", "Gangnam", 0, 1)
 		);
 
 		assertThat(firstPage.items()).hasSize(1);
@@ -99,7 +78,7 @@ class ExploreThemeSearchServiceTest {
 		assertThat(firstPage.pageInfo().hasNext()).isTrue();
 
 		GetExploreThemesUseCase.Result secondPage = getExploreThemesUseCase.handle(
-			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "서울", "강남구", 1, 1)
+			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "Seoul", "Gangnam", 1, 1)
 		);
 
 		assertThat(secondPage.items()).hasSize(1);
@@ -111,18 +90,18 @@ class ExploreThemeSearchServiceTest {
 
 	@Test
 	void returnsFilterOptionsGroupedByRegion() {
-		repository.append(1L, 101L, "Deep Blue", "Store A", "서울", "강남구", "HORROR", null, 4, "HIGH", "2-4인", 60, 0);
-		repository.append(2L, 102L, "Lost Temple", "Store B", "서울", "마포구", "THRILLER", null, 3, "MEDIUM", "3-5인", 75, 0);
-		repository.append(3L, 103L, "Comedy Room", "Store C", "부산", "해운대구", "COMEDY", null, 2, "LOW", "2-3인", 50, 0);
+		repository.append(1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam", "HORROR", null, 4, "HIGH", "2-4 players", 60, 0);
+		repository.append(2L, 102L, "Lost Temple", "Store B", "Seoul", "Mapo", "THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0);
+		repository.append(3L, 103L, "Comedy Room", "Store C", "Busan", "Haeundae", "COMEDY", null, 2, "LOW", "2-3 players", 50, 0);
 
 		GetExploreFiltersUseCase.Result result = getExploreFiltersUseCase.handle();
 
 		assertThat(result.genres()).containsExactly("COMEDY", "HORROR", "THRILLER");
 		assertThat(result.regions()).hasSize(2);
-		assertThat(result.regions().getFirst().name()).isEqualTo("부산");
-		assertThat(result.regions().getFirst().districts()).containsExactly("해운대구");
-		assertThat(result.regions().get(1).name()).isEqualTo("서울");
-		assertThat(result.regions().get(1).districts()).containsExactly("강남구", "마포구");
+		assertThat(result.regions().getFirst().name()).isEqualTo("Busan");
+		assertThat(result.regions().getFirst().districts()).containsExactly("Haeundae");
+		assertThat(result.regions().get(1).name()).isEqualTo("Seoul");
+		assertThat(result.regions().get(1).districts()).containsExactly("Gangnam", "Mapo");
 	}
 
 	private static final class InMemoryExploreThemeReadRepository implements ExploreThemeReadRepository {
@@ -222,6 +201,11 @@ class ExploreThemeSearchServiceTest {
 				.toList();
 
 			return GetExploreFiltersUseCase.Result.of(genres, regions);
+		}
+
+		@Override
+		public Optional<ThemeDetail> getThemeDetail(Long themeId) {
+			throw new UnsupportedOperationException();
 		}
 
 		private boolean matchesKeyword(Row row, String keyword) {

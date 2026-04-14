@@ -1,6 +1,7 @@
 package com.bangpot.explore.infrastructure;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -62,6 +63,50 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		""")
 	List<String> findActiveGenres();
 
+	@Query("""
+		select t.id as themeId,
+		       t.name as themeName,
+		       s.id as storeId,
+		       s.name as storeName,
+		       s.region as region,
+		       s.district as district,
+		       t.genre as genre,
+		       t.posterImageUrl as posterImageUrl,
+		       t.difficulty as difficulty,
+		       t.runningTimeMinutes as runningTimeMinutes,
+		       t.description as description,
+		       t.externalLink as externalLink
+		from Theme t, Store s
+		where s.id = t.storeId
+		  and t.active = true
+		  and t.id = :themeId
+		""")
+	Optional<ThemeDetailProjection> findActiveThemeDetailById(@Param("themeId") Long themeId);
+
+	@Query("""
+		select t.id as themeId,
+		       t.name as themeName,
+		       s.id as storeId,
+		       s.name as storeName,
+		       s.region as region,
+		       s.district as district,
+		       t.genre as genre,
+		       t.posterImageUrl as posterImageUrl,
+		       t.difficulty as difficulty,
+		       t.runningTimeMinutes as runningTimeMinutes
+		from Theme t, Store s
+		where s.id = t.storeId
+		  and t.active = true
+		  and t.storeId = :storeId
+		  and t.id <> :themeId
+		order by t.id desc
+		""")
+	List<RelatedThemeProjection> findRelatedActiveThemes(
+		@Param("storeId") Long storeId,
+		@Param("themeId") Long themeId,
+		Pageable pageable
+	);
+
 	interface ThemeCardProjection {
 		Long getThemeId();
 
@@ -88,5 +133,53 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		Integer getRunningTimeMinutes();
 
 		Integer getFavoriteCount();
+	}
+
+	interface ThemeDetailProjection {
+		Long getThemeId();
+
+		String getThemeName();
+
+		Long getStoreId();
+
+		String getStoreName();
+
+		String getRegion();
+
+		String getDistrict();
+
+		String getGenre();
+
+		String getPosterImageUrl();
+
+		Integer getDifficulty();
+
+		Integer getRunningTimeMinutes();
+
+		String getDescription();
+
+		String getExternalLink();
+	}
+
+	interface RelatedThemeProjection {
+		Long getThemeId();
+
+		String getThemeName();
+
+		Long getStoreId();
+
+		String getStoreName();
+
+		String getRegion();
+
+		String getDistrict();
+
+		String getGenre();
+
+		String getPosterImageUrl();
+
+		Integer getDifficulty();
+
+		Integer getRunningTimeMinutes();
 	}
 }

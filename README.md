@@ -112,6 +112,7 @@ bangpot:
 - `POST /api/crews`
 - `GET /api/crews/public`
 - `GET /api/explore/themes`
+- `GET /api/explore/themes/{themeId}`
 - `GET /api/explore/filters`
 - `GET /api/crews/{crewId}`
 - `POST /api/crews/{crewId}/leave`
@@ -149,7 +150,7 @@ bangpot:
 - `GET /login/oauth2/code/kakao`
 
 `GET /api/crews/public` and `GET /api/crews/{crewId}/join` are public read endpoints and do not require authentication.
-`GET /api/explore/themes` and `GET /api/explore/filters` are public read endpoints and do not require authentication. Explore search uses one keyword `q` across theme name, store name, region, and district; supports repeated `genres` params plus optional `region`, `district`, `page`, and `size`; and returns `{items, pageInfo}` with `hasNext` so the frontend can extend it to infinite scroll. `isFavorited` is fixed to `false` in this round because favorites are not implemented yet, and `favoriteCount` is served from the theme row with `0` as the default seed value when real favorite aggregation is missing.
+`GET /api/explore/themes`, `GET /api/explore/themes/{themeId}`, and `GET /api/explore/filters` are public read endpoints and do not require authentication. Explore search uses one keyword `q` across theme name, store name, region, and district; supports repeated `genres` params plus optional `region`, `district`, `page`, and `size`; and returns `{items, pageInfo}` with `hasNext` so the frontend can extend it to infinite scroll. `isFavorited` is fixed to `false` in this round because favorites are not implemented yet, and `favoriteCount` is served from the theme row with `0` as the default seed value when real favorite aggregation is missing. Theme detail returns the core theme fields plus `relatedThemes`, where recommendations are limited to at most four other active themes from the same store, excluding the current theme itself. Missing `posterImageUrl`, `description`, and `externalLink` are returned as `null` so the frontend can handle fallback copy and imagery.
 `GET /api/crews/{crewId}` is the internal crew hub endpoint and is available only to joined crew members; it returns the crew summary, current user's role, `hasNotice`, and leader-only `pendingJoinRequestCount`.
 `POST /api/crews/{crewId}/leave` is the joined-member-only crew leave endpoint; it removes the caller's membership when the caller is not the leader and does not host unfinished meetings in that crew. After success, internal crew access is revoked because membership checks continue to read `crew_members`.
 `POST /api/crews/{crewId}/members/{targetUserId}/remove` is the current-leader-only forced-remove endpoint; it accepts only current `MEMBER` targets, cancels that target's unfinished hosted meetings in the same crew, marks joined participation in same-crew meetings as `LEFT`, removes the crew membership, and immediately revokes internal crew access.
@@ -177,7 +178,9 @@ Profile and nickname availability moved to `/api/users/...`; frontend consumers 
 - `themes` owns card-level information such as `name`, `genre`, `posterImageUrl`, `difficulty`, `activityLabel`, `recommendedPlayers`, `runningTimeMinutes`, `favoriteCount`, and `isActive`.
 - Search cards are theme-centered and join store information at read time.
 - This round does not implement theme detail, favorites, or meeting auto-fill from explore.
+- Explore Round 02A adds public theme detail on top of the existing list/filter APIs. Detail uses the same `stores` + `themes` source of truth and includes `relatedThemes` selected from the same store.
 - Missing optional card fields are returned as `null`; the frontend should handle poster fallbacks and truncation.
+- `themes.description` and `themes.external_link` are optional detail-only fields. They may be `null` when source data is missing.
 
 ## Crew lifecycle status
 

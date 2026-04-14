@@ -1,6 +1,7 @@
 package com.bangpot.explore.application.port;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
@@ -10,6 +11,8 @@ public interface ExploreThemeReadRepository {
 	SearchResult search(Condition condition);
 
 	GetExploreFiltersUseCase.Result getFilters();
+
+	Optional<ThemeDetail> getThemeDetail(Long themeId);
 
 	record Condition(
 		String keyword,
@@ -40,6 +43,87 @@ public interface ExploreThemeReadRepository {
 			GetExploreThemesUseCase.PageInfo pageInfo
 		) {
 			return new SearchResult(items, pageInfo);
+		}
+	}
+
+	record RelatedThemeSummary(
+		Long themeId,
+		String themeName,
+		Long storeId,
+		String storeName,
+		String regionLabel,
+		String genre,
+		String posterImageUrl,
+		Integer difficulty,
+		Integer runningTimeMinutes
+	) {
+		public static RelatedThemeSummary of(
+			Long themeId,
+			String themeName,
+			Long storeId,
+			String storeName,
+			String regionLabel,
+			String genre,
+			String posterImageUrl,
+			Integer difficulty,
+			Integer runningTimeMinutes
+		) {
+			return new RelatedThemeSummary(
+				themeId,
+				themeName,
+				storeId,
+				storeName,
+				regionLabel,
+				genre,
+				posterImageUrl,
+				difficulty,
+				runningTimeMinutes
+			);
+		}
+	}
+
+	record ThemeDetail(
+		Long themeId,
+		String themeName,
+		Long storeId,
+		String storeName,
+		String regionLabel,
+		String genre,
+		String posterImageUrl,
+		Integer difficulty,
+		Integer runningTimeMinutes,
+		String description,
+		String externalLink,
+		List<RelatedThemeSummary> relatedThemes
+	) {
+		public static ThemeDetail of(
+			Long themeId,
+			String themeName,
+			Long storeId,
+			String storeName,
+			String regionLabel,
+			String genre,
+			String posterImageUrl,
+			Integer difficulty,
+			Integer runningTimeMinutes,
+			String description,
+			String externalLink,
+			List<RelatedThemeSummary> relatedThemes
+		) {
+			return new ThemeDetail(
+				themeId,
+				themeName,
+				storeId,
+				storeName,
+				regionLabel,
+				genre,
+				posterImageUrl,
+				difficulty,
+				runningTimeMinutes,
+				description,
+				externalLink,
+				relatedThemes
+			);
 		}
 	}
 }

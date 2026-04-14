@@ -1,6 +1,7 @@
 package com.bangpot.explore.infrastructure;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -71,6 +72,28 @@ class JpaExploreThemeReadRepository implements ExploreThemeReadRepository {
 		return GetExploreFiltersUseCase.Result.of(genres, regions);
 	}
 
+	@Override
+	public Optional<ThemeDetail> getThemeDetail(Long themeId) {
+		return themeJpaRepository.findActiveThemeDetailById(themeId)
+			.map(row -> ThemeDetail.of(
+				row.getThemeId(),
+				row.getThemeName(),
+				row.getStoreId(),
+				row.getStoreName(),
+				toRegionLabel(row.getRegion(), row.getDistrict()),
+				row.getGenre(),
+				row.getPosterImageUrl(),
+				row.getDifficulty(),
+				row.getRunningTimeMinutes(),
+				row.getDescription(),
+				row.getExternalLink(),
+				themeJpaRepository.findRelatedActiveThemes(row.getStoreId(), row.getThemeId(), PageRequest.of(0, 4))
+					.stream()
+					.map(this::toRelatedThemeSummary)
+					.toList()
+			));
+	}
+
 	private List<String> normalizedGenres(List<String> genres) {
 		if (genres == null || genres.isEmpty()) {
 			return List.of(UNUSED_GENRE);
@@ -111,6 +134,20 @@ class JpaExploreThemeReadRepository implements ExploreThemeReadRepository {
 			row.getRunningTimeMinutes(),
 			row.getFavoriteCount(),
 			false
+		);
+	}
+
+	private RelatedThemeSummary toRelatedThemeSummary(ThemeJpaRepository.RelatedThemeProjection row) {
+		return RelatedThemeSummary.of(
+			row.getThemeId(),
+			row.getThemeName(),
+			row.getStoreId(),
+			row.getStoreName(),
+			toRegionLabel(row.getRegion(), row.getDistrict()),
+			row.getGenre(),
+			row.getPosterImageUrl(),
+			row.getDifficulty(),
+			row.getRunningTimeMinutes()
 		);
 	}
 
