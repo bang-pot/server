@@ -1,6 +1,8 @@
 package com.bangpot.explore.infrastructure;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
@@ -92,6 +94,19 @@ class JpaExploreThemeReadRepository implements ExploreThemeReadRepository {
 					.map(this::toRelatedThemeSummary)
 					.toList()
 			));
+	}
+
+	@Override
+	public Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames) {
+		if (themeNames == null || themeNames.isEmpty()) {
+			return Map.of();
+		}
+
+		Map<String, String> posters = new LinkedHashMap<>();
+		for (ThemeJpaRepository.ThemePosterProjection projection : themeJpaRepository.findActivePosterImagesByThemeNames(themeNames)) {
+			posters.putIfAbsent(projection.getThemeName(), projection.getPosterImageUrl());
+		}
+		return posters;
 	}
 
 	private List<String> normalizedGenres(List<String> genres) {

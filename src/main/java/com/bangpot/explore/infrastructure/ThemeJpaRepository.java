@@ -107,6 +107,16 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		Pageable pageable
 	);
 
+	@Query("""
+		select t.name as themeName,
+		       t.posterImageUrl as posterImageUrl
+		from Theme t
+		where t.active = true
+		  and t.name in :themeNames
+		order by t.id desc
+		""")
+	List<ThemePosterProjection> findActivePosterImagesByThemeNames(@Param("themeNames") List<String> themeNames);
+
 	interface ThemeCardProjection {
 		Long getThemeId();
 
@@ -181,5 +191,11 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		Integer getDifficulty();
 
 		Integer getRunningTimeMinutes();
+	}
+
+	interface ThemePosterProjection {
+		String getThemeName();
+
+		String getPosterImageUrl();
 	}
 }

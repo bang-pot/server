@@ -1,6 +1,7 @@
 package com.bangpot.explore.application.port;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
@@ -13,6 +14,8 @@ public interface ExploreThemeReadRepository {
 	GetExploreFiltersUseCase.Result getFilters();
 
 	Optional<ThemeDetail> getThemeDetail(Long themeId);
+
+	Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames);
 
 	record Condition(
 		String keyword,
