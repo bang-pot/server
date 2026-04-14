@@ -116,6 +116,11 @@ bangpot:
 - `GET /api/explore/meeting-create/crews`
 - `GET /api/explore/filters`
 - `GET /api/archive/meetings`
+- `POST /api/meetings/{meetingId}/logs`
+- `GET /api/meetings/{meetingId}/logs/me`
+- `PATCH /api/logs/{logId}`
+- `DELETE /api/logs/{logId}`
+- `GET /api/logs/{logId}`
 - `GET /api/crews/{crewId}`
 - `POST /api/crews/{crewId}/leave`
 - `POST /api/crews/{crewId}/members/{targetUserId}/remove`
@@ -155,6 +160,7 @@ bangpot:
 `GET /api/explore/themes`, `GET /api/explore/themes/{themeId}`, and `GET /api/explore/filters` are public read endpoints and do not require authentication. Explore search uses one keyword `q` across theme name, store name, region, and district; supports repeated `genres` params plus optional `region`, `district`, `page`, and `size`; and returns `{items, pageInfo}` with `hasNext` so the frontend can extend it to infinite scroll. `isFavorited` is fixed to `false` in this round because favorites are not implemented yet, and `favoriteCount` is served from the theme row with `0` as the default seed value when real favorite aggregation is missing. Theme detail returns the core theme fields plus `relatedThemes`, where recommendations are limited to at most four other active themes from the same store, excluding the current theme itself. Missing `posterImageUrl`, `description`, and `externalLink` are returned as `null` so the frontend can handle fallback copy and imagery.
 `GET /api/explore/meeting-create/crews` is a login-required explore helper endpoint for the "create a meeting with this theme" flow. It always returns `{crews:[...]}` with `crewId` and `crewName` only, uses active crew memberships as the source of truth, filters out deleted crews, and returns `200 OK` with an empty array when the authenticated user has no active crews. Explore does not add a separate `meeting-defaults` API in this round; the frontend should reuse the existing public theme detail response as the default-value source for meeting creation.
 `GET /api/archive/meetings` is a login-required personal archive read endpoint for completed meeting history. It returns only `COMPLETED` meetings related to the authenticated user, where "related" means the user was the host or has participation history with status `JOINED`, `LEFT`, `PENDING`, or `APPROVED`. The response shape is `{items, pageInfo}` with `page`, `size`, and `hasNext`, sorted by `meetingDate desc`, `meetingTime desc`, and `meetingId desc`. Archive cards include `meetingId`, `crewId`, `crewName`, `themeName`, `place`, `date`, `result`, and optional `posterImageUrl`. Poster lookup is resolved from the explore `themes` source of truth by matching `meeting.themeName`; when no active theme image is found, `posterImageUrl` is returned as `null`.
+`POST /api/meetings/{meetingId}/logs`, `PATCH /api/logs/{logId}`, `DELETE /api/logs/{logId}`, `GET /api/meetings/{meetingId}/logs/me`, and `GET /api/logs/{logId}` are login-required gallery/log endpoints for personal escape-log writing. Write access is allowed only for `COMPLETED` meetings and only when the authenticated user is the meeting host or has participation history with status `JOINED`, `PENDING`, or `APPROVED`. `LEFT` participation history is still visible in archive read paths, but it does not grant write permission for a new log. Each user can keep at most one log per meeting. The request body requires non-blank `body` (max 1000 chars) and optional `photos`, where each photo is stored as `{url, sizeBytes}` metadata instead of real file upload. Allowed extensions are `jpg`, `jpeg`, and `png`; a user can attach up to five photos per meeting log; and each photo must declare `sizeBytes <= 5MB`. `GET /api/meetings/{meetingId}/logs/me` returns the current user's own log for that meeting, while `GET /api/logs/{logId}` returns the same detail shape for any authenticated user. Detail responses include meeting summary fields, author nickname, timestamps, body, and ordered photo URL list. Update and delete remain author-only.
 `GET /api/crews/{crewId}` is the internal crew hub endpoint and is available only to joined crew members; it returns the crew summary, current user's role, `hasNotice`, and leader-only `pendingJoinRequestCount`.
 `POST /api/crews/{crewId}/leave` is the joined-member-only crew leave endpoint; it removes the caller's membership when the caller is not the leader and does not host unfinished meetings in that crew. After success, internal crew access is revoked because membership checks continue to read `crew_members`.
 `POST /api/crews/{crewId}/members/{targetUserId}/remove` is the current-leader-only forced-remove endpoint; it accepts only current `MEMBER` targets, cancels that target's unfinished hosted meetings in the same crew, marks joined participation in same-crew meetings as `LEFT`, removes the crew membership, and immediately revokes internal crew access.
@@ -185,6 +191,14 @@ Profile and nickname availability moved to `/api/users/...`; frontend consumers 
 - Explore Round 02A adds public theme detail on top of the existing list/filter APIs. Detail uses the same `stores` + `themes` source of truth and includes `relatedThemes` selected from the same store.
 - Missing optional card fields are returned as `null`; the frontend should handle poster fallbacks and truncation.
 - `themes.description` and `themes.external_link` are optional detail-only fields. They may be `null` when source data is missing.
+
+## Gallery / Log source of truth
+
+- Gallery / Log Round 02 introduces `meeting_logs` and `meeting_log_photos` as the backend source of truth for personal escape-log writing.
+- `meeting_logs` owns the one-log-per-user-per-meeting record with `meetingId`, `authorUserId`, `body`, `createdAt`, and `updatedAt`.
+- `meeting_log_photos` owns ordered photo URL rows for each log.
+- This round does not implement binary file upload. The backend stores only already-uploaded image URLs plus request-time `sizeBytes` metadata for validation.
+- Missing photos are represented as an empty list, not `null`.
 
 ## Crew lifecycle status
 
