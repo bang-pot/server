@@ -13,5 +13,9 @@ public interface CrewRepository {
 
 	Optional<Crew> findById(Long crewId);
 
+	default Optional<Crew> findAnyById(Long crewId) {
+		return findById(crewId);
+	}
+
 	List<Crew> findPublicCrews();
 }

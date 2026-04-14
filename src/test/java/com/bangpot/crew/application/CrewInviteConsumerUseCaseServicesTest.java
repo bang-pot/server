@@ -32,6 +32,7 @@ import com.bangpot.crew.domain.CrewInvite;
 import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
+import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
@@ -102,6 +103,30 @@ class CrewInviteConsumerUseCaseServicesTest {
 				GetMyCrewInvitesUseCase.View::status
 			)
 			.containsExactly(crew.getId(), "비공개 크루", "leader", "PENDING");
+	}
+
+	@Test
+	void hidesInvitesForDeletedCrew() {
+		Crew activeCrew = crewRepository.save(Crew.create("활성 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew deletedCrew = crewRepository.save(Crew.create("삭제된 크루", "crew", CrewVisibility.PRIVATE, null));
+		deletedCrew.delete();
+		crewRepository.save(deletedCrew);
+
+		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
+		AuthUser target = fullUser(2L, "target-provider", "target");
+		authUserRepository.save(inviter);
+		authUserRepository.save(target);
+
+		crewInviteRepository.save(CrewInvite.createPending(activeCrew.getId(), inviter.getId(), target.getId()));
+		crewInviteRepository.save(CrewInvite.createPending(deletedCrew.getId(), inviter.getId(), target.getId()));
+
+		List<GetMyCrewInvitesUseCase.View> result = getMyCrewInvitesUseCase.handle(
+			GetMyCrewInvitesUseCase.Query.of(target.getId())
+		);
+
+		assertThat(result)
+			.extracting(GetMyCrewInvitesUseCase.View::crewName)
+			.containsExactly("활성 크루");
 	}
 
 	@Test
@@ -286,12 +311,19 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 		@Override
 		public Optional<Crew> findById(Long crewId) {
+			return Optional.ofNullable(crewsById.get(crewId))
+				.filter(crew -> crew.getStatus() == CrewStatus.ACTIVE);
+		}
+
+		@Override
+		public Optional<Crew> findAnyById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
 		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
+				.filter(crew -> crew.getStatus() == CrewStatus.ACTIVE)
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
 				.toList();
 		}

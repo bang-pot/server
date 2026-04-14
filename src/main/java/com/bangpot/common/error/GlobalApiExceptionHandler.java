@@ -18,6 +18,9 @@ import com.bangpot.auth.application.exception.MissingRequiredTermsAgreementExcep
 import com.bangpot.auth.error.AuthErrorCode;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.exception.CrewAlreadyJoinedException;
+import com.bangpot.crew.application.exception.CrewDeleteNameMismatchException;
+import com.bangpot.crew.application.exception.CrewDeleteNotAllowedWithActiveMeetingsException;
+import com.bangpot.crew.application.exception.CrewDeleteNotAllowedWithActiveMembersException;
 import com.bangpot.crew.application.exception.CrewInviteAlreadyPendingException;
 import com.bangpot.crew.application.exception.CrewLeaderLeaveNotAllowedException;
 import com.bangpot.crew.application.exception.CrewLeaveNotAllowedForHostedMeetingException;
@@ -152,6 +155,25 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 		CrewRemoveMemberTargetNotAllowedException exception
 	) {
 		return error(CrewErrorCode.CREW_MEMBER_REMOVE_TARGET_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(CrewDeleteNotAllowedWithActiveMembersException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewDeleteNotAllowedWithActiveMembers(
+		CrewDeleteNotAllowedWithActiveMembersException exception
+	) {
+		return error(CrewErrorCode.CREW_DELETE_NOT_ALLOWED_WITH_ACTIVE_MEMBERS);
+	}
+
+	@ExceptionHandler(CrewDeleteNotAllowedWithActiveMeetingsException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewDeleteNotAllowedWithActiveMeetings(
+		CrewDeleteNotAllowedWithActiveMeetingsException exception
+	) {
+		return error(CrewErrorCode.CREW_DELETE_NOT_ALLOWED_WITH_ACTIVE_MEETINGS);
+	}
+
+	@ExceptionHandler(CrewDeleteNameMismatchException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewDeleteNameMismatch(CrewDeleteNameMismatchException exception) {
+		return error(CrewErrorCode.CREW_DELETE_NAME_MISMATCH);
 	}
 
 	@ExceptionHandler(CrewJoinRequestNotFoundException.class)

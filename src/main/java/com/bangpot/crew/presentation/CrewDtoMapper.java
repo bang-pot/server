@@ -5,6 +5,7 @@ import java.util.List;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
+import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
@@ -127,6 +128,18 @@ final class CrewDtoMapper {
 
 	static CrewDto.RemoveCrewMemberResponse toResponse(RemoveCrewMemberUseCase.Result result) {
 		return new CrewDto.RemoveCrewMemberResponse(result.crewId(), result.removedUserId());
+	}
+
+	static DeleteCrewUseCase.Command toDeleteCommand(
+		Long crewId,
+		Long leaderUserId,
+		CrewDto.DeleteCrewRequest request
+	) {
+		return DeleteCrewUseCase.Command.of(crewId, leaderUserId, request.crewName());
+	}
+
+	static CrewDto.DeleteCrewResponse toResponse(DeleteCrewUseCase.Result result) {
+		return new CrewDto.DeleteCrewResponse(result.crewId());
 	}
 
 	static TransferCrewLeadershipUseCase.Command toTransferCommand(

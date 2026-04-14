@@ -23,4 +23,8 @@ public interface MeetingRepository {
 	) {
 		return false;
 	}
+
+	default boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses) {
+		return false;
+	}
 }

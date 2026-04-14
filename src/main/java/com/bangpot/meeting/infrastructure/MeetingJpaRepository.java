@@ -15,4 +15,6 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	Optional<Meeting> findByIdAndCrewId(Long id, Long crewId);
 
 	boolean existsByCrewIdAndHostUserIdAndStatusIn(Long crewId, Long hostUserId, List<MeetingStatus> statuses);
+
+	boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses);
 }

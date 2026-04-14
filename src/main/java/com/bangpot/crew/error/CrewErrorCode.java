@@ -18,7 +18,10 @@ public enum CrewErrorCode implements ApiErrorCode {
 	CREW_LEADER_LEAVE_NOT_ALLOWED(HttpStatus.CONFLICT, "크루장은 먼저 크루장을 위임한 뒤 탈퇴할 수 있습니다."),
 	CREW_LEAVE_NOT_ALLOWED_FOR_HOSTED_MEETING(HttpStatus.CONFLICT, "미완료 생성 모임이 있으면 크루를 탈퇴할 수 없습니다."),
 	CREW_TRANSFER_LEADERSHIP_TARGET_NOT_ALLOWED(HttpStatus.CONFLICT, "위임 대상은 현재 일반 크루원만 가능합니다."),
-	CREW_MEMBER_REMOVE_TARGET_NOT_ALLOWED(HttpStatus.CONFLICT, "강제 제거 대상은 현재 일반 크루원만 가능합니다.");
+	CREW_MEMBER_REMOVE_TARGET_NOT_ALLOWED(HttpStatus.CONFLICT, "강제 제거 대상은 현재 일반 크루원만 가능합니다."),
+	CREW_DELETE_NOT_ALLOWED_WITH_ACTIVE_MEMBERS(HttpStatus.CONFLICT, "다른 ACTIVE 멤버가 남아 있으면 크루를 삭제할 수 없습니다."),
+	CREW_DELETE_NOT_ALLOWED_WITH_ACTIVE_MEETINGS(HttpStatus.CONFLICT, "미완료 모임이 남아 있으면 크루를 삭제할 수 없습니다."),
+	CREW_DELETE_NAME_MISMATCH(HttpStatus.CONFLICT, "입력한 크루명이 현재 크루명과 일치하지 않습니다.");
 
 	private final HttpStatus status;
 	private final String message;

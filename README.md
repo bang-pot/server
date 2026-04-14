@@ -115,6 +115,7 @@ bangpot:
 - `POST /api/crews/{crewId}/leave`
 - `POST /api/crews/{crewId}/members/{targetUserId}/remove`
 - `POST /api/crews/{crewId}/transfer-leadership`
+- `POST /api/crews/{crewId}/delete`
 - `PATCH /api/crews/{crewId}/visibility`
 - `GET /api/crews/{crewId}/members`
 - `GET /api/crews/{crewId}/policies`
@@ -149,6 +150,7 @@ bangpot:
 `POST /api/crews/{crewId}/leave` is the joined-member-only crew leave endpoint; it removes the caller's membership when the caller is not the leader and does not host unfinished meetings in that crew. After success, internal crew access is revoked because membership checks continue to read `crew_members`.
 `POST /api/crews/{crewId}/members/{targetUserId}/remove` is the current-leader-only forced-remove endpoint; it accepts only current `MEMBER` targets, cancels that target's unfinished hosted meetings in the same crew, marks joined participation in same-crew meetings as `LEFT`, removes the crew membership, and immediately revokes internal crew access.
 `POST /api/crews/{crewId}/transfer-leadership` is the current-leader-only ownership transfer endpoint; it accepts a current member as `targetUserId`, swaps the current leader to `MEMBER` and the target member to `LEADER` in one transaction, and immediately changes what crew hub and members list read as the active leader.
+`POST /api/crews/{crewId}/delete` is the current-leader-only crew delete endpoint; it requires exact crew-name re-entry, blocks deletion when any other `ACTIVE` member or unfinished meeting remains, marks the crew as `DELETED`, transitions the deleting leader membership to `LEFT`, and makes the crew disappear from public/internal consumers because normal crew reads now return only `ACTIVE` crews.
 `PATCH /api/crews/{crewId}/visibility` is the leader-only crew visibility toggle endpoint; it updates only the current `visibility` (`PUBLIC` or `PRIVATE`) and immediately affects new explore exposure and direct join request availability while leaving existing pending join requests untouched.
 `GET /api/crews/{crewId}/members` is the joined-member-only crew members list endpoint; it returns leader-first ordering and then remaining members by `joinedAt desc`, while currently unsupported profile fields use safe defaults (`profileImageUrl=null`, `bio=null`, `gender=null`, `escapeCount=0`).
 `GET /api/crews/{crewId}/policies` is the joined-member-only crew policy read endpoint; it returns `{policyId,title,content}` records and responds with `200 OK` plus `[]` when no policy exists.
@@ -162,6 +164,13 @@ Meeting automatic transitions do not add new public APIs in this round. Existing
 `GET /api/crews/{crewId}/invite-candidates` and `POST /api/crews/{crewId}/invites` are private-crew leader endpoints for direct invite flow; candidate list excludes existing members, already pending invite targets, and the leader themself.
 `GET /api/crew-invites/me` returns the current full user's invite history, and `POST /api/crew-invites/{inviteId}/accept|reject` process only `PENDING` invites while keeping invite rows as status history.
 Profile and nickname availability moved to `/api/users/...`; frontend consumers should stop calling legacy `/api/auth/profile` and `/api/auth/nickname-availability`.
+
+## Crew lifecycle status
+
+- `crews.status` is the source of truth for whether a crew is still visible to normal consumers.
+- `ACTIVE` crews are visible to existing public/internal crew consumers.
+- `DELETED` crews remain in storage for history preservation, but normal repository reads treat them as not found.
+- After crew deletion, public cards, join view, crew hub, members list, policies, and crew-scoped meeting reads should no longer expose that crew.
 
 ## User ownership split
 
