@@ -5,15 +5,18 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 
 @Validated
@@ -24,6 +27,7 @@ class ExploreController {
 
 	private final GetExploreThemesUseCase getExploreThemesUseCase;
 	private final GetExploreFiltersUseCase getExploreFiltersUseCase;
+	private final GetExploreThemeDetailUseCase getExploreThemeDetailUseCase;
 
 	@GetMapping("/themes")
 	ResponseEntity<ExploreDto.ExploreThemeListResponse> getThemes(
@@ -40,6 +44,15 @@ class ExploreController {
 					ExploreDtoMapper.toQuery(keyword, genres, region, district, page, size)
 				)
 			)
+		);
+	}
+
+	@GetMapping("/themes/{themeId}")
+	ResponseEntity<ExploreDto.ExploreThemeDetailResponse> getThemeDetail(
+		@PathVariable("themeId") @Positive(message = "themeId는 1 이상이어야 합니다.") Long themeId
+	) {
+		return ResponseEntity.ok(
+			ExploreDtoMapper.toResponse(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(themeId)))
 		);
 	}
 

@@ -35,6 +35,8 @@ import com.bangpot.crew.application.exception.CrewTransferLeadershipTargetNotAll
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
+import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
+import com.bangpot.explore.error.ExploreErrorCode;
 import com.bangpot.meeting.application.exception.MeetingHostCannotCancelParticipationException;
 import com.bangpot.meeting.application.exception.MeetingEditNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
@@ -181,6 +183,11 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(CrewJoinRequestNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleCrewJoinRequestNotFound(CrewJoinRequestNotFoundException exception) {
 		return error(CrewErrorCode.CREW_JOIN_REQUEST_NOT_FOUND);
+	}
+
+	@ExceptionHandler(ExploreThemeNotFoundException.class)
+	ResponseEntity<ApiErrorResponse> handleExploreThemeNotFound(ExploreThemeNotFoundException exception) {
+		return error(ExploreErrorCode.EXPLORE_THEME_NOT_FOUND);
 	}
 
 	@ExceptionHandler(MeetingNotFoundException.class)

@@ -45,6 +45,12 @@ public class Theme {
 	@Column(name = "running_time_minutes")
 	private Integer runningTimeMinutes;
 
+	@Column(name = "description")
+	private String description;
+
+	@Column(name = "external_link")
+	private String externalLink;
+
 	@Column(name = "favorite_count", nullable = false)
 	private Integer favoriteCount;
 
@@ -70,6 +76,8 @@ public class Theme {
 		String activityLabel,
 		String recommendedPlayers,
 		Integer runningTimeMinutes,
+		String description,
+		String externalLink,
 		Integer favoriteCount,
 		boolean active,
 		Instant createdAt,
@@ -84,6 +92,8 @@ public class Theme {
 		this.activityLabel = activityLabel;
 		this.recommendedPlayers = recommendedPlayers;
 		this.runningTimeMinutes = runningTimeMinutes;
+		this.description = description;
+		this.externalLink = externalLink;
 		this.favoriteCount = favoriteCount;
 		this.active = active;
 		this.createdAt = createdAt;
@@ -110,6 +120,39 @@ public class Theme {
 			activityLabel,
 			recommendedPlayers,
 			runningTimeMinutes,
+			null,
+			null,
+			0,
+			true,
+			null,
+			null
+		);
+	}
+
+	public static Theme create(
+		Long storeId,
+		String name,
+		String genre,
+		String posterImageUrl,
+		Integer difficulty,
+		String activityLabel,
+		String recommendedPlayers,
+		Integer runningTimeMinutes,
+		String description,
+		String externalLink
+	) {
+		return new Theme(
+			null,
+			storeId,
+			name,
+			genre,
+			posterImageUrl,
+			difficulty,
+			activityLabel,
+			recommendedPlayers,
+			runningTimeMinutes,
+			description,
+			externalLink,
 			0,
 			true,
 			null,

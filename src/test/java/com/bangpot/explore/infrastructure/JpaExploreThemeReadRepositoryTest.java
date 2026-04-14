@@ -7,8 +7,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.context.annotation.Import;
 
 import com.bangpot.explore.application.port.ExploreThemeReadRepository;
 import com.bangpot.explore.domain.Store;
@@ -26,9 +26,9 @@ class JpaExploreThemeReadRepositoryTest {
 
 	@Test
 	void searchesActiveThemesWithoutFilters() {
-		Store hongdae = entityManager.persist(Store.create("Seoul Escape Hongdae", "서울", "마포구", "서울시 마포구"));
-		entityManager.persist(Theme.create(hongdae.getId(), "Deep Blue", "HORROR", null, 4, "HIGH", "2-4인", 60));
-		entityManager.persist(Theme.create(hongdae.getId(), "Laugh Track", "COMEDY", null, 2, "LOW", "2-4인", 50));
+		Store hongdae = entityManager.persist(Store.create("Seoul Escape Hongdae", "Seoul", "Mapo", "Mapo address"));
+		entityManager.persist(Theme.create(hongdae.getId(), "Deep Blue", "HORROR", null, 4, "HIGH", "2-4 players", 60));
+		entityManager.persist(Theme.create(hongdae.getId(), "Laugh Track", "COMEDY", null, 2, "LOW", "2-4 players", 50));
 		entityManager.flush();
 
 		ExploreThemeReadRepository.SearchResult result = repository.search(
@@ -37,5 +37,51 @@ class JpaExploreThemeReadRepositoryTest {
 
 		assertThat(result.items()).hasSize(2);
 		assertThat(result.pageInfo().hasNext()).isFalse();
+	}
+
+	@Test
+	void returnsThemeDetailWithUpToFourRelatedThemesFromSameStore() {
+		Store hongdae = entityManager.persist(Store.create("Seoul Escape Hongdae", "Seoul", "Mapo", "Mapo address"));
+		Store gangnam = entityManager.persist(Store.create("Seoul Escape Gangnam", "Seoul", "Gangnam", "Gangnam address"));
+
+		Theme target = entityManager.persist(
+			Theme.create(
+				hongdae.getId(),
+				"Deep Blue",
+				"HORROR",
+				"https://image.example/deep-blue.jpg",
+				4,
+				"HIGH",
+				"2-4 players",
+				60,
+				"Deep sea mystery theme",
+				"https://example.com/deep-blue"
+			)
+		);
+		entityManager.persist(Theme.create(hongdae.getId(), "Laugh Track", "COMEDY", null, 2, "LOW", "2-4 players", 50));
+		entityManager.persist(Theme.create(hongdae.getId(), "Time Attack", "THRILLER", null, 3, "MEDIUM", "3-5 players", 75));
+		entityManager.persist(Theme.create(hongdae.getId(), "Lost Harbor", "ADVENTURE", null, 3, "MEDIUM", "2-4 players", 70));
+		entityManager.persist(Theme.create(hongdae.getId(), "Code Red", "HORROR", null, 5, "HIGH", "2-4 players", 65));
+		Theme inactiveTheme = entityManager.persist(
+			Theme.create(hongdae.getId(), "Hidden Track", "COMEDY", null, 1, "LOW", "2-4 players", 45)
+		);
+		entityManager.persist(Theme.create(gangnam.getId(), "Another Store Theme", "HORROR", null, 4, "HIGH", "2-4 players", 60));
+		entityManager.flush();
+
+		entityManager.getEntityManager().createQuery("update Theme t set t.active = false where t.id = :themeId")
+			.setParameter("themeId", inactiveTheme.getId())
+			.executeUpdate();
+		entityManager.clear();
+
+		ExploreThemeReadRepository.ThemeDetail result = repository.getThemeDetail(target.getId()).orElseThrow();
+
+		assertThat(result.themeName()).isEqualTo("Deep Blue");
+		assertThat(result.storeName()).isEqualTo("Seoul Escape Hongdae");
+		assertThat(result.description()).isEqualTo("Deep sea mystery theme");
+		assertThat(result.externalLink()).isEqualTo("https://example.com/deep-blue");
+		assertThat(result.relatedThemes()).hasSize(4);
+		assertThat(result.relatedThemes())
+			.extracting(ExploreThemeReadRepository.RelatedThemeSummary::themeName)
+			.doesNotContain("Deep Blue", "Another Store Theme", "Hidden Track");
 	}
 }

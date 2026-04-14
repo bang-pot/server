@@ -37,6 +37,35 @@ final class ExploreDto {
 	) {
 	}
 
+	record ExploreThemeDetailRelatedThemeResponse(
+		Long themeId,
+		String themeName,
+		Long storeId,
+		String storeName,
+		String regionLabel,
+		String genre,
+		String posterImageUrl,
+		Integer difficulty,
+		Integer runningTimeMinutes
+	) {
+	}
+
+	record ExploreThemeDetailResponse(
+		Long themeId,
+		String themeName,
+		Long storeId,
+		String storeName,
+		String regionLabel,
+		String genre,
+		String posterImageUrl,
+		Integer difficulty,
+		Integer runningTimeMinutes,
+		String description,
+		String externalLink,
+		List<ExploreThemeDetailRelatedThemeResponse> relatedThemes
+	) {
+	}
+
 	record RegionFilterResponse(
 		String name,
 		List<String> districts
