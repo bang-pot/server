@@ -48,8 +48,8 @@ final class MeetingLogDtoMapper {
 		return GetMyMeetingLogUseCase.Query.of(meetingId, userId);
 	}
 
-	static GetMeetingLogDetailUseCase.Query toDetailQuery(Long logId, Long userId) {
-		return GetMeetingLogDetailUseCase.Query.of(logId, userId);
+	static GetMeetingLogDetailUseCase.Query toDetailQuery(Long crewId, Long logId, Long userId) {
+		return GetMeetingLogDetailUseCase.Query.of(crewId, logId, userId);
 	}
 
 	static MeetingLogDto.MeetingLogWriteResponse toResponse(CreateMeetingLogUseCase.Result result) {

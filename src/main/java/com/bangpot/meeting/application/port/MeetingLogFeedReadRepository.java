@@ -19,31 +19,36 @@ public interface MeetingLogFeedReadRepository {
 	record Item(
 		Long logId,
 		Long meetingId,
-		Long crewId,
 		String authorNickname,
 		String meetingTitle,
-		String themeName,
-		String date,
+		String meetingDate,
 		Instant createdAt,
 		String body,
 		String coverPhotoUrl,
-		Long photoCount
+		Long totalPhotoCount
 	) {
 		public static Item of(
 			Long logId,
 			Long meetingId,
-			Long crewId,
 			String authorNickname,
 			String meetingTitle,
-			String themeName,
-			String date,
+			String meetingDate,
 			Instant createdAt,
 			String body,
 			String coverPhotoUrl,
-			Long photoCount
+			Long totalPhotoCount
 		) {
-			return new Item(logId, meetingId, crewId, authorNickname, meetingTitle, themeName, date, createdAt, body,
-				coverPhotoUrl, photoCount);
+			return new Item(
+				logId,
+				meetingId,
+				authorNickname,
+				meetingTitle,
+				meetingDate,
+				createdAt,
+				body,
+				coverPhotoUrl,
+				totalPhotoCount
+			);
 		}
 	}
 

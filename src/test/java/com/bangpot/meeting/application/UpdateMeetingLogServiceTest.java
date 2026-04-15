@@ -36,7 +36,7 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		));
 
 		assertThat(result.logId()).isEqualTo(created.logId());
-		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(created.logId(), 10L));
+		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 10L));
 		assertThat(detail.body()).isEqualTo("수정한 후기입니다.");
 		assertThat(detail.photos()).containsExactly(
 			"https://cdn.example.com/b.png",

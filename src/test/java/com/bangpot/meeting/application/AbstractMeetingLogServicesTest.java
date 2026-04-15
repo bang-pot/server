@@ -10,8 +10,15 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 
+import com.bangpot.crew.application.port.CrewMemberRepository;
+import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewMember;
+import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingLogPhotoRepository;
 import com.bangpot.meeting.application.port.MeetingLogRepository;
+import com.bangpot.meeting.application.port.MeetingParticipantRepository;
+import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.application.service.CreateMeetingLogService;
 import com.bangpot.meeting.application.service.DeleteMeetingLogService;
 import com.bangpot.meeting.application.service.GetMeetingLogDetailService;
@@ -22,11 +29,9 @@ import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
+import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingLog;
 import com.bangpot.meeting.domain.MeetingLogPhoto;
-import com.bangpot.meeting.application.port.MeetingParticipantRepository;
-import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.user.application.port.UserRepository;
@@ -40,6 +45,8 @@ abstract class AbstractMeetingLogServicesTest {
 	protected InMemoryUserRepository userRepository;
 	protected CompletedUserAccessService completedUserAccessService;
 	protected InMemoryMeetingRepository meetingRepository;
+	protected InMemoryCrewRepository crewRepository;
+	protected InMemoryCrewMemberRepository crewMemberRepository;
 	protected InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	protected InMemoryMeetingLogRepository meetingLogRepository;
 	protected InMemoryMeetingLogPhotoRepository meetingLogPhotoRepository;
@@ -54,6 +61,8 @@ abstract class AbstractMeetingLogServicesTest {
 		userRepository = new InMemoryUserRepository();
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
 		meetingRepository = new InMemoryMeetingRepository();
+		crewRepository = new InMemoryCrewRepository();
+		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		meetingLogRepository = new InMemoryMeetingLogRepository();
 		meetingLogPhotoRepository = new InMemoryMeetingLogPhotoRepository();
@@ -84,6 +93,8 @@ abstract class AbstractMeetingLogServicesTest {
 		);
 		getMeetingLogDetailUseCase = new GetMeetingLogDetailService(
 			completedUserAccessService,
+			crewRepository,
+			crewMemberRepository,
 			meetingLogRepository,
 			meetingLogPhotoRepository,
 			meetingRepository,
@@ -104,6 +115,10 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected Meeting completedMeeting(Long crewId, Long hostUserId, String themeName) {
+		crewRepository.findById(crewId)
+			.orElseGet(() -> crewRepository.save(Crew.create("Crew " + crewId, "desc", CrewVisibility.PUBLIC, null)));
+		crewMemberRepository.save(CrewMember.createLeader(crewId, hostUserId));
+
 		Meeting meeting = Meeting.create(
 			crewId,
 			hostUserId,
@@ -147,6 +162,12 @@ abstract class AbstractMeetingLogServicesTest {
 		);
 	}
 
+	protected void activeCrewMember(Long crewId, Long userId) {
+		crewRepository.findById(crewId)
+			.orElseGet(() -> crewRepository.save(Crew.create("Crew " + crewId, "desc", CrewVisibility.PUBLIC, null)));
+		crewMemberRepository.save(CrewMember.createMember(crewId, userId));
+	}
+
 	protected static final class InMemoryUserRepository implements UserRepository {
 		private final Map<Long, User> users = new HashMap<>();
 
@@ -172,6 +193,92 @@ abstract class AbstractMeetingLogServicesTest {
 		public User save(User user) {
 			users.put(user.getId(), user);
 			return user;
+		}
+	}
+
+	protected static final class InMemoryCrewRepository implements CrewRepository {
+		private final Map<Long, Crew> crews = new HashMap<>();
+		private long sequence = 1L;
+
+		@Override
+		public boolean existsByName(String name) {
+			return crews.values().stream().anyMatch(crew -> crew.getName().equals(name));
+		}
+
+		@Override
+		public Crew save(Crew crew) {
+			if (crew.getId() == null) {
+				crew.assignId(sequence++);
+			}
+			crews.put(crew.getId(), crew);
+			return crew;
+		}
+
+		@Override
+		public Optional<Crew> findById(Long crewId) {
+			return Optional.ofNullable(crews.get(crewId))
+				.filter(crew -> crew.getStatus() == com.bangpot.crew.domain.CrewStatus.ACTIVE);
+		}
+
+		@Override
+		public Optional<Crew> findAnyById(Long crewId) {
+			return Optional.ofNullable(crews.get(crewId));
+		}
+
+		@Override
+		public List<Crew> findPublicCrews() {
+			return crews.values().stream()
+				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
+				.toList();
+		}
+	}
+
+	protected static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		private final Map<Long, CrewMember> members = new HashMap<>();
+		private long sequence = 1L;
+
+		@Override
+		public CrewMember save(CrewMember crewMember) {
+			if (crewMember.getId() == null) {
+				crewMember.assignId(sequence++);
+			}
+			members.put(crewMember.getId(), crewMember);
+			return crewMember;
+		}
+
+		@Override
+		public boolean existsByCrewIdAndUserId(Long crewId, Long userId) {
+			return members.values().stream().anyMatch(member ->
+				member.getCrewId().equals(crewId)
+					&& member.getUserId().equals(userId)
+					&& member.getStatus() == com.bangpot.crew.domain.CrewMemberStatus.ACTIVE
+			);
+		}
+
+		@Override
+		public boolean existsLeaderByCrewIdAndUserId(Long crewId, Long userId) {
+			return members.values().stream().anyMatch(member ->
+				member.getCrewId().equals(crewId)
+					&& member.getUserId().equals(userId)
+					&& member.getRole() == com.bangpot.crew.domain.CrewRole.LEADER
+					&& member.getStatus() == com.bangpot.crew.domain.CrewMemberStatus.ACTIVE
+			);
+		}
+
+		@Override
+		public Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId) {
+			return members.values().stream()
+				.filter(member -> member.getCrewId().equals(crewId)
+					&& member.getUserId().equals(userId)
+					&& member.getStatus() == com.bangpot.crew.domain.CrewMemberStatus.ACTIVE)
+				.findFirst();
+		}
+
+		@Override
+		public List<CrewMember> findAllByCrewId(Long crewId) {
+			return members.values().stream()
+				.filter(member -> member.getCrewId().equals(crewId))
+				.toList();
 		}
 	}
 
@@ -305,4 +412,3 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 	}
 }
-

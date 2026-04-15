@@ -27,15 +27,13 @@ class JpaMeetingLogFeedReadRepository implements MeetingLogFeedReadRepository {
 			.map(row -> Item.of(
 				toLong(row[0]),
 				toLong(row[1]),
-				toLong(row[2]),
+				(String) row[2],
 				(String) row[3],
 				(String) row[4],
-				(String) row[5],
+				toInstant(row[5]),
 				(String) row[6],
-				toInstant(row[7]),
-				(String) row[8],
-				(String) row[9],
-				toLong(row[10])
+				(String) row[7],
+				toLong(row[8])
 			))
 			.toList();
 

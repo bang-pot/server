@@ -30,31 +30,36 @@ public interface GetCrewMeetingLogFeedUseCase {
 	record Item(
 		Long logId,
 		Long meetingId,
-		Long crewId,
 		String authorNickname,
 		String meetingTitle,
-		String themeName,
-		String date,
+		String meetingDate,
 		Instant createdAt,
 		String excerpt,
 		String coverPhotoUrl,
-		Long photoCount
+		Long extraPhotoCount
 	) {
 		public static Item of(
 			Long logId,
 			Long meetingId,
-			Long crewId,
 			String authorNickname,
 			String meetingTitle,
-			String themeName,
-			String date,
+			String meetingDate,
 			Instant createdAt,
 			String excerpt,
 			String coverPhotoUrl,
-			Long photoCount
+			Long extraPhotoCount
 		) {
-			return new Item(logId, meetingId, crewId, authorNickname, meetingTitle, themeName, date, createdAt, excerpt,
-				coverPhotoUrl, photoCount);
+			return new Item(
+				logId,
+				meetingId,
+				authorNickname,
+				meetingTitle,
+				meetingDate,
+				createdAt,
+				excerpt,
+				coverPhotoUrl,
+				extraPhotoCount
+			);
 		}
 	}
 

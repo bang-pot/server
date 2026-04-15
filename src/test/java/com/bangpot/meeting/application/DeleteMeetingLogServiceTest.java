@@ -28,7 +28,7 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(created.logId(), 10L));
 
 		assertThatThrownBy(() -> getMeetingLogDetailUseCase.handle(
-			GetMeetingLogDetailUseCase.Query.of(created.logId(), 10L)
+			GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 10L)
 		)).isInstanceOf(MeetingLogNotFoundException.class);
 	}
 

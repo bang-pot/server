@@ -97,15 +97,16 @@ class MeetingLogController {
 		);
 	}
 
-	@GetMapping("/logs/{logId}")
+	@GetMapping("/crews/{crewId}/logs/{logId}")
 	ResponseEntity<MeetingLogDto.MeetingLogDetailResponse> getDetail(
+		@PathVariable Long crewId,
 		@PathVariable Long logId,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(
 			MeetingLogDtoMapper.toResponse(
 				getMeetingLogDetailUseCase.handle(
-					MeetingLogDtoMapper.toDetailQuery(logId, requireAuthenticatedUserId(authentication))
+					MeetingLogDtoMapper.toDetailQuery(crewId, logId, requireAuthenticatedUserId(authentication))
 				)
 			)
 		);

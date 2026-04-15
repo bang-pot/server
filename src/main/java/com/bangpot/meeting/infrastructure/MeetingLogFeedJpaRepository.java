@@ -14,11 +14,9 @@ interface MeetingLogFeedJpaRepository extends JpaRepository<MeetingLog, Long> {
 		select
 			ml.id as logId,
 			m.id as meetingId,
-			m.crew_id as crewId,
 			u.nickname as authorNickname,
 			m.title as meetingTitle,
-			m.theme_name as themeName,
-			m.meeting_date as date,
+			m.meeting_date as meetingDate,
 			ml.created_at as createdAt,
 			ml.body as body,
 			(
@@ -32,7 +30,7 @@ interface MeetingLogFeedJpaRepository extends JpaRepository<MeetingLog, Long> {
 				select count(*)
 				from meeting_log_photos mlp
 				where mlp.log_id = ml.id
-			) as photoCount
+			) as totalPhotoCount
 		from meeting_logs ml
 		join meetings m on m.id = ml.meeting_id
 		join users u on u.id = ml.author_user_id
