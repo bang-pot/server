@@ -13,4 +13,6 @@ interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 	Optional<MeetingLog> findByMeetingIdAndAuthorUserIdAndDeletedAtIsNull(Long meetingId, Long authorUserId);
 
 	boolean existsByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId);
+
+	boolean existsByMeetingIdAndAuthorUserIdAndDeletedAtIsNotNull(Long meetingId, Long authorUserId);
 }

@@ -380,6 +380,14 @@ abstract class AbstractMeetingLogServicesTest {
 			return logs.values().stream()
 				.anyMatch(log -> log.getMeetingId().equals(meetingId) && log.getAuthorUserId().equals(authorUserId));
 		}
+
+		@Override
+		public boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return logs.values().stream()
+				.anyMatch(log -> log.getMeetingId().equals(meetingId)
+					&& log.getAuthorUserId().equals(authorUserId)
+					&& log.getDeletedAt() != null);
+		}
 	}
 
 	protected static final class InMemoryMeetingLogPhotoRepository implements MeetingLogPhotoRepository {

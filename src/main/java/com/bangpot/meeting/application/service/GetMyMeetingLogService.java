@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.bangpot.meeting.application.exception.MeetingLogNotFoundException;
 import com.bangpot.meeting.application.port.MeetingLogPhotoRepository;
 import com.bangpot.meeting.application.port.MeetingLogRepository;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
@@ -33,9 +32,9 @@ public class GetMyMeetingLogService implements GetMyMeetingLogUseCase {
 		completedUserAccessService.validateCompletedUser(query.userId(), "meeting log read requires a completed user");
 		Meeting meeting = meetingRepository.findById(query.meetingId())
 			.orElseThrow(() -> new MeetingNotFoundException(query.meetingId()));
-		MeetingLog log = meetingLogRepository.findByMeetingIdAndAuthorUserId(query.meetingId(), query.userId())
-			.orElseThrow(() -> new MeetingLogNotFoundException(query.meetingId()));
-		return toResult(log, meeting);
+		return meetingLogRepository.findByMeetingIdAndAuthorUserId(query.meetingId(), query.userId())
+			.map(log -> toResult(log, meeting))
+			.orElseGet(() -> toMissingResult(query));
 	}
 
 	Result toResult(MeetingLog log, Meeting meeting) {
@@ -46,6 +45,7 @@ public class GetMyMeetingLogService implements GetMyMeetingLogUseCase {
 			.map(photo -> photo.getPhotoUrl())
 			.toList();
 		return Result.of(
+			Status.EXISTS,
 			log.getId(),
 			meeting.getId(),
 			meeting.getTitle(),
@@ -58,6 +58,13 @@ public class GetMyMeetingLogService implements GetMyMeetingLogUseCase {
 			log.getBody(),
 			photos
 		);
+	}
+
+	private Result toMissingResult(Query query) {
+		if (meetingLogRepository.existsDeletedByMeetingIdAndAuthorUserId(query.meetingId(), query.userId())) {
+			return Result.deletedBlocked();
+		}
+		return Result.notWritten();
 	}
 }
 

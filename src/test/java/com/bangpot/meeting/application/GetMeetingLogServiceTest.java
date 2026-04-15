@@ -2,13 +2,11 @@ package com.bangpot.meeting.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.meeting.application.exception.MeetingLogNotFoundException;
 import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
@@ -29,6 +27,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
 		var detail = getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(meeting.getId(), 10L));
 
+		assertThat(detail.status()).isEqualTo(GetMyMeetingLogUseCase.Status.EXISTS);
 		assertThat(detail.meetingId()).isEqualTo(meeting.getId());
 		assertThat(detail.authorNickname()).isEqualTo("host");
 		assertThat(detail.photos()).containsExactly("https://cdn.example.com/a.jpg");
@@ -79,18 +78,20 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 	}
 
 	@Test
-	void returnsNotFoundWhenMyLogDoesNotExist() {
+	void returnsNotWrittenWhenMyLogDoesNotExist() {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 
-		assertThatThrownBy(() -> getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(
-			meeting.getId(),
-			10L
-		))).isInstanceOf(MeetingLogNotFoundException.class);
+		var result = getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(meeting.getId(), 10L));
+
+		assertThat(result.status()).isEqualTo(GetMyMeetingLogUseCase.Status.NOT_WRITTEN);
+		assertThat(result.logId()).isNull();
+		assertThat(result.body()).isNull();
+		assertThat(result.photos()).isEmpty();
 	}
 
 	@Test
-	void hidesSoftDeletedLogFromMyLogQuery() {
+	void returnsDeletedBlockedWhenSoftDeletedLogExists() {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
@@ -101,9 +102,11 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		));
 		deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(1L, created.logId(), 10L, null));
 
-		assertThatThrownBy(() -> getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(
-			meeting.getId(),
-			10L
-		))).isInstanceOf(MeetingLogNotFoundException.class);
+		var result = getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(meeting.getId(), 10L));
+
+		assertThat(result.status()).isEqualTo(GetMyMeetingLogUseCase.Status.DELETED_BLOCKED);
+		assertThat(result.logId()).isNull();
+		assertThat(result.body()).isNull();
+		assertThat(result.photos()).isEmpty();
 	}
 }

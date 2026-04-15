@@ -18,8 +18,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,8 +31,8 @@ import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
-import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
+import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -66,7 +66,7 @@ class MeetingLogControllerTest {
 		when(createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			55L,
 			7L,
-			"獄쎻뫚源됬빊?疫꿸퀡以??낅빍??",
+			"log body",
 			List.of(CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.jpg", 1024L))
 		))).thenReturn(CreateMeetingLogUseCase.Result.of(101L, 55L));
 
@@ -76,7 +76,7 @@ class MeetingLogControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "body": "獄쎻뫚源됬빊?疫꿸퀡以??낅빍??",
+					  "body": "log body",
 					  "photos": [
 					    { "url": "https://cdn.example.com/a.jpg", "sizeBytes": 1024 }
 					  ]
@@ -93,7 +93,7 @@ class MeetingLogControllerTest {
 		when(updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
 			101L,
 			7L,
-			"??륁젟??癰귣챶揆",
+			"updated body",
 			List.of(UpdateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/b.png", 2048L))
 		))).thenReturn(UpdateMeetingLogUseCase.Result.of(101L, 55L));
 
@@ -103,7 +103,7 @@ class MeetingLogControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "body": "??륁젟??癰귣챶揆",
+					  "body": "updated body",
 					  "photos": [
 					    { "url": "https://cdn.example.com/b.png", "sizeBytes": 2048 }
 					  ]
@@ -131,7 +131,7 @@ class MeetingLogControllerTest {
 
 	@Test
 	void deletesMeetingLogByLeaderWithReason() throws Exception {
-		when(deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(5L, 101L, 7L, "운영 삭제 사유")))
+		when(deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(5L, 101L, 7L, "policy violation")))
 			.thenReturn(DeleteMeetingLogUseCase.Result.of(101L, DeleteMeetingLogUseCase.DeletedBy.LEADER));
 
 		mockMvc.perform(
@@ -140,7 +140,7 @@ class MeetingLogControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "deleteReason": "운영 삭제 사유"
+					  "deleteReason": "policy violation"
 					}
 					""")
 		)
@@ -153,16 +153,17 @@ class MeetingLogControllerTest {
 	void returnsMyMeetingLogDetail() throws Exception {
 		when(getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(55L, 7L)))
 			.thenReturn(GetMyMeetingLogUseCase.Result.of(
+				GetMyMeetingLogUseCase.Status.EXISTS,
 				101L,
 				55L,
-				"??鍮???곷뮞?냈??꾨늄",
+				"Friday Escape",
 				"Deep Blue",
 				"Hongdae",
 				"2026-04-10",
 				"host",
 				Instant.parse("2026-04-14T03:00:00Z"),
 				Instant.parse("2026-04-14T04:00:00Z"),
-				"疫꿸퀡以?癰귣챶揆",
+				"log body",
 				List.of("https://cdn.example.com/a.jpg")
 			));
 
@@ -171,9 +172,40 @@ class MeetingLogControllerTest {
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
 		)
 			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("EXISTS"))
 			.andExpect(jsonPath("$.logId").value(101))
-			.andExpect(jsonPath("$.meetingTitle").value("??鍮???곷뮞?냈??꾨늄"))
+			.andExpect(jsonPath("$.meetingTitle").value("Friday Escape"))
 			.andExpect(jsonPath("$.photos[0]").value("https://cdn.example.com/a.jpg"));
+	}
+
+	@Test
+	void returnsNotWrittenStatusWhenMyLogDoesNotExist() throws Exception {
+		when(getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(55L, 7L)))
+			.thenReturn(GetMyMeetingLogUseCase.Result.notWritten());
+
+		mockMvc.perform(
+			get("/api/meetings/55/logs/me")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("NOT_WRITTEN"))
+			.andExpect(jsonPath("$.logId").isEmpty())
+			.andExpect(jsonPath("$.body").isEmpty());
+	}
+
+	@Test
+	void returnsDeletedBlockedStatusWhenMyLogWasDeleted() throws Exception {
+		when(getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(55L, 7L)))
+			.thenReturn(GetMyMeetingLogUseCase.Result.deletedBlocked());
+
+		mockMvc.perform(
+			get("/api/meetings/55/logs/me")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("DELETED_BLOCKED"))
+			.andExpect(jsonPath("$.logId").isEmpty())
+			.andExpect(jsonPath("$.body").isEmpty());
 	}
 
 	@Test
@@ -182,14 +214,14 @@ class MeetingLogControllerTest {
 			.thenReturn(GetMeetingLogDetailUseCase.Result.of(
 				101L,
 				55L,
-				"??鍮???곷뮞?냈??꾨늄",
+				"Friday Escape",
 				"Deep Blue",
 				"Hongdae",
 				"2026-04-10",
 				"host",
 				Instant.parse("2026-04-14T03:00:00Z"),
 				Instant.parse("2026-04-14T04:00:00Z"),
-				"疫꿸퀡以?癰귣챶揆",
+				"log body",
 				List.of("https://cdn.example.com/a.jpg")
 			));
 
@@ -209,7 +241,7 @@ class MeetingLogControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 					{
-					  "body": "獄쎻뫚源됬빊?疫꿸퀡以??낅빍??",
+					  "body": "log body",
 					  "photos": []
 					}
 					""")
@@ -225,7 +257,7 @@ class MeetingLogControllerTest {
 		when(uploadMeetingLogPhotoUseCase.handle(org.mockito.ArgumentMatchers.any()))
 			.thenReturn(UploadMeetingLogPhotoUseCase.Result.of(
 				"http://localhost:8080/uploads/log-photos/stored-sample.jpg",
-				(Long)file.getSize()
+				(Long) file.getSize()
 			));
 
 		mockMvc.perform(
@@ -235,7 +267,7 @@ class MeetingLogControllerTest {
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.url").value("http://localhost:8080/uploads/log-photos/stored-sample.jpg"))
-			.andExpect(jsonPath("$.sizeBytes").value((int)file.getSize()));
+			.andExpect(jsonPath("$.sizeBytes").value((int) file.getSize()));
 	}
 
 	@Test
@@ -280,4 +312,3 @@ class MeetingLogControllerTest {
 			.andExpect(jsonPath("$.code").value("LOG_NOT_FOUND"));
 	}
 }
-

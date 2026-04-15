@@ -53,6 +53,22 @@ final class MeetingLogDto {
 	) {
 	}
 
+	record MyMeetingLogResponse(
+		String status,
+		Long logId,
+		Long meetingId,
+		String meetingTitle,
+		String themeName,
+		String place,
+		String date,
+		String authorNickname,
+		Instant createdAt,
+		Instant updatedAt,
+		String body,
+		List<String> photos
+	) {
+	}
+
 	record MeetingLogDetailResponse(
 		Long logId,
 		Long meetingId,
