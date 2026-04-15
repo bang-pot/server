@@ -6,8 +6,8 @@ import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
-import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
+import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
 
 final class MeetingLogDtoMapper {
 
@@ -40,8 +40,18 @@ final class MeetingLogDtoMapper {
 		);
 	}
 
-	static DeleteMeetingLogUseCase.Command toCommand(Long logId, Long userId) {
-		return DeleteMeetingLogUseCase.Command.of(logId, userId);
+	static DeleteMeetingLogUseCase.Command toDeleteCommand(
+		Long crewId,
+		Long logId,
+		Long userId,
+		MeetingLogDto.DeleteMeetingLogRequest request
+	) {
+		return DeleteMeetingLogUseCase.Command.of(
+			crewId,
+			logId,
+			userId,
+			request == null ? null : request.deleteReason()
+		);
 	}
 
 	static GetMyMeetingLogUseCase.Query toQuery(Long meetingId, Long userId) {
@@ -61,7 +71,7 @@ final class MeetingLogDtoMapper {
 	}
 
 	static MeetingLogDto.MeetingLogDeleteResponse toResponse(DeleteMeetingLogUseCase.Result result) {
-		return new MeetingLogDto.MeetingLogDeleteResponse(result.logId());
+		return new MeetingLogDto.MeetingLogDeleteResponse(result.logId(), result.deletedBy().name());
 	}
 
 	static MeetingLogDto.MeetingLogPhotoUploadResponse toResponse(UploadMeetingLogPhotoUseCase.Result result) {
@@ -118,4 +128,3 @@ final class MeetingLogDtoMapper {
 			.toList();
 	}
 }
-

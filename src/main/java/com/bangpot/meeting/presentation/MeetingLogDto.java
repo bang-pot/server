@@ -30,13 +30,21 @@ final class MeetingLogDto {
 	) {
 	}
 
+	record DeleteMeetingLogRequest(
+		String deleteReason
+	) {
+	}
+
 	record MeetingLogWriteResponse(
 		Long logId,
 		Long meetingId
 	) {
 	}
 
-	record MeetingLogDeleteResponse(Long logId) {
+	record MeetingLogDeleteResponse(
+		Long logId,
+		String deletedBy
+	) {
 	}
 
 	record MeetingLogPhotoUploadResponse(
@@ -60,4 +68,3 @@ final class MeetingLogDto {
 	) {
 	}
 }
-

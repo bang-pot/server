@@ -22,22 +22,16 @@ class JpaMeetingLogRepository implements MeetingLogRepository {
 
 	@Override
 	public Optional<MeetingLog> findById(Long logId) {
-		return meetingLogJpaRepository.findById(logId);
+		return meetingLogJpaRepository.findByIdAndDeletedAtIsNull(logId);
 	}
 
 	@Override
 	public Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
-		return meetingLogJpaRepository.findByMeetingIdAndAuthorUserId(meetingId, authorUserId);
+		return meetingLogJpaRepository.findByMeetingIdAndAuthorUserIdAndDeletedAtIsNull(meetingId, authorUserId);
 	}
 
 	@Override
-	public boolean existsByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+	public boolean existsAnyByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
 		return meetingLogJpaRepository.existsByMeetingIdAndAuthorUserId(meetingId, authorUserId);
 	}
-
-	@Override
-	public void delete(MeetingLog log) {
-		meetingLogJpaRepository.delete(log);
-	}
 }
-

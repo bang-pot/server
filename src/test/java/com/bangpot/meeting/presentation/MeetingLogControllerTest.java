@@ -117,15 +117,36 @@ class MeetingLogControllerTest {
 
 	@Test
 	void deletesMeetingLogForAuthor() throws Exception {
-		when(deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(101L, 7L)))
-			.thenReturn(DeleteMeetingLogUseCase.Result.of(101L));
+		when(deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(5L, 101L, 7L, null)))
+			.thenReturn(DeleteMeetingLogUseCase.Result.of(101L, DeleteMeetingLogUseCase.DeletedBy.AUTHOR));
 
 		mockMvc.perform(
-			delete("/api/logs/101")
+			delete("/api/crews/5/logs/101")
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.logId").value(101));
+			.andExpect(jsonPath("$.logId").value(101))
+			.andExpect(jsonPath("$.deletedBy").value("AUTHOR"));
+	}
+
+	@Test
+	void deletesMeetingLogByLeaderWithReason() throws Exception {
+		when(deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(5L, 101L, 7L, "운영 삭제 사유")))
+			.thenReturn(DeleteMeetingLogUseCase.Result.of(101L, DeleteMeetingLogUseCase.DeletedBy.LEADER));
+
+		mockMvc.perform(
+			delete("/api/crews/5/logs/101")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "deleteReason": "운영 삭제 사유"
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.logId").value(101))
+			.andExpect(jsonPath("$.deletedBy").value("LEADER"));
 	}
 
 	@Test

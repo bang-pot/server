@@ -10,6 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import com.bangpot.meeting.application.exception.MeetingLogNotFoundException;
 import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
+import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
 
@@ -81,6 +82,24 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 	void returnsNotFoundWhenMyLogDoesNotExist() {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
+
+		assertThatThrownBy(() -> getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(
+			meeting.getId(),
+			10L
+		))).isInstanceOf(MeetingLogNotFoundException.class);
+	}
+
+	@Test
+	void hidesSoftDeletedLogFromMyLogQuery() {
+		completedUser(10L, "host");
+		var meeting = completedMeeting(1L, 10L, "Deep Blue");
+		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
+			meeting.getId(),
+			10L,
+			"my log",
+			List.of()
+		));
+		deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(1L, created.logId(), 10L, null));
 
 		assertThatThrownBy(() -> getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(
 			meeting.getId(),
