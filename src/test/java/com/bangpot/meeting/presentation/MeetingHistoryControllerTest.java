@@ -46,7 +46,11 @@ class MeetingHistoryControllerTest {
 						"2026-04-12",
 						"SUCCESS",
 						"HAS_LOG",
-						101L
+						101L,
+						"최신 로그 요약입니다.",
+						3L,
+						5L,
+						"https://cdn.example.com/cover.jpg"
 					)
 				),
 				GetCrewMeetingHistoryUseCase.PageInfo.of(0, 20, false)
@@ -63,6 +67,10 @@ class MeetingHistoryControllerTest {
 			.andExpect(jsonPath("$.items[0].meetingTitle").value("금요일 이스케이프"))
 			.andExpect(jsonPath("$.items[0].myLogStatus").value("HAS_LOG"))
 			.andExpect(jsonPath("$.items[0].logId").value(101))
+			.andExpect(jsonPath("$.items[0].reviewSummary").value("최신 로그 요약입니다."))
+			.andExpect(jsonPath("$.items[0].logCount").value(3))
+			.andExpect(jsonPath("$.items[0].participantCount").value(5))
+			.andExpect(jsonPath("$.items[0].coverPhotoUrl").value("https://cdn.example.com/cover.jpg"))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
 	}
 

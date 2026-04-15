@@ -48,7 +48,11 @@ public class GetCrewMeetingHistoryService implements GetCrewMeetingHistoryUseCas
 				item.date(),
 				item.result(),
 				item.logId() != null ? "HAS_LOG" : "NO_LOG",
-				item.logId()
+				item.logId(),
+				item.reviewSummary(),
+				item.logCount(),
+				item.participantCount(),
+				item.coverPhotoUrl()
 			))
 			.toList();
 
