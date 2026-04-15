@@ -13,4 +13,6 @@ public interface MeetingLogRepository {
 	Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId);
 
 	boolean existsAnyByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId);
+
+	boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId);
 }

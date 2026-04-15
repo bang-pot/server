@@ -5,6 +5,12 @@ import java.util.List;
 
 public interface GetMyMeetingLogUseCase {
 
+	enum Status {
+		EXISTS,
+		NOT_WRITTEN,
+		DELETED_BLOCKED
+	}
+
 	Result handle(Query query);
 
 	record Query(
@@ -17,6 +23,7 @@ public interface GetMyMeetingLogUseCase {
 	}
 
 	record Result(
+		Status status,
 		Long logId,
 		Long meetingId,
 		String meetingTitle,
@@ -30,6 +37,7 @@ public interface GetMyMeetingLogUseCase {
 		List<String> photos
 	) {
 		public static Result of(
+			Status status,
 			Long logId,
 			Long meetingId,
 			String meetingTitle,
@@ -43,6 +51,7 @@ public interface GetMyMeetingLogUseCase {
 			List<String> photos
 		) {
 			return new Result(
+				status,
 				logId,
 				meetingId,
 				meetingTitle,
@@ -55,6 +64,14 @@ public interface GetMyMeetingLogUseCase {
 				body,
 				photos
 			);
+		}
+
+		public static Result notWritten() {
+			return new Result(Status.NOT_WRITTEN, null, null, null, null, null, null, null, null, null, null, List.of());
+		}
+
+		public static Result deletedBlocked() {
+			return new Result(Status.DELETED_BLOCKED, null, null, null, null, null, null, null, null, null, null, List.of());
 		}
 	}
 }

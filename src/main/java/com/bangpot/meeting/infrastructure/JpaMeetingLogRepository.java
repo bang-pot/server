@@ -34,4 +34,9 @@ class JpaMeetingLogRepository implements MeetingLogRepository {
 	public boolean existsAnyByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
 		return meetingLogJpaRepository.existsByMeetingIdAndAuthorUserId(meetingId, authorUserId);
 	}
+
+	@Override
+	public boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+		return meetingLogJpaRepository.existsByMeetingIdAndAuthorUserIdAndDeletedAtIsNotNull(meetingId, authorUserId);
+	}
 }

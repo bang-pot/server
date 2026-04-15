@@ -91,7 +91,7 @@ class MeetingLogController {
 	}
 
 	@GetMapping("/meetings/{meetingId}/logs/me")
-	ResponseEntity<MeetingLogDto.MeetingLogDetailResponse> getMyLog(
+	ResponseEntity<MeetingLogDto.MyMeetingLogResponse> getMyLog(
 		@PathVariable Long meetingId,
 		Authentication authentication
 	) {

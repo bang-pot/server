@@ -78,8 +78,9 @@ final class MeetingLogDtoMapper {
 		return new MeetingLogDto.MeetingLogPhotoUploadResponse(result.url(), result.sizeBytes());
 	}
 
-	static MeetingLogDto.MeetingLogDetailResponse toResponse(GetMyMeetingLogUseCase.Result result) {
-		return new MeetingLogDto.MeetingLogDetailResponse(
+	static MeetingLogDto.MyMeetingLogResponse toResponse(GetMyMeetingLogUseCase.Result result) {
+		return new MeetingLogDto.MyMeetingLogResponse(
+			result.status().name(),
 			result.logId(),
 			result.meetingId(),
 			result.meetingTitle(),
