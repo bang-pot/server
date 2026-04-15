@@ -127,6 +127,38 @@ class JpaMeetingLogFeedReadRepositoryTest {
 	}
 
 	@Test
+	void excludesSoftDeletedLogs() {
+		Crew crew = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		entityManager.getEntityManager()
+			.createNativeQuery("insert into users (id, nickname, created_at, updated_at) values (7, 'writer', now(), now())")
+			.executeUpdate();
+
+		Meeting meeting = entityManager.persist(Meeting.create(
+			crew.getId(), 7L, "Friday 1", "Deep Blue", "Hongdae", "2026-04-12", "20:00", 4, null, null, null
+		));
+		entityManager.getEntityManager().createNativeQuery("""
+			insert into meeting_logs (meeting_id, author_user_id, body, created_at, updated_at, deleted_at, deleted_by_user_id, delete_reason)
+			values (?, ?, ?, ?, ?, ?, ?, ?)
+			""")
+			.setParameter(1, meeting.getId())
+			.setParameter(2, 7L)
+			.setParameter(3, "deleted log")
+			.setParameter(4, java.sql.Timestamp.from(java.time.Instant.parse("2026-04-15T01:00:00Z")))
+			.setParameter(5, java.sql.Timestamp.from(java.time.Instant.parse("2026-04-15T01:00:00Z")))
+			.setParameter(6, java.sql.Timestamp.from(java.time.Instant.parse("2026-04-16T01:00:00Z")))
+			.setParameter(7, 7L)
+			.setParameter(8, "운영 삭제")
+			.executeUpdate();
+
+		entityManager.flush();
+		entityManager.clear();
+
+		MeetingLogFeedReadRepository.SearchResult result = repository.search(crew.getId(), 0, 10);
+
+		assertThat(result.items()).isEmpty();
+	}
+
+	@Test
 	void returnsHasNextWhenMoreLogsExistThanRequestedSize() {
 		Crew crew = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 		entityManager.getEntityManager()

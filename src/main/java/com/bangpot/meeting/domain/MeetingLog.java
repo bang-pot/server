@@ -4,6 +4,8 @@ import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,6 +40,19 @@ public class MeetingLog {
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
+
+	@Column(name = "deleted_by_user_id")
+	private Long deletedByUserId;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "deleted_by_role")
+	private MeetingLogDeletedBy deletedByRole;
+
+	@Column(name = "delete_reason", length = 500)
+	private String deleteReason;
+
 	protected MeetingLog() {
 	}
 
@@ -47,7 +62,11 @@ public class MeetingLog {
 		Long authorUserId,
 		String body,
 		Instant createdAt,
-		Instant updatedAt
+		Instant updatedAt,
+		Instant deletedAt,
+		Long deletedByUserId,
+		MeetingLogDeletedBy deletedByRole,
+		String deleteReason
 	) {
 		this.id = id;
 		this.meetingId = meetingId;
@@ -55,10 +74,14 @@ public class MeetingLog {
 		this.body = body;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
+		this.deletedAt = deletedAt;
+		this.deletedByUserId = deletedByUserId;
+		this.deletedByRole = deletedByRole;
+		this.deleteReason = deleteReason;
 	}
 
 	public static MeetingLog create(Long meetingId, Long authorUserId, String body, Instant now) {
-		return new MeetingLog(null, meetingId, authorUserId, body, now, now);
+		return new MeetingLog(null, meetingId, authorUserId, body, now, now, null, null, null, null);
 	}
 
 	public static MeetingLog rehydrate(
@@ -67,14 +90,37 @@ public class MeetingLog {
 		Long authorUserId,
 		String body,
 		Instant createdAt,
-		Instant updatedAt
+		Instant updatedAt,
+		Instant deletedAt,
+		Long deletedByUserId,
+		MeetingLogDeletedBy deletedByRole,
+		String deleteReason
 	) {
-		return new MeetingLog(id, meetingId, authorUserId, body, createdAt, updatedAt);
+		return new MeetingLog(
+			id,
+			meetingId,
+			authorUserId,
+			body,
+			createdAt,
+			updatedAt,
+			deletedAt,
+			deletedByUserId,
+			deletedByRole,
+			deleteReason
+		);
 	}
 
 	public void edit(String body, Instant updatedAt) {
 		this.body = body;
 		this.updatedAt = updatedAt;
+	}
+
+	public void delete(Long deletedByUserId, MeetingLogDeletedBy deletedByRole, String deleteReason, Instant deletedAt) {
+		this.deletedByUserId = deletedByUserId;
+		this.deletedByRole = deletedByRole;
+		this.deleteReason = deleteReason;
+		this.deletedAt = deletedAt;
+		this.updatedAt = deletedAt;
 	}
 
 	public void assignId(Long id) {
@@ -107,5 +153,20 @@ public class MeetingLog {
 	public Instant getUpdatedAt() {
 		return updatedAt;
 	}
-}
 
+	public Instant getDeletedAt() {
+		return deletedAt;
+	}
+
+	public Long getDeletedByUserId() {
+		return deletedByUserId;
+	}
+
+	public MeetingLogDeletedBy getDeletedByRole() {
+		return deletedByRole;
+	}
+
+	public String getDeleteReason() {
+		return deleteReason;
+	}
+}

@@ -20,8 +20,8 @@ import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
-import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
+import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -69,15 +69,22 @@ class MeetingLogController {
 		);
 	}
 
-	@DeleteMapping("/logs/{logId}")
+	@DeleteMapping("/crews/{crewId}/logs/{logId}")
 	ResponseEntity<MeetingLogDto.MeetingLogDeleteResponse> delete(
+		@PathVariable Long crewId,
 		@PathVariable Long logId,
-		Authentication authentication
+		Authentication authentication,
+		@RequestBody(required = false) MeetingLogDto.DeleteMeetingLogRequest request
 	) {
 		return ResponseEntity.ok(
 			MeetingLogDtoMapper.toResponse(
 				deleteMeetingLogUseCase.handle(
-					MeetingLogDtoMapper.toCommand(logId, requireAuthenticatedUserId(authentication))
+					MeetingLogDtoMapper.toDeleteCommand(
+						crewId,
+						logId,
+						requireAuthenticatedUserId(authentication),
+						request
+					)
 				)
 			)
 		);
@@ -137,4 +144,3 @@ class MeetingLogController {
 		return userId;
 	}
 }
-

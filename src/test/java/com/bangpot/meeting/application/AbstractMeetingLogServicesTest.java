@@ -81,8 +81,10 @@ abstract class AbstractMeetingLogServicesTest {
 		);
 		deleteMeetingLogUseCase = new DeleteMeetingLogService(
 			completedUserAccessService,
-			meetingLogRepository,
-			meetingLogPhotoRepository
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository,
+			meetingLogRepository
 		);
 		getMyMeetingLogUseCase = new GetMyMeetingLogService(
 			completedUserAccessService,
@@ -360,24 +362,23 @@ abstract class AbstractMeetingLogServicesTest {
 
 		@Override
 		public Optional<MeetingLog> findById(Long logId) {
-			return Optional.ofNullable(logs.get(logId));
+			return Optional.ofNullable(logs.get(logId))
+				.filter(log -> log.getDeletedAt() == null);
 		}
 
 		@Override
 		public Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
 			return logs.values().stream()
-				.filter(log -> log.getMeetingId().equals(meetingId) && log.getAuthorUserId().equals(authorUserId))
+				.filter(log -> log.getMeetingId().equals(meetingId)
+					&& log.getAuthorUserId().equals(authorUserId)
+					&& log.getDeletedAt() == null)
 				.findFirst();
 		}
 
 		@Override
-		public boolean existsByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
-			return findByMeetingIdAndAuthorUserId(meetingId, authorUserId).isPresent();
-		}
-
-		@Override
-		public void delete(MeetingLog log) {
-			logs.remove(log.getId());
+		public boolean existsAnyByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return logs.values().stream()
+				.anyMatch(log -> log.getMeetingId().equals(meetingId) && log.getAuthorUserId().equals(authorUserId));
 		}
 	}
 

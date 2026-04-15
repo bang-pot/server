@@ -38,7 +38,7 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
 		MeetingLogAccessPolicy.validateWritableMeeting(meeting);
 		MeetingLogAccessPolicy.validateParticipantHistory(meeting, command.userId(), meetingParticipantRepository);
-		if (meetingLogRepository.existsByMeetingIdAndAuthorUserId(command.meetingId(), command.userId())) {
+		if (meetingLogRepository.existsAnyByMeetingIdAndAuthorUserId(command.meetingId(), command.userId())) {
 			throw new MeetingLogAlreadyExistsException(command.meetingId(), command.userId());
 		}
 

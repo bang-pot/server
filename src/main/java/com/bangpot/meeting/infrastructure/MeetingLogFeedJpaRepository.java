@@ -35,6 +35,7 @@ interface MeetingLogFeedJpaRepository extends JpaRepository<MeetingLog, Long> {
 		join meetings m on m.id = ml.meeting_id
 		join users u on u.id = ml.author_user_id
 		where m.crew_id = :crewId
+		  and ml.deleted_at is null
 		order by ml.created_at desc, ml.id desc
 		""", nativeQuery = true)
 	List<Object[]> findByCrewIdOrderByCreatedAtDesc(Long crewId, Pageable pageable);
