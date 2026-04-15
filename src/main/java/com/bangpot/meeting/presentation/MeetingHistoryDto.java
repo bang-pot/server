@@ -21,7 +21,11 @@ public final class MeetingHistoryDto {
 		String date,
 		String result,
 		String myLogStatus,
-		Long logId
+		Long logId,
+		String reviewSummary,
+		Long logCount,
+		Long participantCount,
+		String coverPhotoUrl
 	) {
 	}
 

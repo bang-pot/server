@@ -1,5 +1,7 @@
 package com.bangpot.meeting.infrastructure;
 
+import java.util.List;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
@@ -16,26 +18,39 @@ class JpaMeetingHistoryReadRepository implements MeetingHistoryReadRepository {
 
 	@Override
 	public SearchResult search(Long crewId, Long userId, int page, int size) {
-		var slice = meetingHistoryJpaRepository.findCrewCompletedMeetingHistory(
-			crewId,
-			userId,
-			MeetingStatus.COMPLETED,
-			PageRequest.of(page, size)
-		);
+		List<Item> items = meetingHistoryJpaRepository.findCrewCompletedMeetingHistory(
+				crewId,
+				userId,
+				MeetingStatus.COMPLETED.name(),
+				PageRequest.of(page, size + 1)
+			).stream()
+			.map(row -> Item.of(
+				toLong(row[0]),
+				(String) row[1],
+				(String) row[2],
+				(String) row[3],
+				(String) row[4],
+				String.valueOf(row[5]),
+				toLong(row[6]),
+				(String) row[7],
+				toLong(row[8]),
+				toLong(row[9]),
+				(String) row[10]
+			))
+			.toList();
 
-		return SearchResult.of(
-			slice.getContent().stream()
-				.map(item -> Item.of(
-					item.getMeetingId(),
-					item.getMeetingTitle(),
-					item.getThemeName(),
-					item.getPlace(),
-					item.getMeetingDate(),
-					item.getResult().name(),
-					item.getLogId()
-				))
-				.toList(),
-			PageInfo.of(page, size, slice.hasNext())
-		);
+		boolean hasNext = items.size() > size;
+		if (hasNext) {
+			items = items.subList(0, size);
+		}
+
+		return SearchResult.of(items, PageInfo.of(page, size, hasNext));
+	}
+
+	private Long toLong(Object value) {
+		if (value == null) {
+			return null;
+		}
+		return ((Number) value).longValue();
 	}
 }

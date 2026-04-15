@@ -22,7 +22,11 @@ public interface MeetingHistoryReadRepository {
 		String place,
 		String date,
 		String result,
-		Long logId
+		Long logId,
+		String reviewSummary,
+		Long logCount,
+		Long participantCount,
+		String coverPhotoUrl
 	) {
 		public static Item of(
 			Long meetingId,
@@ -31,9 +35,25 @@ public interface MeetingHistoryReadRepository {
 			String place,
 			String date,
 			String result,
-			Long logId
+			Long logId,
+			String reviewSummary,
+			Long logCount,
+			Long participantCount,
+			String coverPhotoUrl
 		) {
-			return new Item(meetingId, meetingTitle, themeName, place, date, result, logId);
+			return new Item(
+				meetingId,
+				meetingTitle,
+				themeName,
+				place,
+				date,
+				result,
+				logId,
+				reviewSummary,
+				logCount,
+				participantCount,
+				coverPhotoUrl
+			);
 		}
 	}
 

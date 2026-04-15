@@ -3,7 +3,9 @@ package com.bangpot.meeting.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +17,8 @@ import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
+import com.bangpot.crew.domain.CrewMemberStatus;
+import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingHistoryReadRepository;
 import com.bangpot.meeting.application.service.GetCrewMeetingHistoryService;
@@ -46,7 +50,7 @@ class GetCrewMeetingHistoryServiceTest {
 	}
 
 	@Test
-	void returnsCompletedMeetingHistoryWithMyLogStatus() {
+	void returnsCompletedMeetingHistoryWithRicherCardFields() {
 		userRepository.save(User.rehydrate(7L, "member", true));
 		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), 7L));
@@ -59,15 +63,23 @@ class GetCrewMeetingHistoryServiceTest {
 					"Hongdae",
 					"2026-04-12",
 					"SUCCESS",
-					101L
+					101L,
+					"최신 로그 요약입니다.",
+					3L,
+					5L,
+					"https://cdn.example.com/cover.jpg"
 				),
 				MeetingHistoryReadRepository.Item.of(
 					30L,
-					"토요일 이스케이프",
+					"토요일 로스트 하버",
 					"Lost Harbor",
 					"Busan",
 					"2026-04-11",
 					"FAILURE",
+					null,
+					null,
+					0L,
+					1L,
 					null
 				)
 			),
@@ -81,8 +93,17 @@ class GetCrewMeetingHistoryServiceTest {
 		assertThat(result.items()).hasSize(2);
 		assertThat(result.items().get(0).myLogStatus()).isEqualTo("HAS_LOG");
 		assertThat(result.items().get(0).logId()).isEqualTo(101L);
+		assertThat(result.items().get(0).reviewSummary()).isEqualTo("최신 로그 요약입니다.");
+		assertThat(result.items().get(0).logCount()).isEqualTo(3L);
+		assertThat(result.items().get(0).participantCount()).isEqualTo(5L);
+		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/cover.jpg");
+
 		assertThat(result.items().get(1).myLogStatus()).isEqualTo("NO_LOG");
 		assertThat(result.items().get(1).logId()).isNull();
+		assertThat(result.items().get(1).reviewSummary()).isNull();
+		assertThat(result.items().get(1).logCount()).isEqualTo(0L);
+		assertThat(result.items().get(1).participantCount()).isEqualTo(1L);
+		assertThat(result.items().get(1).coverPhotoUrl()).isNull();
 		assertThat(result.pageInfo().hasNext()).isFalse();
 	}
 
@@ -108,7 +129,7 @@ class GetCrewMeetingHistoryServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-		private final java.util.Map<Long, User> users = new java.util.HashMap<>();
+		private final Map<Long, User> users = new HashMap<>();
 
 		@Override
 		public Optional<User> findById(Long userId) {
@@ -136,7 +157,7 @@ class GetCrewMeetingHistoryServiceTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
-		private final java.util.Map<Long, Crew> crews = new java.util.HashMap<>();
+		private final Map<Long, Crew> crews = new HashMap<>();
 		private long sequence = 1L;
 
 		@Override
@@ -156,7 +177,7 @@ class GetCrewMeetingHistoryServiceTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crews.get(crewId))
-				.filter(crew -> crew.getStatus() == com.bangpot.crew.domain.CrewStatus.ACTIVE);
+				.filter(crew -> crew.getStatus() == CrewStatus.ACTIVE);
 		}
 
 		@Override
@@ -166,12 +187,14 @@ class GetCrewMeetingHistoryServiceTest {
 
 		@Override
 		public List<Crew> findPublicCrews() {
-			return crews.values().stream().filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC).toList();
+			return crews.values().stream()
+				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
+				.toList();
 		}
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
-		private final java.util.Map<Long, CrewMember> members = new java.util.HashMap<>();
+		private final Map<Long, CrewMember> members = new HashMap<>();
 		private long sequence = 1L;
 
 		@Override
@@ -188,7 +211,7 @@ class GetCrewMeetingHistoryServiceTest {
 			return members.values().stream().anyMatch(member ->
 				member.getCrewId().equals(crewId)
 					&& member.getUserId().equals(userId)
-					&& member.getStatus() == com.bangpot.crew.domain.CrewMemberStatus.ACTIVE
+					&& member.getStatus() == CrewMemberStatus.ACTIVE
 			);
 		}
 
@@ -202,13 +225,15 @@ class GetCrewMeetingHistoryServiceTest {
 			return members.values().stream()
 				.filter(member -> member.getCrewId().equals(crewId)
 					&& member.getUserId().equals(userId)
-					&& member.getStatus() == com.bangpot.crew.domain.CrewMemberStatus.ACTIVE)
+					&& member.getStatus() == CrewMemberStatus.ACTIVE)
 				.findFirst();
 		}
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
-			return members.values().stream().filter(member -> member.getCrewId().equals(crewId)).toList();
+			return members.values().stream()
+				.filter(member -> member.getCrewId().equals(crewId))
+				.toList();
 		}
 	}
 

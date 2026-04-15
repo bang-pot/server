@@ -18,7 +18,11 @@ final class MeetingHistoryDtoMapper {
 					item.date(),
 					item.result(),
 					item.myLogStatus(),
-					item.logId()
+					item.logId(),
+					item.reviewSummary(),
+					item.logCount(),
+					item.participantCount(),
+					item.coverPhotoUrl()
 				))
 				.toList(),
 			new MeetingHistoryDto.PageInfoResponse(
