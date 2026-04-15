@@ -8,11 +8,12 @@ public interface GetMeetingLogDetailUseCase {
 	Result handle(Query query);
 
 	record Query(
+		Long crewId,
 		Long logId,
 		Long userId
 	) {
-		public static Query of(Long logId, Long userId) {
-			return new Query(logId, userId);
+		public static Query of(Long crewId, Long logId, Long userId) {
+			return new Query(crewId, logId, userId);
 		}
 	}
 

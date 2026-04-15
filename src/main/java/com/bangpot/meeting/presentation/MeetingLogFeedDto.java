@@ -11,15 +11,13 @@ final class MeetingLogFeedDto {
 	record MeetingLogFeedItemResponse(
 		Long logId,
 		Long meetingId,
-		Long crewId,
 		String authorNickname,
 		String meetingTitle,
-		String themeName,
-		String date,
+		String meetingDate,
 		Instant createdAt,
 		String excerpt,
 		String coverPhotoUrl,
-		Long photoCount
+		Long extraPhotoCount
 	) {
 	}
 

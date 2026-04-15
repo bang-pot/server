@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.bangpot.meeting.application.exception.MeetingLogNotFoundException;
 import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
@@ -33,21 +34,37 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 	}
 
 	@Test
-	void getsLogDetailForAuthor() {
+	void getsLogDetailForAuthorWithinCrewContext() {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 		var created = createMeetingLogUseCase.handle(
 			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of())
 		);
 
-		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(created.logId(), 10L));
+		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 10L));
 
 		assertThat(detail.logId()).isEqualTo(created.logId());
 		assertThat(detail.themeName()).isEqualTo("Deep Blue");
 	}
 
 	@Test
-	void allowsLogDetailForAnotherUser() {
+	void allowsLogDetailForAnotherCrewMember() {
+		completedUser(10L, "host");
+		completedUser(11L, "other");
+		var meeting = completedMeeting(1L, 10L, "Deep Blue");
+		activeCrewMember(1L, 11L);
+		var created = createMeetingLogUseCase.handle(
+			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of())
+		);
+
+		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 11L));
+
+		assertThat(detail.logId()).isEqualTo(created.logId());
+		assertThat(detail.authorNickname()).isEqualTo("host");
+	}
+
+	@Test
+	void deniesLogDetailForUserOutsideCrew() {
 		completedUser(10L, "host");
 		completedUser(11L, "other");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
@@ -55,10 +72,9 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of())
 		);
 
-		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(created.logId(), 11L));
-
-		assertThat(detail.logId()).isEqualTo(created.logId());
-		assertThat(detail.authorNickname()).isEqualTo("host");
+		assertThatThrownBy(() -> getMeetingLogDetailUseCase.handle(
+			GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 11L)
+		)).isInstanceOf(AccessDeniedException.class);
 	}
 
 	@Test
@@ -72,4 +88,3 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		))).isInstanceOf(MeetingLogNotFoundException.class);
 	}
 }
-

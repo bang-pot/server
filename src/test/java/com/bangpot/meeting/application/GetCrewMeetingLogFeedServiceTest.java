@@ -56,13 +56,11 @@ class GetCrewMeetingLogFeedServiceTest {
 				MeetingLogFeedReadRepository.Item.of(
 					11L,
 					31L,
-					crew.getId(),
 					"writer",
-					"금요일 번개",
-					"Deep Blue",
+					"Friday Escape",
 					"2026-04-12",
 					Instant.parse("2026-04-15T01:00:00Z"),
-					"정말 재미있었던 기록입니다.",
+					"Quite a fun log body for card rendering.",
 					"https://cdn.example.com/a.jpg",
 					2L
 				)
@@ -75,9 +73,10 @@ class GetCrewMeetingLogFeedServiceTest {
 		);
 
 		assertThat(result.items()).hasSize(1);
-		assertThat(result.items().get(0).excerpt()).isEqualTo("정말 재미있었던 기록입니다.");
+		assertThat(result.items().get(0).meetingDate()).isEqualTo("2026-04-12");
+		assertThat(result.items().get(0).excerpt()).isEqualTo("Quite a fun log body for card rendering.");
 		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/a.jpg");
-		assertThat(result.items().get(0).photoCount()).isEqualTo(2);
+		assertThat(result.items().get(0).extraPhotoCount()).isEqualTo(1L);
 		assertThat(result.pageInfo().hasNext()).isFalse();
 	}
 
@@ -150,7 +149,8 @@ class GetCrewMeetingLogFeedServiceTest {
 
 		@Override
 		public Optional<Crew> findById(Long crewId) {
-			return Optional.ofNullable(crews.get(crewId)).filter(crew -> crew.getStatus() == com.bangpot.crew.domain.CrewStatus.ACTIVE);
+			return Optional.ofNullable(crews.get(crewId))
+				.filter(crew -> crew.getStatus() == com.bangpot.crew.domain.CrewStatus.ACTIVE);
 		}
 
 		@Override
@@ -160,7 +160,9 @@ class GetCrewMeetingLogFeedServiceTest {
 
 		@Override
 		public List<Crew> findPublicCrews() {
-			return crews.values().stream().filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC).toList();
+			return crews.values().stream()
+				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
+				.toList();
 		}
 	}
 
@@ -202,7 +204,9 @@ class GetCrewMeetingLogFeedServiceTest {
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
-			return members.values().stream().filter(member -> member.getCrewId().equals(crewId)).toList();
+			return members.values().stream()
+				.filter(member -> member.getCrewId().equals(crewId))
+				.toList();
 		}
 	}
 

@@ -157,7 +157,7 @@ class MeetingLogControllerTest {
 
 	@Test
 	void returnsMeetingLogDetailForAnotherUser() throws Exception {
-		when(getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(101L, 9L)))
+		when(getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(5L, 101L, 9L)))
 			.thenReturn(GetMeetingLogDetailUseCase.Result.of(
 				101L,
 				55L,
@@ -173,7 +173,7 @@ class MeetingLogControllerTest {
 			));
 
 		mockMvc.perform(
-			get("/api/logs/101")
+			get("/api/crews/5/logs/101")
 				.principal(new UsernamePasswordAuthenticationToken(9L, null))
 		)
 			.andExpect(status().isOk())
@@ -248,11 +248,11 @@ class MeetingLogControllerTest {
 
 	@Test
 	void returnsLogNotFoundWhenDetailDoesNotExist() throws Exception {
-		when(getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(999L, 7L)))
+		when(getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(5L, 999L, 7L)))
 			.thenThrow(new MeetingLogNotFoundException(999L));
 
 		mockMvc.perform(
-			get("/api/logs/999")
+			get("/api/crews/5/logs/999")
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
 		)
 			.andExpect(status().isNotFound())

@@ -44,15 +44,13 @@ public class GetCrewMeetingLogFeedService implements GetCrewMeetingLogFeedUseCas
 			.map(item -> Item.of(
 				item.logId(),
 				item.meetingId(),
-				item.crewId(),
 				item.authorNickname(),
 				item.meetingTitle(),
-				item.themeName(),
-				item.date(),
+				item.meetingDate(),
 				item.createdAt(),
 				toExcerpt(item.body()),
 				item.coverPhotoUrl(),
-				item.photoCount()
+				toExtraPhotoCount(item.totalPhotoCount())
 			))
 			.toList();
 
@@ -68,5 +66,12 @@ public class GetCrewMeetingLogFeedService implements GetCrewMeetingLogFeedUseCas
 			return body;
 		}
 		return body.substring(0, EXCERPT_LIMIT);
+	}
+
+	private long toExtraPhotoCount(Long totalPhotoCount) {
+		if (totalPhotoCount == null || totalPhotoCount <= 1L) {
+			return 0L;
+		}
+		return totalPhotoCount - 1L;
 	}
 }
