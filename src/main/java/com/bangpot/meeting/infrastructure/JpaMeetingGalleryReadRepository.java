@@ -1,6 +1,8 @@
 package com.bangpot.meeting.infrastructure;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
@@ -36,6 +38,32 @@ class JpaMeetingGalleryReadRepository implements MeetingGalleryReadRepository {
 		}
 
 		return SearchResult.of(items, PageInfo.of(page, size, hasNext));
+	}
+
+	@Override
+	public Optional<Detail> findDetail(Long crewId, Long meetingId) {
+		List<Object[]> detailRows = meetingGalleryJpaRepository.findGalleryDetailMeeting(crewId, meetingId);
+		if (detailRows.isEmpty()) {
+			return Optional.empty();
+		}
+
+		Object[] detailRow = detailRows.get(0);
+		AtomicInteger order = new AtomicInteger(1);
+		List<DetailPhoto> photos = meetingGalleryJpaRepository.findGalleryDetailPhotos(meetingId).stream()
+			.map(row -> DetailPhoto.of(
+				toLong(row[0]),
+				(String) row[1],
+				order.getAndIncrement()
+			))
+			.toList();
+
+		return Optional.of(Detail.of(
+			toLong(detailRow[0]),
+			(String) detailRow[1],
+			(String) detailRow[2],
+			photos,
+			photos.size()
+		));
 	}
 
 	private Long toLong(Object value) {

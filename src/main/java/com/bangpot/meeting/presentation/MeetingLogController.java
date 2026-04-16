@@ -119,6 +119,8 @@ class MeetingLogController {
 		);
 	}
 
+	// Gallery detail is handled by MeetingGalleryController to keep card list/detail roles separate.
+
 	@PostMapping("/uploads/log-photos")
 	ResponseEntity<MeetingLogDto.MeetingLogPhotoUploadResponse> uploadPhoto(
 		Authentication authentication,

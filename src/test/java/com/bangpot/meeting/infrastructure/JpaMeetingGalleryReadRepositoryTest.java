@@ -119,6 +119,71 @@ class JpaMeetingGalleryReadRepositoryTest {
 		assertThat(result.pageInfo().hasNext()).isTrue();
 	}
 
+	@Test
+	void returnsMeetingGalleryDetailWithAllActivePhotosInUploadOrder() {
+		Crew crew = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		entityManager.getEntityManager()
+			.createNativeQuery("insert into users (id, nickname, created_at, updated_at) values (7, 'host', now(), now())")
+			.executeUpdate();
+		entityManager.getEntityManager()
+			.createNativeQuery("insert into users (id, nickname, created_at, updated_at) values (8, 'member', now(), now())")
+			.executeUpdate();
+		entityManager.getEntityManager()
+			.createNativeQuery("insert into users (id, nickname, created_at, updated_at) values (9, 'deleted-member', now(), now())")
+			.executeUpdate();
+
+		Meeting meeting = completedMeeting(crew.getId(), 7L, "2026-04-12", "Gallery Detail");
+		Long hostLogId = insertLog(meeting.getId(), 7L, "host log", "2026-04-13T01:00:00Z");
+		Long memberLogId = insertLog(meeting.getId(), 8L, "member log", "2026-04-13T02:00:00Z");
+		Long deletedLogId = insertDeletedLog(meeting.getId(), 9L, "deleted member log", "2026-04-13T03:00:00Z");
+
+		Long firstHostPhotoId = insertPhoto(hostLogId, "https://cdn.example.com/host-1.jpg", "2026-04-13T04:00:00Z");
+		Long memberPhotoId = insertPhoto(memberLogId, "https://cdn.example.com/member-1.jpg", "2026-04-13T05:00:00Z");
+		Long secondHostPhotoId = insertPhoto(hostLogId, "https://cdn.example.com/host-2.jpg", "2026-04-13T06:00:00Z");
+		insertPhoto(deletedLogId, "https://cdn.example.com/deleted-1.jpg", "2026-04-13T07:00:00Z");
+
+		entityManager.flush();
+		entityManager.clear();
+
+		java.util.Optional<MeetingGalleryReadRepository.Detail> result = repository.findDetail(crew.getId(), meeting.getId());
+
+		assertThat(result).isPresent();
+		assertThat(result.get().meetingId()).isEqualTo(meeting.getId());
+		assertThat(result.get().meetingDate()).isEqualTo("2026-04-12");
+		assertThat(result.get().meetingTitle()).isEqualTo("Gallery Detail");
+		assertThat(result.get().totalPhotoCount()).isEqualTo(3);
+		assertThat(result.get().photos()).extracting(MeetingGalleryReadRepository.DetailPhoto::photoId)
+			.containsExactly(firstHostPhotoId, memberPhotoId, secondHostPhotoId);
+		assertThat(result.get().photos()).extracting(MeetingGalleryReadRepository.DetailPhoto::url)
+			.containsExactly(
+				"https://cdn.example.com/host-1.jpg",
+				"https://cdn.example.com/member-1.jpg",
+				"https://cdn.example.com/host-2.jpg"
+			);
+		assertThat(result.get().photos()).extracting(MeetingGalleryReadRepository.DetailPhoto::order)
+			.containsExactly(1, 2, 3);
+	}
+
+	@Test
+	void returnsEmptyWhenMeetingIsNotGalleryTargetForDetail() {
+		Crew crew = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		entityManager.getEntityManager()
+			.createNativeQuery("insert into users (id, nickname, created_at, updated_at) values (7, 'host', now(), now())")
+			.executeUpdate();
+		entityManager.getEntityManager()
+			.createNativeQuery("insert into users (id, nickname, created_at, updated_at) values (8, 'member', now(), now())")
+			.executeUpdate();
+
+		Meeting noHostPhotoMeeting = completedMeeting(crew.getId(), 7L, "2026-04-12", "No Host Photo");
+		Long memberLogId = insertLog(noHostPhotoMeeting.getId(), 8L, "member log", "2026-04-13T02:00:00Z");
+		insertPhoto(memberLogId, "https://cdn.example.com/member-only.jpg", "2026-04-13T05:00:00Z");
+
+		entityManager.flush();
+		entityManager.clear();
+
+		assertThat(repository.findDetail(crew.getId(), noHostPhotoMeeting.getId())).isEmpty();
+	}
+
 	private Meeting completedMeeting(Long crewId, Long hostUserId, String meetingDate, String title) {
 		Meeting meeting = entityManager.persist(Meeting.create(
 			crewId, hostUserId, title, "Deep Blue", "Hongdae", meetingDate, "20:00", 4, null, null, null
@@ -186,7 +251,7 @@ class JpaMeetingGalleryReadRepositoryTest {
 			.getSingleResult()).longValue();
 	}
 
-	private void insertPhoto(Long logId, String url, String createdAt) {
+	private Long insertPhoto(Long logId, String url, String createdAt) {
 		entityManager.getEntityManager().createNativeQuery("""
 			insert into meeting_log_photos (log_id, photo_url, created_at)
 			values (?, ?, ?)
@@ -195,5 +260,10 @@ class JpaMeetingGalleryReadRepositoryTest {
 			.setParameter(2, url)
 			.setParameter(3, java.sql.Timestamp.from(java.time.Instant.parse(createdAt)))
 			.executeUpdate();
+
+		return ((Number) entityManager.getEntityManager()
+			.createNativeQuery("select max(id) from meeting_log_photos where log_id = ?")
+			.setParameter(1, logId)
+			.getSingleResult()).longValue();
 	}
 }

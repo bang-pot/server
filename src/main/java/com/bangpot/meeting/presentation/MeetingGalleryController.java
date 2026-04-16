@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase;
 
 import jakarta.validation.constraints.Max;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 class MeetingGalleryController {
 
 	private final GetCrewMeetingGalleryUseCase getCrewMeetingGalleryUseCase;
+	private final GetCrewMeetingGalleryDetailUseCase getCrewMeetingGalleryDetailUseCase;
 
 	@GetMapping("/{crewId}/gallery")
 	ResponseEntity<MeetingGalleryDto.MeetingGalleryResponse> getGallery(
@@ -36,6 +38,21 @@ class MeetingGalleryController {
 			MeetingGalleryDtoMapper.toResponse(
 				getCrewMeetingGalleryUseCase.handle(
 					GetCrewMeetingGalleryUseCase.Query.of(crewId, requireAuthenticatedUserId(authentication), page, size)
+				)
+			)
+		);
+	}
+
+	@GetMapping("/{crewId}/gallery/{meetingId}")
+	ResponseEntity<MeetingGalleryDto.MeetingGalleryDetailResponse> getGalleryDetail(
+		@PathVariable Long crewId,
+		@PathVariable Long meetingId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(
+			MeetingGalleryDtoMapper.toResponse(
+				getCrewMeetingGalleryDetailUseCase.handle(
+					GetCrewMeetingGalleryDetailUseCase.Query.of(crewId, meetingId, requireAuthenticatedUserId(authentication))
 				)
 			)
 		);

@@ -28,4 +28,20 @@ final class MeetingGalleryDto {
 		MeetingGalleryPageInfo pageInfo
 	) {
 	}
+
+	record MeetingGalleryDetailPhotoResponse(
+		Long photoId,
+		String url,
+		int order
+	) {
+	}
+
+	record MeetingGalleryDetailResponse(
+		Long meetingId,
+		String meetingDate,
+		String meetingTitle,
+		List<MeetingGalleryDetailPhotoResponse> photos,
+		int totalPhotoCount
+	) {
+	}
 }
