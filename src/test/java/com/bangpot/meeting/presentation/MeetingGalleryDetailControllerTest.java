@@ -19,71 +19,69 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
+import com.bangpot.meeting.application.exception.MeetingGalleryNotFoundException;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryDetailUseCase;
-import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
 @WebMvcTest(controllers = MeetingGalleryController.class)
 @Import({GlobalApiExceptionHandler.class, ApiErrorResponseFactory.class})
-class MeetingGalleryControllerTest {
+class MeetingGalleryDetailControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
 
 	@MockitoBean
-	private GetCrewMeetingGalleryUseCase getCrewMeetingGalleryUseCase;
+	private com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase getCrewMeetingGalleryUseCase;
 
 	@MockitoBean
 	private GetCrewMeetingGalleryDetailUseCase getCrewMeetingGalleryDetailUseCase;
 
 	@Test
-	void returnsCrewMeetingGalleryForAuthenticatedUser() throws Exception {
-		when(getCrewMeetingGalleryUseCase.handle(GetCrewMeetingGalleryUseCase.Query.of(5L, 7L, 0, 20)))
-			.thenReturn(GetCrewMeetingGalleryUseCase.Result.of(
+	void returnsMeetingGalleryDetailForAuthenticatedUser() throws Exception {
+		when(getCrewMeetingGalleryDetailUseCase.handle(GetCrewMeetingGalleryDetailUseCase.Query.of(5L, 55L, 7L)))
+			.thenReturn(GetCrewMeetingGalleryDetailUseCase.Result.of(
+				55L,
+				"2026-04-12",
+				"금요일 이스케이프",
 				List.of(
-					GetCrewMeetingGalleryUseCase.Item.of(
-						55L,
-						"2026-04-12",
-						"금요일 이스케이프",
-						"https://cdn.example.com/a.jpg",
-						2L
-					)
+					GetCrewMeetingGalleryDetailUseCase.Photo.of(501L, "https://cdn.example.com/a.jpg", 1),
+					GetCrewMeetingGalleryDetailUseCase.Photo.of(502L, "https://cdn.example.com/b.jpg", 2)
 				),
-				GetCrewMeetingGalleryUseCase.PageInfo.of(0, 20, false)
+				2
 			));
 
 		mockMvc.perform(
-			get("/api/crews/5/gallery")
+			get("/api/crews/5/gallery/55")
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
-				.param("page", "0")
-				.param("size", "20")
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.items[0].meetingId").value(55))
-			.andExpect(jsonPath("$.items[0].meetingDate").value("2026-04-12"))
-			.andExpect(jsonPath("$.items[0].meetingTitle").value("금요일 이스케이프"))
-			.andExpect(jsonPath("$.items[0].coverPhotoUrl").value("https://cdn.example.com/a.jpg"))
-			.andExpect(jsonPath("$.items[0].extraPhotoCount").value(2))
-			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
+			.andExpect(jsonPath("$.meetingId").value(55))
+			.andExpect(jsonPath("$.meetingDate").value("2026-04-12"))
+			.andExpect(jsonPath("$.meetingTitle").value("금요일 이스케이프"))
+			.andExpect(jsonPath("$.photos[0].photoId").value(501))
+			.andExpect(jsonPath("$.photos[0].url").value("https://cdn.example.com/a.jpg"))
+			.andExpect(jsonPath("$.photos[0].order").value(1))
+			.andExpect(jsonPath("$.totalPhotoCount").value(2));
 	}
 
 	@Test
-	void returnsUnauthorizedWhenGalleryRequestedWithoutAuthentication() throws Exception {
-		mockMvc.perform(get("/api/crews/5/gallery"))
+	void returnsUnauthorizedWhenDetailRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/crews/5/gallery/55"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
 
 	@Test
-	void returnsValidationErrorWhenPageIsNegative() throws Exception {
+	void returnsGalleryNotFoundWhenMeetingIsNotGalleryTarget() throws Exception {
+		when(getCrewMeetingGalleryDetailUseCase.handle(GetCrewMeetingGalleryDetailUseCase.Query.of(5L, 999L, 7L)))
+			.thenThrow(new MeetingGalleryNotFoundException(999L));
+
 		mockMvc.perform(
-			get("/api/crews/5/gallery")
+			get("/api/crews/5/gallery/999")
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
-				.param("page", "-1")
-				.param("size", "20")
 		)
-			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.code").value("GALLERY_NOT_FOUND"));
 	}
 }

@@ -43,6 +43,7 @@ import com.bangpot.meeting.application.exception.MeetingLogRequestValidationExce
 import com.bangpot.meeting.application.exception.MeetingLogWriteNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingHostCannotCancelParticipationException;
 import com.bangpot.meeting.application.exception.MeetingEditNotAllowedException;
+import com.bangpot.meeting.application.exception.MeetingGalleryNotFoundException;
 import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.exception.MeetingParticipationAlreadyJoinedException;
@@ -50,6 +51,7 @@ import com.bangpot.meeting.application.exception.MeetingParticipationNotJoinedEx
 import com.bangpot.meeting.application.exception.MeetingResultAlreadyRecordedException;
 import com.bangpot.meeting.application.exception.MeetingResultRecordNotAllowedException;
 import com.bangpot.meeting.error.MeetingErrorCode;
+import com.bangpot.meeting.error.MeetingGalleryErrorCode;
 import com.bangpot.meeting.error.MeetingLogErrorCode;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
@@ -222,6 +224,11 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(MeetingNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleMeetingNotFound(MeetingNotFoundException exception) {
 		return error(MeetingErrorCode.MEETING_NOT_FOUND);
+	}
+
+	@ExceptionHandler(MeetingGalleryNotFoundException.class)
+	ResponseEntity<ApiErrorResponse> handleMeetingGalleryNotFound(MeetingGalleryNotFoundException exception) {
+		return error(MeetingGalleryErrorCode.GALLERY_NOT_FOUND);
 	}
 
 	@ExceptionHandler(MeetingParticipationAlreadyJoinedException.class)

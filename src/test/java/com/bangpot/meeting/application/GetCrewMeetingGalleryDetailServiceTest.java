@@ -16,20 +16,21 @@ import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.meeting.application.exception.MeetingGalleryNotFoundException;
 import com.bangpot.meeting.application.port.MeetingGalleryReadRepository;
-import com.bangpot.meeting.application.service.GetCrewMeetingGalleryService;
-import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase;
+import com.bangpot.meeting.application.service.GetCrewMeetingGalleryDetailService;
+import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryDetailUseCase;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
 
-class GetCrewMeetingGalleryServiceTest {
+class GetCrewMeetingGalleryDetailServiceTest {
 
 	private InMemoryUserRepository userRepository;
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryMeetingGalleryReadRepository meetingGalleryReadRepository;
-	private GetCrewMeetingGalleryUseCase getCrewMeetingGalleryUseCase;
+	private GetCrewMeetingGalleryDetailUseCase getCrewMeetingGalleryDetailUseCase;
 
 	@BeforeEach
 	void setUp() {
@@ -37,7 +38,7 @@ class GetCrewMeetingGalleryServiceTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingGalleryReadRepository = new InMemoryMeetingGalleryReadRepository();
-		getCrewMeetingGalleryUseCase = new GetCrewMeetingGalleryService(
+		getCrewMeetingGalleryDetailUseCase = new GetCrewMeetingGalleryDetailService(
 			new CompletedUserAccessService(userRepository),
 			crewRepository,
 			crewMemberRepository,
@@ -46,41 +47,55 @@ class GetCrewMeetingGalleryServiceTest {
 	}
 
 	@Test
-	void returnsMeetingGalleryForActiveCrewMember() {
+	void returnsMeetingGalleryDetailForActiveCrewMember() {
 		userRepository.save(User.rehydrate(7L, "member", true));
 		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), 7L));
-		meetingGalleryReadRepository.result = MeetingGalleryReadRepository.SearchResult.of(
-			List.of(
-				MeetingGalleryReadRepository.Item.of(
-					31L,
-					"2026-04-12",
-					"Friday Escape",
-					"https://cdn.example.com/a.jpg",
-					2L
-				)
-			),
-			MeetingGalleryReadRepository.PageInfo.of(0, 20, false)
+		meetingGalleryReadRepository.detail = Optional.of(
+			MeetingGalleryReadRepository.Detail.of(
+				31L,
+				"2026-04-12",
+				"Friday Escape",
+				List.of(
+					MeetingGalleryReadRepository.DetailPhoto.of(501L, "https://cdn.example.com/a.jpg", 1),
+					MeetingGalleryReadRepository.DetailPhoto.of(502L, "https://cdn.example.com/b.jpg", 2)
+				),
+				2
+			)
 		);
 
-		GetCrewMeetingGalleryUseCase.Result result = getCrewMeetingGalleryUseCase.handle(
-			GetCrewMeetingGalleryUseCase.Query.of(crew.getId(), 7L, 0, 20)
+		GetCrewMeetingGalleryDetailUseCase.Result result = getCrewMeetingGalleryDetailUseCase.handle(
+			GetCrewMeetingGalleryDetailUseCase.Query.of(crew.getId(), 31L, 7L)
 		);
 
-		assertThat(result.items()).hasSize(1);
-		assertThat(result.items().get(0).meetingId()).isEqualTo(31L);
-		assertThat(result.items().get(0).meetingDate()).isEqualTo("2026-04-12");
-		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/a.jpg");
-		assertThat(result.items().get(0).extraPhotoCount()).isEqualTo(2L);
-		assertThat(result.pageInfo().hasNext()).isFalse();
+		assertThat(result.meetingId()).isEqualTo(31L);
+		assertThat(result.meetingDate()).isEqualTo("2026-04-12");
+		assertThat(result.meetingTitle()).isEqualTo("Friday Escape");
+		assertThat(result.totalPhotoCount()).isEqualTo(2);
+		assertThat(result.photos()).extracting(GetCrewMeetingGalleryDetailUseCase.Photo::photoId)
+			.containsExactly(501L, 502L);
+		assertThat(result.photos()).extracting(GetCrewMeetingGalleryDetailUseCase.Photo::order)
+			.containsExactly(1, 2);
+	}
+
+	@Test
+	void throwsMeetingGalleryNotFoundWhenMeetingIsNotGalleryTarget() {
+		userRepository.save(User.rehydrate(7L, "member", true));
+		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), 7L));
+
+		assertThatThrownBy(() -> getCrewMeetingGalleryDetailUseCase.handle(
+			GetCrewMeetingGalleryDetailUseCase.Query.of(crew.getId(), 999L, 7L)
+		))
+			.isInstanceOf(MeetingGalleryNotFoundException.class);
 	}
 
 	@Test
 	void throwsCrewNotFoundWhenCrewDoesNotExist() {
 		userRepository.save(User.rehydrate(7L, "member", true));
 
-		assertThatThrownBy(() -> getCrewMeetingGalleryUseCase.handle(
-			GetCrewMeetingGalleryUseCase.Query.of(999L, 7L, 0, 20)
+		assertThatThrownBy(() -> getCrewMeetingGalleryDetailUseCase.handle(
+			GetCrewMeetingGalleryDetailUseCase.Query.of(999L, 31L, 7L)
 		))
 			.isInstanceOf(CrewNotFoundException.class);
 	}
@@ -90,8 +105,8 @@ class GetCrewMeetingGalleryServiceTest {
 		userRepository.save(User.rehydrate(7L, "member", true));
 		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 
-		assertThatThrownBy(() -> getCrewMeetingGalleryUseCase.handle(
-			GetCrewMeetingGalleryUseCase.Query.of(crew.getId(), 7L, 0, 20)
+		assertThatThrownBy(() -> getCrewMeetingGalleryDetailUseCase.handle(
+			GetCrewMeetingGalleryDetailUseCase.Query.of(crew.getId(), 31L, 7L)
 		))
 			.isInstanceOf(AccessDeniedException.class);
 	}
@@ -207,6 +222,7 @@ class GetCrewMeetingGalleryServiceTest {
 
 	private static final class InMemoryMeetingGalleryReadRepository implements MeetingGalleryReadRepository {
 		private SearchResult result = SearchResult.of(List.of(), PageInfo.of(0, 20, false));
+		private Optional<Detail> detail = Optional.empty();
 
 		@Override
 		public SearchResult search(Long crewId, int page, int size) {
@@ -214,8 +230,8 @@ class GetCrewMeetingGalleryServiceTest {
 		}
 
 		@Override
-		public java.util.Optional<Detail> findDetail(Long crewId, Long meetingId) {
-			return java.util.Optional.empty();
+		public Optional<Detail> findDetail(Long crewId, Long meetingId) {
+			return detail;
 		}
 	}
 }
