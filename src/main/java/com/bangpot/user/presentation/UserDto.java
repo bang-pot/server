@@ -1,5 +1,7 @@
 package com.bangpot.user.presentation;
 
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 
 final class UserDto {
@@ -20,6 +22,30 @@ final class UserDto {
 		Long joinedMeetingsCount,
 		Long myCrewsCount,
 		Long pendingCrewsCount
+	) {
+	}
+
+	record CreatedMeetingItemResponse(
+		Long meetingId,
+		String title,
+		String status,
+		String date,
+		String time,
+		Long crewId,
+		String crewName
+	) {
+	}
+
+	record CreatedMeetingsPageInfo(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
+	record CreatedMeetingsResponse(
+		List<CreatedMeetingItemResponse> items,
+		CreatedMeetingsPageInfo pageInfo
 	) {
 	}
 

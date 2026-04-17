@@ -16,8 +16,10 @@ import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.CompletedUserAccessService;
+import com.bangpot.user.application.service.GetMyCreatedMeetingsService;
 import com.bangpot.user.application.service.GetMyProfileService;
 import com.bangpot.user.application.service.UpdateMyProfileService;
+import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
@@ -30,8 +32,10 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryAuthUserRepository authUserRepository;
 	protected InMemoryUserRepository userRepository;
 	protected InMemoryProfileHubReadRepository profileHubReadRepository;
+	protected InMemoryCreatedMeetingReadRepository createdMeetingReadRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	protected GetMyProfileUseCase getMyProfileUseCase;
+	protected GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	protected UpdateMyProfileUseCase updateMyProfileUseCase;
 	protected CompletedUserAccessService completedUserAccessService;
 
@@ -40,8 +44,14 @@ abstract class AbstractUserApplicationServiceTest {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
 		profileHubReadRepository = new InMemoryProfileHubReadRepository();
+		createdMeetingReadRepository = new InMemoryCreatedMeetingReadRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
+		getMyCreatedMeetingsUseCase = new GetMyCreatedMeetingsService(
+			authUserRepository,
+			userRepository,
+			createdMeetingReadRepository
+		);
 		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
 	}
@@ -138,6 +148,20 @@ abstract class AbstractUserApplicationServiceTest {
 				userId,
 				Counts.of(createdMeetingsCount, joinedMeetingsCount, myCrewsCount, pendingCrewsCount)
 			);
+		}
+	}
+
+	protected static final class InMemoryCreatedMeetingReadRepository
+		implements com.bangpot.user.application.port.CreatedMeetingReadRepository {
+		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
+
+		@Override
+		public SearchResult search(Long userId, int page, int size) {
+			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
+		}
+
+		void putResult(Long userId, SearchResult result) {
+			resultsByUserId.put(userId, result);
 		}
 	}
 }
