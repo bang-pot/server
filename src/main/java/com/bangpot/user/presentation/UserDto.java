@@ -12,7 +12,15 @@ final class UserDto {
 	) {
 	}
 
-	record UserProfileResponse(Long id, String nickname) {
+	record UserProfileResponse(
+		Long id,
+		String nickname,
+		String profileImageUrl,
+		Long createdMeetingsCount,
+		Long joinedMeetingsCount,
+		Long myCrewsCount,
+		Long pendingCrewsCount
+	) {
 	}
 
 	record NicknameAvailabilityResponse(String nickname, boolean available) {

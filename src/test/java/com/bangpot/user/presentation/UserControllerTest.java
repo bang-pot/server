@@ -45,7 +45,7 @@ class UserControllerTest {
 	@Test
 	void returnsCurrentProfileFromNewUserPath() throws Exception {
 		when(getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(77L)))
-			.thenReturn(GetMyProfileUseCase.View.of(77L, "bangpot"));
+			.thenReturn(GetMyProfileUseCase.View.of(77L, "bangpot", null, 4L, 3L, 2L, 1L));
 
 		mockMvc.perform(
 			get("/api/users/me")
@@ -53,7 +53,21 @@ class UserControllerTest {
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(77))
-			.andExpect(jsonPath("$.nickname").value("bangpot"));
+			.andExpect(jsonPath("$.nickname").value("bangpot"))
+			.andExpect(jsonPath("$.profileImageUrl").isEmpty())
+			.andExpect(jsonPath("$.createdMeetingsCount").value(4))
+			.andExpect(jsonPath("$.joinedMeetingsCount").value(3))
+			.andExpect(jsonPath("$.myCrewsCount").value(2))
+			.andExpect(jsonPath("$.pendingCrewsCount").value(1));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenProfileIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/me"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
 	}
 
 	@Test

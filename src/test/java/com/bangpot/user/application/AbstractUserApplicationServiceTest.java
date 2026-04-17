@@ -29,6 +29,7 @@ abstract class AbstractUserApplicationServiceTest {
 
 	protected InMemoryAuthUserRepository authUserRepository;
 	protected InMemoryUserRepository userRepository;
+	protected InMemoryProfileHubReadRepository profileHubReadRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	protected GetMyProfileUseCase getMyProfileUseCase;
 	protected UpdateMyProfileUseCase updateMyProfileUseCase;
@@ -38,8 +39,9 @@ abstract class AbstractUserApplicationServiceTest {
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
+		profileHubReadRepository = new InMemoryProfileHubReadRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
-		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository);
+		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
 		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
 	}
@@ -119,6 +121,23 @@ abstract class AbstractUserApplicationServiceTest {
 		public User save(User user) {
 			users.put(user.getId(), user);
 			return user;
+		}
+	}
+
+	protected static final class InMemoryProfileHubReadRepository
+		implements com.bangpot.user.application.port.ProfileHubReadRepository {
+		private final Map<Long, Counts> countsByUserId = new HashMap<>();
+
+		@Override
+		public Counts loadCounts(Long userId) {
+			return countsByUserId.getOrDefault(userId, Counts.of(0L, 0L, 0L, 0L));
+		}
+
+		void putCounts(Long userId, long createdMeetingsCount, long joinedMeetingsCount, long myCrewsCount, long pendingCrewsCount) {
+			countsByUserId.put(
+				userId,
+				Counts.of(createdMeetingsCount, joinedMeetingsCount, myCrewsCount, pendingCrewsCount)
+			);
 		}
 	}
 }

@@ -11,10 +11,34 @@ public interface GetMyProfileUseCase {
 		}
 	}
 
-	record View(Long id, String nickname) {
+	record View(
+		Long id,
+		String nickname,
+		String profileImageUrl,
+		Long createdMeetingsCount,
+		Long joinedMeetingsCount,
+		Long myCrewsCount,
+		Long pendingCrewsCount
+	) {
 
-		public static View of(Long id, String nickname) {
-			return new View(id, nickname);
+		public static View of(
+			Long id,
+			String nickname,
+			String profileImageUrl,
+			Long createdMeetingsCount,
+			Long joinedMeetingsCount,
+			Long myCrewsCount,
+			Long pendingCrewsCount
+		) {
+			return new View(
+				id,
+				nickname,
+				profileImageUrl,
+				createdMeetingsCount,
+				joinedMeetingsCount,
+				myCrewsCount,
+				pendingCrewsCount
+			);
 		}
 	}
 }

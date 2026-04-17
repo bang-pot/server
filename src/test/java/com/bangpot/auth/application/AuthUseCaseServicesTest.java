@@ -30,6 +30,7 @@ import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
+import com.bangpot.user.application.port.ProfileHubReadRepository;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.GetMyProfileService;
@@ -45,6 +46,7 @@ class AuthUseCaseServicesTest {
 
 	private InMemoryAuthUserRepository authUserRepository;
 	private InMemoryUserRepository userRepository;
+	private ProfileHubReadRepository profileHubReadRepository;
 	private LoginWithProviderUseCase loginWithProviderUseCase;
 	private CompleteTempUserUseCase completeTempUserUseCase;
 	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
@@ -57,6 +59,7 @@ class AuthUseCaseServicesTest {
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
+		profileHubReadRepository = userId -> ProfileHubReadRepository.Counts.of(0L, 0L, 0L, 0L);
 		Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 		authAuditLogger = org.mockito.Mockito.mock(AuthAuditLogger.class);
 		AuthRequiredTermsProperties authRequiredTermsProperties = new AuthRequiredTermsProperties();
@@ -76,7 +79,7 @@ class AuthUseCaseServicesTest {
 			userRepository,
 			authRequiredTermsProperties
 		);
-		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository);
+		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
 		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
 	}
 
