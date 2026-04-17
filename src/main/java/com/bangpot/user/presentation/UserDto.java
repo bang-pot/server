@@ -98,6 +98,34 @@ final class UserDto {
 	) {
 	}
 
+	record PendingCrewItemResponse(
+		Long joinRequestId,
+		Long crewId,
+		String crewName,
+		String requestedAt,
+		String messageSummary
+	) {
+	}
+
+	record PendingCrewsPageInfo(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
+	record PendingCrewsResponse(
+		List<PendingCrewItemResponse> items,
+		PendingCrewsPageInfo pageInfo
+	) {
+	}
+
+	record CancelPendingCrewJoinRequestResponse(
+		Long joinRequestId,
+		Long crewId
+	) {
+	}
+
 	record NicknameAvailabilityResponse(String nickname, boolean available) {
 	}
 }

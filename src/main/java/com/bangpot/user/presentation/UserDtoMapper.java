@@ -1,9 +1,11 @@
 package com.bangpot.user.presentation;
 
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
+import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
@@ -97,6 +99,31 @@ final class UserDtoMapper {
 				result.pageInfo().hasNext()
 			)
 		);
+	}
+
+	static UserDto.PendingCrewsResponse toResponse(GetMyPendingCrewsUseCase.Result result) {
+		return new UserDto.PendingCrewsResponse(
+			result.items().stream()
+				.map(item -> new UserDto.PendingCrewItemResponse(
+					item.joinRequestId(),
+					item.crewId(),
+					item.crewName(),
+					item.requestedAt(),
+					item.messageSummary()
+				))
+				.toList(),
+			new UserDto.PendingCrewsPageInfo(
+				result.pageInfo().page(),
+				result.pageInfo().size(),
+				result.pageInfo().hasNext()
+			)
+		);
+	}
+
+	static UserDto.CancelPendingCrewJoinRequestResponse toResponse(
+		CancelMyPendingCrewJoinRequestUseCase.Result result
+	) {
+		return new UserDto.CancelPendingCrewJoinRequestResponse(result.joinRequestId(), result.crewId());
 	}
 
 	static UserDto.NicknameAvailabilityResponse toResponse(

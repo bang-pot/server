@@ -3,7 +3,9 @@ package com.bangpot.user.presentation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,9 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
+import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
@@ -28,9 +32,11 @@ import lombok.RequiredArgsConstructor;
 class UserController {
 
 	private final CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
+	private final CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 	private final GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	private final GetMyCrewsUseCase getMyCrewsUseCase;
 	private final GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
+	private final GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
 	private final GetMyProfileUseCase getMyProfileUseCase;
 	private final UpdateMyProfileUseCase updateMyProfileUseCase;
 
@@ -77,6 +83,30 @@ class UserController {
 	) {
 		GetMyCrewsUseCase.Result result = getMyCrewsUseCase.handle(
 			GetMyCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/api/users/me/pending-crews")
+	ResponseEntity<UserDto.PendingCrewsResponse> myPendingCrews(
+		Authentication authentication,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
+	) {
+		GetMyPendingCrewsUseCase.Result result = getMyPendingCrewsUseCase.handle(
+			GetMyPendingCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@DeleteMapping("/api/users/me/pending-crews/{joinRequestId}")
+	ResponseEntity<UserDto.CancelPendingCrewJoinRequestResponse> cancelMyPendingCrew(
+		Authentication authentication,
+		@PathVariable Long joinRequestId
+	) {
+		CancelMyPendingCrewJoinRequestUseCase.Result result = cancelMyPendingCrewJoinRequestUseCase.handle(
+			CancelMyPendingCrewJoinRequestUseCase.Command.of(requireAuthenticatedUserId(authentication), joinRequestId)
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}
