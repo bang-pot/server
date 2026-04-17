@@ -49,6 +49,33 @@ final class UserDto {
 	) {
 	}
 
+	record JoinedMeetingItemResponse(
+		Long meetingId,
+		String title,
+		String themeName,
+		Long crewId,
+		String crewName,
+		String date,
+		String time,
+		String status,
+		String result,
+		boolean canWriteReview
+	) {
+	}
+
+	record JoinedMeetingsPageInfo(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
+	record JoinedMeetingsResponse(
+		List<JoinedMeetingItemResponse> items,
+		JoinedMeetingsPageInfo pageInfo
+	) {
+	}
+
 	record NicknameAvailabilityResponse(String nickname, boolean available) {
 	}
 }

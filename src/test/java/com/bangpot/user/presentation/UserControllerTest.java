@@ -22,6 +22,7 @@ import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
@@ -42,6 +43,9 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
+
+	@MockitoBean
+	private GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 
 	@MockitoBean
 	private UpdateMyProfileUseCase updateMyProfileUseCase;
@@ -100,6 +104,70 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
 			.andExpect(jsonPath("$.pageInfo.size").value(20))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
+	}
+
+	@Test
+	void returnsMyJoinedMeetingsFromNewUserPath() throws Exception {
+		when(getMyJoinedMeetingsUseCase.handle(GetMyJoinedMeetingsUseCase.Query.of(77L, 0, 20)))
+			.thenReturn(GetMyJoinedMeetingsUseCase.Result.of(
+				List.of(
+					GetMyJoinedMeetingsUseCase.Item.of(
+						201L,
+						"토요일 방탈",
+						"Deep Blue",
+						5L,
+						"방탈출 크루",
+						"2026-04-18",
+						"19:00",
+						"COMPLETED",
+						"SUCCESS",
+						true
+					)
+				),
+				GetMyJoinedMeetingsUseCase.PageInfo.of(0, 20, false)
+			));
+
+		mockMvc.perform(
+			get("/api/users/me/joined-meetings")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "0")
+				.param("size", "20")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].meetingId").value(201))
+			.andExpect(jsonPath("$.items[0].title").value("토요일 방탈"))
+			.andExpect(jsonPath("$.items[0].themeName").value("Deep Blue"))
+			.andExpect(jsonPath("$.items[0].crewId").value(5))
+			.andExpect(jsonPath("$.items[0].crewName").value("방탈출 크루"))
+			.andExpect(jsonPath("$.items[0].date").value("2026-04-18"))
+			.andExpect(jsonPath("$.items[0].time").value("19:00"))
+			.andExpect(jsonPath("$.items[0].status").value("COMPLETED"))
+			.andExpect(jsonPath("$.items[0].result").value("SUCCESS"))
+			.andExpect(jsonPath("$.items[0].canWriteReview").value(true))
+			.andExpect(jsonPath("$.pageInfo.page").value(0))
+			.andExpect(jsonPath("$.pageInfo.size").value(20))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenJoinedMeetingsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/me/joined-meetings"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void returnsValidationErrorWhenJoinedMeetingsPageIsNegative() throws Exception {
+		mockMvc.perform(
+			get("/api/users/me/joined-meetings")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "-1")
+				.param("size", "20")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
 	}
 
 	@Test
