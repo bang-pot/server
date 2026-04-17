@@ -76,6 +76,28 @@ final class UserDto {
 	) {
 	}
 
+	record MyCrewItemResponse(
+		Long crewId,
+		String crewName,
+		String visibility,
+		String leaderNickname,
+		String coverImageUrl
+	) {
+	}
+
+	record MyCrewsPageInfo(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
+	record MyCrewsResponse(
+		List<MyCrewItemResponse> items,
+		MyCrewsPageInfo pageInfo
+	) {
+	}
+
 	record NicknameAvailabilityResponse(String nickname, boolean available) {
 	}
 }

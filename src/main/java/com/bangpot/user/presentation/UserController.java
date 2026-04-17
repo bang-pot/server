@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
@@ -28,6 +29,7 @@ class UserController {
 
 	private final CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	private final GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
+	private final GetMyCrewsUseCase getMyCrewsUseCase;
 	private final GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 	private final GetMyProfileUseCase getMyProfileUseCase;
 	private final UpdateMyProfileUseCase updateMyProfileUseCase;
@@ -62,6 +64,19 @@ class UserController {
 	) {
 		GetMyJoinedMeetingsUseCase.Result result = getMyJoinedMeetingsUseCase.handle(
 			GetMyJoinedMeetingsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/api/users/me/crews")
+	ResponseEntity<UserDto.MyCrewsResponse> myCrews(
+		Authentication authentication,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page??0 ?댁긽?댁뼱???⑸땲??") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size??1 ?댁긽?댁뼱???⑸땲??")
+		@Max(value = 50, message = "size??50 ?댄븯?ъ빞 ?⑸땲??") int size
+	) {
+		GetMyCrewsUseCase.Result result = getMyCrewsUseCase.handle(
+			GetMyCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}

@@ -40,9 +40,13 @@ class JpaProfileHubReadRepositoryTest {
 		Crew crewA = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 		Crew crewB = entityManager.persist(Crew.create("Beta Crew", "desc", CrewVisibility.PUBLIC, null));
 		Crew crewC = entityManager.persist(Crew.create("Gamma Crew", "desc", CrewVisibility.PUBLIC, null));
+		Crew deletedCrew = entityManager.persist(Crew.create("Deleted Crew", "desc", CrewVisibility.PUBLIC, null));
+		deletedCrew.delete();
+		entityManager.persist(deletedCrew);
 
 		entityManager.persist(CrewMember.createMember(crewA.getId(), 7L));
 		entityManager.persist(CrewMember.createMember(crewB.getId(), 7L));
+		entityManager.persist(CrewMember.createMember(deletedCrew.getId(), 7L));
 
 		CrewJoinRequest pendingJoinRequest = CrewJoinRequest.createPending(crewC.getId(), 7L, "let me in");
 		entityManager.persist(pendingJoinRequest);
