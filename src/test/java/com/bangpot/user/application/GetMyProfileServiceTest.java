@@ -19,11 +19,31 @@ class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
 		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		profileHubReadRepository.putCounts(7L, 5L, 3L, 2L, 1L);
 
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
 
 		assertThat(result.id()).isEqualTo(7L);
 		assertThat(result.nickname()).isEqualTo("bangpot");
+		assertThat(result.profileImageUrl()).isNull();
+		assertThat(result.createdMeetingsCount()).isEqualTo(5L);
+		assertThat(result.joinedMeetingsCount()).isEqualTo(3L);
+		assertThat(result.myCrewsCount()).isEqualTo(2L);
+		assertThat(result.pendingCrewsCount()).isEqualTo(1L);
+	}
+
+	@Test
+	void defaultsHubCountsToZeroWhenNoActivityExists() {
+		AuthUser authUser = fullUser(7L, "bangpot");
+		authUserRepository.save(authUser);
+		userRepository.save(User.rehydrate(7L, "bangpot", true));
+
+		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
+
+		assertThat(result.createdMeetingsCount()).isZero();
+		assertThat(result.joinedMeetingsCount()).isZero();
+		assertThat(result.myCrewsCount()).isZero();
+		assertThat(result.pendingCrewsCount()).isZero();
 	}
 
 	@Test
