@@ -22,6 +22,7 @@ import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
@@ -46,6 +47,9 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
+
+	@MockitoBean
+	private GetMyCrewsUseCase getMyCrewsUseCase;
 
 	@MockitoBean
 	private UpdateMyProfileUseCase updateMyProfileUseCase;
@@ -150,6 +154,39 @@ class UserControllerTest {
 	}
 
 	@Test
+	void returnsMyCrewsFromNewUserPath() throws Exception {
+		when(getMyCrewsUseCase.handle(GetMyCrewsUseCase.Query.of(77L, 0, 20)))
+			.thenReturn(GetMyCrewsUseCase.Result.of(
+				List.of(
+					GetMyCrewsUseCase.Item.of(
+						31L,
+						"Alpha Crew",
+						"PUBLIC",
+						"leader-pot",
+						"https://cdn.example.com/crew-alpha.jpg"
+					)
+				),
+				GetMyCrewsUseCase.PageInfo.of(0, 20, false)
+			));
+
+		mockMvc.perform(
+			get("/api/users/me/crews")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "0")
+				.param("size", "20")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].crewId").value(31))
+			.andExpect(jsonPath("$.items[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.items[0].visibility").value("PUBLIC"))
+			.andExpect(jsonPath("$.items[0].leaderNickname").value("leader-pot"))
+			.andExpect(jsonPath("$.items[0].coverImageUrl").value("https://cdn.example.com/crew-alpha.jpg"))
+			.andExpect(jsonPath("$.pageInfo.page").value(0))
+			.andExpect(jsonPath("$.pageInfo.size").value(20))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
+	}
+
+	@Test
 	void returnsUnauthorizedWhenJoinedMeetingsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/joined-meetings"))
 			.andExpect(status().isUnauthorized())
@@ -162,6 +199,27 @@ class UserControllerTest {
 	void returnsValidationErrorWhenJoinedMeetingsPageIsNegative() throws Exception {
 		mockMvc.perform(
 			get("/api/users/me/joined-meetings")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "-1")
+				.param("size", "20")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenMyCrewsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/me/crews"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void returnsValidationErrorWhenMyCrewsPageIsNegative() throws Exception {
+		mockMvc.perform(
+			get("/api/users/me/crews")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 				.param("page", "-1")
 				.param("size", "20")

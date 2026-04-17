@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewMemberStatus;
+import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.user.application.port.ProfileHubReadRepository;
 
@@ -24,7 +25,7 @@ interface JpaProfileHubReadRepository extends Repository<UserJpaEntity, Long>, P
 		return Counts.of(
 			countCreatedMeetings(userId),
 			countJoinedMeetings(userId, JOINED_STATUSES),
-			countMyCrews(userId, CrewMemberStatus.ACTIVE),
+			countMyCrews(userId, CrewMemberStatus.ACTIVE, CrewStatus.ACTIVE),
 			countPendingCrews(userId, CrewJoinRequestStatus.PENDING)
 		);
 	}
@@ -51,13 +52,16 @@ interface JpaProfileHubReadRepository extends Repository<UserJpaEntity, Long>, P
 
 	@Query("""
 		select count(cm)
-		from CrewMember cm
-		where cm.userId = :userId
+		from CrewMember cm, Crew c
+		where cm.crewId = c.id
+		  and cm.userId = :userId
 		  and cm.status = :activeStatus
+		  and c.status = :activeCrewStatus
 		""")
 	Long countMyCrews(
 		@Param("userId") Long userId,
-		@Param("activeStatus") CrewMemberStatus activeStatus
+		@Param("activeStatus") CrewMemberStatus activeStatus,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus
 	);
 
 	@Query("""
