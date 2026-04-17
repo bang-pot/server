@@ -2,6 +2,7 @@ package com.bangpot.user.presentation;
 
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
@@ -47,6 +48,30 @@ final class UserDtoMapper {
 				))
 				.toList(),
 			new UserDto.CreatedMeetingsPageInfo(
+				result.pageInfo().page(),
+				result.pageInfo().size(),
+				result.pageInfo().hasNext()
+			)
+		);
+	}
+
+	static UserDto.JoinedMeetingsResponse toResponse(GetMyJoinedMeetingsUseCase.Result result) {
+		return new UserDto.JoinedMeetingsResponse(
+			result.items().stream()
+				.map(item -> new UserDto.JoinedMeetingItemResponse(
+					item.meetingId(),
+					item.title(),
+					item.themeName(),
+					item.crewId(),
+					item.crewName(),
+					item.date(),
+					item.time(),
+					item.status(),
+					item.result(),
+					item.canWriteReview()
+				))
+				.toList(),
+			new UserDto.JoinedMeetingsPageInfo(
 				result.pageInfo().page(),
 				result.pageInfo().size(),
 				result.pageInfo().hasNext()
