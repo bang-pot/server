@@ -19,6 +19,7 @@ import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
+import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
 import jakarta.validation.Valid;
@@ -38,6 +39,7 @@ class UserController {
 	private final GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 	private final GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
 	private final GetMyProfileUseCase getMyProfileUseCase;
+	private final GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
 	private final UpdateMyProfileUseCase updateMyProfileUseCase;
 
 	@GetMapping("/api/users/me")
@@ -96,6 +98,14 @@ class UserController {
 	) {
 		GetMyPendingCrewsUseCase.Result result = getMyPendingCrewsUseCase.handle(
 			GetMyPendingCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/api/users/me/withdrawal-check")
+	ResponseEntity<UserDto.WithdrawalCheckResponse> withdrawalCheck(Authentication authentication) {
+		GetMyWithdrawalCheckUseCase.Result result = getMyWithdrawalCheckUseCase.handle(
+			GetMyWithdrawalCheckUseCase.Query.of(requireAuthenticatedUserId(authentication))
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}

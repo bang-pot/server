@@ -23,6 +23,7 @@ import com.bangpot.user.application.service.GetMyCrewsService;
 import com.bangpot.user.application.service.CancelMyPendingCrewJoinRequestService;
 import com.bangpot.user.application.service.GetMyPendingCrewsService;
 import com.bangpot.user.application.service.GetMyProfileService;
+import com.bangpot.user.application.service.GetMyWithdrawalCheckService;
 import com.bangpot.user.application.service.UpdateMyProfileService;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
@@ -31,6 +32,7 @@ import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
+import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.domain.User;
 
@@ -45,6 +47,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryJoinedMeetingReadRepository joinedMeetingReadRepository;
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
 	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
+	protected InMemoryWithdrawalCheckReadRepository withdrawalCheckReadRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	protected CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 	protected GetMyProfileUseCase getMyProfileUseCase;
@@ -52,6 +55,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 	protected GetMyCrewsUseCase getMyCrewsUseCase;
 	protected GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
+	protected GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
 	protected UpdateMyProfileUseCase updateMyProfileUseCase;
 	protected CompletedUserAccessService completedUserAccessService;
 
@@ -64,6 +68,7 @@ abstract class AbstractUserApplicationServiceTest {
 		joinedMeetingReadRepository = new InMemoryJoinedMeetingReadRepository();
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
 		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
+		withdrawalCheckReadRepository = new InMemoryWithdrawalCheckReadRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
 		getMyCreatedMeetingsUseCase = new GetMyCreatedMeetingsService(
@@ -85,6 +90,11 @@ abstract class AbstractUserApplicationServiceTest {
 			authUserRepository,
 			userRepository,
 			pendingCrewReadRepository
+		);
+		getMyWithdrawalCheckUseCase = new GetMyWithdrawalCheckService(
+			authUserRepository,
+			userRepository,
+			withdrawalCheckReadRepository
 		);
 		cancelMyPendingCrewJoinRequestUseCase = new CancelMyPendingCrewJoinRequestService(
 			authUserRepository,
@@ -261,6 +271,20 @@ abstract class AbstractUserApplicationServiceTest {
 
 		private String cancelKey(Long userId, Long joinRequestId) {
 			return userId + ":" + joinRequestId;
+		}
+	}
+
+	protected static final class InMemoryWithdrawalCheckReadRepository
+		implements com.bangpot.user.application.port.WithdrawalCheckReadRepository {
+		private final Map<Long, View> resultsByUserId = new HashMap<>();
+
+		@Override
+		public View load(Long userId) {
+			return resultsByUserId.getOrDefault(userId, View.of(List.of(), List.of()));
+		}
+
+		void putResult(Long userId, View view) {
+			resultsByUserId.put(userId, view);
 		}
 	}
 }

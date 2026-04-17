@@ -126,6 +126,31 @@ final class UserDto {
 	) {
 	}
 
+	record BlockingActiveCrewResponse(
+		Long crewId,
+		String crewName
+	) {
+	}
+
+	record BlockingParticipatingMeetingResponse(
+		Long meetingId,
+		String meetingTitle,
+		Long crewId,
+		String crewName,
+		String meetingStatus,
+		String date,
+		String time,
+		String participationRole
+	) {
+	}
+
+	record WithdrawalCheckResponse(
+		boolean canWithdraw,
+		List<BlockingActiveCrewResponse> blockingActiveCrews,
+		List<BlockingParticipatingMeetingResponse> blockingParticipatingMeetings
+	) {
+	}
+
 	record NicknameAvailabilityResponse(String nickname, boolean available) {
 	}
 }

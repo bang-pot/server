@@ -7,6 +7,7 @@ import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
+import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
 final class UserDtoMapper {
@@ -124,6 +125,30 @@ final class UserDtoMapper {
 		CancelMyPendingCrewJoinRequestUseCase.Result result
 	) {
 		return new UserDto.CancelPendingCrewJoinRequestResponse(result.joinRequestId(), result.crewId());
+	}
+
+	static UserDto.WithdrawalCheckResponse toResponse(GetMyWithdrawalCheckUseCase.Result result) {
+		return new UserDto.WithdrawalCheckResponse(
+			result.canWithdraw(),
+			result.blockingActiveCrews().stream()
+				.map(crew -> new UserDto.BlockingActiveCrewResponse(
+					crew.crewId(),
+					crew.crewName()
+				))
+				.toList(),
+			result.blockingParticipatingMeetings().stream()
+				.map(meeting -> new UserDto.BlockingParticipatingMeetingResponse(
+					meeting.meetingId(),
+					meeting.meetingTitle(),
+					meeting.crewId(),
+					meeting.crewName(),
+					meeting.meetingStatus(),
+					meeting.date(),
+					meeting.time(),
+					meeting.participationRole()
+				))
+				.toList()
+		);
 	}
 
 	static UserDto.NicknameAvailabilityResponse toResponse(

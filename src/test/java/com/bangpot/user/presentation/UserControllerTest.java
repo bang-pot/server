@@ -21,13 +21,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
-import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
+import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
+import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
 @ActiveProfiles("test")
@@ -61,6 +62,9 @@ class UserControllerTest {
 	private CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 
 	@MockitoBean
+	private GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
+
+	@MockitoBean
 	private UpdateMyProfileUseCase updateMyProfileUseCase;
 
 	@Test
@@ -89,12 +93,12 @@ class UserControllerTest {
 				List.of(
 					GetMyCreatedMeetingsUseCase.Item.of(
 						101L,
-						"금요일 이스케이프",
+						"Friday Escape",
 						"COMPLETED",
 						"2026-04-17",
 						"19:00",
 						5L,
-						"방탈출 크루"
+						"Room Escape Crew"
 					)
 				),
 				GetMyCreatedMeetingsUseCase.PageInfo.of(0, 20, false)
@@ -108,12 +112,12 @@ class UserControllerTest {
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items[0].meetingId").value(101))
-			.andExpect(jsonPath("$.items[0].title").value("금요일 이스케이프"))
+			.andExpect(jsonPath("$.items[0].title").value("Friday Escape"))
 			.andExpect(jsonPath("$.items[0].status").value("COMPLETED"))
 			.andExpect(jsonPath("$.items[0].date").value("2026-04-17"))
 			.andExpect(jsonPath("$.items[0].time").value("19:00"))
 			.andExpect(jsonPath("$.items[0].crewId").value(5))
-			.andExpect(jsonPath("$.items[0].crewName").value("방탈출 크루"))
+			.andExpect(jsonPath("$.items[0].crewName").value("Room Escape Crew"))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
 			.andExpect(jsonPath("$.pageInfo.size").value(20))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
@@ -126,10 +130,10 @@ class UserControllerTest {
 				List.of(
 					GetMyJoinedMeetingsUseCase.Item.of(
 						201L,
-						"토요일 방탈",
+						"Sunday Escape",
 						"Deep Blue",
 						5L,
-						"방탈출 크루",
+						"Room Escape Crew",
 						"2026-04-18",
 						"19:00",
 						"COMPLETED",
@@ -148,10 +152,10 @@ class UserControllerTest {
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items[0].meetingId").value(201))
-			.andExpect(jsonPath("$.items[0].title").value("토요일 방탈"))
+			.andExpect(jsonPath("$.items[0].title").value("Sunday Escape"))
 			.andExpect(jsonPath("$.items[0].themeName").value("Deep Blue"))
 			.andExpect(jsonPath("$.items[0].crewId").value(5))
-			.andExpect(jsonPath("$.items[0].crewName").value("방탈출 크루"))
+			.andExpect(jsonPath("$.items[0].crewName").value("Room Escape Crew"))
 			.andExpect(jsonPath("$.items[0].date").value("2026-04-18"))
 			.andExpect(jsonPath("$.items[0].time").value("19:00"))
 			.andExpect(jsonPath("$.items[0].status").value("COMPLETED"))
@@ -205,7 +209,7 @@ class UserControllerTest {
 						31L,
 						"Alpha Crew",
 						"2026-04-17T09:30:00Z",
-						"같이 활동하고 싶습니다"
+						"I want to join this crew"
 					)
 				),
 				GetMyPendingCrewsUseCase.PageInfo.of(0, 20, false)
@@ -222,7 +226,7 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[0].crewId").value(31))
 			.andExpect(jsonPath("$.items[0].crewName").value("Alpha Crew"))
 			.andExpect(jsonPath("$.items[0].requestedAt").value("2026-04-17T09:30:00Z"))
-			.andExpect(jsonPath("$.items[0].messageSummary").value("같이 활동하고 싶습니다"))
+			.andExpect(jsonPath("$.items[0].messageSummary").value("I want to join this crew"))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
 			.andExpect(jsonPath("$.pageInfo.size").value(20))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
@@ -243,8 +247,57 @@ class UserControllerTest {
 	}
 
 	@Test
+	void returnsMyWithdrawalCheckFromNewUserPath() throws Exception {
+		when(getMyWithdrawalCheckUseCase.handle(GetMyWithdrawalCheckUseCase.Query.of(77L)))
+			.thenReturn(GetMyWithdrawalCheckUseCase.Result.of(
+				false,
+				List.of(
+					GetMyWithdrawalCheckUseCase.BlockingActiveCrew.of(31L, "Alpha Crew")
+				),
+				List.of(
+					GetMyWithdrawalCheckUseCase.BlockingParticipatingMeeting.of(
+						101L,
+						"Friday Escape",
+						31L,
+						"Alpha Crew",
+						"RECRUITING",
+						"2026-04-20",
+						"19:00",
+						"HOST"
+					)
+				)
+			));
+
+		mockMvc.perform(
+			get("/api/users/me/withdrawal-check")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.canWithdraw").value(false))
+			.andExpect(jsonPath("$.blockingActiveCrews[0].crewId").value(31))
+			.andExpect(jsonPath("$.blockingActiveCrews[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingId").value(101))
+			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingTitle").value("Friday Escape"))
+			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].crewId").value(31))
+			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingStatus").value("RECRUITING"))
+			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].date").value("2026-04-20"))
+			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].time").value("19:00"))
+			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].participationRole").value("HOST"));
+	}
+
+	@Test
 	void returnsUnauthorizedWhenJoinedMeetingsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/joined-meetings"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void returnsUnauthorizedWhenWithdrawalCheckRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/me/withdrawal-check"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
 			.andExpect(jsonPath("$.fieldErrors").isArray())
