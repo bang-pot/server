@@ -1,6 +1,7 @@
 package com.bangpot.user.presentation;
 
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
+import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
@@ -30,6 +31,27 @@ final class UserDtoMapper {
 
 	static UserDto.UserProfileResponse toResponse(UpdateMyProfileUseCase.Result result) {
 		return new UserDto.UserProfileResponse(result.id(), result.nickname(), null, null, null, null, null);
+	}
+
+	static UserDto.CreatedMeetingsResponse toResponse(GetMyCreatedMeetingsUseCase.Result result) {
+		return new UserDto.CreatedMeetingsResponse(
+			result.items().stream()
+				.map(item -> new UserDto.CreatedMeetingItemResponse(
+					item.meetingId(),
+					item.title(),
+					item.status(),
+					item.date(),
+					item.time(),
+					item.crewId(),
+					item.crewName()
+				))
+				.toList(),
+			new UserDto.CreatedMeetingsPageInfo(
+				result.pageInfo().page(),
+				result.pageInfo().size(),
+				result.pageInfo().hasNext()
+			)
+		);
 	}
 
 	static UserDto.NicknameAvailabilityResponse toResponse(
