@@ -13,17 +13,22 @@ import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
+import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.application.service.GetMyCreatedMeetingsService;
 import com.bangpot.user.application.service.GetMyJoinedMeetingsService;
 import com.bangpot.user.application.service.GetMyCrewsService;
+import com.bangpot.user.application.service.CancelMyPendingCrewJoinRequestService;
+import com.bangpot.user.application.service.GetMyPendingCrewsService;
 import com.bangpot.user.application.service.GetMyProfileService;
 import com.bangpot.user.application.service.UpdateMyProfileService;
+import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
+import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
@@ -39,11 +44,14 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryCreatedMeetingReadRepository createdMeetingReadRepository;
 	protected InMemoryJoinedMeetingReadRepository joinedMeetingReadRepository;
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
+	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
+	protected CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 	protected GetMyProfileUseCase getMyProfileUseCase;
 	protected GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	protected GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 	protected GetMyCrewsUseCase getMyCrewsUseCase;
+	protected GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
 	protected UpdateMyProfileUseCase updateMyProfileUseCase;
 	protected CompletedUserAccessService completedUserAccessService;
 
@@ -55,6 +63,7 @@ abstract class AbstractUserApplicationServiceTest {
 		createdMeetingReadRepository = new InMemoryCreatedMeetingReadRepository();
 		joinedMeetingReadRepository = new InMemoryJoinedMeetingReadRepository();
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
+		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
 		getMyCreatedMeetingsUseCase = new GetMyCreatedMeetingsService(
@@ -71,6 +80,16 @@ abstract class AbstractUserApplicationServiceTest {
 			authUserRepository,
 			userRepository,
 			myCrewReadRepository
+		);
+		getMyPendingCrewsUseCase = new GetMyPendingCrewsService(
+			authUserRepository,
+			userRepository,
+			pendingCrewReadRepository
+		);
+		cancelMyPendingCrewJoinRequestUseCase = new CancelMyPendingCrewJoinRequestService(
+			authUserRepository,
+			userRepository,
+			pendingCrewReadRepository
 		);
 		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
@@ -210,6 +229,38 @@ abstract class AbstractUserApplicationServiceTest {
 
 		void putResult(Long userId, SearchResult result) {
 			resultsByUserId.put(userId, result);
+		}
+	}
+
+	protected static final class InMemoryPendingCrewReadRepository
+		implements com.bangpot.user.application.port.PendingCrewReadRepository {
+		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
+		private final Map<String, CancelResult> cancelResultsByOwnerAndRequestId = new HashMap<>();
+
+		@Override
+		public SearchResult search(Long userId, int page, int size) {
+			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
+		}
+
+		@Override
+		public CancelResult cancel(Long userId, Long joinRequestId) {
+			CancelResult cancelResult = cancelResultsByOwnerAndRequestId.get(cancelKey(userId, joinRequestId));
+			if (cancelResult == null) {
+				throw new CrewJoinRequestNotFoundException(joinRequestId);
+			}
+			return cancelResult;
+		}
+
+		void putResult(Long userId, SearchResult result) {
+			resultsByUserId.put(userId, result);
+		}
+
+		void putCancelable(Long userId, CancelResult cancelResult) {
+			cancelResultsByOwnerAndRequestId.put(cancelKey(userId, cancelResult.joinRequestId()), cancelResult);
+		}
+
+		private String cancelKey(Long userId, Long joinRequestId) {
+			return userId + ":" + joinRequestId;
 		}
 	}
 }

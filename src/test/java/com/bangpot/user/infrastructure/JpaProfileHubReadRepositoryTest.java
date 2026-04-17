@@ -40,6 +40,7 @@ class JpaProfileHubReadRepositoryTest {
 		Crew crewA = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 		Crew crewB = entityManager.persist(Crew.create("Beta Crew", "desc", CrewVisibility.PUBLIC, null));
 		Crew crewC = entityManager.persist(Crew.create("Gamma Crew", "desc", CrewVisibility.PUBLIC, null));
+		Crew privateCrew = entityManager.persist(Crew.create("Private Crew", "desc", CrewVisibility.PRIVATE, null));
 		Crew deletedCrew = entityManager.persist(Crew.create("Deleted Crew", "desc", CrewVisibility.PUBLIC, null));
 		deletedCrew.delete();
 		entityManager.persist(deletedCrew);
@@ -50,6 +51,10 @@ class JpaProfileHubReadRepositoryTest {
 
 		CrewJoinRequest pendingJoinRequest = CrewJoinRequest.createPending(crewC.getId(), 7L, "let me in");
 		entityManager.persist(pendingJoinRequest);
+		CrewJoinRequest privatePendingJoinRequest = CrewJoinRequest.createPending(privateCrew.getId(), 7L, "private pending");
+		entityManager.persist(privatePendingJoinRequest);
+		CrewJoinRequest deletedPendingJoinRequest = CrewJoinRequest.createPending(deletedCrew.getId(), 7L, "deleted pending");
+		entityManager.persist(deletedPendingJoinRequest);
 		CrewJoinRequest approvedJoinRequest = CrewJoinRequest.createPending(crewB.getId(), 7L, "approved already");
 		approvedJoinRequest.approve();
 		entityManager.persist(approvedJoinRequest);

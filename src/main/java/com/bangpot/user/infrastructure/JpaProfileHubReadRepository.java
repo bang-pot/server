@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
+import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.user.application.port.ProfileHubReadRepository;
 
@@ -26,7 +27,7 @@ interface JpaProfileHubReadRepository extends Repository<UserJpaEntity, Long>, P
 			countCreatedMeetings(userId),
 			countJoinedMeetings(userId, JOINED_STATUSES),
 			countMyCrews(userId, CrewMemberStatus.ACTIVE, CrewStatus.ACTIVE),
-			countPendingCrews(userId, CrewJoinRequestStatus.PENDING)
+			countPendingCrews(userId, CrewJoinRequestStatus.PENDING, CrewStatus.ACTIVE, CrewVisibility.PUBLIC)
 		);
 	}
 
@@ -66,12 +67,17 @@ interface JpaProfileHubReadRepository extends Repository<UserJpaEntity, Long>, P
 
 	@Query("""
 		select count(cjr)
-		from CrewJoinRequest cjr
+		from CrewJoinRequest cjr, Crew c
 		where cjr.userId = :userId
+		  and cjr.crewId = c.id
 		  and cjr.status = :pendingStatus
+		  and c.status = :activeCrewStatus
+		  and c.visibility = :publicVisibility
 		""")
 	Long countPendingCrews(
 		@Param("userId") Long userId,
-		@Param("pendingStatus") CrewJoinRequestStatus pendingStatus
+		@Param("pendingStatus") CrewJoinRequestStatus pendingStatus,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("publicVisibility") CrewVisibility publicVisibility
 	);
 }

@@ -1,6 +1,7 @@
 package com.bangpot.user.presentation;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,9 +22,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
+import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 
@@ -50,6 +53,12 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyCrewsUseCase getMyCrewsUseCase;
+
+	@MockitoBean
+	private GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
+
+	@MockitoBean
+	private CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 
 	@MockitoBean
 	private UpdateMyProfileUseCase updateMyProfileUseCase;
@@ -187,6 +196,53 @@ class UserControllerTest {
 	}
 
 	@Test
+	void returnsMyPendingCrewsFromNewUserPath() throws Exception {
+		when(getMyPendingCrewsUseCase.handle(GetMyPendingCrewsUseCase.Query.of(77L, 0, 20)))
+			.thenReturn(GetMyPendingCrewsUseCase.Result.of(
+				List.of(
+					GetMyPendingCrewsUseCase.Item.of(
+						101L,
+						31L,
+						"Alpha Crew",
+						"2026-04-17T09:30:00Z",
+						"같이 활동하고 싶습니다"
+					)
+				),
+				GetMyPendingCrewsUseCase.PageInfo.of(0, 20, false)
+			));
+
+		mockMvc.perform(
+			get("/api/users/me/pending-crews")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "0")
+				.param("size", "20")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].joinRequestId").value(101))
+			.andExpect(jsonPath("$.items[0].crewId").value(31))
+			.andExpect(jsonPath("$.items[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.items[0].requestedAt").value("2026-04-17T09:30:00Z"))
+			.andExpect(jsonPath("$.items[0].messageSummary").value("같이 활동하고 싶습니다"))
+			.andExpect(jsonPath("$.pageInfo.page").value(0))
+			.andExpect(jsonPath("$.pageInfo.size").value(20))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
+	}
+
+	@Test
+	void cancelsMyPendingCrewRequestFromNewUserPath() throws Exception {
+		when(cancelMyPendingCrewJoinRequestUseCase.handle(CancelMyPendingCrewJoinRequestUseCase.Command.of(77L, 101L)))
+			.thenReturn(CancelMyPendingCrewJoinRequestUseCase.Result.of(101L, 31L));
+
+		mockMvc.perform(
+			delete("/api/users/me/pending-crews/101")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.joinRequestId").value(101))
+			.andExpect(jsonPath("$.crewId").value(31));
+	}
+
+	@Test
 	void returnsUnauthorizedWhenJoinedMeetingsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/joined-meetings"))
 			.andExpect(status().isUnauthorized())
@@ -210,6 +266,36 @@ class UserControllerTest {
 	@Test
 	void returnsUnauthorizedWhenMyCrewsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/crews"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void returnsUnauthorizedWhenMyPendingCrewsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/me/pending-crews"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void returnsValidationErrorWhenMyPendingCrewsPageIsNegative() throws Exception {
+		mockMvc.perform(
+			get("/api/users/me/pending-crews")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "-1")
+				.param("size", "20")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenMyPendingCrewCancelRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(delete("/api/users/me/pending-crews/101"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
 			.andExpect(jsonPath("$.fieldErrors").isArray())

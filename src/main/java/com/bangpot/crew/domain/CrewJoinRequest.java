@@ -82,6 +82,10 @@ public class CrewJoinRequest {
 		status = CrewJoinRequestStatus.REJECTED;
 	}
 
+	public void cancel() {
+		status = CrewJoinRequestStatus.CANCELED;
+	}
+
 	public void assignId(Long id) {
 		this.id = id;
 	}
