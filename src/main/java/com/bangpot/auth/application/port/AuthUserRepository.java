@@ -12,4 +12,8 @@ public interface AuthUserRepository {
 	Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId);
 
 	AuthUser save(AuthUser user);
+
+	default void deleteById(Long userId) {
+		throw new UnsupportedOperationException("deleteById is not implemented");
+	}
 }

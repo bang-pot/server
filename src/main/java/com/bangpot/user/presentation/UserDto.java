@@ -3,6 +3,7 @@ package com.bangpot.user.presentation;
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.AssertTrue;
 
 final class UserDto {
 
@@ -148,6 +149,19 @@ final class UserDto {
 		boolean canWithdraw,
 		List<BlockingActiveCrewResponse> blockingActiveCrews,
 		List<BlockingParticipatingMeetingResponse> blockingParticipatingMeetings
+	) {
+	}
+
+	record WithdrawMyAccountRequest(
+		@NotBlank(message = "reasonCode is required") String reasonCode,
+		String reasonDetail,
+		@AssertTrue(message = "confirmationChecked must be true") boolean confirmationChecked
+	) {
+	}
+
+	record WithdrawMyAccountResponse(
+		String withdrawnAt,
+		boolean canLogin
 	) {
 	}
 

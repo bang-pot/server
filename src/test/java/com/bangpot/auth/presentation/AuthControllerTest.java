@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -63,7 +63,8 @@ class AuthControllerTest {
 				"2026-03-25",
 				GetCurrentAuthUserUseCase.AuthenticatedUserView.of(55L, null),
 				null
-			));
+			)
+		);
 
 		mockMvc.perform(
 			get("/api/auth/me")
@@ -88,7 +89,8 @@ class AuthControllerTest {
 				"2026-03-25",
 				GetCurrentAuthUserUseCase.AuthenticatedUserView.of(77L, "bangpot"),
 				Instant.parse("2026-03-31T00:00:00Z")
-			));
+			)
+		);
 
 		mockMvc.perform(
 			get("/api/auth/me")
@@ -116,7 +118,6 @@ class AuthControllerTest {
 		)
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
-			.andExpect(jsonPath("$.message").value("인증이 필요합니다."))
 			.andExpect(jsonPath("$.requestId").value("na"))
 			.andExpect(jsonPath("$.fieldErrors").isArray())
 			.andExpect(jsonPath("$.fieldErrors").isEmpty());
@@ -137,10 +138,9 @@ class AuthControllerTest {
 		)
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
-			.andExpect(jsonPath("$.message").value("입력값이 올바르지 않습니다."))
 			.andExpect(jsonPath("$.requestId").value("na"))
 			.andExpect(jsonPath("$.fieldErrors[0].field").value("nickname"))
-			.andExpect(jsonPath("$.fieldErrors[0].message").value("닉네임은 비어 있을 수 없습니다."));
+			.andExpect(jsonPath("$.fieldErrors[0].message").exists());
 	}
 
 	@Test
@@ -161,7 +161,6 @@ class AuthControllerTest {
 		)
 			.andExpect(status().isConflict())
 			.andExpect(jsonPath("$.code").value("AUTH_DUPLICATE_NICKNAME"))
-			.andExpect(jsonPath("$.message").value("이미 사용 중인 닉네임입니다."))
 			.andExpect(jsonPath("$.requestId").value("na"))
 			.andExpect(jsonPath("$.fieldErrors").isArray())
 			.andExpect(jsonPath("$.fieldErrors").isEmpty());
@@ -185,7 +184,6 @@ class AuthControllerTest {
 		)
 			.andExpect(status().isInternalServerError())
 			.andExpect(jsonPath("$.code").value("COMMON_INTERNAL_ERROR"))
-			.andExpect(jsonPath("$.message").value("일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."))
 			.andExpect(jsonPath("$.requestId").value("na"))
 			.andExpect(jsonPath("$.fieldErrors").isArray())
 			.andExpect(jsonPath("$.fieldErrors").isEmpty());

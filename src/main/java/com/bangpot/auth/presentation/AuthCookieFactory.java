@@ -10,11 +10,11 @@ import com.bangpot.auth.infrastructure.config.AuthJwtProperties;
 
 @Component
 @RequiredArgsConstructor
-class AuthCookieFactory {
+public class AuthCookieFactory {
 
 	private final AuthJwtProperties authJwtProperties;
 
-	String createLogoutCookieHeader() {
+	public String createLogoutCookieHeader() {
 		return ResponseCookie.from(authJwtProperties.getCookieName(), "")
 			.httpOnly(true)
 			.secure(authJwtProperties.isSecureCookie())

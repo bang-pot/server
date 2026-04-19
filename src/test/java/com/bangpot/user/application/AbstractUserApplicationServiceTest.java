@@ -1,6 +1,8 @@
 package com.bangpot.user.application;
 
 import java.time.Instant;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ import com.bangpot.user.application.service.CancelMyPendingCrewJoinRequestServic
 import com.bangpot.user.application.service.GetMyPendingCrewsService;
 import com.bangpot.user.application.service.GetMyProfileService;
 import com.bangpot.user.application.service.GetMyWithdrawalCheckService;
+import com.bangpot.user.application.service.WithdrawMyAccountService;
 import com.bangpot.user.application.service.UpdateMyProfileService;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
@@ -33,7 +36,9 @@ import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
+import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
+import com.bangpot.user.domain.UserWithdrawal;
 import com.bangpot.user.domain.User;
 
 abstract class AbstractUserApplicationServiceTest {
@@ -48,6 +53,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
 	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
 	protected InMemoryWithdrawalCheckReadRepository withdrawalCheckReadRepository;
+	protected InMemoryUserWithdrawalRepository userWithdrawalRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	protected CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 	protected GetMyProfileUseCase getMyProfileUseCase;
@@ -56,6 +62,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected GetMyCrewsUseCase getMyCrewsUseCase;
 	protected GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
 	protected GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
+	protected WithdrawMyAccountUseCase withdrawMyAccountUseCase;
 	protected UpdateMyProfileUseCase updateMyProfileUseCase;
 	protected CompletedUserAccessService completedUserAccessService;
 
@@ -69,6 +76,7 @@ abstract class AbstractUserApplicationServiceTest {
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
 		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
 		withdrawalCheckReadRepository = new InMemoryWithdrawalCheckReadRepository();
+		userWithdrawalRepository = new InMemoryUserWithdrawalRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
 		getMyCreatedMeetingsUseCase = new GetMyCreatedMeetingsService(
@@ -95,6 +103,13 @@ abstract class AbstractUserApplicationServiceTest {
 			authUserRepository,
 			userRepository,
 			withdrawalCheckReadRepository
+		);
+		withdrawMyAccountUseCase = new WithdrawMyAccountService(
+			authUserRepository,
+			userRepository,
+			getMyWithdrawalCheckUseCase,
+			userWithdrawalRepository,
+			Clock.fixed(BASE_TIME, ZoneOffset.UTC)
 		);
 		cancelMyPendingCrewJoinRequestUseCase = new CancelMyPendingCrewJoinRequestService(
 			authUserRepository,
@@ -138,12 +153,14 @@ abstract class AbstractUserApplicationServiceTest {
 
 		@Override
 		public Optional<AuthUser> findById(Long userId) {
-			return Optional.ofNullable(authUsers.get(userId));
+			return Optional.ofNullable(authUsers.get(userId))
+				.filter(user -> !user.isWithdrawn());
 		}
 
 		@Override
 		public Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId) {
 			return authUsers.values().stream()
+				.filter(user -> !user.isWithdrawn())
 				.filter(user -> user.getProvider() == provider && providerId.equals(user.getProviderId()))
 				.findFirst();
 		}
@@ -153,6 +170,11 @@ abstract class AbstractUserApplicationServiceTest {
 			authUsers.put(user.getId(), user);
 			return user;
 		}
+
+		@Override
+		public void deleteById(Long userId) {
+			authUsers.remove(userId);
+		}
 	}
 
 	protected static final class InMemoryUserRepository implements UserRepository {
@@ -160,7 +182,8 @@ abstract class AbstractUserApplicationServiceTest {
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return Optional.ofNullable(users.get(userId));
+			return Optional.ofNullable(users.get(userId))
+				.filter(user -> !withdrawnUserIds.contains(userId));
 		}
 
 		@Override
@@ -181,6 +204,13 @@ abstract class AbstractUserApplicationServiceTest {
 			users.put(user.getId(), user);
 			return user;
 		}
+
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+			withdrawnUserIds.add(userId);
+		}
+
+		private final java.util.Set<Long> withdrawnUserIds = new java.util.HashSet<>();
 	}
 
 	protected static final class InMemoryProfileHubReadRepository
@@ -285,6 +315,21 @@ abstract class AbstractUserApplicationServiceTest {
 
 		void putResult(Long userId, View view) {
 			resultsByUserId.put(userId, view);
+		}
+	}
+
+	protected static final class InMemoryUserWithdrawalRepository
+		implements com.bangpot.user.application.port.UserWithdrawalRepository {
+		private final Map<Long, UserWithdrawal> withdrawalsByUserId = new HashMap<>();
+
+		@Override
+		public UserWithdrawal save(UserWithdrawal userWithdrawal) {
+			withdrawalsByUserId.put(userWithdrawal.getUserId(), userWithdrawal);
+			return userWithdrawal;
+		}
+
+		UserWithdrawal findByUserId(Long userId) {
+			return withdrawalsByUserId.get(userId);
 		}
 	}
 }

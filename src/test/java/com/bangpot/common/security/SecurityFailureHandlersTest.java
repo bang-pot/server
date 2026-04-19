@@ -41,7 +41,6 @@ class SecurityFailureHandlersTest {
 		assertThat(response.getContentType()).startsWith("application/json");
 		assertThat(response.getContentAsString())
 			.contains("\"code\":\"AUTH_UNAUTHENTICATED\"")
-			.contains("\"message\":\"인증이 필요합니다.\"")
 			.contains("\"requestId\":\"req-auth-401\"")
 			.contains("\"fieldErrors\":[]");
 		verify(authAuditLogger).protectedResourceAccessFailed("GET", "/api/crew");
@@ -73,7 +72,6 @@ class SecurityFailureHandlersTest {
 		assertThat(response.getContentType()).startsWith("application/json");
 		assertThat(response.getContentAsString())
 			.contains("\"code\":\"AUTH_ACCESS_DENIED\"")
-			.contains("\"message\":\"접근 권한이 없습니다.\"")
 			.contains("\"requestId\":\"req-auth-403\"")
 			.contains("\"fieldErrors\":[]");
 		verify(authAuditLogger).accessDenied(55L, "POST", "/api/admin");

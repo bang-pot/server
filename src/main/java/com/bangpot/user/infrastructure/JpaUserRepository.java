@@ -18,25 +18,25 @@ public class JpaUserRepository implements UserRepository {
 
 	@Override
 	public Optional<User> findById(Long userId) {
-		return userJpaRepository.findById(userId).map(this::toDomain);
+		return userJpaRepository.findByIdAndWithdrawnAtIsNull(userId).map(this::toDomain);
 	}
 
 	@Override
 	public boolean existsByNickname(String nickname) {
-		return userJpaRepository.existsByNickname(nickname);
+		return userJpaRepository.existsByNicknameAndWithdrawnAtIsNull(nickname);
 	}
 
 	@Override
 	public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 		String normalizedKeyword = normalizeKeyword(nickname);
 		if (normalizedKeyword == null) {
-			return userJpaRepository.findAllByOrderByIdAsc()
+			return userJpaRepository.findAllByWithdrawnAtIsNullOrderByIdAsc()
 				.stream()
 				.map(this::toDomain)
 				.toList();
 		}
 		return userJpaRepository
-			.findAllByNicknameContainingIgnoreCaseOrderByIdAsc(normalizedKeyword)
+			.findAllByNicknameContainingIgnoreCaseAndWithdrawnAtIsNullOrderByIdAsc(normalizedKeyword)
 			.stream()
 			.map(this::toDomain)
 			.toList();
@@ -48,6 +48,15 @@ public class JpaUserRepository implements UserRepository {
 			.orElseGet(() -> UserJpaEntity.create(user.getId(), user.getNickname()));
 		userJpaEntity.updateNickname(user.getNickname());
 		return toDomain(userJpaRepository.save(userJpaEntity));
+	}
+
+	@Override
+	public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		userJpaRepository.findById(userId)
+			.ifPresent(user -> {
+				user.withdraw(anonymizedNickname, withdrawnAt);
+				userJpaRepository.save(user);
+			});
 	}
 
 	private User toDomain(UserJpaEntity userJpaEntity) {

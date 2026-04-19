@@ -1,16 +1,20 @@
 package com.bangpot.user.presentation;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bangpot.auth.presentation.AuthCookieFactory;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
@@ -21,6 +25,7 @@ import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
+import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -41,6 +46,8 @@ class UserController {
 	private final GetMyProfileUseCase getMyProfileUseCase;
 	private final GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
 	private final UpdateMyProfileUseCase updateMyProfileUseCase;
+	private final WithdrawMyAccountUseCase withdrawMyAccountUseCase;
+	private final AuthCookieFactory authCookieFactory;
 
 	@GetMapping("/api/users/me")
 	ResponseEntity<UserDto.UserProfileResponse> profile(Authentication authentication) {
@@ -108,6 +115,20 @@ class UserController {
 			GetMyWithdrawalCheckUseCase.Query.of(requireAuthenticatedUserId(authentication))
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@PostMapping("/api/users/me/withdrawal")
+	ResponseEntity<UserDto.WithdrawMyAccountResponse> withdrawMyAccount(
+		Authentication authentication,
+		@Valid @RequestBody UserDto.WithdrawMyAccountRequest request
+	) {
+		WithdrawMyAccountUseCase.Result result = withdrawMyAccountUseCase.handle(
+			UserDtoMapper.toCommand(requireAuthenticatedUserId(authentication), request)
+		);
+		SecurityContextHolder.clearContext();
+		return ResponseEntity.ok()
+			.header(HttpHeaders.SET_COOKIE, authCookieFactory.createLogoutCookieHeader())
+			.body(UserDtoMapper.toResponse(result));
 	}
 
 	@DeleteMapping("/api/users/me/pending-crews/{joinRequestId}")

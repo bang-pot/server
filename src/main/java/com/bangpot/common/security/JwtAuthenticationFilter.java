@@ -8,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.infrastructure.AuthSessionTokenService;
 import com.bangpot.auth.infrastructure.config.AuthJwtProperties;
 
@@ -21,13 +22,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final AuthJwtProperties authJwtProperties;
 	private final AuthSessionTokenService authSessionTokenService;
+	private final AuthUserRepository authUserRepository;
 
 	public JwtAuthenticationFilter(
 		AuthJwtProperties authJwtProperties,
-		AuthSessionTokenService authSessionTokenService
+		AuthSessionTokenService authSessionTokenService,
+		AuthUserRepository authUserRepository
 	) {
 		this.authJwtProperties = authJwtProperties;
 		this.authSessionTokenService = authSessionTokenService;
+		this.authUserRepository = authUserRepository;
 	}
 
 	@Override
@@ -38,6 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	) throws ServletException, IOException {
 		resolveAccessToken(request)
 			.flatMap(authSessionTokenService::resolveUserId)
+			.filter(userId -> authUserRepository.findById(userId).isPresent())
 			.ifPresent(userId -> SecurityContextHolder.getContext().setAuthentication(
 				new UsernamePasswordAuthenticationToken(userId, null, java.util.List.of())
 			));

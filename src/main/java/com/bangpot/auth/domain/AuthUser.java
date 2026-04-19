@@ -35,7 +35,7 @@ public class AuthUser {
 	@Column(name = "provider", nullable = false, updatable = false)
 	private AuthProvider provider;
 
-	@Column(name = "provider_id", nullable = false, updatable = false)
+	@Column(name = "provider_id", nullable = false)
 	private String providerId;
 
 	@Enumerated(EnumType.STRING)
@@ -57,6 +57,9 @@ public class AuthUser {
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
+	@Column(name = "withdrawn_at")
+	private Instant withdrawnAt;
+
 	protected AuthUser() {
 	}
 
@@ -69,7 +72,8 @@ public class AuthUser {
 		RequiredTermsAgreement requiredTermsAgreement,
 		String pendingRedirectPath,
 		Instant createdAt,
-		Instant updatedAt
+		Instant updatedAt,
+		Instant withdrawnAt
 	) {
 		this.id = id;
 		this.provider = provider;
@@ -80,6 +84,7 @@ public class AuthUser {
 		this.pendingRedirectPath = pendingRedirectPath;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
+		this.withdrawnAt = withdrawnAt;
 	}
 
 	public static AuthUser createTemp(AuthProvider provider, String providerId, String pendingRedirectPath) {
@@ -91,6 +96,7 @@ public class AuthUser {
 			null,
 			null,
 			pendingRedirectPath,
+			null,
 			null,
 			null
 		);
@@ -105,7 +111,8 @@ public class AuthUser {
 		RequiredTermsAgreement requiredTermsAgreement,
 		String pendingRedirectPath,
 		Instant createdAt,
-		Instant updatedAt
+		Instant updatedAt,
+		Instant withdrawnAt
 	) {
 		return new AuthUser(
 			id,
@@ -116,7 +123,33 @@ public class AuthUser {
 			requiredTermsAgreement,
 			pendingRedirectPath,
 			createdAt,
-			updatedAt
+			updatedAt,
+			withdrawnAt
+		);
+	}
+
+	public static AuthUser rehydrate(
+		Long id,
+		AuthProvider provider,
+		String providerId,
+		AuthUserStatus status,
+		String nickname,
+		RequiredTermsAgreement requiredTermsAgreement,
+		String pendingRedirectPath,
+		Instant createdAt,
+		Instant updatedAt
+	) {
+		return rehydrate(
+			id,
+			provider,
+			providerId,
+			status,
+			nickname,
+			requiredTermsAgreement,
+			pendingRedirectPath,
+			createdAt,
+			updatedAt,
+			null
 		);
 	}
 
@@ -144,6 +177,10 @@ public class AuthUser {
 		return status == AuthUserStatus.TEMP;
 	}
 
+	public boolean isWithdrawn() {
+		return status == AuthUserStatus.WITHDRAWN;
+	}
+
 	public void updatePendingRedirectPath(String redirectPath) {
 		if (status == AuthUserStatus.TEMP && redirectPath != null && !redirectPath.isBlank()) {
 			pendingRedirectPath = redirectPath;
@@ -163,4 +200,12 @@ public class AuthUser {
 		return nextPath;
 	}
 
+	public void withdraw(String tombstoneProviderId, Instant withdrawnAt) {
+		this.status = AuthUserStatus.WITHDRAWN;
+		this.providerId = tombstoneProviderId;
+		this.nickname = null;
+		this.requiredTermsAgreement = null;
+		this.pendingRedirectPath = null;
+		this.withdrawnAt = withdrawnAt;
+	}
 }
