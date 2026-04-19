@@ -55,7 +55,9 @@ import com.bangpot.meeting.error.MeetingGalleryErrorCode;
 import com.bangpot.meeting.error.MeetingLogErrorCode;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
+import com.bangpot.user.application.exception.UserWithdrawalRequestValidationException;
 import com.bangpot.user.application.exception.UserNotFoundException;
+import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
@@ -293,6 +295,20 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(AuthCompletionNotAllowedException.class)
 	ResponseEntity<ApiErrorResponse> handleAuthCompletionNotAllowed(AuthCompletionNotAllowedException exception) {
 		return error(AuthErrorCode.AUTH_COMPLETION_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(WithdrawalNotAllowedException.class)
+	ResponseEntity<ApiErrorResponse> handleWithdrawalNotAllowed(WithdrawalNotAllowedException exception) {
+		return error(AuthErrorCode.AUTH_WITHDRAWAL_NOT_ALLOWED);
+	}
+
+	@ExceptionHandler(UserWithdrawalRequestValidationException.class)
+	ResponseEntity<ApiErrorResponse> handleUserWithdrawalRequestValidation(
+		UserWithdrawalRequestValidationException exception
+	) {
+		return ResponseEntity.badRequest().body(
+			apiErrorResponseFactory.create(CommonErrorCode.COMMON_VALIDATION_ERROR, exception.getFieldErrors())
+		);
 	}
 
 	@ExceptionHandler(AccessDeniedException.class)

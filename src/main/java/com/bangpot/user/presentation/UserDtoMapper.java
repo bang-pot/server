@@ -1,5 +1,9 @@
 package com.bangpot.user.presentation;
 
+import java.util.List;
+
+import com.bangpot.common.error.ApiErrorField;
+import com.bangpot.user.application.exception.UserWithdrawalRequestValidationException;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
@@ -9,6 +13,8 @@ import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
+import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
+import com.bangpot.user.domain.WithdrawalReasonCode;
 
 final class UserDtoMapper {
 
@@ -151,9 +157,42 @@ final class UserDtoMapper {
 		);
 	}
 
+	static WithdrawMyAccountUseCase.Command toCommand(
+		Long userId,
+		UserDto.WithdrawMyAccountRequest request
+	) {
+		return WithdrawMyAccountUseCase.Command.of(
+			userId,
+			parseReasonCode(request.reasonCode()),
+			normalizeReasonDetail(request.reasonDetail())
+		);
+	}
+
+	static UserDto.WithdrawMyAccountResponse toResponse(WithdrawMyAccountUseCase.Result result) {
+		return new UserDto.WithdrawMyAccountResponse(result.withdrawnAt(), result.canLogin());
+	}
+
 	static UserDto.NicknameAvailabilityResponse toResponse(
 		CheckNicknameAvailabilityUseCase.Result result
 	) {
 		return new UserDto.NicknameAvailabilityResponse(result.nickname(), result.available());
+	}
+
+	private static WithdrawalReasonCode parseReasonCode(String reasonCode) {
+		try {
+			return WithdrawalReasonCode.valueOf(reasonCode.trim());
+		} catch (RuntimeException exception) {
+			throw new UserWithdrawalRequestValidationException(
+				List.of(new ApiErrorField("reasonCode", "reasonCode is invalid"))
+			);
+		}
+	}
+
+	private static String normalizeReasonDetail(String reasonDetail) {
+		if (reasonDetail == null) {
+			return null;
+		}
+		String trimmed = reasonDetail.trim();
+		return trimmed.isEmpty() ? null : trimmed;
 	}
 }

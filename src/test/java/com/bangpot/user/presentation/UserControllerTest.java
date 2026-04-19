@@ -4,6 +4,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
+import com.bangpot.auth.presentation.AuthCookieFactory;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
@@ -30,6 +33,8 @@ import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
+import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
+import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -63,6 +68,12 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
+
+	@MockitoBean
+	private WithdrawMyAccountUseCase withdrawMyAccountUseCase;
+
+	@MockitoBean
+	private AuthCookieFactory authCookieFactory;
 
 	@MockitoBean
 	private UpdateMyProfileUseCase updateMyProfileUseCase;
@@ -287,6 +298,116 @@ class UserControllerTest {
 	}
 
 	@Test
+	void withdrawsCurrentUserAndClearsAuthCookie() throws Exception {
+		when(withdrawMyAccountUseCase.handle(
+			WithdrawMyAccountUseCase.Command.of(
+				77L,
+				com.bangpot.user.domain.WithdrawalReasonCode.OTHER,
+				null
+			)
+		)).thenReturn(WithdrawMyAccountUseCase.Result.of("2026-04-17T10:15:30Z", false));
+		when(authCookieFactory.createLogoutCookieHeader()).thenReturn(
+			"access_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax"
+		);
+
+		mockMvc.perform(
+			post("/api/users/me/withdrawal")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "reasonCode": "OTHER",
+					  "reasonDetail": " ",
+					  "confirmationChecked": true
+					}
+					""")
+		)
+			.andExpect(status().isOk())
+			.andExpect(header().string("Set-Cookie", org.hamcrest.Matchers.containsString("Max-Age=0")))
+			.andExpect(jsonPath("$.withdrawnAt").value("2026-04-17T10:15:30Z"))
+			.andExpect(jsonPath("$.canLogin").value(false));
+	}
+
+	@Test
+	void returnsValidationErrorWhenWithdrawalReasonCodeIsBlank() throws Exception {
+		mockMvc.perform(
+			post("/api/users/me/withdrawal")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "reasonCode": " ",
+					  "confirmationChecked": true
+					}
+					""")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("reasonCode"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenWithdrawalConfirmationIsUnchecked() throws Exception {
+		mockMvc.perform(
+			post("/api/users/me/withdrawal")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "reasonCode": "OTHER",
+					  "confirmationChecked": false
+					}
+					""")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("confirmationChecked"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenWithdrawalReasonCodeIsInvalid() throws Exception {
+		mockMvc.perform(
+			post("/api/users/me/withdrawal")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "reasonCode": "INVALID",
+					  "confirmationChecked": true
+					}
+					""")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("reasonCode"));
+	}
+
+	@Test
+	void returnsConflictWhenWithdrawalBecomesBlockedAtExecutionTime() throws Exception {
+		when(withdrawMyAccountUseCase.handle(
+			WithdrawMyAccountUseCase.Command.of(
+				77L,
+				com.bangpot.user.domain.WithdrawalReasonCode.NOT_USING,
+				null
+			)
+		)).thenThrow(new WithdrawalNotAllowedException());
+
+		mockMvc.perform(
+			post("/api/users/me/withdrawal")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "reasonCode": "NOT_USING",
+					  "confirmationChecked": true
+					}
+					""")
+		)
+			.andExpect(status().isConflict())
+			.andExpect(jsonPath("$.code").value("AUTH_WITHDRAWAL_NOT_ALLOWED"));
+	}
+
+	@Test
 	void returnsUnauthorizedWhenJoinedMeetingsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/joined-meetings"))
 			.andExpect(status().isUnauthorized())
@@ -298,6 +419,24 @@ class UserControllerTest {
 	@Test
 	void returnsUnauthorizedWhenWithdrawalCheckRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/withdrawal-check"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void returnsUnauthorizedWhenWithdrawalIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(
+			post("/api/users/me/withdrawal")
+				.contentType("application/json")
+				.content("""
+					{
+					  "reasonCode": "OTHER",
+					  "confirmationChecked": true
+					}
+					""")
+		)
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
 			.andExpect(jsonPath("$.fieldErrors").isArray())

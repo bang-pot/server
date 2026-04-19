@@ -23,6 +23,7 @@ import com.bangpot.auth.infrastructure.AuthSessionTokenService;
 import com.bangpot.auth.infrastructure.config.AuthFrontendProperties;
 import com.bangpot.auth.infrastructure.config.AuthJwtProperties;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
+import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2AuthenticationFailureHandler;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2AuthenticationSuccessHandler;
 import com.bangpot.auth.infrastructure.oauth.KakaoOAuth2UserService;
@@ -38,9 +39,10 @@ public class SecurityConfig {
 	@Bean
 	JwtAuthenticationFilter jwtAuthenticationFilter(
 		AuthJwtProperties authJwtProperties,
-		AuthSessionTokenService authSessionTokenService
+		AuthSessionTokenService authSessionTokenService,
+		AuthUserRepository authUserRepository
 	) {
-		return new JwtAuthenticationFilter(authJwtProperties, authSessionTokenService);
+		return new JwtAuthenticationFilter(authJwtProperties, authSessionTokenService, authUserRepository);
 	}
 
 	@Bean

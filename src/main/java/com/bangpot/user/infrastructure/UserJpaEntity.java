@@ -42,6 +42,9 @@ class UserJpaEntity {
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
+	@Column(name = "withdrawn_at")
+	private Instant withdrawnAt;
+
 	protected UserJpaEntity() {
 	}
 
@@ -52,7 +55,8 @@ class UserJpaEntity {
 		String gender,
 		String profileImageUrl,
 		Instant createdAt,
-		Instant updatedAt
+		Instant updatedAt,
+		Instant withdrawnAt
 	) {
 		this.id = id;
 		this.nickname = nickname;
@@ -61,14 +65,23 @@ class UserJpaEntity {
 		this.profileImageUrl = profileImageUrl;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
+		this.withdrawnAt = withdrawnAt;
 	}
 
 	static UserJpaEntity create(Long id, String nickname) {
-		return new UserJpaEntity(id, nickname, null, null, null, null, null);
+		return new UserJpaEntity(id, nickname, null, null, null, null, null, null);
 	}
 
 	void updateNickname(String nickname) {
 		this.nickname = nickname;
+	}
+
+	void withdraw(String anonymizedNickname, Instant withdrawnAt) {
+		this.nickname = anonymizedNickname;
+		this.bio = null;
+		this.gender = null;
+		this.profileImageUrl = null;
+		this.withdrawnAt = withdrawnAt;
 	}
 
 	@PrePersist

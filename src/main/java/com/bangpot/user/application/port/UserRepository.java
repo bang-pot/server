@@ -14,4 +14,8 @@ public interface UserRepository {
 	List<User> findCompletedUsersByNicknameContaining(String nickname);
 
 	User save(User user);
+
+	default void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		throw new UnsupportedOperationException("withdrawById is not implemented");
+	}
 }
