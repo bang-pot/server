@@ -125,6 +125,7 @@ public class SecurityConfig {
 				.requestMatchers(
 					"/api/auth/me",
 					"/api/auth/logout",
+					"/api/home",
 					"/api/users/nickname-availability",
 					"/actuator/health",
 					"/actuator/health/**"
