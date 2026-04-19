@@ -1,5 +1,6 @@
 package com.bangpot.user.presentation;
 
+import java.time.Instant;
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
@@ -66,6 +67,33 @@ final class UserDto {
 	record CalendarResponse(
 		List<CalendarItemResponse> items,
 		int totalCount
+	) {
+	}
+
+	record MyMeetingLogItemResponse(
+		Long logId,
+		Long crewId,
+		String crewName,
+		Long meetingId,
+		String meetingTitle,
+		String meetingDate,
+		Instant createdAt,
+		String excerpt,
+		String coverPhotoUrl,
+		Long photoCount
+	) {
+	}
+
+	record MyMeetingLogsPageInfo(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
+	record MyMeetingLogsResponse(
+		List<MyMeetingLogItemResponse> items,
+		MyMeetingLogsPageInfo pageInfo
 	) {
 	}
 

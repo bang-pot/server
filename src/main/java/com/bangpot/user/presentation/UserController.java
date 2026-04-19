@@ -22,6 +22,7 @@ import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
@@ -44,6 +45,7 @@ class UserController {
 	private final GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	private final GetMyCrewsUseCase getMyCrewsUseCase;
 	private final GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
+	private final GetMyMeetingLogsUseCase getMyMeetingLogsUseCase;
 	private final GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
 	private final GetMyProfileUseCase getMyProfileUseCase;
 	private final GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
@@ -76,6 +78,19 @@ class UserController {
 	ResponseEntity<UserDto.CalendarResponse> calendar(Authentication authentication) {
 		GetMyCalendarUseCase.Result result = getMyCalendarUseCase.handle(
 			GetMyCalendarUseCase.Query.of(requireAuthenticatedUserId(authentication))
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/api/users/me/logs")
+	ResponseEntity<UserDto.MyMeetingLogsResponse> myMeetingLogs(
+		Authentication authentication,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
+	) {
+		GetMyMeetingLogsUseCase.Result result = getMyMeetingLogsUseCase.handle(
+			GetMyMeetingLogsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}

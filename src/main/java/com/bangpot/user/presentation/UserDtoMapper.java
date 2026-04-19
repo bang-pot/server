@@ -10,6 +10,7 @@ import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
@@ -82,6 +83,30 @@ final class UserDtoMapper {
 				))
 				.toList(),
 			result.totalCount()
+		);
+	}
+
+	static UserDto.MyMeetingLogsResponse toResponse(GetMyMeetingLogsUseCase.Result result) {
+		return new UserDto.MyMeetingLogsResponse(
+			result.items().stream()
+				.map(item -> new UserDto.MyMeetingLogItemResponse(
+					item.logId(),
+					item.crewId(),
+					item.crewName(),
+					item.meetingId(),
+					item.meetingTitle(),
+					item.meetingDate(),
+					item.createdAt(),
+					item.excerpt(),
+					item.coverPhotoUrl(),
+					item.photoCount()
+				))
+				.toList(),
+			new UserDto.MyMeetingLogsPageInfo(
+				result.pageInfo().page(),
+				result.pageInfo().size(),
+				result.pageInfo().hasNext()
+			)
 		);
 	}
 

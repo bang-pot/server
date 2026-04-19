@@ -21,6 +21,7 @@ import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.application.service.GetMyCreatedMeetingsService;
 import com.bangpot.user.application.service.GetMyCalendarService;
+import com.bangpot.user.application.service.GetMyMeetingLogsService;
 import com.bangpot.user.application.service.GetMyJoinedMeetingsService;
 import com.bangpot.user.application.service.GetMyCrewsService;
 import com.bangpot.user.application.service.CancelMyPendingCrewJoinRequestService;
@@ -32,6 +33,7 @@ import com.bangpot.user.application.service.UpdateMyProfileService;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
+import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
@@ -52,6 +54,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryProfileHubReadRepository profileHubReadRepository;
 	protected InMemoryCreatedMeetingReadRepository createdMeetingReadRepository;
 	protected InMemoryCalendarReadRepository calendarReadRepository;
+	protected InMemoryMyMeetingLogReadRepository myMeetingLogReadRepository;
 	protected InMemoryJoinedMeetingReadRepository joinedMeetingReadRepository;
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
 	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
@@ -62,6 +65,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected GetMyProfileUseCase getMyProfileUseCase;
 	protected GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	protected GetMyCalendarUseCase getMyCalendarUseCase;
+	protected GetMyMeetingLogsUseCase getMyMeetingLogsUseCase;
 	protected GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 	protected GetMyCrewsUseCase getMyCrewsUseCase;
 	protected GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
@@ -77,6 +81,7 @@ abstract class AbstractUserApplicationServiceTest {
 		profileHubReadRepository = new InMemoryProfileHubReadRepository();
 		createdMeetingReadRepository = new InMemoryCreatedMeetingReadRepository();
 		calendarReadRepository = new InMemoryCalendarReadRepository();
+		myMeetingLogReadRepository = new InMemoryMyMeetingLogReadRepository();
 		joinedMeetingReadRepository = new InMemoryJoinedMeetingReadRepository();
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
 		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
@@ -93,6 +98,11 @@ abstract class AbstractUserApplicationServiceTest {
 			authUserRepository,
 			userRepository,
 			calendarReadRepository
+		);
+		getMyMeetingLogsUseCase = new GetMyMeetingLogsService(
+			authUserRepository,
+			userRepository,
+			myMeetingLogReadRepository
 		);
 		getMyJoinedMeetingsUseCase = new GetMyJoinedMeetingsService(
 			authUserRepository,
@@ -265,6 +275,20 @@ abstract class AbstractUserApplicationServiceTest {
 
 		void putView(Long userId, View view) {
 			viewsByUserId.put(userId, view);
+		}
+	}
+
+	protected static final class InMemoryMyMeetingLogReadRepository
+		implements com.bangpot.user.application.port.MyMeetingLogReadRepository {
+		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
+
+		@Override
+		public SearchResult search(Long userId, int page, int size) {
+			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
+		}
+
+		void putResult(Long userId, SearchResult result) {
+			resultsByUserId.put(userId, result);
 		}
 	}
 
