@@ -27,6 +27,7 @@ import com.bangpot.auth.presentation.AuthCookieFactory;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
@@ -53,6 +54,9 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
+
+	@MockitoBean
+	private GetMyCalendarUseCase getMyCalendarUseCase;
 
 	@MockitoBean
 	private GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
@@ -132,6 +136,57 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
 			.andExpect(jsonPath("$.pageInfo.size").value(20))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
+	}
+
+	@Test
+	void returnsMyCalendarFromNewUserPath() throws Exception {
+		when(getMyCalendarUseCase.handle(GetMyCalendarUseCase.Query.of(77L)))
+			.thenReturn(GetMyCalendarUseCase.Result.of(
+				List.of(
+					GetMyCalendarUseCase.Item.of(
+						301L,
+						"Friday Escape",
+						5L,
+						"Room Escape Crew",
+						"2026-04-20",
+						"19:00",
+						"RECRUITING",
+						false,
+						"HOST"
+					),
+					GetMyCalendarUseCase.Item.of(
+						302L,
+						"Canceled Escape",
+						6L,
+						"Another Crew",
+						"2026-04-21",
+						"20:00",
+						"CANCELED",
+						true,
+						"PARTICIPANT"
+					)
+				),
+				2
+			));
+
+		mockMvc.perform(
+			get("/api/users/me/calendar")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].meetingId").value(301))
+			.andExpect(jsonPath("$.items[0].meetingTitle").value("Friday Escape"))
+			.andExpect(jsonPath("$.items[0].crewId").value(5))
+			.andExpect(jsonPath("$.items[0].crewName").value("Room Escape Crew"))
+			.andExpect(jsonPath("$.items[0].date").value("2026-04-20"))
+			.andExpect(jsonPath("$.items[0].time").value("19:00"))
+			.andExpect(jsonPath("$.items[0].meetingStatus").value("RECRUITING"))
+			.andExpect(jsonPath("$.items[0].isCanceled").value(false))
+			.andExpect(jsonPath("$.items[0].participationRole").value("HOST"))
+			.andExpect(jsonPath("$.items[1].meetingStatus").value("CANCELED"))
+			.andExpect(jsonPath("$.items[1].isCanceled").value(true))
+			.andExpect(jsonPath("$.items[1].participationRole").value("PARTICIPANT"))
+			.andExpect(jsonPath("$.totalCount").value(2));
 	}
 
 	@Test
@@ -410,6 +465,15 @@ class UserControllerTest {
 	@Test
 	void returnsUnauthorizedWhenJoinedMeetingsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/joined-meetings"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void returnsUnauthorizedWhenCalendarRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/me/calendar"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
 			.andExpect(jsonPath("$.fieldErrors").isArray())

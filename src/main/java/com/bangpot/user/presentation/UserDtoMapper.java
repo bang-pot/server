@@ -6,6 +6,7 @@ import com.bangpot.common.error.ApiErrorField;
 import com.bangpot.user.application.exception.UserWithdrawalRequestValidationException;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
+import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
@@ -62,6 +63,25 @@ final class UserDtoMapper {
 				result.pageInfo().size(),
 				result.pageInfo().hasNext()
 			)
+		);
+	}
+
+	static UserDto.CalendarResponse toResponse(GetMyCalendarUseCase.Result result) {
+		return new UserDto.CalendarResponse(
+			result.items().stream()
+				.map(item -> new UserDto.CalendarItemResponse(
+					item.meetingId(),
+					item.meetingTitle(),
+					item.crewId(),
+					item.crewName(),
+					item.date(),
+					item.time(),
+					item.meetingStatus(),
+					item.isCanceled(),
+					item.participationRole()
+				))
+				.toList(),
+			result.totalCount()
 		);
 	}
 

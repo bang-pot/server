@@ -18,6 +18,7 @@ import com.bangpot.auth.presentation.AuthCookieFactory;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
+import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
@@ -39,6 +40,7 @@ class UserController {
 
 	private final CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	private final CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
+	private final GetMyCalendarUseCase getMyCalendarUseCase;
 	private final GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	private final GetMyCrewsUseCase getMyCrewsUseCase;
 	private final GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
@@ -66,6 +68,14 @@ class UserController {
 	) {
 		GetMyCreatedMeetingsUseCase.Result result = getMyCreatedMeetingsUseCase.handle(
 			GetMyCreatedMeetingsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/api/users/me/calendar")
+	ResponseEntity<UserDto.CalendarResponse> calendar(Authentication authentication) {
+		GetMyCalendarUseCase.Result result = getMyCalendarUseCase.handle(
+			GetMyCalendarUseCase.Query.of(requireAuthenticatedUserId(authentication))
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}
