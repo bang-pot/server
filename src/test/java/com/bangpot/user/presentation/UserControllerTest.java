@@ -30,6 +30,7 @@ import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
+import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
@@ -57,6 +58,9 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyCalendarUseCase getMyCalendarUseCase;
+
+	@MockitoBean
+	private GetMyMeetingLogsUseCase getMyMeetingLogsUseCase;
 
 	@MockitoBean
 	private GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
@@ -187,6 +191,49 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[1].isCanceled").value(true))
 			.andExpect(jsonPath("$.items[1].participationRole").value("PARTICIPANT"))
 			.andExpect(jsonPath("$.totalCount").value(2));
+	}
+
+	@Test
+	void returnsMyMeetingLogsFromNewUserPath() throws Exception {
+		when(getMyMeetingLogsUseCase.handle(GetMyMeetingLogsUseCase.Query.of(77L, 0, 20)))
+			.thenReturn(GetMyMeetingLogsUseCase.Result.of(
+				List.of(
+					GetMyMeetingLogsUseCase.Item.of(
+						501L,
+						31L,
+						"Alpha Crew",
+						201L,
+						"Friday Escape",
+						"2026-04-18",
+						java.time.Instant.parse("2026-04-19T10:15:30Z"),
+						"Too fun to stop writing",
+						"https://cdn.example.com/log-cover.jpg",
+						3L
+					)
+				),
+				GetMyMeetingLogsUseCase.PageInfo.of(0, 20, false)
+			));
+
+		mockMvc.perform(
+			get("/api/users/me/logs")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "0")
+				.param("size", "20")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].logId").value(501))
+			.andExpect(jsonPath("$.items[0].crewId").value(31))
+			.andExpect(jsonPath("$.items[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.items[0].meetingId").value(201))
+			.andExpect(jsonPath("$.items[0].meetingTitle").value("Friday Escape"))
+			.andExpect(jsonPath("$.items[0].meetingDate").value("2026-04-18"))
+			.andExpect(jsonPath("$.items[0].createdAt").value("2026-04-19T10:15:30Z"))
+			.andExpect(jsonPath("$.items[0].excerpt").value("Too fun to stop writing"))
+			.andExpect(jsonPath("$.items[0].coverPhotoUrl").value("https://cdn.example.com/log-cover.jpg"))
+			.andExpect(jsonPath("$.items[0].photoCount").value(3))
+			.andExpect(jsonPath("$.pageInfo.page").value(0))
+			.andExpect(jsonPath("$.pageInfo.size").value(20))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
 	}
 
 	@Test
@@ -481,6 +528,15 @@ class UserControllerTest {
 	}
 
 	@Test
+	void returnsUnauthorizedWhenMeetingLogsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/me/logs"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
 	void returnsUnauthorizedWhenWithdrawalCheckRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/withdrawal-check"))
 			.andExpect(status().isUnauthorized())
@@ -511,6 +567,18 @@ class UserControllerTest {
 	void returnsValidationErrorWhenJoinedMeetingsPageIsNegative() throws Exception {
 		mockMvc.perform(
 			get("/api/users/me/joined-meetings")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "-1")
+				.param("size", "20")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenMeetingLogsPageIsNegative() throws Exception {
+		mockMvc.perform(
+			get("/api/users/me/logs")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 				.param("page", "-1")
 				.param("size", "20")
