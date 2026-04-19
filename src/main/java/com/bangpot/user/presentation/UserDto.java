@@ -50,6 +50,25 @@ final class UserDto {
 	) {
 	}
 
+	record CalendarItemResponse(
+		Long meetingId,
+		String meetingTitle,
+		Long crewId,
+		String crewName,
+		String date,
+		String time,
+		String meetingStatus,
+		boolean isCanceled,
+		String participationRole
+	) {
+	}
+
+	record CalendarResponse(
+		List<CalendarItemResponse> items,
+		int totalCount
+	) {
+	}
+
 	record JoinedMeetingItemResponse(
 		Long meetingId,
 		String title,
