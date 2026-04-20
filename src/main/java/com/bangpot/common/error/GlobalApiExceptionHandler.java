@@ -31,6 +31,7 @@ import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotAllowedException;
 import com.bangpot.crew.application.exception.CrewRemoveMemberTargetNotAllowedException;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
+import com.bangpot.crew.application.exception.CrewScheduleRequestValidationException;
 import com.bangpot.crew.application.exception.CrewTransferLeadershipTargetNotAllowedException;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
@@ -192,6 +193,15 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(CrewJoinRequestNotFoundException.class)
 	ResponseEntity<ApiErrorResponse> handleCrewJoinRequestNotFound(CrewJoinRequestNotFoundException exception) {
 		return error(CrewErrorCode.CREW_JOIN_REQUEST_NOT_FOUND);
+	}
+
+	@ExceptionHandler(CrewScheduleRequestValidationException.class)
+	ResponseEntity<ApiErrorResponse> handleCrewScheduleRequestValidation(
+		CrewScheduleRequestValidationException exception
+	) {
+		return ResponseEntity.badRequest().body(
+			apiErrorResponseFactory.create(CommonErrorCode.COMMON_VALIDATION_ERROR, exception.getFieldErrors())
+		);
 	}
 
 	@ExceptionHandler(ExploreThemeNotFoundException.class)

@@ -31,6 +31,7 @@ import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
+import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
@@ -69,6 +70,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private GetCrewPoliciesUseCase getCrewPoliciesUseCase;
+
+	@MockitoBean
+	private GetCrewScheduleUseCase getCrewScheduleUseCase;
 
 	@MockitoBean
 	private RequestCrewJoinUseCase requestCrewJoinUseCase;
@@ -353,6 +357,75 @@ class CrewControllerTest {
 			.andExpect(jsonPath("$[0].content").value("시간 약속을 지켜주세요."))
 			.andExpect(jsonPath("$[1].policyId").value(302))
 			.andExpect(jsonPath("$[1].content").value("노쇼는 금지합니다.\n불참 시 미리 알려주세요."));
+	}
+
+	@Test
+	void returnsCrewScheduleForJoinedMember() throws Exception {
+		when(getCrewScheduleUseCase.handle(GetCrewScheduleUseCase.Query.of(1L, 77L, "2026-04-20", "2026-04-30")))
+			.thenReturn(GetCrewScheduleUseCase.Result.of(
+				List.of(
+					GetCrewScheduleUseCase.Item.of(
+						501L,
+						"Deep Blue",
+						"2026-04-20",
+						"19:00",
+						"RECRUITING",
+						"OPEN",
+						"Hongdae",
+						4L,
+						false
+					),
+					GetCrewScheduleUseCase.Item.of(
+						502L,
+						"Black Out",
+						"2026-04-21",
+						"20:00",
+						"CANCELED",
+						"CLOSED",
+						"Gangnam",
+						3L,
+						true
+					)
+				)
+			));
+
+		mockMvc.perform(
+			get("/api/crews/1/schedule")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("from", "2026-04-20")
+				.param("to", "2026-04-30")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].meetingId").value(501))
+			.andExpect(jsonPath("$.items[0].themeName").value("Deep Blue"))
+			.andExpect(jsonPath("$.items[0].date").value("2026-04-20"))
+			.andExpect(jsonPath("$.items[0].time").value("19:00"))
+			.andExpect(jsonPath("$.items[0].meetingStatus").value("RECRUITING"))
+			.andExpect(jsonPath("$.items[0].recruitmentStatus").value("OPEN"))
+			.andExpect(jsonPath("$.items[0].place").value("Hongdae"))
+			.andExpect(jsonPath("$.items[0].participantCount").value(4))
+			.andExpect(jsonPath("$.items[0].isCanceled").value(false))
+			.andExpect(jsonPath("$.items[1].meetingStatus").value("CANCELED"))
+			.andExpect(jsonPath("$.items[1].isCanceled").value(true));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenCrewScheduleRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/crews/1/schedule").param("from", "2026-04-20").param("to", "2026-04-30"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenCrewScheduleDateRangeIsInvalid() throws Exception {
+		mockMvc.perform(
+			get("/api/crews/1/schedule")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("from", "2026-04-31")
+				.param("to", "2026-04-20")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
 	}
 
 	@Test

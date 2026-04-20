@@ -5,6 +5,7 @@ import com.bangpot.crew.domain.CrewRole;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 final class CrewDto {
@@ -60,6 +61,30 @@ final class CrewDto {
 		Long policyId,
 		String title,
 		String content
+	) {
+	}
+
+	record CrewScheduleRequest(
+		@Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "from must use yyyy-MM-dd.") String from,
+		@Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "to must use yyyy-MM-dd.") String to
+	) {
+	}
+
+	record CrewScheduleItemResponse(
+		Long meetingId,
+		String themeName,
+		String date,
+		String time,
+		String meetingStatus,
+		String recruitmentStatus,
+		String place,
+		Long participantCount,
+		boolean isCanceled
+	) {
+	}
+
+	record CrewScheduleResponse(
+		java.util.List<CrewScheduleItemResponse> items
 	) {
 	}
 
