@@ -35,17 +35,18 @@ class ExploreController {
 
 	@GetMapping("/themes")
 	ResponseEntity<ExploreDto.ExploreThemeListResponse> getThemes(
+		Authentication authentication,
 		@RequestParam(value = "q", required = false) String keyword,
 		@RequestParam(value = "genres", required = false) List<String> genres,
 		@RequestParam(value = "region", required = false) String region,
 		@RequestParam(value = "district", required = false) String district,
-		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page??0 ?댁긽?댁뼱???⑸땲??") int page,
-		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size??1 ?댁긽?댁뼱???⑸땲??") @Max(value = 50, message = "size??50 ?댄븯?ъ빞 ?⑸땲??") int size
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.") @Max(value = 50, message = "size는 50 이하여야 합니다.") int size
 	) {
 		return ResponseEntity.ok(
 			ExploreDtoMapper.toResponse(
 				getExploreThemesUseCase.handle(
-					ExploreDtoMapper.toQuery(keyword, genres, region, district, page, size)
+					ExploreDtoMapper.toQuery(authenticatedUserIdOrNull(authentication), keyword, genres, region, district, page, size)
 				)
 			)
 		);
@@ -53,10 +54,15 @@ class ExploreController {
 
 	@GetMapping("/themes/{themeId}")
 	ResponseEntity<ExploreDto.ExploreThemeDetailResponse> getThemeDetail(
-		@PathVariable("themeId") @Positive(message = "themeId??1 ?댁긽?댁뼱???⑸땲??") Long themeId
+		Authentication authentication,
+		@PathVariable("themeId") @Positive(message = "themeId는 1 이상이어야 합니다.") Long themeId
 	) {
 		return ResponseEntity.ok(
-			ExploreDtoMapper.toResponse(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(themeId)))
+			ExploreDtoMapper.toResponse(
+				getExploreThemeDetailUseCase.handle(
+					GetExploreThemeDetailUseCase.Query.of(authenticatedUserIdOrNull(authentication), themeId)
+				)
+			)
 		);
 	}
 
@@ -79,6 +85,13 @@ class ExploreController {
 	private Long requireAuthenticatedUserId(Authentication authentication) {
 		if (authentication == null || !(authentication.getPrincipal() instanceof Long userId)) {
 			throw new UnauthenticatedException();
+		}
+		return userId;
+	}
+
+	private Long authenticatedUserIdOrNull(Authentication authentication) {
+		if (authentication == null || !(authentication.getPrincipal() instanceof Long userId)) {
+			return null;
 		}
 		return userId;
 	}

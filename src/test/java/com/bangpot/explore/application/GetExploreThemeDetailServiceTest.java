@@ -7,12 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
 import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.service.GetExploreThemeDetailService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
@@ -20,12 +22,14 @@ import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 class GetExploreThemeDetailServiceTest {
 
 	private InMemoryExploreThemeReadRepository repository;
+	private InMemoryThemeFavoriteRepository themeFavoriteRepository;
 	private GetExploreThemeDetailUseCase useCase;
 
 	@BeforeEach
 	void setUp() {
 		repository = new InMemoryExploreThemeReadRepository();
-		useCase = new GetExploreThemeDetailService(repository);
+		themeFavoriteRepository = new InMemoryThemeFavoriteRepository();
+		useCase = new GetExploreThemeDetailService(repository, themeFavoriteRepository);
 	}
 
 	@Test
@@ -68,10 +72,13 @@ class GetExploreThemeDetailServiceTest {
 			)
 		);
 
-		GetExploreThemeDetailUseCase.Result result = useCase.handle(GetExploreThemeDetailUseCase.Query.of(5L));
+		themeFavoriteRepository.favorite(7L, 5L);
+
+		GetExploreThemeDetailUseCase.Result result = useCase.handle(GetExploreThemeDetailUseCase.Query.of(7L, 5L));
 
 		assertThat(result.themeId()).isEqualTo(5L);
 		assertThat(result.themeName()).isEqualTo("Deep Blue");
+		assertThat(result.isFavorite()).isTrue();
 		assertThat(result.relatedThemes()).hasSize(2);
 		assertThat(result.relatedThemes())
 			.extracting(GetExploreThemeDetailUseCase.RelatedTheme::themeName)
@@ -80,7 +87,7 @@ class GetExploreThemeDetailServiceTest {
 
 	@Test
 	void throwsWhenThemeDoesNotExist() {
-		assertThatThrownBy(() -> useCase.handle(GetExploreThemeDetailUseCase.Query.of(999L)))
+		assertThatThrownBy(() -> useCase.handle(GetExploreThemeDetailUseCase.Query.of(null, 999L)))
 			.isInstanceOf(ExploreThemeNotFoundException.class);
 	}
 
@@ -109,6 +116,37 @@ class GetExploreThemeDetailServiceTest {
 		@Override
 		public Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames) {
 			return new HashMap<>();
+		}
+	}
+
+	private static final class InMemoryThemeFavoriteRepository implements ThemeFavoriteRepository {
+		private final Map<Long, Set<Long>> favoriteThemeIdsByUserId = new HashMap<>();
+
+		@Override
+		public boolean create(Long userId, Long themeId, java.time.Instant createdAt) {
+			return favoriteThemeIdsByUserId.computeIfAbsent(userId, ignored -> new java.util.HashSet<>()).add(themeId);
+		}
+
+		@Override
+		public boolean delete(Long userId, Long themeId) {
+			return favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).remove(themeId);
+		}
+
+		@Override
+		public boolean exists(Long userId, Long themeId) {
+			return userId != null && favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).contains(themeId);
+		}
+
+		@Override
+		public Set<Long> findFavoritedThemeIds(Long userId, List<Long> themeIds) {
+			Set<Long> favorites = favoriteThemeIdsByUserId.getOrDefault(userId, Set.of());
+			return themeIds.stream()
+				.filter(favorites::contains)
+				.collect(java.util.stream.Collectors.toSet());
+		}
+
+		void favorite(Long userId, Long themeId) {
+			favoriteThemeIdsByUserId.computeIfAbsent(userId, ignored -> new java.util.HashSet<>()).add(themeId);
 		}
 	}
 }

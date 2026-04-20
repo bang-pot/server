@@ -6,6 +6,8 @@ import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreMeetingCreateCrewsUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.application.usecase.AddThemeFavoriteUseCase;
+import com.bangpot.explore.application.usecase.RemoveThemeFavoriteUseCase;
 
 final class ExploreDtoMapper {
 
@@ -13,6 +15,7 @@ final class ExploreDtoMapper {
 	}
 
 	static GetExploreThemesUseCase.Query toQuery(
+		Long userId,
 		String keyword,
 		List<String> genres,
 		String region,
@@ -20,7 +23,7 @@ final class ExploreDtoMapper {
 		int page,
 		int size
 	) {
-		return GetExploreThemesUseCase.Query.of(keyword, genres, region, district, page, size);
+		return GetExploreThemesUseCase.Query.of(userId, keyword, genres, region, district, page, size);
 	}
 
 	static ExploreDto.ExploreThemeListResponse toResponse(GetExploreThemesUseCase.Result result) {
@@ -58,10 +61,19 @@ final class ExploreDtoMapper {
 			result.runningTimeMinutes(),
 			result.description(),
 			result.externalLink(),
+			result.isFavorite(),
 			result.relatedThemes().stream()
 				.map(ExploreDtoMapper::toResponse)
 				.toList()
 		);
+	}
+
+	static ExploreDto.ThemeFavoriteResponse toResponse(AddThemeFavoriteUseCase.Result result) {
+		return new ExploreDto.ThemeFavoriteResponse(result.themeId(), result.isFavorite(), result.favoriteCount());
+	}
+
+	static ExploreDto.ThemeFavoriteResponse toResponse(RemoveThemeFavoriteUseCase.Result result) {
+		return new ExploreDto.ThemeFavoriteResponse(result.themeId(), result.isFavorite(), result.favoriteCount());
 	}
 
 	static ExploreDto.ExploreMeetingCreateCrewsResponse toResponse(GetExploreMeetingCreateCrewsUseCase.Result result) {
