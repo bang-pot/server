@@ -21,6 +21,7 @@ import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.application.service.GetMyCreatedMeetingsService;
 import com.bangpot.user.application.service.GetMyCalendarService;
+import com.bangpot.user.application.service.GetMyFavoriteThemesSummaryService;
 import com.bangpot.user.application.service.GetMyMeetingLogsService;
 import com.bangpot.user.application.service.GetMyJoinedMeetingsService;
 import com.bangpot.user.application.service.GetMyCrewsService;
@@ -33,6 +34,7 @@ import com.bangpot.user.application.service.UpdateMyProfileService;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
+import com.bangpot.user.application.usecase.GetMyFavoriteThemesSummaryUseCase;
 import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
@@ -54,6 +56,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryProfileHubReadRepository profileHubReadRepository;
 	protected InMemoryCreatedMeetingReadRepository createdMeetingReadRepository;
 	protected InMemoryCalendarReadRepository calendarReadRepository;
+	protected InMemoryFavoriteThemeSummaryReadRepository favoriteThemeSummaryReadRepository;
 	protected InMemoryMyMeetingLogReadRepository myMeetingLogReadRepository;
 	protected InMemoryJoinedMeetingReadRepository joinedMeetingReadRepository;
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
@@ -65,6 +68,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected GetMyProfileUseCase getMyProfileUseCase;
 	protected GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	protected GetMyCalendarUseCase getMyCalendarUseCase;
+	protected GetMyFavoriteThemesSummaryUseCase getMyFavoriteThemesSummaryUseCase;
 	protected GetMyMeetingLogsUseCase getMyMeetingLogsUseCase;
 	protected GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 	protected GetMyCrewsUseCase getMyCrewsUseCase;
@@ -81,6 +85,7 @@ abstract class AbstractUserApplicationServiceTest {
 		profileHubReadRepository = new InMemoryProfileHubReadRepository();
 		createdMeetingReadRepository = new InMemoryCreatedMeetingReadRepository();
 		calendarReadRepository = new InMemoryCalendarReadRepository();
+		favoriteThemeSummaryReadRepository = new InMemoryFavoriteThemeSummaryReadRepository();
 		myMeetingLogReadRepository = new InMemoryMyMeetingLogReadRepository();
 		joinedMeetingReadRepository = new InMemoryJoinedMeetingReadRepository();
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
@@ -98,6 +103,11 @@ abstract class AbstractUserApplicationServiceTest {
 			authUserRepository,
 			userRepository,
 			calendarReadRepository
+		);
+		getMyFavoriteThemesSummaryUseCase = new GetMyFavoriteThemesSummaryService(
+			authUserRepository,
+			userRepository,
+			favoriteThemeSummaryReadRepository
 		);
 		getMyMeetingLogsUseCase = new GetMyMeetingLogsService(
 			authUserRepository,
@@ -271,6 +281,20 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public View load(Long userId) {
 			return viewsByUserId.getOrDefault(userId, View.of(List.of(), 0));
+		}
+
+		void putView(Long userId, View view) {
+			viewsByUserId.put(userId, view);
+		}
+	}
+
+	protected static final class InMemoryFavoriteThemeSummaryReadRepository
+		implements com.bangpot.user.application.port.FavoriteThemeSummaryReadRepository {
+		private final Map<Long, View> viewsByUserId = new HashMap<>();
+
+		@Override
+		public View load(Long userId, int limit) {
+			return viewsByUserId.getOrDefault(userId, View.of(List.of(), 0L));
 		}
 
 		void putView(Long userId, View view) {

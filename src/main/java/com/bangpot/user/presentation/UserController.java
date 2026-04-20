@@ -21,6 +21,7 @@ import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCas
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
+import com.bangpot.user.application.usecase.GetMyFavoriteThemesSummaryUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
@@ -44,6 +45,7 @@ class UserController {
 	private final GetMyCalendarUseCase getMyCalendarUseCase;
 	private final GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	private final GetMyCrewsUseCase getMyCrewsUseCase;
+	private final GetMyFavoriteThemesSummaryUseCase getMyFavoriteThemesSummaryUseCase;
 	private final GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 	private final GetMyMeetingLogsUseCase getMyMeetingLogsUseCase;
 	private final GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
@@ -78,6 +80,14 @@ class UserController {
 	ResponseEntity<UserDto.CalendarResponse> calendar(Authentication authentication) {
 		GetMyCalendarUseCase.Result result = getMyCalendarUseCase.handle(
 			GetMyCalendarUseCase.Query.of(requireAuthenticatedUserId(authentication))
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/api/users/me/favorites/summary")
+	ResponseEntity<UserDto.FavoriteThemeSummaryResponse> favoriteThemesSummary(Authentication authentication) {
+		GetMyFavoriteThemesSummaryUseCase.Result result = getMyFavoriteThemesSummaryUseCase.handle(
+			GetMyFavoriteThemesSummaryUseCase.Query.of(requireAuthenticatedUserId(authentication))
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}

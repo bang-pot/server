@@ -70,6 +70,24 @@ final class UserDto {
 	) {
 	}
 
+	record FavoriteThemeSummaryItemResponse(
+		Long themeId,
+		String themeName,
+		String storeName,
+		String regionName,
+		String thumbnailUrl,
+		Integer favoriteCount,
+		boolean isFavorite
+	) {
+	}
+
+	record FavoriteThemeSummaryResponse(
+		List<FavoriteThemeSummaryItemResponse> items,
+		Long totalCount,
+		boolean hasMore
+	) {
+	}
+
 	record MyMeetingLogItemResponse(
 		Long logId,
 		Long crewId,
