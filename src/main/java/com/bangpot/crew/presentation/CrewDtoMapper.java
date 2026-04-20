@@ -1,7 +1,10 @@
 package com.bangpot.crew.presentation;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
+import com.bangpot.common.error.ApiErrorField;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
@@ -12,8 +15,10 @@ import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
+import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
+import com.bangpot.crew.application.exception.CrewScheduleRequestValidationException;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
@@ -100,6 +105,35 @@ final class CrewDtoMapper {
 				view.content()
 			))
 			.toList();
+	}
+
+	static GetCrewScheduleUseCase.Query toScheduleQuery(Long crewId, Long userId, String from, String to) {
+		LocalDate fromDate = parseDate("from", from);
+		LocalDate toDate = parseDate("to", to);
+		if (fromDate.isAfter(toDate)) {
+			throw new CrewScheduleRequestValidationException(
+				List.of(new ApiErrorField("to", "to must be on or after from."))
+			);
+		}
+		return GetCrewScheduleUseCase.Query.of(crewId, userId, fromDate.toString(), toDate.toString());
+	}
+
+	static CrewDto.CrewScheduleResponse toResponse(GetCrewScheduleUseCase.Result result) {
+		return new CrewDto.CrewScheduleResponse(
+			result.items().stream()
+				.map(item -> new CrewDto.CrewScheduleItemResponse(
+					item.meetingId(),
+					item.themeName(),
+					item.date(),
+					item.time(),
+					item.meetingStatus(),
+					item.recruitmentStatus(),
+					item.place(),
+					item.participantCount(),
+					item.isCanceled()
+				))
+				.toList()
+		);
 	}
 
 	static UpdateCrewVisibilityUseCase.Command toVisibilityCommand(
@@ -256,5 +290,15 @@ final class CrewDtoMapper {
 
 	static CrewDto.CreateCrewInviteResponse toResponse(CreateCrewInviteUseCase.Result result) {
 		return new CrewDto.CreateCrewInviteResponse(result.crewId(), result.targetUserId(), result.status());
+	}
+
+	private static LocalDate parseDate(String field, String value) {
+		try {
+			return LocalDate.parse(value);
+		} catch (DateTimeParseException exception) {
+			throw new CrewScheduleRequestValidationException(
+				List.of(new ApiErrorField(field, field + " must be a valid date in yyyy-MM-dd format."))
+			);
+		}
 	}
 }

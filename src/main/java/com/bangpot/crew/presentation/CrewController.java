@@ -22,6 +22,7 @@ import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
+import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
@@ -33,6 +34,7 @@ import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -49,6 +51,7 @@ class CrewController {
 	private final GetCrewHubUseCase getCrewHubUseCase;
 	private final GetCrewMembersUseCase getCrewMembersUseCase;
 	private final GetCrewPoliciesUseCase getCrewPoliciesUseCase;
+	private final GetCrewScheduleUseCase getCrewScheduleUseCase;
 	private final UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
 	private final LeaveCrewUseCase leaveCrewUseCase;
 	private final RemoveCrewMemberUseCase removeCrewMemberUseCase;
@@ -108,6 +111,20 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toPolicyResponses(
 			getCrewPoliciesUseCase.handle(
 				CrewDtoMapper.toPoliciesQuery(crewId, requireAuthenticatedUserId(authentication))
+			)
+		));
+	}
+
+	@GetMapping("/{crewId}/schedule")
+	ResponseEntity<CrewDto.CrewScheduleResponse> getCrewSchedule(
+		@PathVariable Long crewId,
+		@RequestParam("from") @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "from must use yyyy-MM-dd.") String from,
+		@RequestParam("to") @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "to must use yyyy-MM-dd.") String to,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			getCrewScheduleUseCase.handle(
+				CrewDtoMapper.toScheduleQuery(crewId, requireAuthenticatedUserId(authentication), from, to)
 			)
 		));
 	}
