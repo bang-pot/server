@@ -36,6 +36,7 @@ import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
+import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
@@ -84,6 +85,9 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
+
+	@MockitoBean
+	private SearchUsersUseCase searchUsersUseCase;
 
 	@MockitoBean
 	private WithdrawMyAccountUseCase withdrawMyAccountUseCase;
@@ -426,6 +430,37 @@ class UserControllerTest {
 	}
 
 	@Test
+	void returnsUserSearchResultsFromNewUserPath() throws Exception {
+		when(searchUsersUseCase.handle(SearchUsersUseCase.Query.of(77L, "pot", 20)))
+			.thenReturn(SearchUsersUseCase.Result.of(
+				List.of(
+					SearchUsersUseCase.Item.of(
+						101L,
+						"bangpot",
+						"https://cdn.example.com/users/101.jpg",
+						"escape lover",
+						"MALE",
+						0
+					)
+				)
+			));
+
+		mockMvc.perform(
+			get("/api/users/search")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("keyword", "pot")
+				.param("size", "20")
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].userId").value(101))
+			.andExpect(jsonPath("$.items[0].nickname").value("bangpot"))
+			.andExpect(jsonPath("$.items[0].profileImageUrl").value("https://cdn.example.com/users/101.jpg"))
+			.andExpect(jsonPath("$.items[0].bio").value("escape lover"))
+			.andExpect(jsonPath("$.items[0].gender").value("MALE"))
+			.andExpect(jsonPath("$.items[0].escapeCount").value(0));
+	}
+
+	@Test
 	void cancelsMyPendingCrewRequestFromNewUserPath() throws Exception {
 		when(cancelMyPendingCrewJoinRequestUseCase.handle(CancelMyPendingCrewJoinRequestUseCase.Command.of(77L, 101L)))
 			.thenReturn(CancelMyPendingCrewJoinRequestUseCase.Result.of(101L, 31L));
@@ -626,6 +661,15 @@ class UserControllerTest {
 	}
 
 	@Test
+	void returnsUnauthorizedWhenUserSearchRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/search").param("keyword", "pot"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
 	void returnsUnauthorizedWhenFavoritesRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/favorites"))
 			.andExpect(status().isUnauthorized())
@@ -692,6 +736,18 @@ class UserControllerTest {
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 				.param("page", "-1")
 				.param("size", "20")
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenUserSearchSizeExceedsMaximum() throws Exception {
+		mockMvc.perform(
+			get("/api/users/search")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("keyword", "pot")
+				.param("size", "51")
 		)
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));

@@ -16,6 +16,7 @@ import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
+import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.domain.WithdrawalReasonCode;
@@ -210,6 +211,21 @@ final class UserDtoMapper {
 				result.pageInfo().size(),
 				result.pageInfo().hasNext()
 			)
+		);
+	}
+
+	static UserDto.UserSearchResponse toResponse(SearchUsersUseCase.Result result) {
+		return new UserDto.UserSearchResponse(
+			result.items().stream()
+				.map(item -> new UserDto.UserSearchItemResponse(
+					item.userId(),
+					item.nickname(),
+					item.profileImageUrl(),
+					item.bio(),
+					item.gender(),
+					item.escapeCount()
+				))
+				.toList()
 		);
 	}
 

@@ -30,6 +30,7 @@ import com.bangpot.user.application.service.CancelMyPendingCrewJoinRequestServic
 import com.bangpot.user.application.service.GetMyPendingCrewsService;
 import com.bangpot.user.application.service.GetMyProfileService;
 import com.bangpot.user.application.service.GetMyWithdrawalCheckService;
+import com.bangpot.user.application.service.SearchUsersService;
 import com.bangpot.user.application.service.WithdrawMyAccountService;
 import com.bangpot.user.application.service.UpdateMyProfileService;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
@@ -44,6 +45,7 @@ import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
+import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.domain.UserWithdrawal;
@@ -65,6 +67,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
 	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
 	protected InMemoryWithdrawalCheckReadRepository withdrawalCheckReadRepository;
+	protected InMemoryUserSearchReadRepository userSearchReadRepository;
 	protected InMemoryUserWithdrawalRepository userWithdrawalRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	protected CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
@@ -78,6 +81,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected GetMyCrewsUseCase getMyCrewsUseCase;
 	protected GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
 	protected GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
+	protected SearchUsersUseCase searchUsersUseCase;
 	protected WithdrawMyAccountUseCase withdrawMyAccountUseCase;
 	protected UpdateMyProfileUseCase updateMyProfileUseCase;
 	protected CompletedUserAccessService completedUserAccessService;
@@ -96,6 +100,7 @@ abstract class AbstractUserApplicationServiceTest {
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
 		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
 		withdrawalCheckReadRepository = new InMemoryWithdrawalCheckReadRepository();
+		userSearchReadRepository = new InMemoryUserSearchReadRepository();
 		userWithdrawalRepository = new InMemoryUserWithdrawalRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
@@ -143,6 +148,11 @@ abstract class AbstractUserApplicationServiceTest {
 			authUserRepository,
 			userRepository,
 			withdrawalCheckReadRepository
+		);
+		searchUsersUseCase = new SearchUsersService(
+			authUserRepository,
+			userRepository,
+			userSearchReadRepository
 		);
 		withdrawMyAccountUseCase = new WithdrawMyAccountService(
 			authUserRepository,
@@ -411,6 +421,28 @@ abstract class AbstractUserApplicationServiceTest {
 
 		void putResult(Long userId, View view) {
 			resultsByUserId.put(userId, view);
+		}
+	}
+
+	protected static final class InMemoryUserSearchReadRepository
+		implements com.bangpot.user.application.port.UserSearchReadRepository {
+		private final Map<String, List<Item>> itemsByKeyword = new HashMap<>();
+		private int searchCount;
+
+		@Override
+		public List<Item> search(String keyword, int size) {
+			searchCount++;
+			return itemsByKeyword.getOrDefault(keyword, List.of()).stream()
+				.limit(size)
+				.toList();
+		}
+
+		void putResult(String keyword, List<Item> items) {
+			itemsByKeyword.put(keyword, items);
+		}
+
+		int getSearchCount() {
+			return searchCount;
 		}
 	}
 
