@@ -25,7 +25,9 @@ public interface GetExploreThemeDetailUseCase {
 		String genre,
 		String posterImageUrl,
 		Integer difficulty,
-		Integer runningTimeMinutes
+		Integer runningTimeMinutes,
+		Integer favoriteCount,
+		boolean isFavorite
 	) {
 		public static RelatedTheme of(
 			Long themeId,
@@ -36,7 +38,9 @@ public interface GetExploreThemeDetailUseCase {
 			String genre,
 			String posterImageUrl,
 			Integer difficulty,
-			Integer runningTimeMinutes
+			Integer runningTimeMinutes,
+			Integer favoriteCount,
+			boolean isFavorite
 		) {
 			return new RelatedTheme(
 				themeId,
@@ -47,7 +51,9 @@ public interface GetExploreThemeDetailUseCase {
 				genre,
 				posterImageUrl,
 				difficulty,
-				runningTimeMinutes
+				runningTimeMinutes,
+				favoriteCount,
+				isFavorite
 			);
 		}
 	}

@@ -95,7 +95,8 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		       t.genre as genre,
 		       t.posterImageUrl as posterImageUrl,
 		       t.difficulty as difficulty,
-		       t.runningTimeMinutes as runningTimeMinutes
+		       t.runningTimeMinutes as runningTimeMinutes,
+		       t.favoriteCount as favoriteCount
 		from Theme t, Store s
 		where s.id = t.storeId
 		  and t.active = true
@@ -193,6 +194,8 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		Integer getDifficulty();
 
 		Integer getRunningTimeMinutes();
+
+		Integer getFavoriteCount();
 	}
 
 	interface ThemePosterProjection {

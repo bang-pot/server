@@ -71,7 +71,7 @@ class GetHomeServiceTest {
 			List.of(
 				GetExploreThemesUseCase.Item.of(
 					101L, "Deep Blue", 501L, "Room Escape", "Seoul Mapo", "Mystery",
-					"https://cdn.example.com/theme.jpg", null, null, null, null, 0, false
+					"https://cdn.example.com/theme.jpg", null, null, null, null, 7, false
 				)
 			),
 			GetExploreThemesUseCase.PageInfo.of(0, 8, false)
@@ -88,6 +88,8 @@ class GetHomeServiceTest {
 		assertThat(result.upcomingMeetings().totalCount()).isZero();
 		assertThat(result.publicCrewPreview().items()).hasSize(1);
 		assertThat(result.themeExplorePreview().items()).hasSize(1);
+		assertThat(result.themeExplorePreview().items().getFirst().favoriteCount()).isEqualTo(7);
+		assertThat(result.themeExplorePreview().items().getFirst().isFavorite()).isFalse();
 	}
 
 	@Test
@@ -123,7 +125,7 @@ class GetHomeServiceTest {
 			List.of(
 				GetExploreThemesUseCase.Item.of(
 					101L, "Deep Blue", 501L, "Room Escape", "Seoul Mapo", "Mystery",
-					"https://cdn.example.com/theme.jpg", null, null, null, null, 0, false
+					"https://cdn.example.com/theme.jpg", null, null, null, null, 7, true
 				)
 			),
 			GetExploreThemesUseCase.PageInfo.of(0, 8, false)
@@ -141,6 +143,8 @@ class GetHomeServiceTest {
 			.containsExactly(101L);
 		assertThat(result.publicCrewPreview().items()).hasSize(1);
 		assertThat(result.themeExplorePreview().items()).hasSize(1);
+		assertThat(result.themeExplorePreview().items().getFirst().favoriteCount()).isEqualTo(7);
+		assertThat(result.themeExplorePreview().items().getFirst().isFavorite()).isTrue();
 	}
 
 	private AuthUser fullUser(Long id, String nickname) {

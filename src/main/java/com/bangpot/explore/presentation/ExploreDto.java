@@ -20,7 +20,7 @@ final class ExploreDto {
 		String recommendedPlayers,
 		Integer runningTimeMinutes,
 		Integer favoriteCount,
-		boolean isFavorited
+		boolean isFavorite
 	) {
 	}
 
@@ -46,7 +46,9 @@ final class ExploreDto {
 		String genre,
 		String posterImageUrl,
 		Integer difficulty,
-		Integer runningTimeMinutes
+		Integer runningTimeMinutes,
+		Integer favoriteCount,
+		boolean isFavorite
 	) {
 	}
 

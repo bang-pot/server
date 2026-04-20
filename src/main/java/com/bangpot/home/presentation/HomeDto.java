@@ -73,7 +73,9 @@ final class HomeDto {
 		String themeName,
 		String storeName,
 		String regionName,
-		String thumbnailUrl
+		String thumbnailUrl,
+		Integer favoriteCount,
+		boolean isFavorite
 	) {
 	}
 

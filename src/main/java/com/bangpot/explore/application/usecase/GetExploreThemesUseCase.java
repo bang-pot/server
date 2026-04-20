@@ -52,7 +52,7 @@ public interface GetExploreThemesUseCase {
 		String recommendedPlayers,
 		Integer runningTimeMinutes,
 		Integer favoriteCount,
-		boolean isFavorited
+		boolean isFavorite
 	) {
 		public static Item of(
 			Long themeId,
@@ -67,7 +67,7 @@ public interface GetExploreThemesUseCase {
 			String recommendedPlayers,
 			Integer runningTimeMinutes,
 			Integer favoriteCount,
-			boolean isFavorited
+			boolean isFavorite
 		) {
 			return new Item(
 				themeId,
@@ -82,7 +82,7 @@ public interface GetExploreThemesUseCase {
 				recommendedPlayers,
 				runningTimeMinutes,
 				favoriteCount,
-				isFavorited
+				isFavorite
 			);
 		}
 	}

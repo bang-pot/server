@@ -1,5 +1,8 @@
 package com.bangpot.explore.application.service;
 
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +25,16 @@ public class GetExploreThemeDetailService implements GetExploreThemeDetailUseCas
 	public Result handle(Query query) {
 		ExploreThemeReadRepository.ThemeDetail detail = exploreThemeReadRepository.getThemeDetail(query.themeId())
 			.orElseThrow(() -> new ExploreThemeNotFoundException(query.themeId()));
-		boolean isFavorite = query.userId() != null && themeFavoriteRepository.exists(query.userId(), query.themeId());
+		List<Long> favoriteTargetThemeIds = query.userId() == null
+			? List.of()
+			: java.util.stream.Stream.concat(
+				java.util.stream.Stream.of(detail.themeId()),
+				detail.relatedThemes().stream().map(ExploreThemeReadRepository.RelatedThemeSummary::themeId)
+			).toList();
+		Set<Long> favoritedThemeIds = query.userId() == null
+			? Set.of()
+			: themeFavoriteRepository.findFavoritedThemeIds(query.userId(), favoriteTargetThemeIds);
+		boolean isFavorite = favoritedThemeIds.contains(query.themeId());
 
 		return Result.of(
 			detail.themeId(),
@@ -47,7 +59,9 @@ public class GetExploreThemeDetailService implements GetExploreThemeDetailUseCas
 					relatedTheme.genre(),
 					relatedTheme.posterImageUrl(),
 					relatedTheme.difficulty(),
-					relatedTheme.runningTimeMinutes()
+					relatedTheme.runningTimeMinutes(),
+					relatedTheme.favoriteCount(),
+					favoritedThemeIds.contains(relatedTheme.themeId())
 				))
 				.toList()
 		);
