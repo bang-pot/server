@@ -21,6 +21,7 @@ import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCas
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
+import com.bangpot.user.application.usecase.GetMyFavoriteThemesUseCase;
 import com.bangpot.user.application.usecase.GetMyFavoriteThemesSummaryUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
@@ -45,6 +46,7 @@ class UserController {
 	private final GetMyCalendarUseCase getMyCalendarUseCase;
 	private final GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	private final GetMyCrewsUseCase getMyCrewsUseCase;
+	private final GetMyFavoriteThemesUseCase getMyFavoriteThemesUseCase;
 	private final GetMyFavoriteThemesSummaryUseCase getMyFavoriteThemesSummaryUseCase;
 	private final GetMyJoinedMeetingsUseCase getMyJoinedMeetingsUseCase;
 	private final GetMyMeetingLogsUseCase getMyMeetingLogsUseCase;
@@ -88,6 +90,19 @@ class UserController {
 	ResponseEntity<UserDto.FavoriteThemeSummaryResponse> favoriteThemesSummary(Authentication authentication) {
 		GetMyFavoriteThemesSummaryUseCase.Result result = getMyFavoriteThemesSummaryUseCase.handle(
 			GetMyFavoriteThemesSummaryUseCase.Query.of(requireAuthenticatedUserId(authentication))
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/api/users/me/favorites")
+	ResponseEntity<UserDto.FavoriteThemesResponse> favoriteThemes(
+		Authentication authentication,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
+	) {
+		GetMyFavoriteThemesUseCase.Result result = getMyFavoriteThemesUseCase.handle(
+			GetMyFavoriteThemesUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}
