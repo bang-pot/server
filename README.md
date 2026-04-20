@@ -296,6 +296,32 @@ Backend API는 성공 응답을 별도 envelope로 감싸지 않고 resource JSO
   - `AUTH_USER_NOT_FOUND`
   - `AUTH_COMPLETION_NOT_ALLOWED`
 
+## User search
+
+- `GET /api/users/search` is the login-required common member search endpoint.
+- Query params:
+  - `keyword` required
+  - `size` optional, default `20`, max `50`
+- Response shape:
+  - `items[]`
+    - `userId`
+    - `nickname`
+    - `profileImageUrl`
+    - `bio`
+    - `gender`
+    - `escapeCount`
+- Search rule:
+  - nickname-based partial match
+  - blank or whitespace-only keyword returns `200 OK` with `items=[]`
+  - ordered by `nickname asc`, then `userId asc`
+- Inclusion rule:
+  - only current valid members
+  - implemented as `AuthUserStatus.FULL` plus `users.withdrawn_at is null`
+  - withdrawn users and temp/incomplete users are excluded
+- Profile field note:
+  - `profileImageUrl`, `bio`, and `gender` reuse the current `users` table fields
+  - `escapeCount` is currently returned as safe default `0` because that profile field is not yet connected to a persisted backend source of truth
+
 ## Verification commands
 
 ```powershell

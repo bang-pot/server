@@ -28,6 +28,7 @@ import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
+import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 
@@ -53,6 +54,7 @@ class UserController {
 	private final GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
 	private final GetMyProfileUseCase getMyProfileUseCase;
 	private final GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
+	private final SearchUsersUseCase searchUsersUseCase;
 	private final UpdateMyProfileUseCase updateMyProfileUseCase;
 	private final WithdrawMyAccountUseCase withdrawMyAccountUseCase;
 	private final AuthCookieFactory authCookieFactory;
@@ -163,6 +165,19 @@ class UserController {
 	ResponseEntity<UserDto.WithdrawalCheckResponse> withdrawalCheck(Authentication authentication) {
 		GetMyWithdrawalCheckUseCase.Result result = getMyWithdrawalCheckUseCase.handle(
 			GetMyWithdrawalCheckUseCase.Query.of(requireAuthenticatedUserId(authentication))
+		);
+		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+	}
+
+	@GetMapping("/api/users/search")
+	ResponseEntity<UserDto.UserSearchResponse> searchUsers(
+		Authentication authentication,
+		@RequestParam("keyword") String keyword,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size must be at least 1")
+		@Max(value = 50, message = "size must be at most 50") int size
+	) {
+		SearchUsersUseCase.Result result = searchUsersUseCase.handle(
+			SearchUsersUseCase.Query.of(requireAuthenticatedUserId(authentication), keyword, size)
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}

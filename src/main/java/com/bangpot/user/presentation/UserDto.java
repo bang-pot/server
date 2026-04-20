@@ -210,6 +210,21 @@ final class UserDto {
 	) {
 	}
 
+	record UserSearchItemResponse(
+		Long userId,
+		String nickname,
+		String profileImageUrl,
+		String bio,
+		String gender,
+		int escapeCount
+	) {
+	}
+
+	record UserSearchResponse(
+		List<UserSearchItemResponse> items
+	) {
+	}
+
 	record CancelPendingCrewJoinRequestResponse(
 		Long joinRequestId,
 		Long crewId
