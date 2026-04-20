@@ -162,7 +162,8 @@ class JpaExploreThemeReadRepository implements ExploreThemeReadRepository {
 			row.getGenre(),
 			row.getPosterImageUrl(),
 			row.getDifficulty(),
-			row.getRunningTimeMinutes()
+			row.getRunningTimeMinutes(),
+			row.getFavoriteCount()
 		);
 	}
 

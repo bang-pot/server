@@ -114,9 +114,9 @@ class ExploreThemeSearchServiceTest {
 			GetExploreThemesUseCase.Query.of(7L, null, List.of(), null, null, 0, 20)
 		);
 
-		assertThat(guestResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorited)
+		assertThat(guestResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorite)
 			.containsExactly(false, false);
-		assertThat(userResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorited)
+		assertThat(userResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorite)
 			.containsExactly(false, true);
 	}
 

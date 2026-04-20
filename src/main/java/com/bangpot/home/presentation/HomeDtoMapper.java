@@ -52,7 +52,9 @@ final class HomeDtoMapper {
 						item.themeName(),
 						item.storeName(),
 						item.regionName(),
-						item.thumbnailUrl()
+						item.thumbnailUrl(),
+						item.favoriteCount(),
+						item.isFavorite()
 					))
 					.toList()
 			)

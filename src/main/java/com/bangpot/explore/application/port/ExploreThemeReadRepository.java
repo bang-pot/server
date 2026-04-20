@@ -58,7 +58,8 @@ public interface ExploreThemeReadRepository {
 		String genre,
 		String posterImageUrl,
 		Integer difficulty,
-		Integer runningTimeMinutes
+		Integer runningTimeMinutes,
+		Integer favoriteCount
 	) {
 		public static RelatedThemeSummary of(
 			Long themeId,
@@ -69,7 +70,8 @@ public interface ExploreThemeReadRepository {
 			String genre,
 			String posterImageUrl,
 			Integer difficulty,
-			Integer runningTimeMinutes
+			Integer runningTimeMinutes,
+			Integer favoriteCount
 		) {
 			return new RelatedThemeSummary(
 				themeId,
@@ -80,7 +82,8 @@ public interface ExploreThemeReadRepository {
 				genre,
 				posterImageUrl,
 				difficulty,
-				runningTimeMinutes
+				runningTimeMinutes,
+				favoriteCount
 			);
 		}
 	}

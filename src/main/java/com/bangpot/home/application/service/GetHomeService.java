@@ -48,7 +48,7 @@ public class GetHomeService implements GetHomeUseCase {
 			loadMyCrewsSection(query.userId(), isLoggedIn),
 			loadUpcomingMeetingsSection(query.userId(), isLoggedIn),
 			loadPublicCrewPreviewSection(),
-			loadThemeExplorePreviewSection()
+			loadThemeExplorePreviewSection(query.userId(), isLoggedIn)
 		);
 	}
 
@@ -122,9 +122,17 @@ public class GetHomeService implements GetHomeUseCase {
 		);
 	}
 
-	private ThemeExplorePreviewSection loadThemeExplorePreviewSection() {
+	private ThemeExplorePreviewSection loadThemeExplorePreviewSection(Long userId, boolean isLoggedIn) {
 		GetExploreThemesUseCase.Result result = getExploreThemesUseCase.handle(
-			GetExploreThemesUseCase.Query.of(null, null, null, null, 0, THEME_PREVIEW_LIMIT)
+			GetExploreThemesUseCase.Query.of(
+				isLoggedIn ? userId : null,
+				null,
+				null,
+				null,
+				null,
+				0,
+				THEME_PREVIEW_LIMIT
+			)
 		);
 
 		return ThemeExplorePreviewSection.of(
@@ -134,7 +142,9 @@ public class GetHomeService implements GetHomeUseCase {
 					item.themeName(),
 					item.storeName(),
 					item.regionLabel(),
-					item.posterImageUrl()
+					item.posterImageUrl(),
+					item.favoriteCount(),
+					item.isFavorite()
 				))
 				.toList()
 		);

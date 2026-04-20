@@ -102,7 +102,7 @@ class ExploreControllerTest {
 			.andExpect(jsonPath("$.items[0].storeName").value("Seoul Escape Hongdae"))
 			.andExpect(jsonPath("$.items[0].genre").value("HORROR"))
 			.andExpect(jsonPath("$.items[0].favoriteCount").value(0))
-			.andExpect(jsonPath("$.items[0].isFavorited").value(false))
+			.andExpect(jsonPath("$.items[0].isFavorite").value(false))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
@@ -161,7 +161,9 @@ class ExploreControllerTest {
 						"COMEDY",
 						null,
 						2,
-						50
+						50,
+						4,
+						false
 					)
 				)
 			));
@@ -175,7 +177,9 @@ class ExploreControllerTest {
 			.andExpect(jsonPath("$.externalLink").value("https://example.com/deep-blue"))
 			.andExpect(jsonPath("$.isFavorite").value(false))
 			.andExpect(jsonPath("$.relatedThemes[0].themeId").value(1))
-			.andExpect(jsonPath("$.relatedThemes[0].themeName").value("Laugh Track"));
+			.andExpect(jsonPath("$.relatedThemes[0].themeName").value("Laugh Track"))
+			.andExpect(jsonPath("$.relatedThemes[0].favoriteCount").value(4))
+			.andExpect(jsonPath("$.relatedThemes[0].isFavorite").value(false));
 	}
 
 	@Test
@@ -230,7 +234,7 @@ class ExploreControllerTest {
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.items[0].isFavorited").value(true));
+			.andExpect(jsonPath("$.items[0].isFavorite").value(true));
 
 		mockMvc.perform(
 			get("/api/explore/themes/5")

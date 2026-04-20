@@ -98,7 +98,7 @@ final class ExploreDtoMapper {
 			item.recommendedPlayers(),
 			item.runningTimeMinutes(),
 			item.favoriteCount(),
-			item.isFavorited()
+			item.isFavorite()
 		);
 	}
 
@@ -114,7 +114,9 @@ final class ExploreDtoMapper {
 			item.genre(),
 			item.posterImageUrl(),
 			item.difficulty(),
-			item.runningTimeMinutes()
+			item.runningTimeMinutes(),
+			item.favoriteCount(),
+			item.isFavorite()
 		);
 	}
 }

@@ -50,7 +50,9 @@ class HomeControllerTest {
 						"Deep Blue",
 						"Room Escape",
 						"Seoul Mapo",
-						"https://cdn.example.com/theme.jpg"
+						"https://cdn.example.com/theme.jpg",
+						7,
+						false
 					))
 				)
 			));
@@ -67,7 +69,9 @@ class HomeControllerTest {
 			.andExpect(jsonPath("$.upcomingMeetings.items").isEmpty())
 			.andExpect(jsonPath("$.upcomingMeetings.totalCount").value(0))
 			.andExpect(jsonPath("$.publicCrewPreview.items[0].crewId").value(31))
-			.andExpect(jsonPath("$.themeExplorePreview.items[0].themeId").value(101));
+			.andExpect(jsonPath("$.themeExplorePreview.items[0].themeId").value(101))
+			.andExpect(jsonPath("$.themeExplorePreview.items[0].favoriteCount").value(7))
+			.andExpect(jsonPath("$.themeExplorePreview.items[0].isFavorite").value(false));
 	}
 
 	@Test

@@ -125,16 +125,20 @@ public interface GetHomeUseCase {
 		String themeName,
 		String storeName,
 		String regionName,
-		String thumbnailUrl
+		String thumbnailUrl,
+		Integer favoriteCount,
+		boolean isFavorite
 	) {
 		public static ThemeExplorePreviewItem of(
 			Long themeId,
 			String themeName,
 			String storeName,
 			String regionName,
-			String thumbnailUrl
+			String thumbnailUrl,
+			Integer favoriteCount,
+			boolean isFavorite
 		) {
-			return new ThemeExplorePreviewItem(themeId, themeName, storeName, regionName, thumbnailUrl);
+			return new ThemeExplorePreviewItem(themeId, themeName, storeName, regionName, thumbnailUrl, favoriteCount, isFavorite);
 		}
 	}
 }

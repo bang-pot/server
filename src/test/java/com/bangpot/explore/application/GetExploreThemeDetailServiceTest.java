@@ -56,7 +56,8 @@ class GetExploreThemeDetailServiceTest {
 					"COMEDY",
 					null,
 					2,
-					50
+					50,
+					4
 				),
 				ExploreThemeReadRepository.RelatedThemeSummary.of(
 					3L,
@@ -67,12 +68,14 @@ class GetExploreThemeDetailServiceTest {
 					"THRILLER",
 					null,
 					3,
-					75
+					75,
+					1
 				)
 			)
 		);
 
 		themeFavoriteRepository.favorite(7L, 5L);
+		themeFavoriteRepository.favorite(7L, 1L);
 
 		GetExploreThemeDetailUseCase.Result result = useCase.handle(GetExploreThemeDetailUseCase.Query.of(7L, 5L));
 
@@ -83,6 +86,12 @@ class GetExploreThemeDetailServiceTest {
 		assertThat(result.relatedThemes())
 			.extracting(GetExploreThemeDetailUseCase.RelatedTheme::themeName)
 			.containsExactly("Laugh Track", "Time Attack");
+		assertThat(result.relatedThemes())
+			.extracting(GetExploreThemeDetailUseCase.RelatedTheme::favoriteCount)
+			.containsExactly(4, 1);
+		assertThat(result.relatedThemes())
+			.extracting(GetExploreThemeDetailUseCase.RelatedTheme::isFavorite)
+			.containsExactly(true, false);
 	}
 
 	@Test
