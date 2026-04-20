@@ -6,14 +6,14 @@ import com.bangpot.common.error.ApiErrorCode;
 
 public enum AuthErrorCode implements ApiErrorCode {
 
-	AUTH_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "?몄쬆???꾩슂?⑸땲??"),
-	AUTH_ACCESS_DENIED(HttpStatus.FORBIDDEN, "?묎렐 沅뚰븳???놁뒿?덈떎."),
-	AUTH_INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "?됰꽕?꾩씠 ?щ컮瑜댁? ?딆뒿?덈떎."),
-	AUTH_REQUIRED_TERMS_AGREEMENT(HttpStatus.BAD_REQUEST, "?꾩닔 ?쎄? ?숈쓽媛 ?꾩슂?⑸땲??"),
-	AUTH_DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "?대? ?ъ슜 以묒씤 ?됰꽕?꾩엯?덈떎."),
-	AUTH_USER_NOT_FOUND(HttpStatus.CONFLICT, "?몄쬆 ?ъ슜?먮? 李얠쓣 ???놁뒿?덈떎."),
-	AUTH_COMPLETION_NOT_ALLOWED(HttpStatus.CONFLICT, "?대? 媛???꾨즺???ъ슜?먯엯?덈떎."),
-	AUTH_WITHDRAWAL_NOT_ALLOWED(HttpStatus.CONFLICT, "withdrawal is not allowed right now");
+	AUTH_UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+	AUTH_ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+	AUTH_INVALID_NICKNAME(HttpStatus.BAD_REQUEST, "유효하지 않은 닉네임입니다."),
+	AUTH_REQUIRED_TERMS_AGREEMENT(HttpStatus.BAD_REQUEST, "필수 약관 동의가 필요합니다."),
+	AUTH_DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
+	AUTH_USER_NOT_FOUND(HttpStatus.CONFLICT, "사용자를 찾을 수 없습니다."),
+	AUTH_COMPLETION_NOT_ALLOWED(HttpStatus.CONFLICT, "프로필 완료를 진행할 수 없습니다."),
+	AUTH_WITHDRAWAL_NOT_ALLOWED(HttpStatus.CONFLICT, "지금은 회원탈퇴를 진행할 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String message;
