@@ -9,6 +9,7 @@ import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCas
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
+import com.bangpot.user.application.usecase.GetMyFavoriteThemesUseCase;
 import com.bangpot.user.application.usecase.GetMyFavoriteThemesSummaryUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
@@ -102,6 +103,27 @@ final class UserDtoMapper {
 				.toList(),
 			result.totalCount(),
 			result.hasMore()
+		);
+	}
+
+	static UserDto.FavoriteThemesResponse toResponse(GetMyFavoriteThemesUseCase.Result result) {
+		return new UserDto.FavoriteThemesResponse(
+			result.items().stream()
+				.map(item -> new UserDto.FavoriteThemeItemResponse(
+					item.themeId(),
+					item.themeName(),
+					item.storeName(),
+					item.regionName(),
+					item.thumbnailUrl(),
+					item.favoriteCount(),
+					item.isFavorite()
+				))
+				.toList(),
+			new UserDto.FavoriteThemesPageInfo(
+				result.pageInfo().page(),
+				result.pageInfo().size(),
+				result.pageInfo().hasNext()
+			)
 		);
 	}
 

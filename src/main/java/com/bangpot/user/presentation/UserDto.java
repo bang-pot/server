@@ -88,6 +88,30 @@ final class UserDto {
 	) {
 	}
 
+	record FavoriteThemeItemResponse(
+		Long themeId,
+		String themeName,
+		String storeName,
+		String regionName,
+		String thumbnailUrl,
+		Integer favoriteCount,
+		boolean isFavorite
+	) {
+	}
+
+	record FavoriteThemesPageInfo(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
+	record FavoriteThemesResponse(
+		List<FavoriteThemeItemResponse> items,
+		FavoriteThemesPageInfo pageInfo
+	) {
+	}
+
 	record MyMeetingLogItemResponse(
 		Long logId,
 		Long crewId,
