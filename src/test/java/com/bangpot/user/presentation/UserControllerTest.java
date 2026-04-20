@@ -29,6 +29,7 @@ import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
+import com.bangpot.user.application.usecase.GetMyFavoriteThemesSummaryUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
@@ -58,6 +59,9 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyCalendarUseCase getMyCalendarUseCase;
+
+	@MockitoBean
+	private GetMyFavoriteThemesSummaryUseCase getMyFavoriteThemesSummaryUseCase;
 
 	@MockitoBean
 	private GetMyMeetingLogsUseCase getMyMeetingLogsUseCase;
@@ -191,6 +195,41 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[1].isCanceled").value(true))
 			.andExpect(jsonPath("$.items[1].participationRole").value("PARTICIPANT"))
 			.andExpect(jsonPath("$.totalCount").value(2));
+	}
+
+	@Test
+	void returnsMyFavoriteThemesSummaryFromNewUserPath() throws Exception {
+		when(getMyFavoriteThemesSummaryUseCase.handle(GetMyFavoriteThemesSummaryUseCase.Query.of(77L)))
+			.thenReturn(GetMyFavoriteThemesSummaryUseCase.Result.of(
+				List.of(
+					GetMyFavoriteThemesSummaryUseCase.Item.of(
+						901L,
+						"Deep Blue",
+						"Seoul Escape",
+						"서울",
+						"https://cdn.example.com/theme-901.jpg",
+						12,
+						true
+					)
+				),
+				6L,
+				true
+			));
+
+		mockMvc.perform(
+			get("/api/users/me/favorites/summary")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].themeId").value(901))
+			.andExpect(jsonPath("$.items[0].themeName").value("Deep Blue"))
+			.andExpect(jsonPath("$.items[0].storeName").value("Seoul Escape"))
+			.andExpect(jsonPath("$.items[0].regionName").value("서울"))
+			.andExpect(jsonPath("$.items[0].thumbnailUrl").value("https://cdn.example.com/theme-901.jpg"))
+			.andExpect(jsonPath("$.items[0].favoriteCount").value(12))
+			.andExpect(jsonPath("$.items[0].isFavorite").value(true))
+			.andExpect(jsonPath("$.totalCount").value(6))
+			.andExpect(jsonPath("$.hasMore").value(true));
 	}
 
 	@Test
@@ -530,6 +569,15 @@ class UserControllerTest {
 	@Test
 	void returnsUnauthorizedWhenMeetingLogsRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/users/me/logs"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void returnsUnauthorizedWhenFavoriteSummaryRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(get("/api/users/me/favorites/summary"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
 			.andExpect(jsonPath("$.fieldErrors").isArray())
