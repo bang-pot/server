@@ -6,9 +6,13 @@ public interface GetExploreThemeDetailUseCase {
 
 	Result handle(Query query);
 
-	record Query(Long themeId) {
+	record Query(Long userId, Long themeId) {
+		public static Query of(Long userId, Long themeId) {
+			return new Query(userId, themeId);
+		}
+
 		public static Query of(Long themeId) {
-			return new Query(themeId);
+			return of(null, themeId);
 		}
 	}
 
@@ -60,6 +64,7 @@ public interface GetExploreThemeDetailUseCase {
 		Integer runningTimeMinutes,
 		String description,
 		String externalLink,
+		boolean isFavorite,
 		List<RelatedTheme> relatedThemes
 	) {
 		public static Result of(
@@ -74,6 +79,7 @@ public interface GetExploreThemeDetailUseCase {
 			Integer runningTimeMinutes,
 			String description,
 			String externalLink,
+			boolean isFavorite,
 			List<RelatedTheme> relatedThemes
 		) {
 			return new Result(
@@ -88,6 +94,38 @@ public interface GetExploreThemeDetailUseCase {
 				runningTimeMinutes,
 				description,
 				externalLink,
+				isFavorite,
+				relatedThemes
+			);
+		}
+
+		public static Result of(
+			Long themeId,
+			String themeName,
+			Long storeId,
+			String storeName,
+			String regionLabel,
+			String genre,
+			String posterImageUrl,
+			Integer difficulty,
+			Integer runningTimeMinutes,
+			String description,
+			String externalLink,
+			List<RelatedTheme> relatedThemes
+		) {
+			return of(
+				themeId,
+				themeName,
+				storeId,
+				storeName,
+				regionLabel,
+				genre,
+				posterImageUrl,
+				difficulty,
+				runningTimeMinutes,
+				description,
+				externalLink,
+				false,
 				relatedThemes
 			);
 		}

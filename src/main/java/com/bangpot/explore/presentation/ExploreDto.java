@@ -62,7 +62,15 @@ final class ExploreDto {
 		Integer runningTimeMinutes,
 		String description,
 		String externalLink,
+		boolean isFavorite,
 		List<ExploreThemeDetailRelatedThemeResponse> relatedThemes
+	) {
+	}
+
+	record ThemeFavoriteResponse(
+		Long themeId,
+		boolean isFavorite,
+		int favoriteCount
 	) {
 	}
 

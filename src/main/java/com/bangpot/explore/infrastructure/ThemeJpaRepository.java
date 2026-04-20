@@ -13,6 +13,8 @@ import com.bangpot.explore.domain.Theme;
 
 interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 
+	Optional<Theme> findByIdAndActiveTrue(Long themeId);
+
 	@Query("""
 		select t.id as themeId,
 		       t.name as themeName,

@@ -1,7 +1,9 @@
 package com.bangpot.explore.presentation;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -24,10 +26,12 @@ import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreMeetingCreateCrewsUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.application.usecase.AddThemeFavoriteUseCase;
+import com.bangpot.explore.application.usecase.RemoveThemeFavoriteUseCase;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
-@WebMvcTest(controllers = ExploreController.class)
+@WebMvcTest(controllers = {ExploreController.class, ThemeFavoriteController.class})
 @Import({GlobalApiExceptionHandler.class, ApiErrorResponseFactory.class})
 class ExploreControllerTest {
 
@@ -46,9 +50,16 @@ class ExploreControllerTest {
 	@MockitoBean
 	private GetExploreMeetingCreateCrewsUseCase getExploreMeetingCreateCrewsUseCase;
 
+	@MockitoBean
+	private AddThemeFavoriteUseCase addThemeFavoriteUseCase;
+
+	@MockitoBean
+	private RemoveThemeFavoriteUseCase removeThemeFavoriteUseCase;
+
 	@Test
 	void returnsExploreThemeCardsWithoutAuthentication() throws Exception {
 		when(getExploreThemesUseCase.handle(GetExploreThemesUseCase.Query.of(
+			null,
 			"deep",
 			List.of("HORROR"),
 			"Seoul",
@@ -126,7 +137,7 @@ class ExploreControllerTest {
 
 	@Test
 	void returnsThemeDetailWithoutAuthentication() throws Exception {
-		when(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(5L)))
+		when(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(null, 5L)))
 			.thenReturn(GetExploreThemeDetailUseCase.Result.of(
 				5L,
 				"Deep Blue",
@@ -139,6 +150,7 @@ class ExploreControllerTest {
 				60,
 				"Deep sea mystery theme",
 				"https://example.com/deep-blue",
+				false,
 				List.of(
 					GetExploreThemeDetailUseCase.RelatedTheme.of(
 						1L,
@@ -161,13 +173,76 @@ class ExploreControllerTest {
 			.andExpect(jsonPath("$.storeName").value("Seoul Escape Hongdae"))
 			.andExpect(jsonPath("$.description").value("Deep sea mystery theme"))
 			.andExpect(jsonPath("$.externalLink").value("https://example.com/deep-blue"))
+			.andExpect(jsonPath("$.isFavorite").value(false))
 			.andExpect(jsonPath("$.relatedThemes[0].themeId").value(1))
 			.andExpect(jsonPath("$.relatedThemes[0].themeName").value("Laugh Track"));
 	}
 
 	@Test
+	void returnsFavoritedStateWhenAuthenticated() throws Exception {
+		when(getExploreThemesUseCase.handle(GetExploreThemesUseCase.Query.of(
+			7L,
+			null,
+			null,
+			null,
+			null,
+			0,
+			20
+		))).thenReturn(GetExploreThemesUseCase.Result.of(
+			List.of(
+				GetExploreThemesUseCase.Item.of(
+					1L,
+					"Deep Blue",
+					101L,
+					"Seoul Escape Hongdae",
+					"Seoul Mapo",
+					"HORROR",
+					"https://image.example/deep-blue.jpg",
+					4,
+					"ACTIVE",
+					"2-4 players",
+					60,
+					3,
+					true
+				)
+			),
+			GetExploreThemesUseCase.PageInfo.of(0, 20, false)
+		));
+		when(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(7L, 5L)))
+			.thenReturn(GetExploreThemeDetailUseCase.Result.of(
+				5L,
+				"Deep Blue",
+				1L,
+				"Seoul Escape Hongdae",
+				"Seoul Mapo",
+				"HORROR",
+				"https://image.example/deep-blue.jpg",
+				4,
+				60,
+				"Deep sea mystery theme",
+				"https://example.com/deep-blue",
+				true,
+				List.of()
+			));
+
+		mockMvc.perform(
+			get("/api/explore/themes")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.items[0].isFavorited").value(true));
+
+		mockMvc.perform(
+			get("/api/explore/themes/5")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.isFavorite").value(true));
+	}
+
+	@Test
 	void returnsThemeNotFoundWhenThemeDoesNotExist() throws Exception {
-		when(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(999L)))
+		when(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(null, 999L)))
 			.thenThrow(new ExploreThemeNotFoundException(999L));
 
 		mockMvc.perform(get("/api/explore/themes/999"))
@@ -198,6 +273,50 @@ class ExploreControllerTest {
 	@Test
 	void returnsUnauthorizedWhenMeetingCreateCrewsIsUnauthenticated() throws Exception {
 		mockMvc.perform(get("/api/explore/meeting-create/crews"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void favoritesThemeWhenAuthenticated() throws Exception {
+		when(addThemeFavoriteUseCase.handle(AddThemeFavoriteUseCase.Command.of(7L, 5L)))
+			.thenReturn(AddThemeFavoriteUseCase.Result.of(5L, true, 3));
+
+		mockMvc.perform(
+			post("/api/themes/5/favorite")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.themeId").value(5))
+			.andExpect(jsonPath("$.isFavorite").value(true))
+			.andExpect(jsonPath("$.favoriteCount").value(3));
+	}
+
+	@Test
+	void unfavoritesThemeWhenAuthenticated() throws Exception {
+		when(removeThemeFavoriteUseCase.handle(RemoveThemeFavoriteUseCase.Command.of(7L, 5L)))
+			.thenReturn(RemoveThemeFavoriteUseCase.Result.of(5L, false, 2));
+
+		mockMvc.perform(
+			delete("/api/themes/5/favorite")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.themeId").value(5))
+			.andExpect(jsonPath("$.isFavorite").value(false))
+			.andExpect(jsonPath("$.favoriteCount").value(2));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenFavoriteIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(post("/api/themes/5/favorite"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenFavoriteDeleteIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(delete("/api/themes/5/favorite"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

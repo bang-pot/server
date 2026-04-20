@@ -5,14 +5,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.service.GetExploreFiltersService;
 import com.bangpot.explore.application.service.GetExploreThemesService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
@@ -21,13 +24,15 @@ import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 class ExploreThemeSearchServiceTest {
 
 	private InMemoryExploreThemeReadRepository repository;
+	private InMemoryThemeFavoriteRepository themeFavoriteRepository;
 	private GetExploreThemesUseCase getExploreThemesUseCase;
 	private GetExploreFiltersUseCase getExploreFiltersUseCase;
 
 	@BeforeEach
 	void setUp() {
 		repository = new InMemoryExploreThemeReadRepository();
-		getExploreThemesUseCase = new GetExploreThemesService(repository);
+		themeFavoriteRepository = new InMemoryThemeFavoriteRepository();
+		getExploreThemesUseCase = new GetExploreThemesService(repository, themeFavoriteRepository);
 		getExploreFiltersUseCase = new GetExploreFiltersService(repository);
 	}
 
@@ -88,6 +93,31 @@ class ExploreThemeSearchServiceTest {
 		assertThat(secondPage.items())
 			.extracting(GetExploreThemesUseCase.Item::genre)
 			.containsOnly("HORROR");
+	}
+
+	@Test
+	void marksFavoritedThemesForAuthenticatedUserOnly() {
+		repository.append(
+			1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam",
+			"HORROR", null, 4, "HIGH", "2-4 players", 60, 3
+		);
+		repository.append(
+			2L, 101L, "Laugh Track", "Store A", "Seoul", "Gangnam",
+			"COMEDY", null, 2, "LOW", "2-4 players", 50, 1
+		);
+		themeFavoriteRepository.favorite(7L, 1L);
+
+		GetExploreThemesUseCase.Result guestResult = getExploreThemesUseCase.handle(
+			GetExploreThemesUseCase.Query.of(null, null, List.of(), null, null, 0, 20)
+		);
+		GetExploreThemesUseCase.Result userResult = getExploreThemesUseCase.handle(
+			GetExploreThemesUseCase.Query.of(7L, null, List.of(), null, null, 0, 20)
+		);
+
+		assertThat(guestResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorited)
+			.containsExactly(false, false);
+		assertThat(userResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorited)
+			.containsExactly(false, true);
 	}
 
 	@Test
@@ -256,6 +286,37 @@ class ExploreThemeSearchServiceTest {
 			Integer runningTimeMinutes,
 			Integer favoriteCount
 		) {
+		}
+	}
+
+	private static final class InMemoryThemeFavoriteRepository implements ThemeFavoriteRepository {
+		private final Map<Long, Set<Long>> favoriteThemeIdsByUserId = new HashMap<>();
+
+		@Override
+		public boolean create(Long userId, Long themeId, java.time.Instant createdAt) {
+			return favoriteThemeIdsByUserId.computeIfAbsent(userId, ignored -> new HashSet<>()).add(themeId);
+		}
+
+		@Override
+		public boolean delete(Long userId, Long themeId) {
+			return favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).remove(themeId);
+		}
+
+		@Override
+		public boolean exists(Long userId, Long themeId) {
+			return favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).contains(themeId);
+		}
+
+		@Override
+		public Set<Long> findFavoritedThemeIds(Long userId, List<Long> themeIds) {
+			Set<Long> favorites = favoriteThemeIdsByUserId.getOrDefault(userId, Set.of());
+			return themeIds.stream()
+				.filter(favorites::contains)
+				.collect(java.util.stream.Collectors.toSet());
+		}
+
+		void favorite(Long userId, Long themeId) {
+			favoriteThemeIdsByUserId.computeIfAbsent(userId, ignored -> new HashSet<>()).add(themeId);
 		}
 	}
 }

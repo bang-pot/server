@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
 import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 
 import lombok.RequiredArgsConstructor;
@@ -14,12 +15,14 @@ import lombok.RequiredArgsConstructor;
 public class GetExploreThemeDetailService implements GetExploreThemeDetailUseCase {
 
 	private final ExploreThemeReadRepository exploreThemeReadRepository;
+	private final ThemeFavoriteRepository themeFavoriteRepository;
 
 	@Override
 	@Transactional(readOnly = true)
 	public Result handle(Query query) {
 		ExploreThemeReadRepository.ThemeDetail detail = exploreThemeReadRepository.getThemeDetail(query.themeId())
 			.orElseThrow(() -> new ExploreThemeNotFoundException(query.themeId()));
+		boolean isFavorite = query.userId() != null && themeFavoriteRepository.exists(query.userId(), query.themeId());
 
 		return Result.of(
 			detail.themeId(),
@@ -33,6 +36,7 @@ public class GetExploreThemeDetailService implements GetExploreThemeDetailUseCas
 			detail.runningTimeMinutes(),
 			detail.description(),
 			detail.externalLink(),
+			isFavorite,
 			detail.relatedThemes().stream()
 				.map(relatedTheme -> RelatedTheme.of(
 					relatedTheme.themeId(),
