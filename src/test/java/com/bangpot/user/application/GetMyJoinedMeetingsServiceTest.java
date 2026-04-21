@@ -21,7 +21,7 @@ class GetMyJoinedMeetingsServiceTest extends AbstractUserApplicationServiceTest 
 	void returnsMyJoinedMeetingsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		joinedMeetingReadRepository.putResult(
 			7L,
 			JoinedMeetingReadRepository.SearchResult.of(
@@ -65,7 +65,7 @@ class GetMyJoinedMeetingsServiceTest extends AbstractUserApplicationServiceTest 
 	void defaultsJoinedMeetingListToEmptyWhenNoActivityExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyJoinedMeetingsUseCase.Result result = getMyJoinedMeetingsUseCase.handle(
 			GetMyJoinedMeetingsUseCase.Query.of(7L, 0, 20)

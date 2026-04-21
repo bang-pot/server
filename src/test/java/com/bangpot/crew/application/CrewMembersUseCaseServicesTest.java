@@ -63,10 +63,10 @@ class CrewMembersUseCaseServicesTest {
 	void returnsCrewMembersSortedByLeaderThenJoinedAtDescending() {
 		AuthUser requester = fullAuthUser(1L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(1L, "requester", true));
-		userRepository.save(User.rehydrate(2L, "leader-pot", true));
-		userRepository.save(User.rehydrate(3L, "new-member", true));
-		userRepository.save(User.rehydrate(4L, "old-member", true));
+		userRepository.save(User.create(1L, "requester"));
+		userRepository.save(User.create(2L, "leader-pot"));
+		userRepository.save(User.create(3L, "new-member"));
+		userRepository.save(User.create(4L, "old-member"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(10L, crew.getId(), 2L, CrewRole.LEADER, NOW.minusSeconds(300)));
@@ -94,7 +94,7 @@ class CrewMembersUseCaseServicesTest {
 	void returnsSingleLeaderWhenCrewHasOnlyOneMember() {
 		AuthUser leader = fullAuthUser(2L, "leader-provider", "leader-pot");
 		authUserRepository.save(leader);
-		userRepository.save(User.rehydrate(2L, "leader-pot", true));
+		userRepository.save(User.create(2L, "leader-pot"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(10L, crew.getId(), leader.getId(), CrewRole.LEADER, NOW.minusSeconds(60)));
@@ -112,7 +112,7 @@ class CrewMembersUseCaseServicesTest {
 	void rejectsCrewMembersForNonMember() {
 		AuthUser outsider = fullAuthUser(99L, "outsider-provider", "outsider");
 		authUserRepository.save(outsider);
-		userRepository.save(User.rehydrate(99L, "outsider", true));
+		userRepository.save(User.create(99L, "outsider"));
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), outsider.getId())))
@@ -123,7 +123,6 @@ class CrewMembersUseCaseServicesTest {
 	void rejectsCrewMembersForTempUser() {
 		AuthUser tempUser = tempAuthUser(88L, "temp-provider");
 		authUserRepository.save(tempUser);
-		userRepository.save(User.rehydrate(88L, "temp-user", false));
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(10L, crew.getId(), tempUser.getId(), CrewRole.MEMBER, NOW.minusSeconds(60)));
 
@@ -233,7 +232,6 @@ class CrewMembersUseCaseServicesTest {
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			String normalized = nickname == null ? null : nickname.trim().toLowerCase();
 			return usersById.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> normalized == null || user.getNickname().toLowerCase().contains(normalized))
 				.toList();
 		}
@@ -267,6 +265,13 @@ class CrewMembersUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
+		}		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
 		}
 
 		@Override

@@ -29,8 +29,11 @@ import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
+import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.crew.domain.Crew;
+import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
-import com.bangpot.user.application.port.ProfileHubReadRepository;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.GetMyProfileService;
@@ -46,7 +49,8 @@ class AuthUseCaseServicesTest {
 
 	private InMemoryAuthUserRepository authUserRepository;
 	private InMemoryUserRepository userRepository;
-	private ProfileHubReadRepository profileHubReadRepository;
+	private InMemoryMeetingRepository meetingRepository;
+	private InMemoryCrewRepository crewRepository;
 	private LoginWithProviderUseCase loginWithProviderUseCase;
 	private CompleteTempUserUseCase completeTempUserUseCase;
 	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
@@ -59,7 +63,8 @@ class AuthUseCaseServicesTest {
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
-		profileHubReadRepository = userId -> ProfileHubReadRepository.Counts.of(0L, 0L, 0L, 0L);
+		meetingRepository = new InMemoryMeetingRepository();
+		crewRepository = new InMemoryCrewRepository();
 		Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 		authAuditLogger = org.mockito.Mockito.mock(AuthAuditLogger.class);
 		AuthRequiredTermsProperties authRequiredTermsProperties = new AuthRequiredTermsProperties();
@@ -79,7 +84,7 @@ class AuthUseCaseServicesTest {
 			userRepository,
 			authRequiredTermsProperties
 		);
-		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
+		getMyProfileUseCase = new GetMyProfileService(userRepository, meetingRepository, crewRepository);
 		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
 	}
 
@@ -97,7 +102,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(3600)
 		);
 		authUserRepository.save(existingUser);
-		userRepository.save(User.rehydrate(existingUser.getId(), "bangpot", true));
+		userRepository.save(User.create(existingUser.getId(), "bangpot"));
 
 		LoginWithProviderUseCase.Result result = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "1001", "/protected-demo")
@@ -192,7 +197,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
-		userRepository.save(User.rehydrate(10L, "dupe-name", true));
+		userRepository.save(User.create(10L, "dupe-name"));
 		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "4004", null)
 		);
@@ -220,7 +225,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(60)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "bangpot", true));
+		userRepository.save(User.create(fullUser.getId(), "bangpot"));
 
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(fullUser.getId()));
 
@@ -242,7 +247,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(60)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "before", true));
+		userRepository.save(User.create(fullUser.getId(), "before"));
 
 		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
 			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "  after  ")
@@ -268,7 +273,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
-		userRepository.save(User.rehydrate(10L, "dupe-name", true));
+		userRepository.save(User.create(10L, "dupe-name"));
 		AuthUser fullUser = AuthUser.rehydrate(
 			11L,
 			AuthProvider.KAKAO,
@@ -281,7 +286,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(10)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "before", true));
+		userRepository.save(User.create(fullUser.getId(), "before"));
 
 		assertThatThrownBy(() -> updateMyProfileUseCase.handle(
 			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "dupe-name")
@@ -344,7 +349,6 @@ class AuthUseCaseServicesTest {
 			}
 			final String keyword = normalizedKeyword;
 			return usersById.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
 				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
 				.toList();
@@ -354,6 +358,72 @@ class AuthUseCaseServicesTest {
 		public User save(User user) {
 			usersById.put(user.getId(), user);
 			return user;
+		}
+	}
+
+	private static final class InMemoryMeetingRepository implements MeetingRepository {
+
+		@Override
+		public Meeting save(Meeting meeting) {
+			return meeting;
+		}
+
+		@Override
+		public List<Meeting> findAllByCrewId(Long crewId) {
+			return List.of();
+		}
+
+		@Override
+		public Optional<Meeting> findById(Long meetingId) {
+			return Optional.empty();
+		}
+
+		@Override
+		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
+			return Optional.empty();
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
+		}
+	}
+
+	private static final class InMemoryCrewRepository implements CrewRepository {
+
+		@Override
+		public boolean existsByName(String name) {
+			return false;
+		}
+
+		@Override
+		public Crew save(Crew crew) {
+			return crew;
+		}
+
+		@Override
+		public Optional<Crew> findById(Long crewId) {
+			return Optional.empty();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public List<Crew> findPublicCrews() {
+			return List.of();
 		}
 	}
 }

@@ -22,7 +22,7 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 	void withdrawsAccountWhenNoBlockingReasonExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		WithdrawMyAccountUseCase.Result result = withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.OTHER, null)
@@ -41,7 +41,7 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 	void storesOptionalReasonDetailWhenProvided() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.SERVICE_UNSATISFIED, "Need a break")
@@ -56,7 +56,7 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 	void rejectsWithdrawalWhenBlockingReasonExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		withdrawalCheckReadRepository.putResult(
 			7L,
 			com.bangpot.user.application.port.WithdrawalCheckReadRepository.View.of(

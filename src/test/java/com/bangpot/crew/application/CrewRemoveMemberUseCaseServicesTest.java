@@ -221,7 +221,8 @@ class CrewRemoveMemberUseCaseServicesTest {
 		@Override
 		public Optional<User> findById(Long userId) {
 			return authUserRepository.findById(userId)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL));
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(authUser -> User.create(authUser.getId(), authUser.getNickname()));
 		}
 
 		@Override
@@ -264,7 +265,14 @@ class CrewRemoveMemberUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
 		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return List.of();
 		}
@@ -352,6 +360,16 @@ class CrewRemoveMemberUseCaseServicesTest {
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return Optional.ofNullable(meetingsById.get(meetingId))
 				.filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
 		}
 	}
 

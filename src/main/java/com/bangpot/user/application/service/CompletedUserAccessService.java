@@ -14,9 +14,7 @@ public class CompletedUserAccessService {
 	private final UserRepository userRepository;
 
 	public boolean isCompletedUser(Long userId) {
-		return userRepository.findById(userId)
-			.filter(user -> !user.requiresCompletion())
-			.isPresent();
+		return userRepository.findById(userId).isPresent();
 	}
 
 	public void validateCompletedUser(Long userId, String deniedMessage) {

@@ -95,7 +95,7 @@ class GetHomeServiceTest {
 	@Test
 	void returnsLoggedInHomeWithPersonalizedSummaries() {
 		authUserRepository.save(fullUser(7L, "bangpot"));
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		profileHubReadRepository.putCounts(7L, 0L, 0L, 3L, 0L);
 		myCrewReadRepository.resultByUserId.put(
 			7L,

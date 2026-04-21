@@ -62,7 +62,7 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 		);
 		String nextPath = user.consumePendingRedirectPathOrDefault(DEFAULT_NEXT_PATH);
 		authUserRepository.save(user);
-		userRepository.save(User.rehydrate(user.getId(), normalizedNickname, true));
+		userRepository.save(User.create(user.getId(), normalizedNickname));
 		authAuditLogger.authStateChanged(
 			user.getId(),
 			AuthUserStatus.TEMP,

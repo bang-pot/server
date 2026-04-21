@@ -241,7 +241,14 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
 		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -278,7 +285,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		private User toDomain(AuthUser authUser) {
-			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
+			return User.create(authUser.getId(), authUser.getNickname());
 		}
 	}
 
@@ -363,6 +370,16 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			return meetingsById.values().stream()
 				.filter(meeting -> meetingId.equals(meeting.getId()) && crewId.equals(meeting.getCrewId()))
 				.findFirst();
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
 		}
 	}
 

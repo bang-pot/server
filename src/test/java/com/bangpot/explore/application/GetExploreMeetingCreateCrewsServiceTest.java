@@ -43,7 +43,7 @@ class GetExploreMeetingCreateCrewsServiceTest {
 
 	@Test
 	void returnsActiveCrewsForCompletedUser() {
-		userRepository.save(User.rehydrate(1L, "alpha", true));
+		userRepository.save(User.create(1L, "alpha"));
 		crewRepository.save(activeCrew(100L, "Alpha Crew"));
 		crewRepository.save(activeCrew(200L, "Beta Crew"));
 		crewRepository.save(deletedCrew(300L, "Deleted Crew"));
@@ -64,7 +64,7 @@ class GetExploreMeetingCreateCrewsServiceTest {
 
 	@Test
 	void returnsEmptyArrayWhenUserHasNoActiveCrews() {
-		userRepository.save(User.rehydrate(1L, "alpha", true));
+		userRepository.save(User.create(1L, "alpha"));
 
 		GetExploreMeetingCreateCrewsUseCase.Result result = useCase.handle(
 			GetExploreMeetingCreateCrewsUseCase.Query.of(1L)
@@ -75,8 +75,6 @@ class GetExploreMeetingCreateCrewsServiceTest {
 
 	@Test
 	void deniesIncompleteUser() {
-		userRepository.save(User.rehydrate(1L, "temp", false));
-
 		assertThatThrownBy(() -> useCase.handle(GetExploreMeetingCreateCrewsUseCase.Query.of(1L)))
 			.isInstanceOf(AccessDeniedException.class);
 	}
@@ -124,7 +122,14 @@ class GetExploreMeetingCreateCrewsServiceTest {
 				.findFirst();
 		}
 
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
 		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			throw new UnsupportedOperationException();
 		}

@@ -213,7 +213,8 @@ class CrewLeaveUseCaseServicesTest {
 		@Override
 		public Optional<User> findById(Long userId) {
 			return authUserRepository.findById(userId)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL));
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(authUser -> User.create(authUser.getId(), authUser.getNickname()));
 		}
 
 		@Override
@@ -254,6 +255,13 @@ class CrewLeaveUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
+		}		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
 		}
 
 		@Override
@@ -344,6 +352,16 @@ class CrewLeaveUseCaseServicesTest {
 			return meetingsById.values().stream()
 				.filter(meeting -> meetingId.equals(meeting.getId()) && crewId.equals(meeting.getCrewId()))
 				.findFirst();
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
 		}
 
 		@Override

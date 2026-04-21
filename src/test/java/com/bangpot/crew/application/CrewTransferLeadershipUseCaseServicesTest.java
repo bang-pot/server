@@ -198,7 +198,8 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		@Override
 		public Optional<User> findById(Long userId) {
 			return authUserRepository.findById(userId)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL));
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(authUser -> User.create(authUser.getId(), authUser.getNickname()));
 		}
 
 		@Override
@@ -241,7 +242,14 @@ class CrewTransferLeadershipUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
 		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return List.of();
 		}

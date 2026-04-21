@@ -250,7 +250,7 @@ class CrewVisibilityUseCaseServicesTest {
 		}
 
 		private User toDomain(AuthUser authUser) {
-			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
+			return User.create(authUser.getId(), authUser.getNickname());
 		}
 	}
 
@@ -278,7 +278,14 @@ class CrewVisibilityUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
 		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)

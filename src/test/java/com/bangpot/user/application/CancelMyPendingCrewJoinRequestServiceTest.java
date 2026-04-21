@@ -19,7 +19,7 @@ class CancelMyPendingCrewJoinRequestServiceTest extends AbstractUserApplicationS
 	void cancelsMyPendingCrewJoinRequestForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		pendingCrewReadRepository.putCancelable(
 			7L,
 			PendingCrewReadRepository.CancelResult.of(101L, 11L)

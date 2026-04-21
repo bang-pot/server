@@ -12,26 +12,24 @@ class CompletedUserAccessServiceTest extends AbstractUserApplicationServiceTest 
 
 	@Test
 	void validatesCompletedUserWhenProfileExists() {
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		assertThat(completedUserAccessService.isCompletedUser(7L)).isTrue();
 	}
 
 	@Test
-	void rejectsIncompleteUserThroughCompletedAccessService() {
-		userRepository.save(User.rehydrate(7L, "temp-pot", false));
-
+	void rejectsMissingProfileThroughCompletedAccessService() {
 		assertThat(completedUserAccessService.isCompletedUser(7L)).isFalse();
-		assertThatThrownBy(() -> completedUserAccessService.validateCompletedUser(7L, "가입 완료 사용자만 가능합니다."))
+		assertThatThrownBy(() -> completedUserAccessService.validateCompletedUser(7L, "프로필 완료가 필요합니다."))
 			.isInstanceOf(AccessDeniedException.class)
-			.hasMessage("가입 완료 사용자만 가능합니다.");
+			.hasMessage("프로필 완료가 필요합니다.");
 	}
 
 	@Test
 	void rejectsUnknownUserThroughCompletedAccessService() {
 		assertThat(completedUserAccessService.isCompletedUser(999L)).isFalse();
-		assertThatThrownBy(() -> completedUserAccessService.validateCompletedUser(999L, "가입 완료 사용자만 가능합니다."))
+		assertThatThrownBy(() -> completedUserAccessService.validateCompletedUser(999L, "프로필 완료가 필요합니다."))
 			.isInstanceOf(AccessDeniedException.class)
-			.hasMessage("가입 완료 사용자만 가능합니다.");
+			.hasMessage("프로필 완료가 필요합니다.");
 	}
 }

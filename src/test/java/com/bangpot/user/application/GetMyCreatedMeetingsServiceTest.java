@@ -21,7 +21,7 @@ class GetMyCreatedMeetingsServiceTest extends AbstractUserApplicationServiceTest
 	void returnsMyCreatedMeetingsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		createdMeetingReadRepository.putResult(
 			7L,
 			CreatedMeetingReadRepository.SearchResult.of(
@@ -59,7 +59,7 @@ class GetMyCreatedMeetingsServiceTest extends AbstractUserApplicationServiceTest
 	void defaultsCreatedMeetingListToEmptyWhenNoActivityExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyCreatedMeetingsUseCase.Result result = getMyCreatedMeetingsUseCase.handle(
 			GetMyCreatedMeetingsUseCase.Query.of(7L, 0, 20)

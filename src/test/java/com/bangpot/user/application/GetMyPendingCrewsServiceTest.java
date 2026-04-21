@@ -21,7 +21,7 @@ class GetMyPendingCrewsServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsMyPendingCrewsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		pendingCrewReadRepository.putResult(
 			7L,
 			PendingCrewReadRepository.SearchResult.of(
@@ -55,7 +55,7 @@ class GetMyPendingCrewsServiceTest extends AbstractUserApplicationServiceTest {
 	void defaultsPendingCrewListToEmptyWhenNoPendingRequestsExist() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyPendingCrewsUseCase.Result result = getMyPendingCrewsUseCase.handle(
 			GetMyPendingCrewsUseCase.Query.of(7L, 0, 20)

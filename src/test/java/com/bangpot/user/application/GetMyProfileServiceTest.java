@@ -6,9 +6,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.domain.User;
 
@@ -16,10 +13,9 @@ class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 
 	@Test
 	void returnsMyProfileForCompletedUser() {
-		AuthUser authUser = fullUser(7L, "bangpot");
-		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
-		profileHubReadRepository.putCounts(7L, 5L, 3L, 2L, 1L);
+		userRepository.save(User.create(7L, "bangpot"));
+		meetingRepository.putCounts(7L, 5L, 3L);
+		crewRepository.putCounts(7L, 2L, 1L);
 
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
 
@@ -34,9 +30,7 @@ class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 
 	@Test
 	void defaultsHubCountsToZeroWhenNoActivityExists() {
-		AuthUser authUser = fullUser(7L, "bangpot");
-		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
 
@@ -47,26 +41,9 @@ class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	}
 
 	@Test
-	void rejectsMyProfileLookupForTempUser() {
-		AuthUser authUser = tempUser(7L);
-		authUserRepository.save(authUser);
-
+	void rejectsMyProfileLookupWhenProfileRowIsMissing() {
 		assertThatThrownBy(() -> getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L)))
-			.isInstanceOf(AccessDeniedException.class);
-	}
-
-	@Test
-	void rejectsMyProfileLookupWhenUserRowIsMissing() {
-		AuthUser authUser = fullUser(7L, "bangpot");
-		authUserRepository.save(authUser);
-
-		assertThatThrownBy(() -> getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L)))
-			.isInstanceOf(UserNotFoundException.class);
-	}
-
-	@Test
-	void rejectsProfileLookupWhenAuthUserDoesNotExist() {
-		assertThatThrownBy(() -> getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(77L)))
-			.isInstanceOf(AuthUserNotFoundException.class);
+			.isInstanceOf(AccessDeniedException.class)
+			.hasMessage("프로필 완료가 필요합니다.");
 	}
 }

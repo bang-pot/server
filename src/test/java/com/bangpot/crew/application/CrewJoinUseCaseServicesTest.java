@@ -308,7 +308,7 @@ class CrewJoinUseCaseServicesTest {
 		}
 
 		private User toDomain(AuthUser authUser) {
-			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
+			return User.create(authUser.getId(), authUser.getNickname());
 		}
 	}
 
@@ -334,6 +334,13 @@ class CrewJoinUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
+		}		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
 		}
 
 		@Override

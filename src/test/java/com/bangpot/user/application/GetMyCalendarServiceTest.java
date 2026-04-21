@@ -21,7 +21,7 @@ class GetMyCalendarServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsMyCalendarItemsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		calendarReadRepository.putView(
 			7L,
 			CalendarReadRepository.View.of(
@@ -73,7 +73,7 @@ class GetMyCalendarServiceTest extends AbstractUserApplicationServiceTest {
 	void defaultsCalendarToEmptyWhenNoActivityExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyCalendarUseCase.Result result = getMyCalendarUseCase.handle(GetMyCalendarUseCase.Query.of(7L));
 
@@ -105,3 +105,4 @@ class GetMyCalendarServiceTest extends AbstractUserApplicationServiceTest {
 			.isInstanceOf(AuthUserNotFoundException.class);
 	}
 }
+

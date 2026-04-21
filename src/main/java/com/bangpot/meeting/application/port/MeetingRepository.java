@@ -16,6 +16,10 @@ public interface MeetingRepository {
 
 	Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId);
 
+	long countCreatedByHostUserId(Long userId);
+
+	long countJoinedByUserId(Long userId);
+
 	default boolean existsByCrewIdAndHostUserIdAndStatusIn(
 		Long crewId,
 		Long hostUserId,

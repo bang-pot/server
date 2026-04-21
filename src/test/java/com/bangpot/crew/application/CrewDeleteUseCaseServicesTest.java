@@ -259,7 +259,8 @@ class CrewDeleteUseCaseServicesTest {
 		@Override
 		public Optional<User> findById(Long userId) {
 			return authUserRepository.findById(userId)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL));
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(authUser -> User.create(authUser.getId(), authUser.getNickname()));
 		}
 
 		@Override
@@ -301,6 +302,13 @@ class CrewDeleteUseCaseServicesTest {
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId))
 				.filter(Crew::isActive);
+		}		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
 		}
 
 		@Override
@@ -398,6 +406,16 @@ class CrewDeleteUseCaseServicesTest {
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return findById(meetingId).filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
 		}
 
 		@Override

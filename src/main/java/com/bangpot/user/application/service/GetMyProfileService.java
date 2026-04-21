@@ -4,11 +4,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.exception.UserNotFoundException;
-import com.bangpot.user.application.port.ProfileHubReadRepository;
+import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.domain.User;
@@ -20,29 +17,22 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetMyProfileService implements GetMyProfileUseCase {
 
-	private final AuthUserRepository authUserRepository;
 	private final UserRepository userRepository;
-	private final ProfileHubReadRepository profileHubReadRepository;
+	private final MeetingRepository meetingRepository;
+	private final CrewRepository crewRepository;
 
 	@Override
 	public View handle(Query query) {
-		AuthUser authUser = authUserRepository.findById(query.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(query.userId()));
-		if (authUser.requiresCompletion()) {
-			throw new AccessDeniedException("full user profile is required");
-		}
-
 		User user = userRepository.findById(query.userId())
-			.orElseThrow(() -> new UserNotFoundException(query.userId()));
-		ProfileHubReadRepository.Counts counts = profileHubReadRepository.loadCounts(query.userId());
+			.orElseThrow(() -> new AccessDeniedException("프로필 완료가 필요합니다."));
 		return View.of(
 			user.getId(),
 			user.getNickname(),
 			null,
-			counts.createdMeetingsCount(),
-			counts.joinedMeetingsCount(),
-			counts.myCrewsCount(),
-			counts.pendingCrewsCount()
+			meetingRepository.countCreatedByHostUserId(query.userId()),
+			meetingRepository.countJoinedByUserId(query.userId()),
+			crewRepository.countActiveByMemberUserId(query.userId()),
+			crewRepository.countPendingPublicByUserId(query.userId())
 		);
 	}
 }

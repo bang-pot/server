@@ -21,7 +21,7 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsMatchingUsersForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		userSearchReadRepository.putResult(
 			"pot",
 			List.of(
@@ -62,7 +62,7 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsEmptyResultForBlankKeywordWithoutQueryingRepository() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		SearchUsersUseCase.Result result = searchUsersUseCase.handle(
 			SearchUsersUseCase.Query.of(7L, "   ", 20)

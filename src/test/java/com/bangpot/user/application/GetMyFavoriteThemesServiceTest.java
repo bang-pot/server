@@ -21,7 +21,7 @@ class GetMyFavoriteThemesServiceTest extends AbstractUserApplicationServiceTest 
 	void returnsMyFavoriteThemesForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		myFavoriteThemeReadRepository.putResult(
 			7L,
 			MyFavoriteThemeReadRepository.SearchResult.of(
@@ -61,7 +61,7 @@ class GetMyFavoriteThemesServiceTest extends AbstractUserApplicationServiceTest 
 	void defaultsFavoriteThemeListToEmptyWhenNoFavoritesExist() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyFavoriteThemesUseCase.Result result = getMyFavoriteThemesUseCase.handle(
 			GetMyFavoriteThemesUseCase.Query.of(7L, 0, 20)

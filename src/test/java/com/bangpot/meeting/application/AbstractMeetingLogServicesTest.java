@@ -105,15 +105,13 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected User completedUser(Long id, String nickname) {
-		User user = User.rehydrate(id, nickname, true);
+		User user = User.create(id, nickname);
 		userRepository.save(user);
 		return user;
 	}
 
 	protected User incompleteUser(Long id, String nickname) {
-		User user = User.rehydrate(id, nickname, false);
-		userRepository.save(user);
-		return user;
+		return User.create(id, nickname);
 	}
 
 	protected Meeting completedMeeting(Long crewId, Long hostUserId, String themeName) {
@@ -186,7 +184,6 @@ abstract class AbstractMeetingLogServicesTest {
 		@Override
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			return users.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> user.getNickname().contains(nickname))
 				.toList();
 		}
@@ -227,7 +224,14 @@ abstract class AbstractMeetingLogServicesTest {
 			return Optional.ofNullable(crews.get(crewId));
 		}
 
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
 		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crews.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -310,6 +314,16 @@ abstract class AbstractMeetingLogServicesTest {
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return findById(meetingId).filter(meeting -> meeting.getCrewId().equals(crewId));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
 		}
 	}
 

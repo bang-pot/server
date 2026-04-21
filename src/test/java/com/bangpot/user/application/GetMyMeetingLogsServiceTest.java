@@ -22,7 +22,7 @@ class GetMyMeetingLogsServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsMyMeetingLogsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		myMeetingLogReadRepository.putResult(
 			7L,
 			MyMeetingLogReadRepository.SearchResult.of(
@@ -66,7 +66,7 @@ class GetMyMeetingLogsServiceTest extends AbstractUserApplicationServiceTest {
 	void defaultsMeetingLogListToEmptyWhenNoAuthoredLogsExist() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyMeetingLogsUseCase.Result result = getMyMeetingLogsUseCase.handle(
 			GetMyMeetingLogsUseCase.Query.of(7L, 0, 20)

@@ -88,7 +88,14 @@ class CrewPublicCardUseCaseServicesTest {
 			return crews.stream().filter(crew -> crewId.equals(crew.getId())).findFirst();
 		}
 
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
 		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crews.stream()
 				.filter(crew -> crew.getStatus() == CrewStatus.ACTIVE)

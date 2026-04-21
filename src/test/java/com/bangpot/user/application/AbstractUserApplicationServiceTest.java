@@ -15,7 +15,12 @@ import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
+import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
+import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.CompletedUserAccessService;
@@ -58,6 +63,8 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryAuthUserRepository authUserRepository;
 	protected InMemoryUserRepository userRepository;
 	protected InMemoryProfileHubReadRepository profileHubReadRepository;
+	protected InMemoryMeetingRepository meetingRepository;
+	protected InMemoryCrewRepository crewRepository;
 	protected InMemoryCreatedMeetingReadRepository createdMeetingReadRepository;
 	protected InMemoryCalendarReadRepository calendarReadRepository;
 	protected InMemoryMyFavoriteThemeReadRepository myFavoriteThemeReadRepository;
@@ -91,6 +98,8 @@ abstract class AbstractUserApplicationServiceTest {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
 		profileHubReadRepository = new InMemoryProfileHubReadRepository();
+		meetingRepository = new InMemoryMeetingRepository();
+		crewRepository = new InMemoryCrewRepository();
 		createdMeetingReadRepository = new InMemoryCreatedMeetingReadRepository();
 		calendarReadRepository = new InMemoryCalendarReadRepository();
 		myFavoriteThemeReadRepository = new InMemoryMyFavoriteThemeReadRepository();
@@ -103,7 +112,7 @@ abstract class AbstractUserApplicationServiceTest {
 		userSearchReadRepository = new InMemoryUserSearchReadRepository();
 		userWithdrawalRepository = new InMemoryUserWithdrawalRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
-		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
+		getMyProfileUseCase = new GetMyProfileService(userRepository, meetingRepository, crewRepository);
 		getMyCreatedMeetingsUseCase = new GetMyCreatedMeetingsService(
 			authUserRepository,
 			userRepository,
@@ -244,7 +253,6 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			return users.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> user.getNickname().contains(nickname))
 				.toList();
 		}
@@ -277,6 +285,96 @@ abstract class AbstractUserApplicationServiceTest {
 				userId,
 				Counts.of(createdMeetingsCount, joinedMeetingsCount, myCrewsCount, pendingCrewsCount)
 			);
+		}
+	}
+
+	protected static final class InMemoryMeetingRepository implements MeetingRepository {
+		private final Map<Long, Meeting> meetingsById = new HashMap<>();
+		private final Map<Long, Long> createdCountsByUserId = new HashMap<>();
+		private final Map<Long, Long> joinedCountsByUserId = new HashMap<>();
+
+		@Override
+		public Meeting save(Meeting meeting) {
+			meetingsById.put(meeting.getId(), meeting);
+			return meeting;
+		}
+
+		@Override
+		public List<Meeting> findAllByCrewId(Long crewId) {
+			return List.of();
+		}
+
+		@Override
+		public Optional<Meeting> findById(Long meetingId) {
+			return Optional.ofNullable(meetingsById.get(meetingId));
+		}
+
+		@Override
+		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
+			return findById(meetingId).filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return createdCountsByUserId.getOrDefault(userId, 0L);
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return joinedCountsByUserId.getOrDefault(userId, 0L);
+		}
+
+		void putCounts(Long userId, long createdMeetingsCount, long joinedMeetingsCount) {
+			createdCountsByUserId.put(userId, createdMeetingsCount);
+			joinedCountsByUserId.put(userId, joinedMeetingsCount);
+		}
+	}
+
+	protected static final class InMemoryCrewRepository implements CrewRepository {
+		private final Map<Long, Crew> crewsById = new HashMap<>();
+		private final Map<Long, Long> activeCountsByUserId = new HashMap<>();
+		private final Map<Long, Long> pendingCountsByUserId = new HashMap<>();
+		private long sequence = 1L;
+
+		@Override
+		public boolean existsByName(String name) {
+			return crewsById.values().stream().anyMatch(crew -> name.equals(crew.getName()));
+		}
+
+		@Override
+		public Crew save(Crew crew) {
+			if (crew.getId() == null) {
+				crew.assignId(sequence++);
+			}
+			crewsById.put(crew.getId(), crew);
+			return crew;
+		}
+
+		@Override
+		public Optional<Crew> findById(Long crewId) {
+			return Optional.ofNullable(crewsById.get(crewId));
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return activeCountsByUserId.getOrDefault(userId, 0L);
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return pendingCountsByUserId.getOrDefault(userId, 0L);
+		}
+
+		@Override
+		public List<Crew> findPublicCrews() {
+			return crewsById.values().stream()
+				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
+				.toList();
+		}
+
+		void putCounts(Long userId, long activeCount, long pendingCount) {
+			activeCountsByUserId.put(userId, activeCount);
+			pendingCountsByUserId.put(userId, pendingCount);
 		}
 	}
 

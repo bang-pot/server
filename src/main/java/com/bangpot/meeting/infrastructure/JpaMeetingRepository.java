@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
 
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,12 @@ import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
 class JpaMeetingRepository implements MeetingRepository {
+
+	private static final List<MeetingParticipationStatus> JOINED_STATUSES = List.of(
+		MeetingParticipationStatus.JOINED,
+		MeetingParticipationStatus.PENDING,
+		MeetingParticipationStatus.APPROVED
+	);
 
 	private final MeetingJpaRepository meetingJpaRepository;
 
@@ -35,6 +42,16 @@ class JpaMeetingRepository implements MeetingRepository {
 	@Override
 	public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 		return meetingJpaRepository.findByIdAndCrewId(meetingId, crewId);
+	}
+
+	@Override
+	public long countCreatedByHostUserId(Long userId) {
+		return meetingJpaRepository.countByHostUserId(userId);
+	}
+
+	@Override
+	public long countJoinedByUserId(Long userId) {
+		return meetingJpaRepository.countJoinedByUserId(userId, JOINED_STATUSES);
 	}
 
 	@Override

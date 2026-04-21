@@ -19,7 +19,7 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 	void returnsFavoriteThemeSummaryForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		favoriteThemeSummaryReadRepository.putView(
 			7L,
 			FavoriteThemeSummaryReadRepository.View.of(
@@ -58,7 +58,7 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 	void returnsEmptyFavoriteThemeSummaryWhenNoFavoritesExist() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyFavoriteThemesSummaryUseCase.Result result = getMyFavoriteThemesSummaryUseCase.handle(
 			GetMyFavoriteThemesSummaryUseCase.Query.of(7L)

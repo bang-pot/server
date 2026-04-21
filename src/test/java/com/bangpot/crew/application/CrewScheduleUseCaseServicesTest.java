@@ -82,7 +82,7 @@ class CrewScheduleUseCaseServicesTest {
 	void returnsCrewScheduleForJoinedMemberIncludingRecruitingCompletedAndCanceled() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(7L, "requester", true));
+		userRepository.save(User.create(7L, "requester"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(1L, crew.getId(), requester.getId(), CrewRole.MEMBER));
@@ -136,7 +136,7 @@ class CrewScheduleUseCaseServicesTest {
 	void sortsCrewScheduleByDateTimeAndMeetingIdAscending() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(7L, "requester", true));
+		userRepository.save(User.create(7L, "requester"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(1L, crew.getId(), requester.getId(), CrewRole.MEMBER));
@@ -167,7 +167,7 @@ class CrewScheduleUseCaseServicesTest {
 	void appliesAutomaticMeetingTransitionBeforeBuildingSchedule() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(7L, "requester", true));
+		userRepository.save(User.create(7L, "requester"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(1L, crew.getId(), requester.getId(), CrewRole.MEMBER));
@@ -192,7 +192,7 @@ class CrewScheduleUseCaseServicesTest {
 	void rejectsCrewScheduleForNonMember() {
 		AuthUser outsider = fullAuthUser(99L, "outsider-provider", "outsider");
 		authUserRepository.save(outsider);
-		userRepository.save(User.rehydrate(99L, "outsider", true));
+		userRepository.save(User.create(99L, "outsider"));
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> getCrewScheduleUseCase.handle(
@@ -204,7 +204,6 @@ class CrewScheduleUseCaseServicesTest {
 	void rejectsCrewScheduleForTempUser() {
 		AuthUser tempUser = tempAuthUser(88L, "temp-provider");
 		authUserRepository.save(tempUser);
-		userRepository.save(User.rehydrate(88L, "temp-user", false));
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(1L, crew.getId(), tempUser.getId(), CrewRole.MEMBER));
 
@@ -217,7 +216,7 @@ class CrewScheduleUseCaseServicesTest {
 	void rejectsCrewScheduleForUnknownCrew() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(7L, "requester", true));
+		userRepository.save(User.create(7L, "requester"));
 
 		assertThatThrownBy(() -> getCrewScheduleUseCase.handle(
 			GetCrewScheduleUseCase.Query.of(999L, requester.getId(), "2026-04-20", "2026-04-22")
@@ -301,7 +300,6 @@ class CrewScheduleUseCaseServicesTest {
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			String normalized = nickname == null ? null : nickname.trim().toLowerCase();
 			return usersById.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> normalized == null || user.getNickname().toLowerCase().contains(normalized))
 				.toList();
 		}
@@ -337,7 +335,14 @@ class CrewScheduleUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
 		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -416,6 +421,16 @@ class CrewScheduleUseCaseServicesTest {
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return findById(meetingId).filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
 		}
 	}
 

@@ -60,7 +60,7 @@ public class JpaUserRepository implements UserRepository {
 	}
 
 	private User toDomain(UserJpaEntity userJpaEntity) {
-		return User.rehydrate(userJpaEntity.getId(), userJpaEntity.getNickname(), true);
+		return User.create(userJpaEntity.getId(), userJpaEntity.getNickname());
 	}
 
 	private String normalizeKeyword(String keyword) {

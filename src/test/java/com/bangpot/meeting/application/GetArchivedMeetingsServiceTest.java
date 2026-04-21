@@ -156,7 +156,8 @@ class GetArchivedMeetingsServiceTest {
 		@Override
 		public Optional<User> findById(Long userId) {
 			return Optional.ofNullable(authUsers.get(userId))
-				.map(user -> User.rehydrate(user.getId(), user.getNickname(), user.getStatus() == AuthUserStatus.FULL));
+				.filter(user -> user.getStatus() == AuthUserStatus.FULL)
+				.map(user -> User.create(user.getId(), user.getNickname()));
 		}
 
 		@Override

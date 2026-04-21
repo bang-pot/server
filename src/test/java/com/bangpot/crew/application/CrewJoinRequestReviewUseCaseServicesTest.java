@@ -292,7 +292,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 			this.authUserRepository = authUserRepository;
 			authUserRepository.usersById.values().stream()
 				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), true))
+				.map(authUser -> User.create(authUser.getId(), authUser.getNickname()))
 				.forEach(user -> usersById.put(user.getId(), user));
 		}
 
@@ -305,7 +305,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 			return authUserRepository.findById(userId)
 				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
 				.map(authUser -> {
-					User loaded = User.rehydrate(authUser.getId(), authUser.getNickname(), true);
+					User loaded = User.create(authUser.getId(), authUser.getNickname());
 					usersById.put(loaded.getId(), loaded);
 					return loaded;
 				});
@@ -323,7 +323,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 			}
 			authUserRepository.usersById.values().stream()
 				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), true))
+				.map(authUser -> User.create(authUser.getId(), authUser.getNickname()))
 				.forEach(user -> usersById.putIfAbsent(user.getId(), user));
 			final String keyword = normalizedKeyword;
 			return usersById.values().stream()
@@ -361,6 +361,13 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
+		}		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
 		}
 
 		@Override

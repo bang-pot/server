@@ -21,7 +21,7 @@ class GetMyWithdrawalCheckServiceTest extends AbstractUserApplicationServiceTest
 	void returnsWithdrawalCheckForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 		withdrawalCheckReadRepository.putResult(
 			7L,
 			WithdrawalCheckReadRepository.View.of(
@@ -62,7 +62,7 @@ class GetMyWithdrawalCheckServiceTest extends AbstractUserApplicationServiceTest
 	void allowsWithdrawalWhenNoBlockingReasonExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		GetMyWithdrawalCheckUseCase.Result result = getMyWithdrawalCheckUseCase.handle(
 			GetMyWithdrawalCheckUseCase.Query.of(7L)
