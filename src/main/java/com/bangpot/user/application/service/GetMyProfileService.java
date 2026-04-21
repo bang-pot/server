@@ -28,8 +28,8 @@ public class GetMyProfileService implements GetMyProfileUseCase {
 	public View handle(Query query) {
 		AuthUser authUser = authUserRepository.findById(query.userId())
 			.orElseThrow(() -> new AuthUserNotFoundException(query.userId()));
-		if (authUser.requiresCompletion()) {
-			throw new AccessDeniedException("full user profile is required");
+		if (authUser.isTemp()) {
+			throw new AccessDeniedException("가입 완료 사용자만 이용할 수 있습니다.");
 		}
 
 		User user = userRepository.findById(query.userId())

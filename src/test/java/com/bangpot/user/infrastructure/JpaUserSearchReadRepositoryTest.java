@@ -25,26 +25,26 @@ class JpaUserSearchReadRepositoryTest {
 	@Test
 	void returnsOnlyFullActiveUsersMatchingNicknameInStableOrder() {
 		insertUser(10L, "BangPot", "bio-10", "MALE", "https://cdn.example.com/users/10.jpg", null);
-		insertAuthUser(10L, "provider-10", AuthUserStatus.FULL, "BangPot", null);
+		insertAuthUser(10L, "provider-10", AuthUserStatus.FULL, null);
 
 		insertUser(11L, "bangpot", null, null, null, null);
-		insertAuthUser(11L, "provider-11", AuthUserStatus.FULL, "bangpot", null);
+		insertAuthUser(11L, "provider-11", AuthUserStatus.FULL, null);
 
 		insertUser(12L, "potter", "bio-12", "FEMALE", null, null);
-		insertAuthUser(12L, "provider-12", AuthUserStatus.FULL, "potter", null);
+		insertAuthUser(12L, "provider-12", AuthUserStatus.FULL, null);
 
 		insertUser(13L, "temp-pot", null, null, null, null);
-		insertAuthUser(13L, "provider-13", AuthUserStatus.TEMP, null, null);
+		insertAuthUser(13L, "provider-13", AuthUserStatus.TEMP, null);
 
 		Instant withdrawnAt = Instant.parse("2026-04-20T00:00:00Z");
 		insertUser(14L, "withdrawn-pot", "bio-14", "FEMALE", null, withdrawnAt);
-		insertAuthUser(14L, "provider-14", AuthUserStatus.FULL, "withdrawn-pot", null);
+		insertAuthUser(14L, "provider-14", AuthUserStatus.FULL, null);
 
 		insertUser(15L, "gone-pot", "bio-15", "MALE", null, null);
-		insertAuthUser(15L, "provider-15", AuthUserStatus.WITHDRAWN, null, withdrawnAt);
+		insertAuthUser(15L, "provider-15", AuthUserStatus.WITHDRAWN, withdrawnAt);
 
 		insertUser(16L, "other-user", null, null, null, null);
-		insertAuthUser(16L, "provider-16", AuthUserStatus.FULL, "other-user", null);
+		insertAuthUser(16L, "provider-16", AuthUserStatus.FULL, null);
 		entityManager.clear();
 
 		var result = repository.search("pot", 20);
@@ -67,11 +67,11 @@ class JpaUserSearchReadRepositoryTest {
 	@Test
 	void appliesRequestedSizeLimit() {
 		insertUser(20L, "AlphaPot", null, null, null, null);
-		insertAuthUser(20L, "provider-20", AuthUserStatus.FULL, "AlphaPot", null);
+		insertAuthUser(20L, "provider-20", AuthUserStatus.FULL, null);
 		insertUser(21L, "beta-pot", null, null, null, null);
-		insertAuthUser(21L, "provider-21", AuthUserStatus.FULL, "beta-pot", null);
+		insertAuthUser(21L, "provider-21", AuthUserStatus.FULL, null);
 		insertUser(22L, "pot-zone", null, null, null, null);
-		insertAuthUser(22L, "provider-22", AuthUserStatus.FULL, "pot-zone", null);
+		insertAuthUser(22L, "provider-22", AuthUserStatus.FULL, null);
 		entityManager.clear();
 
 		var result = repository.search("pot", 2);
@@ -108,7 +108,6 @@ class JpaUserSearchReadRepositoryTest {
 		Long userId,
 		String providerId,
 		AuthUserStatus status,
-		String nickname,
 		Instant withdrawnAt
 	) {
 		Instant now = Instant.parse("2026-04-20T10:00:00Z").plus(userId, ChronoUnit.SECONDS);
@@ -119,7 +118,6 @@ class JpaUserSearchReadRepositoryTest {
 					provider,
 					provider_id,
 					status,
-					nickname,
 					required_terms_version,
 					required_terms_accepted_at,
 					pending_redirect_path,
@@ -132,7 +130,6 @@ class JpaUserSearchReadRepositoryTest {
 					:provider,
 					:providerId,
 					:status,
-					:nickname,
 					:requiredTermsVersion,
 					:requiredTermsAcceptedAt,
 					null,
@@ -145,7 +142,6 @@ class JpaUserSearchReadRepositoryTest {
 			.setParameter("provider", "KAKAO")
 			.setParameter("providerId", providerId)
 			.setParameter("status", status.name())
-			.setParameter("nickname", nickname)
 			.setParameter("requiredTermsVersion", status == AuthUserStatus.FULL ? "2026-04" : null)
 			.setParameter("requiredTermsAcceptedAt", status == AuthUserStatus.FULL ? now : null)
 			.setParameter("createdAt", now)

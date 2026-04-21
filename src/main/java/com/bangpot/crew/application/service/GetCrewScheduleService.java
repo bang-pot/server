@@ -44,9 +44,9 @@ public class GetCrewScheduleService implements GetCrewScheduleUseCase {
 		crewRepository.findById(query.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(query.crewId()));
 
-		completedUserAccessService.validateCompletedUser(query.userId(), "Only joined crew members can read crew schedule.");
+		completedUserAccessService.validateCompletedUser(query.userId(), "가입한 크루원만 크루 일정을 조회할 수 있습니다.");
 		if (crewMemberRepository.findByCrewIdAndUserId(query.crewId(), query.userId()).isEmpty()) {
-			throw new AccessDeniedException("Only joined crew members can read crew schedule.");
+			throw new AccessDeniedException("가입한 크루원만 크루 일정을 조회할 수 있습니다.");
 		}
 
 		LocalDate from = LocalDate.parse(query.from());

@@ -38,7 +38,7 @@ class RequestTracingFilterTest {
 		assertThat(response.getHeader("X-Request-Id")).isEqualTo("req-health-1");
 		assertThat(output.getOut())
 			.contains("event=request.completed")
-			.contains("message=\"요청 처리 완료\"")
+			.contains("message=\"?�청 처리 ?�료\"")
 			.contains("requestId=req-health-1")
 			.contains("method=GET")
 			.contains("path=/api/auth/me");
@@ -56,7 +56,7 @@ class RequestTracingFilterTest {
 		assertThat(response.getHeader("X-Request-Id")).isNotBlank();
 		assertThat(output.getOut())
 			.contains("event=request.completed")
-			.contains("message=\"요청 처리 완료\"");
+			.contains("message=\"?�청 처리 ?�료\"");
 	}
 
 	@Test
@@ -79,7 +79,7 @@ class RequestTracingFilterTest {
 
 		assertThat(output.getOut())
 			.contains("event=request.slow")
-			.contains("message=\"느린 요청 감지\"")
+			.contains("message=\"?�린 ?�청 감�?\"")
 			.contains("requestId=req-slow-1")
 			.contains("durationMs=3200")
 			.contains("thresholdMs=3000")

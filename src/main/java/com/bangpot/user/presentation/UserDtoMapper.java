@@ -285,7 +285,7 @@ final class UserDtoMapper {
 			return WithdrawalReasonCode.valueOf(reasonCode.trim());
 		} catch (RuntimeException exception) {
 			throw new UserWithdrawalRequestValidationException(
-				List.of(new ApiErrorField("reasonCode", "reasonCode is invalid"))
+				List.of(new ApiErrorField("reasonCode", "유효하지 않은 탈퇴 사유입니다."))
 			);
 		}
 	}

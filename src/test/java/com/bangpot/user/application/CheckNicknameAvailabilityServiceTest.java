@@ -21,7 +21,7 @@ class CheckNicknameAvailabilityServiceTest extends AbstractUserApplicationServic
 
 	@Test
 	void returnsUnavailableWhenNicknameAlreadyExists() {
-		userRepository.save(User.rehydrate(1L, "bangpot", true));
+		userRepository.save(User.rehydrate(1L, "bangpot"));
 
 		CheckNicknameAvailabilityUseCase.Result result = checkNicknameAvailabilityUseCase.handle(
 			CheckNicknameAvailabilityUseCase.Query.of("bangpot")

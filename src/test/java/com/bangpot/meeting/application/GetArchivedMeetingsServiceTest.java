@@ -16,10 +16,6 @@ import org.springframework.security.access.AccessDeniedException;
 import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
 import com.bangpot.meeting.application.service.GetArchivedMeetingsService;
 import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
-import com.bangpot.auth.domain.AuthProvider;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.auth.domain.AuthUserStatus;
-import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.explore.application.port.ExploreThemeReadRepository;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
@@ -75,38 +71,12 @@ class GetArchivedMeetingsServiceTest {
 
 	@Test
 	void rejectsArchiveReadForIncompleteUser() {
-		userRepository.save(tempUser(8L, "temp-user"));
-
 		assertThatThrownBy(() -> getArchivedMeetingsUseCase.handle(GetArchivedMeetingsUseCase.Query.of(8L, 0, 20)))
 			.isInstanceOf(AccessDeniedException.class);
 	}
 
-	private AuthUser fullUser(Long id, String nickname) {
-		return AuthUser.rehydrate(
-			id,
-			AuthProvider.KAKAO,
-			"provider-" + id,
-			AuthUserStatus.FULL,
-			nickname,
-			RequiredTermsAgreement.of("2026-04-01", NOW.minusSeconds(30)),
-			null,
-			NOW.minusSeconds(3600),
-			NOW.minusSeconds(30)
-		);
-	}
-
-	private AuthUser tempUser(Long id, String providerId) {
-		return AuthUser.rehydrate(
-			id,
-			AuthProvider.KAKAO,
-			providerId,
-			AuthUserStatus.TEMP,
-			null,
-			null,
-			null,
-			NOW.minusSeconds(3600),
-			NOW.minusSeconds(30)
-		);
+	private User fullUser(Long id, String nickname) {
+		return User.rehydrate(id, nickname);
 	}
 
 	private static final class InMemoryArchivedMeetingReadRepository implements ArchivedMeetingReadRepository {
@@ -151,17 +121,16 @@ class GetArchivedMeetingsServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-		private final Map<Long, AuthUser> authUsers = new HashMap<>();
+		private final Map<Long, User> users = new HashMap<>();
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return Optional.ofNullable(authUsers.get(userId))
-				.map(user -> User.rehydrate(user.getId(), user.getNickname(), user.getStatus() == AuthUserStatus.FULL));
+			return Optional.ofNullable(users.get(userId));
 		}
 
 		@Override
 		public boolean existsByNickname(String nickname) {
-			return authUsers.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
+			return users.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}
 
 		@Override
@@ -171,11 +140,8 @@ class GetArchivedMeetingsServiceTest {
 
 		@Override
 		public User save(User user) {
-			throw new UnsupportedOperationException();
-		}
-
-		void save(AuthUser authUser) {
-			authUsers.put(authUser.getId(), authUser);
+			users.put(user.getId(), user);
+			return user;
 		}
 	}
 }

@@ -28,7 +28,7 @@ import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
-import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
+import com.bangpot.auth.application.config.AuthRequiredTermsProperties;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.port.ProfileHubReadRepository;
 import com.bangpot.user.application.port.UserRepository;
@@ -90,14 +90,13 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"1001",
 			AuthUserStatus.FULL,
-			"bangpot",
 			RequiredTermsAgreement.of("2026-03-01", NOW.minusSeconds(3600)),
 			null,
 			NOW.minusSeconds(7200),
 			NOW.minusSeconds(3600)
 		);
 		authUserRepository.save(existingUser);
-		userRepository.save(User.rehydrate(existingUser.getId(), "bangpot", true));
+		userRepository.save(User.rehydrate(existingUser.getId(), "bangpot"));
 
 		LoginWithProviderUseCase.Result result = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "1001", "/protected-demo")
@@ -159,10 +158,6 @@ class AuthUseCaseServicesTest {
 			.get()
 			.extracting(User::getNickname)
 			.isEqualTo("potmaster");
-		assertThat(authUserRepository.findById(loginResult.userId())).isPresent()
-			.get()
-			.extracting(AuthUser::getNickname)
-			.isNull();
 
 		GetCurrentAuthUserUseCase.View meView = getCurrentAuthUserUseCase.handle(
 			GetCurrentAuthUserUseCase.Query.of(loginResult.userId())
@@ -180,19 +175,26 @@ class AuthUseCaseServicesTest {
 	}
 
 	@Test
+	void authUserDoesNotOwnNicknameState() {
+		assertThat(AuthUser.class.getDeclaredFields())
+			.extracting(java.lang.reflect.Field::getName)
+			.asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.list(String.class))
+			.doesNotContain("nickname");
+	}
+
+	@Test
 	void rejectsDuplicateNicknameAtCompletionTime() {
 		authUserRepository.save(AuthUser.rehydrate(
 			10L,
 			AuthProvider.KAKAO,
 			"existing",
 			AuthUserStatus.FULL,
-			"dupe-name",
 			RequiredTermsAgreement.of("2026-03-01", NOW.minusSeconds(10)),
 			null,
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
-		userRepository.save(User.rehydrate(10L, "dupe-name", true));
+		userRepository.save(User.rehydrate(10L, "dupe-name"));
 		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "4004", null)
 		);
@@ -213,14 +215,13 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"full-user",
 			AuthUserStatus.FULL,
-			"bangpot",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
 			NOW.minusSeconds(60)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "bangpot", true));
+		userRepository.save(User.rehydrate(fullUser.getId(), "bangpot"));
 
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(fullUser.getId()));
 
@@ -235,14 +236,13 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"full-user",
 			AuthUserStatus.FULL,
-			"before",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
 			NOW.minusSeconds(60)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "before", true));
+		userRepository.save(User.rehydrate(fullUser.getId(), "before"));
 
 		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
 			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "  after  ")
@@ -262,26 +262,24 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"existing",
 			AuthUserStatus.FULL,
-			"dupe-name",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(10)),
 			null,
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
-		userRepository.save(User.rehydrate(10L, "dupe-name", true));
+		userRepository.save(User.rehydrate(10L, "dupe-name"));
 		AuthUser fullUser = AuthUser.rehydrate(
 			11L,
 			AuthProvider.KAKAO,
 			"updating-user",
 			AuthUserStatus.FULL,
-			"before",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(10)),
 			null,
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "before", true));
+		userRepository.save(User.rehydrate(fullUser.getId(), "before"));
 
 		assertThatThrownBy(() -> updateMyProfileUseCase.handle(
 			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "dupe-name")
@@ -305,12 +303,6 @@ class AuthUseCaseServicesTest {
 			Long userId = idsByProviderId.get(provider.name() + ":" + providerId);
 			return userId == null ? Optional.empty() : findById(userId);
 		}
-
-		public boolean existsByNickname(String nickname) {
-			return usersById.values().stream()
-				.anyMatch(user -> nickname.equals(user.getNickname()));
-		}
-
 		@Override
 		public AuthUser save(AuthUser user) {
 			if (user.getId() == null) {
@@ -344,7 +336,6 @@ class AuthUseCaseServicesTest {
 			}
 			final String keyword = normalizedKeyword;
 			return usersById.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
 				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
 				.toList();

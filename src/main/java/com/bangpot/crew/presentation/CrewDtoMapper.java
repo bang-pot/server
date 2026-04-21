@@ -112,7 +112,7 @@ final class CrewDtoMapper {
 		LocalDate toDate = parseDate("to", to);
 		if (fromDate.isAfter(toDate)) {
 			throw new CrewScheduleRequestValidationException(
-				List.of(new ApiErrorField("to", "to must be on or after from."))
+				List.of(new ApiErrorField("to", "종료일은 시작일과 같거나 이후 날짜여야 합니다."))
 			);
 		}
 		return GetCrewScheduleUseCase.Query.of(crewId, userId, fromDate.toString(), toDate.toString());

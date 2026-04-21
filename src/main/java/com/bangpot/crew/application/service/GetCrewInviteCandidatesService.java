@@ -15,6 +15,7 @@ import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
+import com.bangpot.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,20 +34,33 @@ public class GetCrewInviteCandidatesService implements GetCrewInviteCandidatesUs
 	public List<View> handle(Query query) {
 		Crew crew = crewRepository.findById(query.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(query.crewId()));
-		completedUserAccessService.validateCompletedUser(query.leaderUserId(), "크루 초대 대상을 조회할 수 없습니다.");
+		completedUserAccessService.validateCompletedUser(query.leaderUserId(), "가입 완료 사용자만 크루 초대 대상을 조회할 수 있습니다.");
 
 		if (!crewMemberRepository.existsLeaderByCrewIdAndUserId(crew.getId(), query.leaderUserId())) {
-			throw new AccessDeniedException("크루 초대 대상을 조회할 수 없습니다.");
+			throw new AccessDeniedException("크루 초대 대상을 조회할 권한이 없습니다.");
 		}
 		if (!crew.allowsDirectInvite()) {
 			throw new CrewInviteNotAllowedException(crew.getId());
 		}
 
-		return userRepository.findCompletedUsersByNicknameContaining(query.nickname()).stream()
+		String normalizedNickname = normalizeNickname(query.nickname());
+		List<User> candidates = normalizedNickname == null
+			? userRepository.findAllCompletedUsers()
+			: userRepository.findCompletedUsersByNicknameContaining(normalizedNickname);
+
+		return candidates.stream()
 			.filter(user -> !user.getId().equals(query.leaderUserId()))
 			.filter(user -> !crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), user.getId()))
 			.filter(user -> !crewInviteRepository.existsPendingByCrewIdAndTargetUserId(crew.getId(), user.getId()))
 			.map(user -> View.of(user.getId(), user.getNickname()))
 			.toList();
+	}
+
+	private String normalizeNickname(String nickname) {
+		if (nickname == null) {
+			return null;
+		}
+		String normalizedNickname = nickname.trim();
+		return normalizedNickname.isEmpty() ? null : normalizedNickname;
 	}
 }

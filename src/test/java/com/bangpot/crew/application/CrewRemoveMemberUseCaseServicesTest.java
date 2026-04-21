@@ -59,7 +59,7 @@ class CrewRemoveMemberUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
-		userRepository = new InMemoryUserRepository(authUserRepository);
+		userRepository = new InMemoryUserRepository();
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
@@ -174,12 +174,12 @@ class CrewRemoveMemberUseCaseServicesTest {
 	}
 
 	private AuthUser fullUser(Long id, String providerId, String nickname) {
+		userRepository.save(User.rehydrate(id, nickname));
 		return AuthUser.rehydrate(
 			id,
 			AuthProvider.KAKAO,
 			providerId,
 			AuthUserStatus.FULL,
-			nickname,
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
@@ -211,17 +211,11 @@ class CrewRemoveMemberUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-
-		private final InMemoryAuthUserRepository authUserRepository;
-
-		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
-			this.authUserRepository = authUserRepository;
-		}
+		private final Map<Long, User> usersById = new HashMap<>();
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL));
+			return Optional.ofNullable(usersById.get(userId));
 		}
 
 		@Override
@@ -236,7 +230,8 @@ class CrewRemoveMemberUseCaseServicesTest {
 
 		@Override
 		public User save(User user) {
-			throw new UnsupportedOperationException();
+			usersById.put(user.getId(), user);
+			return user;
 		}
 	}
 

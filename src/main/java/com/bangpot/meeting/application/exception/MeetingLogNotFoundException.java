@@ -6,4 +6,3 @@ public class MeetingLogNotFoundException extends RuntimeException {
 		super("meeting log not found: " + logId);
 	}
 }
-

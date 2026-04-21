@@ -22,7 +22,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var result = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"정말 재미있었던 방탈출이었어요.",
+			"?�말 ?��??�었??방탈출이?�어??",
 			java.util.List.of(
 				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.jpg", 1024L)
 			)
@@ -42,7 +42,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var result = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			11L,
-			"같이 참여했던 멤버도 기록을 남길 수 있어야 합니다.",
+			"같이 참여?�던 멤버??기록???�길 ???�어???�니??",
 			java.util.List.of()
 		));
 
@@ -59,7 +59,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			11L,
-			"LEFT 이력은 작성 권한이 없습니다.",
+			"LEFT ?�력?� ?�성 권한???�습?�다.",
 			java.util.List.of()
 		))).isInstanceOf(AccessDeniedException.class);
 	}
@@ -72,7 +72,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"완료 전에 작성할 수는 없습니다.",
+			"?�료 ?�에 ?�성???�는 ?�습?�다.",
 			java.util.List.of()
 		))).isInstanceOf(MeetingLogWriteNotAllowedException.class);
 	}
@@ -86,7 +86,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			99L,
-			"무관한 사용자는 작성할 수 없습니다.",
+			"무�????�용?�는 ?�성?????�습?�다.",
 			java.util.List.of()
 		))).isInstanceOf(AccessDeniedException.class);
 	}
@@ -98,14 +98,14 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"첫 기록",
+			"�?기록",
 			java.util.List.of()
 		));
 
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"두 번째 기록",
+			"??번째 기록",
 			java.util.List.of()
 		))).isInstanceOf(MeetingLogAlreadyExistsException.class);
 	}
@@ -118,7 +118,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"사진 검증 실패",
+			"?�진 검�??�패",
 			java.util.List.of(
 				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.gif", 1024L),
 				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/b.jpg", 6L * 1024 * 1024),

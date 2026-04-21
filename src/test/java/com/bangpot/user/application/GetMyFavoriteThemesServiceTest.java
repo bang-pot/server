@@ -21,7 +21,7 @@ class GetMyFavoriteThemesServiceTest extends AbstractUserApplicationServiceTest 
 	void returnsMyFavoriteThemesForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 		myFavoriteThemeReadRepository.putResult(
 			7L,
 			MyFavoriteThemeReadRepository.SearchResult.of(
@@ -30,7 +30,7 @@ class GetMyFavoriteThemesServiceTest extends AbstractUserApplicationServiceTest 
 						901L,
 						"Deep Blue",
 						"Seoul Escape",
-						"서울",
+						"?쒖슱",
 						"https://cdn.example.com/theme-901.jpg",
 						12,
 						true
@@ -48,7 +48,7 @@ class GetMyFavoriteThemesServiceTest extends AbstractUserApplicationServiceTest 
 		assertThat(result.items().get(0).themeId()).isEqualTo(901L);
 		assertThat(result.items().get(0).themeName()).isEqualTo("Deep Blue");
 		assertThat(result.items().get(0).storeName()).isEqualTo("Seoul Escape");
-		assertThat(result.items().get(0).regionName()).isEqualTo("서울");
+		assertThat(result.items().get(0).regionName()).isEqualTo("?쒖슱");
 		assertThat(result.items().get(0).thumbnailUrl()).isEqualTo("https://cdn.example.com/theme-901.jpg");
 		assertThat(result.items().get(0).favoriteCount()).isEqualTo(12);
 		assertThat(result.items().get(0).isFavorite()).isTrue();
@@ -61,7 +61,7 @@ class GetMyFavoriteThemesServiceTest extends AbstractUserApplicationServiceTest 
 	void defaultsFavoriteThemeListToEmptyWhenNoFavoritesExist() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		GetMyFavoriteThemesUseCase.Result result = getMyFavoriteThemesUseCase.handle(
 			GetMyFavoriteThemesUseCase.Query.of(7L, 0, 20)

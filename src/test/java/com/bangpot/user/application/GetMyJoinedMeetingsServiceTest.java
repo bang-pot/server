@@ -21,17 +21,17 @@ class GetMyJoinedMeetingsServiceTest extends AbstractUserApplicationServiceTest 
 	void returnsMyJoinedMeetingsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 		joinedMeetingReadRepository.putResult(
 			7L,
 			JoinedMeetingReadRepository.SearchResult.of(
 				List.of(
 					JoinedMeetingReadRepository.Item.of(
 						201L,
-						"토요일 방탈",
+						"?�요??방탈",
 						"Deep Blue",
 						5L,
-						"방탈출 크루",
+						"방탈�??�루",
 						"2026-04-18",
 						"19:00",
 						"COMPLETED",
@@ -49,10 +49,10 @@ class GetMyJoinedMeetingsServiceTest extends AbstractUserApplicationServiceTest 
 
 		assertThat(result.items()).hasSize(1);
 		assertThat(result.items().get(0).meetingId()).isEqualTo(201L);
-		assertThat(result.items().get(0).title()).isEqualTo("토요일 방탈");
+		assertThat(result.items().get(0).title()).isEqualTo("?�요??방탈");
 		assertThat(result.items().get(0).themeName()).isEqualTo("Deep Blue");
 		assertThat(result.items().get(0).crewId()).isEqualTo(5L);
-		assertThat(result.items().get(0).crewName()).isEqualTo("방탈출 크루");
+		assertThat(result.items().get(0).crewName()).isEqualTo("방탈�??�루");
 		assertThat(result.items().get(0).date()).isEqualTo("2026-04-18");
 		assertThat(result.items().get(0).time()).isEqualTo("19:00");
 		assertThat(result.items().get(0).status()).isEqualTo("COMPLETED");
@@ -65,7 +65,7 @@ class GetMyJoinedMeetingsServiceTest extends AbstractUserApplicationServiceTest 
 	void defaultsJoinedMeetingListToEmptyWhenNoActivityExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		GetMyJoinedMeetingsUseCase.Result result = getMyJoinedMeetingsUseCase.handle(
 			GetMyJoinedMeetingsUseCase.Query.of(7L, 0, 20)

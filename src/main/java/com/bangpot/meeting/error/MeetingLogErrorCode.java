@@ -33,4 +33,3 @@ public enum MeetingLogErrorCode implements ApiErrorCode {
 		return status;
 	}
 }
-

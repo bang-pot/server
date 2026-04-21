@@ -19,7 +19,7 @@ class LombokUsageBoundaryTest {
 			"src/main/java/com/bangpot/auth/infrastructure/config/AuthFrontendProperties.java"
 		);
 		assertUsesGetterSetter(
-			"src/main/java/com/bangpot/auth/infrastructure/config/AuthRequiredTermsProperties.java"
+			"src/main/java/com/bangpot/auth/application/config/AuthRequiredTermsProperties.java"
 		);
 	}
 

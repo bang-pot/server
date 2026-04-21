@@ -13,6 +13,10 @@ public interface UserRepository {
 
 	List<User> findCompletedUsersByNicknameContaining(String nickname);
 
+	default List<User> findAllCompletedUsers() {
+		throw new UnsupportedOperationException("findAllCompletedUsers is not implemented");
+	}
+
 	User save(User user);
 
 	default void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {

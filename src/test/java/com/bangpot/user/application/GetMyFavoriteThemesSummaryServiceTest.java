@@ -19,7 +19,7 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 	void returnsFavoriteThemeSummaryForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 		favoriteThemeSummaryReadRepository.putView(
 			7L,
 			FavoriteThemeSummaryReadRepository.View.of(
@@ -28,7 +28,7 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 						101L,
 						"Deep Blue",
 						"Seoul Escape",
-						"서울",
+						"?쒖슱",
 						"https://cdn.example.com/theme-101.jpg",
 						13,
 						true
@@ -46,7 +46,7 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 		assertThat(result.items().get(0).themeId()).isEqualTo(101L);
 		assertThat(result.items().get(0).themeName()).isEqualTo("Deep Blue");
 		assertThat(result.items().get(0).storeName()).isEqualTo("Seoul Escape");
-		assertThat(result.items().get(0).regionName()).isEqualTo("서울");
+		assertThat(result.items().get(0).regionName()).isEqualTo("?쒖슱");
 		assertThat(result.items().get(0).thumbnailUrl()).isEqualTo("https://cdn.example.com/theme-101.jpg");
 		assertThat(result.items().get(0).favoriteCount()).isEqualTo(13);
 		assertThat(result.items().get(0).isFavorite()).isTrue();
@@ -58,7 +58,7 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 	void returnsEmptyFavoriteThemeSummaryWhenNoFavoritesExist() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		GetMyFavoriteThemesSummaryUseCase.Result result = getMyFavoriteThemesSummaryUseCase.handle(
 			GetMyFavoriteThemesSummaryUseCase.Query.of(7L)

@@ -257,9 +257,9 @@ final class UserDto {
 	}
 
 	record WithdrawMyAccountRequest(
-		@NotBlank(message = "reasonCode is required") String reasonCode,
+		@NotBlank(message = "탈퇴 사유를 선택해야 합니다.") String reasonCode,
 		String reasonDetail,
-		@AssertTrue(message = "confirmationChecked must be true") boolean confirmationChecked
+		@AssertTrue(message = "탈퇴 진행 동의가 필요합니다.") boolean confirmationChecked
 	) {
 	}
 

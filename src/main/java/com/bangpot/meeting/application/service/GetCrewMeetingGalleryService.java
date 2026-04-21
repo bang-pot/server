@@ -25,7 +25,7 @@ public class GetCrewMeetingGalleryService implements GetCrewMeetingGalleryUseCas
 
 	@Override
 	public Result handle(Query query) {
-		completedUserAccessService.validateCompletedUser(query.userId(), "meeting gallery access requires a completed user");
+		completedUserAccessService.validateCompletedUser(query.userId(), "모임 갤러리 조회는 가입 완료 사용자만 가능합니다.");
 		crewRepository.findById(query.crewId()).orElseThrow(() -> new CrewNotFoundException(query.crewId()));
 
 		if (!crewMemberRepository.existsByCrewIdAndUserId(query.crewId(), query.userId())) {

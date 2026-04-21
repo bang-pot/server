@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
 import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
+import com.bangpot.auth.application.config.AuthRequiredTermsProperties;
 import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.domain.User;
@@ -33,12 +33,12 @@ public class GetCurrentAuthUserService implements GetCurrentAuthUserUseCase {
 			return View.guest(authRequiredTermsProperties.getRequiredTermsVersion());
 		}
 
-		AuthStatus authStatus = user.requiresCompletion() ? AuthStatus.TEMP : AuthStatus.FULL;
+		AuthStatus authStatus = user.isTemp() ? AuthStatus.TEMP : AuthStatus.FULL;
 		Instant requiredTermsAcceptedAt = user.getRequiredTermsAgreement() == null
 			? null
 			: user.getRequiredTermsAgreement().getAcceptedAt();
 		String nickname = null;
-		if (!user.requiresCompletion()) {
+		if (!user.isTemp()) {
 			User profile = userRepository.findById(user.getId())
 				.orElseThrow(() -> new UserNotFoundException(user.getId()));
 			nickname = profile.getNickname();
@@ -46,7 +46,7 @@ public class GetCurrentAuthUserService implements GetCurrentAuthUserUseCase {
 
 		return View.authenticated(
 			authStatus,
-			user.requiresCompletion(),
+			user.isTemp(),
 			user.getPendingRedirectPath(),
 			authRequiredTermsProperties.getRequiredTermsVersion(),
 			AuthenticatedUserView.of(user.getId(), nickname),

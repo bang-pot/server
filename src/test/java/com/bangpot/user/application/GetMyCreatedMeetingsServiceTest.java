@@ -21,19 +21,19 @@ class GetMyCreatedMeetingsServiceTest extends AbstractUserApplicationServiceTest
 	void returnsMyCreatedMeetingsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 		createdMeetingReadRepository.putResult(
 			7L,
 			CreatedMeetingReadRepository.SearchResult.of(
 				List.of(
 					CreatedMeetingReadRepository.Item.of(
 						101L,
-						"금요일 이스케이프",
+						"금요???�스케?�프",
 						"COMPLETED",
 						"2026-04-17",
 						"19:00",
 						5L,
-						"방탈출 크루"
+						"방탈�??�루"
 					)
 				),
 				CreatedMeetingReadRepository.PageInfo.of(0, 20, false)
@@ -46,12 +46,12 @@ class GetMyCreatedMeetingsServiceTest extends AbstractUserApplicationServiceTest
 
 		assertThat(result.items()).hasSize(1);
 		assertThat(result.items().get(0).meetingId()).isEqualTo(101L);
-		assertThat(result.items().get(0).title()).isEqualTo("금요일 이스케이프");
+		assertThat(result.items().get(0).title()).isEqualTo("금요???�스케?�프");
 		assertThat(result.items().get(0).status()).isEqualTo("COMPLETED");
 		assertThat(result.items().get(0).date()).isEqualTo("2026-04-17");
 		assertThat(result.items().get(0).time()).isEqualTo("19:00");
 		assertThat(result.items().get(0).crewId()).isEqualTo(5L);
-		assertThat(result.items().get(0).crewName()).isEqualTo("방탈출 크루");
+		assertThat(result.items().get(0).crewName()).isEqualTo("방탈�??�루");
 		assertThat(result.pageInfo().hasNext()).isFalse();
 	}
 
@@ -59,7 +59,7 @@ class GetMyCreatedMeetingsServiceTest extends AbstractUserApplicationServiceTest
 	void defaultsCreatedMeetingListToEmptyWhenNoActivityExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		GetMyCreatedMeetingsUseCase.Result result = getMyCreatedMeetingsUseCase.handle(
 			GetMyCreatedMeetingsUseCase.Query.of(7L, 0, 20)

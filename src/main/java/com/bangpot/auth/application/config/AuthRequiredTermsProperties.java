@@ -1,4 +1,4 @@
-package com.bangpot.auth.infrastructure.config;
+package com.bangpot.auth.application.config;
 
 import lombok.Getter;
 import lombok.Setter;

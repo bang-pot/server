@@ -18,7 +18,7 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void updatesNicknameForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
 			UpdateMyProfileUseCase.Command.of(7L, "  new-pot  ")
@@ -33,8 +33,8 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void allowsKeepingSameNicknameWithoutDuplicateFailure() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
-		userRepository.save(User.rehydrate(8L, "other", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
+		userRepository.save(User.rehydrate(8L, "other"));
 
 		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
 			UpdateMyProfileUseCase.Command.of(7L, "bangpot")
@@ -47,7 +47,7 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void rejectsNicknameUpdateForBlankNickname() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "   ")))
 			.isInstanceOf(InvalidNicknameException.class);
@@ -57,8 +57,8 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void rejectsNicknameUpdateWhenNicknameAlreadyExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
-		userRepository.save(User.rehydrate(8L, "taken", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
+		userRepository.save(User.rehydrate(8L, "taken"));
 
 		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "taken")))
 			.isInstanceOf(DuplicateNicknameException.class);

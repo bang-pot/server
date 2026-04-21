@@ -6,4 +6,3 @@ public class MeetingLogAlreadyExistsException extends RuntimeException {
 		super("meeting log already exists: meetingId=" + meetingId + ", authorUserId=" + authorUserId);
 	}
 }
-

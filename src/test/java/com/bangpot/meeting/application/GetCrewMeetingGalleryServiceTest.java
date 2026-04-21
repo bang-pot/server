@@ -47,7 +47,7 @@ class GetCrewMeetingGalleryServiceTest {
 
 	@Test
 	void returnsMeetingGalleryForActiveCrewMember() {
-		userRepository.save(User.rehydrate(7L, "member", true));
+		userRepository.save(User.rehydrate(7L, "member"));
 		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), 7L));
 		meetingGalleryReadRepository.result = MeetingGalleryReadRepository.SearchResult.of(
@@ -77,7 +77,7 @@ class GetCrewMeetingGalleryServiceTest {
 
 	@Test
 	void throwsCrewNotFoundWhenCrewDoesNotExist() {
-		userRepository.save(User.rehydrate(7L, "member", true));
+		userRepository.save(User.rehydrate(7L, "member"));
 
 		assertThatThrownBy(() -> getCrewMeetingGalleryUseCase.handle(
 			GetCrewMeetingGalleryUseCase.Query.of(999L, 7L, 0, 20)
@@ -87,7 +87,7 @@ class GetCrewMeetingGalleryServiceTest {
 
 	@Test
 	void throwsAccessDeniedWhenUserIsNotActiveCrewMember() {
-		userRepository.save(User.rehydrate(7L, "member", true));
+		userRepository.save(User.rehydrate(7L, "member"));
 		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> getCrewMeetingGalleryUseCase.handle(
@@ -112,7 +112,6 @@ class GetCrewMeetingGalleryServiceTest {
 		@Override
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			return users.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> user.getNickname().contains(nickname))
 				.toList();
 		}

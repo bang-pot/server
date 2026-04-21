@@ -19,7 +19,7 @@ class SlackWebhookAppenderTest {
 		assertThat(appender.isSlackTarget(loggingEvent(
 			Level.INFO,
 			"com.bangpot.common.logging.StartupLifecycleLogger",
-			"event=application.startup.completed message=\"애플리케이션 기동 완료\""
+			"event=application.startup.completed message=\"?�플리�??�션 기동 ?�료\""
 		))).isTrue();
 	}
 
@@ -30,7 +30,7 @@ class SlackWebhookAppenderTest {
 		assertThat(appender.isSlackTarget(loggingEvent(
 			Level.WARN,
 			"com.bangpot.auth.infrastructure.logging.AuthAuditLogger",
-			"event=auth.protected_resource_access_failed message=\"보호 자원 접근 실패\" path=/api/sonicos/tfa"
+			"event=auth.protected_resource_access_failed message=\"보호 ?�원 ?�근 ?�패\" path=/api/sonicos/tfa"
 		))).isFalse();
 	}
 
@@ -40,14 +40,14 @@ class SlackWebhookAppenderTest {
 		LoggingEvent event = loggingEvent(
 			Level.ERROR,
 			"com.bangpot.common.logging.ServerErrorLoggingFilter",
-			"event=request.failed message=\"요청 처리 중 서버 오류 발생\" path=/api/auth/me?token=secret context=request.failed exceptionType=IllegalStateException"
+			"event=request.failed message=\"?�청 처리 �??�버 ?�류 발생\" path=/api/auth/me?token=secret context=request.failed exceptionType=IllegalStateException"
 		);
 		event.setMDCPropertyMap(Map.of("requestId", "req-ops-500"));
 
 		String payload = appender.buildPayload(event);
 
 		assertThat(payload)
-			.contains("\"text\":\"[ERROR] 요청 처리 중 서버 오류 발생\\n")
+			.contains("\"text\":\"[ERROR] ?�청 처리 �??�버 ?�류 발생\\n")
 			.contains("- service: bangpot-backend\\n")
 			.contains("- environment: prod\\n")
 			.contains("- requestId: req-ops-500\\n")
@@ -63,19 +63,19 @@ class SlackWebhookAppenderTest {
 		LoggingEvent event = loggingEvent(
 			Level.WARN,
 			"com.bangpot.common.logging.RequestTracingFilter",
-			"event=request.slow message=\"느린 요청 감지\" path=/api/auth/me context=request.slow durationMs=3200 thresholdMs=3000"
+			"event=request.slow message=\"?�린 ?�청 감�?\" path=/api/auth/me context=request.slow durationMs=3200 thresholdMs=3000"
 		);
 		event.setMDCPropertyMap(Map.of("requestId", "req-slow-1"));
 
 		String payload = appender.buildPayload(event);
 
 		assertThat(payload)
-			.contains("\"text\":\"[WARN] 느린 요청 감지\\n")
+			.contains("\"text\":\"[WARN] ?�린 ?�청 감�?\\n")
 			.contains("- requestId: req-slow-1\\n")
 			.contains("- path: /api/auth/me\\n")
 			.contains("- context: request.slow\\n")
 			.contains("- durationMs: 3200\\n")
-			.contains("- summary: 느린 요청 감지");
+			.contains("- summary: ?�린 ?�청 감�?");
 	}
 
 	@Test
@@ -102,7 +102,7 @@ class SlackWebhookAppenderTest {
 		String payload = appender.buildPayload(event);
 
 		assertThat(payload)
-			.contains("\"text\":\"[ERROR] 애플리케이션 시작 실패\\n")
+			.contains("\"text\":\"[ERROR] ?�플리�??�션 ?�작 ?�패\\n")
 			.contains("- context: application.startup\\n")
 			.contains("- reason: Web server failed to start. Port 8080 was already in use.\\n")
 			.doesNotContain("APPLICATION FAILED TO START")

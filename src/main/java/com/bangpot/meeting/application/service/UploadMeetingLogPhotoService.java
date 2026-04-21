@@ -2,6 +2,7 @@ package com.bangpot.meeting.application.service;
 
 import java.util.List;
 import java.util.Locale;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +26,7 @@ public class UploadMeetingLogPhotoService implements UploadMeetingLogPhotoUseCas
 
 	@Override
 	public Result handle(Command command) {
-		completedUserAccessService.validateCompletedUser(command.userId(), "log photo upload requires a completed user");
+		completedUserAccessService.validateCompletedUser(command.userId(), "방탈로그 사진 업로드는 가입 완료 사용자만 가능합니다.");
 
 		MultipartFile file = command.file();
 		validate(file);
@@ -65,4 +66,3 @@ public class UploadMeetingLogPhotoService implements UploadMeetingLogPhotoUseCas
 	}
 
 }
-

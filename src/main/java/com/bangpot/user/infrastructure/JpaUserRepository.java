@@ -30,13 +30,18 @@ public class JpaUserRepository implements UserRepository {
 	public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 		String normalizedKeyword = normalizeKeyword(nickname);
 		if (normalizedKeyword == null) {
-			return userJpaRepository.findAllByWithdrawnAtIsNullOrderByIdAsc()
-				.stream()
-				.map(this::toDomain)
-				.toList();
+			return List.of();
 		}
 		return userJpaRepository
 			.findAllByNicknameContainingIgnoreCaseAndWithdrawnAtIsNullOrderByIdAsc(normalizedKeyword)
+			.stream()
+			.map(this::toDomain)
+			.toList();
+	}
+
+	@Override
+	public List<User> findAllCompletedUsers() {
+		return userJpaRepository.findAllByWithdrawnAtIsNullOrderByIdAsc()
 			.stream()
 			.map(this::toDomain)
 			.toList();
@@ -60,7 +65,7 @@ public class JpaUserRepository implements UserRepository {
 	}
 
 	private User toDomain(UserJpaEntity userJpaEntity) {
-		return User.rehydrate(userJpaEntity.getId(), userJpaEntity.getNickname(), true);
+		return User.rehydrate(userJpaEntity.getId(), userJpaEntity.getNickname());
 	}
 
 	private String normalizeKeyword(String keyword) {

@@ -147,7 +147,7 @@ class JpaMeetingLogFeedReadRepositoryTest {
 			.setParameter(5, java.sql.Timestamp.from(java.time.Instant.parse("2026-04-15T01:00:00Z")))
 			.setParameter(6, java.sql.Timestamp.from(java.time.Instant.parse("2026-04-16T01:00:00Z")))
 			.setParameter(7, 7L)
-			.setParameter(8, "운영 삭제")
+			.setParameter(8, "?댁쁺 ??젣")
 			.executeUpdate();
 
 		entityManager.flush();

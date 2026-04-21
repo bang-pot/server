@@ -1,31 +1,24 @@
 package com.bangpot.user.domain;
 
+import lombok.Getter;
+
+@Getter
 public class User {
 
 	private final Long id;
 	private String nickname;
-	private final boolean profileCompleted;
 
-	private User(Long id, String nickname, boolean profileCompleted) {
+	private User(Long id, String nickname) {
 		this.id = id;
 		this.nickname = nickname;
-		this.profileCompleted = profileCompleted;
 	}
 
-	public static User rehydrate(Long id, String nickname, boolean profileCompleted) {
-		return new User(id, nickname, profileCompleted);
+	public static User create(Long id, String nickname) {
+		return new User(id, nickname);
 	}
 
-	public Long getId() {
-		return id;
-	}
-
-	public String getNickname() {
-		return nickname;
-	}
-
-	public boolean requiresCompletion() {
-		return !profileCompleted;
+	public static User rehydrate(Long id, String nickname) {
+		return new User(id, nickname);
 	}
 
 	public void updateNickname(String nickname) {
