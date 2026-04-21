@@ -8,17 +8,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 
 @Entity
 @Getter
-@Table(
-	name = "users",
-	uniqueConstraints = {
-		@UniqueConstraint(name = "uk_users_nickname", columnNames = "nickname")
-	}
-)
+@Table(name = "users")
 class UserJpaEntity {
 
 	@Id

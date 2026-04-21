@@ -175,7 +175,7 @@ abstract class AbstractUserApplicationServiceTest {
 			userRepository,
 			pendingCrewReadRepository
 		);
-		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
+		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
 	}
 

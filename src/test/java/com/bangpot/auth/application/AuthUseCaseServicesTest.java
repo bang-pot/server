@@ -85,7 +85,7 @@ class AuthUseCaseServicesTest {
 			authRequiredTermsProperties
 		);
 		getMyProfileUseCase = new GetMyProfileService(userRepository, meetingRepository, crewRepository);
-		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
+		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
 	}
 
 	@Test
