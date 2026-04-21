@@ -35,6 +35,10 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 	private static final Pattern REASON_PATTERN = Pattern.compile("(?:exceptionType|failureType)=([^\\s]+)");
 	private static final Pattern DURATION_PATTERN = Pattern.compile("durationMs=([^\\s]+)");
 	private static final Pattern DESCRIPTION_PATTERN = Pattern.compile("Description:\\s*(.+?)(?:\\s+Action:|$)", Pattern.DOTALL);
+	private static final String STARTUP_FAILURE_SUMMARY =
+		"\uC560\uD50C\uB9AC\uCF00\uC774\uC158 \uC2DC\uC791 \uC2E4\uD328";
+	private static final String DEFAULT_SUMMARY =
+		"\uC6B4\uC601 \uC54C\uB9BC";
 
 	private final HttpClient httpClient = HttpClient.newBuilder()
 		.connectTimeout(CONNECT_TIMEOUT)
@@ -50,7 +54,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 	private String environment;
 
 	@Override
-	// 현재 로그가 운영 알림 조건에 맞을 때만 Slack webhook으로 전송한다.
 	protected void append(ILoggingEvent eventObject) {
 		if (url == null || url.isBlank() || !isSlackTarget(eventObject)) {
 			return;
@@ -70,7 +73,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		}
 	}
 
-	// startup 완료 로그, 운영상 중요한 warn, 모든 error만 Slack 대상으로 제한한다.
 	boolean isSlackTarget(ILoggingEvent eventObject) {
 		if (eventObject.getLevel().isGreaterOrEqual(Level.ERROR)) {
 			return true;
@@ -81,7 +83,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		return Level.INFO.equals(eventObject.getLevel()) && STARTUP_LOGGER.equals(eventObject.getLoggerName());
 	}
 
-	// 로그 이벤트에서 최소 추적 필드를 찾아 Slack text payload JSON으로 만든다.
 	String buildPayload(ILoggingEvent event) {
 		Map<String, String> mdc = safeMdcPropertyMap(event);
 		String formattedMessage = sanitize(event.getFormattedMessage());
@@ -114,7 +115,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		return "{\"text\":\"" + escapeJson(text.toString()) + "\"}";
 	}
 
-	// startup 실패처럼 MDC 자체가 아직 준비되지 않은 로그도 안전하게 처리한다.
 	private Map<String, String> safeMdcPropertyMap(ILoggingEvent event) {
 		try {
 			Map<String, String> mdc = event.getMDCPropertyMap();
@@ -124,13 +124,11 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		}
 	}
 
-	// 단순한 401 요청 로그는 제외하고 Slack에서는 노이즈로 취급한다.
 	private boolean isScannerNoise(String formattedMessage) {
 		return formattedMessage != null
 			&& formattedMessage.contains("event=auth.protected_resource_access_failed");
 	}
 
-	// 정해진 패턴이 보이면 로그 메시지에서 구조화된 필드 하나를 추출한다.
 	private String extract(Pattern pattern, String message) {
 		if (message == null || message.isBlank()) {
 			return null;
@@ -139,15 +137,13 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		return matcher.find() ? normalizeWhitespace(matcher.group(1)) : null;
 	}
 
-	// startup 실패는 긴 본문 대신 짧은 제목으로 고정하고, 나머지는 기존 message 필드를 우선 사용한다.
 	private String resolveSummary(ILoggingEvent event, String formattedMessage) {
 		if (STARTUP_FAILURE_LOGGER.equals(event.getLoggerName())) {
-			return "애플리케이션 시작 실패";
+			return STARTUP_FAILURE_SUMMARY;
 		}
-		return firstNonBlank(extract(MESSAGE_PATTERN, formattedMessage), formattedMessage, "운영 알림");
+		return firstNonBlank(extract(MESSAGE_PATTERN, formattedMessage), formattedMessage, DEFAULT_SUMMARY);
 	}
 
-	// startup 실패는 공통 context를 붙여 Slack 채널에서 종류를 바로 구분할 수 있게 한다.
 	private String resolveContext(ILoggingEvent event) {
 		if (STARTUP_FAILURE_LOGGER.equals(event.getLoggerName())) {
 			return "application.startup";
@@ -155,7 +151,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		return null;
 	}
 
-	// 일반 오류는 exception or failure type을, startup 실패는 Description 요약을 reason으로 사용한다.
 	private String resolveReason(ILoggingEvent event, String formattedMessage) {
 		if (STARTUP_FAILURE_LOGGER.equals(event.getLoggerName())) {
 			return firstNonBlank(extract(DESCRIPTION_PATTERN, formattedMessage), "startup failed");
@@ -163,7 +158,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		return extract(REASON_PATTERN, formattedMessage);
 	}
 
-	// 마스킹 이후에도 의미가 남는 값만 Slack 본문에 줄 단위로 추가한다.
 	private void appendLine(StringBuilder text, String key, String value) {
 		String sanitizedValue = sanitize(value);
 		if (sanitizedValue == null || sanitizedValue.isBlank()) {
@@ -175,7 +169,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 			.append(sanitizedValue);
 	}
 
-	// Slack payload를 만들기 전에 민감정보 패턴을 먼저 마스킹한다.
 	private String sanitize(String value) {
 		if (value == null || value.isBlank() || "-".equals(value)) {
 			return null;
@@ -190,7 +183,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		return normalizeWhitespace(sanitized);
 	}
 
-	// 일반 마스킹 규칙을 적용한 뒤 query string을 제거해 path-only 값으로 맞춘다.
 	private String sanitizePath(String path) {
 		String sanitized = sanitize(path);
 		if (sanitized == null) {
@@ -199,7 +191,6 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		return RequestTrace.sanitizePath(sanitized);
 	}
 
-	// 후보 값 중 비어 있지 않은 첫 번째 값을 골라 fallback 순서를 고정한다.
 	private String firstNonBlank(String... candidates) {
 		for (String candidate : candidates) {
 			if (candidate != null && !candidate.isBlank()) {
@@ -209,12 +200,10 @@ public class SlackWebhookAppender extends AppenderBase<ILoggingEvent> {
 		return null;
 	}
 
-	// 여러 줄과 중복 공백을 한 줄 요약 형태로 정리한다.
 	private String normalizeWhitespace(String value) {
 		return value == null ? null : value.replaceAll("\\s+", " ").trim();
 	}
 
-	// Slack webhook 요청 본문에 들어가도록 text를 안전한 JSON 문자열로 이스케이프한다.
 	private String escapeJson(String value) {
 		return value
 			.replace("\\", "\\\\")

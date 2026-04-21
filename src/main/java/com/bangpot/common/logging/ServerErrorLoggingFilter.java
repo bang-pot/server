@@ -18,6 +18,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class ServerErrorLoggingFilter extends OncePerRequestFilter {
 
+	private static final String SERVER_ERROR_MESSAGE = "\uC694\uCCAD \uCC98\uB9AC \uC911 \uC11C\uBC84 \uC624\uB958 \uBC1C\uC0DD";
+
 	@Override
 	protected void doFilterInternal(
 		HttpServletRequest request,
@@ -41,7 +43,8 @@ public class ServerErrorLoggingFilter extends OncePerRequestFilter {
 			return;
 		}
 		log.error(
-			"event=request.failed message=\"요청 처리 중 서버 오류 발생\" requestId={} method={} path={} status={} exceptionType={}",
+			"event=request.failed message=\"{}\" requestId={} method={} path={} status={} exceptionType={}",
+			SERVER_ERROR_MESSAGE,
 			RequestTrace.currentRequestId(),
 			request.getMethod(),
 			RequestTrace.sanitizePath(request.getRequestURI()),

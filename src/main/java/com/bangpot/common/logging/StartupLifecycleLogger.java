@@ -20,6 +20,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class StartupLifecycleLogger {
 
+	private static final String STARTUP_HEALTH_FAILED_MESSAGE =
+		"\uC560\uD50C\uB9AC\uCF00\uC774\uC158 \uAE30\uB3D9 \uD6C4 \uB370\uC774\uD130\uBCA0\uC774\uC2A4 \uD655\uC778 \uC2E4\uD328";
+	private static final String STARTUP_COMPLETED_MESSAGE =
+		"\uC560\uD50C\uB9AC\uCF00\uC774\uC158 \uAE30\uB3D9 \uC644\uB8CC";
+
 	private final Environment environment;
 	private final ObjectProvider<DataSource> dataSourceProvider;
 
@@ -30,7 +35,8 @@ public class StartupLifecycleLogger {
 
 		if (dataSourceStatus.failed()) {
 			log.error(
-				"event=application.startup.health_failed message=\"애플리케이션 기동 후 데이터베이스 확인 실패\" context=application.startup.readiness profiles={} port={} startupMs={} exceptionType={}",
+				"event=application.startup.health_failed message=\"{}\" context=application.startup.readiness profiles={} port={} startupMs={} exceptionType={}",
+				STARTUP_HEALTH_FAILED_MESSAGE,
 				resolveProfiles(),
 				resolvePort(),
 				startupMs,
@@ -40,7 +46,8 @@ public class StartupLifecycleLogger {
 		}
 
 		log.info(
-			"event=application.startup.completed message=\"애플리케이션 기동 완료\" context=application.startup profiles={} port={} startupMs={} datasource={}",
+			"event=application.startup.completed message=\"{}\" context=application.startup profiles={} port={} startupMs={} datasource={}",
+			STARTUP_COMPLETED_MESSAGE,
 			resolveProfiles(),
 			resolvePort(),
 			startupMs,
