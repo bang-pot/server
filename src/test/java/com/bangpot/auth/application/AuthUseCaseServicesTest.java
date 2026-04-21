@@ -142,6 +142,20 @@ class AuthUseCaseServicesTest {
 	}
 
 	@Test
+	void returnsPendingRedirectPathOnlyForTempUser() {
+		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
+			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "2500", "/protected-demo")
+		);
+
+		GetCurrentAuthUserUseCase.View meView = getCurrentAuthUserUseCase.handle(
+			GetCurrentAuthUserUseCase.Query.of(loginResult.userId())
+		);
+
+		assertThat(meView.authStatus()).isEqualTo(GetCurrentAuthUserUseCase.AuthStatus.TEMP);
+		assertThat(meView.redirectTo()).isEqualTo("/protected-demo");
+	}
+
+	@Test
 	void completesTempUserProfileAndPromotesUserToFull() {
 		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "3003", "/protected-demo")
@@ -165,6 +179,7 @@ class AuthUseCaseServicesTest {
 		assertThat(meView.authStatus()).isEqualTo(GetCurrentAuthUserUseCase.AuthStatus.FULL);
 		assertThat(meView.user()).isNotNull();
 		assertThat(meView.user().nickname()).isEqualTo("potmaster");
+		assertThat(meView.redirectTo()).isNull();
 		assertThat(meView.requiredTermsVersion()).isEqualTo("2026-03-25");
 		verify(authAuditLogger).authStateChanged(
 			loginResult.userId(),
@@ -172,6 +187,28 @@ class AuthUseCaseServicesTest {
 			AuthUserStatus.FULL,
 			"profile_completed"
 		);
+	}
+
+	@Test
+	void throwsInternalInvariantErrorWhenFullAuthUserHasNoProfile() {
+		AuthUser fullUser = AuthUser.rehydrate(
+			88L,
+			AuthProvider.KAKAO,
+			"full-without-profile",
+			AuthUserStatus.FULL,
+			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
+			null,
+			NOW.minusSeconds(3600),
+			NOW.minusSeconds(60)
+		);
+		authUserRepository.save(fullUser);
+
+		assertThatThrownBy(() -> getCurrentAuthUserUseCase.handle(
+			GetCurrentAuthUserUseCase.Query.of(fullUser.getId())
+		))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("완료된 회원의 프로필 정보가 없습니다.")
+			.hasMessageContaining("userId=88");
 	}
 
 	@Test
