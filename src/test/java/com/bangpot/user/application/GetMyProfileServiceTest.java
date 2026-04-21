@@ -18,7 +18,7 @@ class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsMyProfileForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 		profileHubReadRepository.putCounts(7L, 5L, 3L, 2L, 1L);
 
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
@@ -36,7 +36,7 @@ class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void defaultsHubCountsToZeroWhenNoActivityExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
 

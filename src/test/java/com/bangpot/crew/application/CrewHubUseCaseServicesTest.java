@@ -48,7 +48,7 @@ class CrewHubUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
-		userRepository = new InMemoryUserRepository(authUserRepository);
+		userRepository = new InMemoryUserRepository();
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
@@ -134,12 +134,12 @@ class CrewHubUseCaseServicesTest {
 	}
 
 	private AuthUser fullUser(Long id, String providerId, String nickname) {
+		userRepository.save(User.rehydrate(id, nickname));
 		return AuthUser.rehydrate(
 			id,
 			AuthProvider.KAKAO,
 			providerId,
 			AuthUserStatus.FULL,
-			nickname,
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
@@ -177,10 +177,6 @@ class CrewHubUseCaseServicesTest {
 				.findFirst();
 		}
 
-		public boolean existsByNickname(String nickname) {
-			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
-		}
-
 		@Override
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
@@ -189,21 +185,16 @@ class CrewHubUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-
-		private final InMemoryAuthUserRepository authUserRepository;
-
-		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
-			this.authUserRepository = authUserRepository;
-		}
+		private final Map<Long, User> usersById = new HashMap<>();
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId).map(this::toDomain);
+			return Optional.ofNullable(usersById.get(userId));
 		}
 
 		@Override
 		public boolean existsByNickname(String nickname) {
-			return authUserRepository.existsByNickname(nickname);
+			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
 		}
 
 		@Override
@@ -213,11 +204,8 @@ class CrewHubUseCaseServicesTest {
 
 		@Override
 		public User save(User user) {
-			throw new UnsupportedOperationException();
-		}
-
-		private User toDomain(AuthUser authUser) {
-			return User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL);
+			usersById.put(user.getId(), user);
+			return user;
 		}
 	}
 

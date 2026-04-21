@@ -176,7 +176,6 @@ abstract class AbstractUserApplicationServiceTest {
 			AuthProvider.KAKAO,
 			"provider-" + id,
 			AuthUserStatus.FULL,
-			nickname,
 			RequiredTermsAgreement.of("2026-04-14", BASE_TIME),
 			null,
 			BASE_TIME,
@@ -204,13 +203,13 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public Optional<AuthUser> findById(Long userId) {
 			return Optional.ofNullable(authUsers.get(userId))
-				.filter(user -> !user.isWithdrawn());
+				.filter(user -> user.getStatus() != AuthUserStatus.WITHDRAWN);
 		}
 
 		@Override
 		public Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId) {
 			return authUsers.values().stream()
-				.filter(user -> !user.isWithdrawn())
+				.filter(user -> user.getStatus() != AuthUserStatus.WITHDRAWN)
 				.filter(user -> user.getProvider() == provider && providerId.equals(user.getProviderId()))
 				.findFirst();
 		}
@@ -244,7 +243,6 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			return users.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> user.getNickname().contains(nickname))
 				.toList();
 		}

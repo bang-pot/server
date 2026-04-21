@@ -95,7 +95,7 @@ class GetHomeServiceTest {
 	@Test
 	void returnsLoggedInHomeWithPersonalizedSummaries() {
 		authUserRepository.save(fullUser(7L, "bangpot"));
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 		profileHubReadRepository.putCounts(7L, 0L, 0L, 3L, 0L);
 		myCrewReadRepository.resultByUserId.put(
 			7L,
@@ -153,7 +153,6 @@ class GetHomeServiceTest {
 			AuthProvider.KAKAO,
 			"provider-" + id,
 			AuthUserStatus.FULL,
-			nickname,
 			RequiredTermsAgreement.of("2026-04-14", BASE_TIME),
 			null,
 			BASE_TIME,
@@ -166,7 +165,8 @@ class GetHomeServiceTest {
 
 		@Override
 		public Optional<AuthUser> findById(Long userId) {
-			return Optional.ofNullable(users.get(userId)).filter(user -> !user.isWithdrawn());
+			return Optional.ofNullable(users.get(userId))
+				.filter(user -> user.getStatus() != com.bangpot.auth.domain.AuthUserStatus.WITHDRAWN);
 		}
 
 		@Override

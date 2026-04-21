@@ -10,12 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.bangpot.auth.application.exception.AuthCompletionNotAllowedException;
 import com.bangpot.auth.application.exception.AuthUserNotFoundException;
 import com.bangpot.auth.application.exception.MissingRequiredTermsAgreementException;
+import com.bangpot.auth.application.config.AuthRequiredTermsProperties;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
-import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
@@ -39,7 +39,7 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 	public Result handle(Command command) {
 		AuthUser user = authUserRepository.findById(command.userId())
 			.orElseThrow(() -> new AuthUserNotFoundException(command.userId()));
-		if (!user.requiresCompletion()) {
+		if (!user.isTemp()) {
 			throw new AuthCompletionNotAllowedException(command.userId());
 		}
 
@@ -62,7 +62,9 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 		);
 		String nextPath = user.consumePendingRedirectPathOrDefault(DEFAULT_NEXT_PATH);
 		authUserRepository.save(user);
-		userRepository.save(User.rehydrate(user.getId(), normalizedNickname, true));
+		userRepository.save(
+				User.create(user.getId(), normalizedNickname)
+		);
 		authAuditLogger.authStateChanged(
 			user.getId(),
 			AuthUserStatus.TEMP,

@@ -51,7 +51,7 @@ class CrewTransferLeadershipUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
-		userRepository = new InMemoryUserRepository(authUserRepository);
+		userRepository = new InMemoryUserRepository();
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
@@ -151,12 +151,12 @@ class CrewTransferLeadershipUseCaseServicesTest {
 	}
 
 	private AuthUser fullUser(Long id, String providerId, String nickname) {
+		userRepository.save(User.rehydrate(id, nickname));
 		return AuthUser.rehydrate(
 			id,
 			AuthProvider.KAKAO,
 			providerId,
 			AuthUserStatus.FULL,
-			nickname,
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
@@ -188,17 +188,11 @@ class CrewTransferLeadershipUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-
-		private final InMemoryAuthUserRepository authUserRepository;
-
-		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
-			this.authUserRepository = authUserRepository;
-		}
+		private final Map<Long, User> usersById = new HashMap<>();
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), authUser.getStatus() == AuthUserStatus.FULL));
+			return Optional.ofNullable(usersById.get(userId));
 		}
 
 		@Override
@@ -213,7 +207,8 @@ class CrewTransferLeadershipUseCaseServicesTest {
 
 		@Override
 		public User save(User user) {
-			throw new UnsupportedOperationException();
+			usersById.put(user.getId(), user);
+			return user;
 		}
 	}
 
@@ -300,7 +295,7 @@ class CrewTransferLeadershipUseCaseServicesTest {
 				createdAtField.setAccessible(true);
 				createdAtField.set(crewMember, createdAt);
 			} catch (ReflectiveOperationException exception) {
-				throw new IllegalStateException("테스트용 CrewMember 생성일시를 설정할 수 없습니다.", exception);
+				throw new IllegalStateException("?뚯뒪?몄슜 CrewMember ?앹꽦?쇱떆瑜??ㅼ젙?????놁뒿?덈떎.", exception);
 			}
 		}
 	}

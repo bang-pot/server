@@ -26,7 +26,7 @@ public class UpdateMeetingLogService implements UpdateMeetingLogUseCase {
 
 	@Override
 	public Result handle(Command command) {
-		completedUserAccessService.validateCompletedUser(command.userId(), "meeting log update requires a completed user");
+		completedUserAccessService.validateCompletedUser(command.userId(), "방탈로그 수정은 가입 완료 사용자만 가능합니다.");
 		MeetingLog log = meetingLogRepository.findById(command.logId())
 			.orElseThrow(() -> new MeetingLogNotFoundException(command.logId()));
 		validateAuthor(log, command.userId());
@@ -54,4 +54,3 @@ public class UpdateMeetingLogService implements UpdateMeetingLogUseCase {
 			.toList();
 	}
 }
-

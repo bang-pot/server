@@ -118,8 +118,8 @@ class CrewController {
 	@GetMapping("/{crewId}/schedule")
 	ResponseEntity<CrewDto.CrewScheduleResponse> getCrewSchedule(
 		@PathVariable Long crewId,
-		@RequestParam("from") @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "from must use yyyy-MM-dd.") String from,
-		@RequestParam("to") @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "to must use yyyy-MM-dd.") String to,
+		@RequestParam("from") @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "from은 yyyy-MM-dd 형식이어야 합니다.") String from,
+		@RequestParam("to") @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "to는 yyyy-MM-dd 형식이어야 합니다.") String to,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(

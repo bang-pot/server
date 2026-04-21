@@ -44,7 +44,7 @@ class SecurityWiringLocationTest {
 			.doesNotThrowAnyException();
 		assertThatCode(() -> Class.forName("com.bangpot.auth.infrastructure.config.AuthFrontendProperties"))
 			.doesNotThrowAnyException();
-		assertThatCode(() -> Class.forName("com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties"))
+		assertThatCode(() -> Class.forName("com.bangpot.auth.application.config.AuthRequiredTermsProperties"))
 			.doesNotThrowAnyException();
 		assertThatThrownBy(() -> Class.forName("com.bangpot.auth.infrastructure.AuthProperties"))
 			.isInstanceOf(ClassNotFoundException.class);

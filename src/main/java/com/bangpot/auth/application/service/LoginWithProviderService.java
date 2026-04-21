@@ -33,7 +33,7 @@ public class LoginWithProviderService implements LoginWithProviderUseCase {
 			));
 
 		Result result;
-		if (user.requiresCompletion()) {
+		if (user.isTemp()) {
 			user.updatePendingRedirectPath(sanitizedRedirect);
 			authUserRepository.save(user);
 			result = Result.temp(user.getId(), COMPLETION_PATH, user.getPendingRedirectPath());

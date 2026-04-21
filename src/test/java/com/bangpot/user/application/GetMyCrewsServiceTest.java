@@ -21,7 +21,7 @@ class GetMyCrewsServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsMyActiveCrewsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 		myCrewReadRepository.putResult(
 			7L,
 			MyCrewReadRepository.SearchResult.of(
@@ -53,7 +53,7 @@ class GetMyCrewsServiceTest extends AbstractUserApplicationServiceTest {
 	void defaultsCrewListToEmptyWhenNoActiveMembershipExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		GetMyCrewsUseCase.Result result = getMyCrewsUseCase.handle(GetMyCrewsUseCase.Query.of(7L, 0, 20));
 

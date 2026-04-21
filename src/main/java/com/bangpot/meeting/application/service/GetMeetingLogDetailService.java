@@ -32,7 +32,7 @@ public class GetMeetingLogDetailService implements GetMeetingLogDetailUseCase {
 
 	@Override
 	public Result handle(Query query) {
-		completedUserAccessService.validateCompletedUser(query.userId(), "meeting log detail access requires a completed user");
+		completedUserAccessService.validateCompletedUser(query.userId(), "방탈로그 상세 조회는 가입 완료 사용자만 가능합니다.");
 		crewRepository.findById(query.crewId()).orElseThrow(() -> new CrewNotFoundException(query.crewId()));
 
 		if (!crewMemberRepository.existsByCrewIdAndUserId(query.crewId(), query.userId())) {
@@ -64,4 +64,3 @@ public class GetMeetingLogDetailService implements GetMeetingLogDetailUseCase {
 		);
 	}
 }
-

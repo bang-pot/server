@@ -53,7 +53,7 @@ class CrewInviteUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
-		userRepository = new InMemoryUserRepository(authUserRepository);
+		userRepository = new InMemoryUserRepository();
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
@@ -76,7 +76,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void returnsInvitableCandidatesForPrivateCrewLeader() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		AuthUser invited = fullUser(2L, "invited-provider", "alpha");
 		AuthUser alreadyMember = fullUser(3L, "member-provider", "member");
@@ -104,8 +104,34 @@ class CrewInviteUseCaseServicesTest {
 	}
 
 	@Test
+	void rejectsInviteCandidatesLookupForTempLeaderWithKoreanMessage() {
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
+		AuthUser tempLeader = tempUser(1L, "temp-provider");
+		authUserRepository.save(tempLeader);
+
+		assertThatThrownBy(() -> getCrewInviteCandidatesUseCase.handle(
+			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), tempLeader.getId(), "alpha")
+		))
+			.isInstanceOf(AccessDeniedException.class)
+			.hasMessage("가입 완료 사용자만 크루 초대 대상을 조회할 수 있습니다.");
+	}
+
+	@Test
+	void rejectsInviteCandidatesLookupForNonLeaderWithKoreanMessage() {
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
+		AuthUser member = fullUser(1L, "member-provider", "member");
+		authUserRepository.save(member);
+
+		assertThatThrownBy(() -> getCrewInviteCandidatesUseCase.handle(
+			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), member.getId(), "alpha")
+		))
+			.isInstanceOf(AccessDeniedException.class)
+			.hasMessage("크루 초대 대상을 조회할 권한이 없습니다.");
+	}
+
+	@Test
 	void filtersInviteCandidatesByNickname() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		authUserRepository.save(leader);
 		authUserRepository.save(fullUser(2L, "alpha-provider", "alpha-runner"));
@@ -126,7 +152,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteCandidatesLookupForPublicCrew() {
-		Crew crew = crewRepository.save(Crew.create("방팟 공개 크루", "crew", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 공개 ?�루", "crew", CrewVisibility.PUBLIC, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		authUserRepository.save(leader);
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
@@ -139,7 +165,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void createsPendingInviteForPrivateCrewLeader() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "runner");
 		authUserRepository.save(leader);
@@ -162,7 +188,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteCreationWhenTargetAlreadyJoined() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "runner");
 		authUserRepository.save(leader);
@@ -178,7 +204,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteCreationWhenPendingInviteAlreadyExists() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "runner");
 		authUserRepository.save(leader);
@@ -194,7 +220,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteCreationForNonLeader() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser member = fullUser(1L, "member-provider", "member");
 		AuthUser target = fullUser(2L, "target-provider", "runner");
 		authUserRepository.save(member);
@@ -207,12 +233,12 @@ class CrewInviteUseCaseServicesTest {
 	}
 
 	private AuthUser fullUser(Long id, String providerId, String nickname) {
+		userRepository.save(User.rehydrate(id, nickname));
 		return AuthUser.rehydrate(
 			id,
 			AuthProvider.KAKAO,
 			providerId,
 			AuthUserStatus.FULL,
-			nickname,
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
@@ -250,10 +276,6 @@ class CrewInviteUseCaseServicesTest {
 				.findFirst();
 		}
 
-		public boolean existsByNickname(String nickname) {
-			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
-		}
-
 		@Override
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
@@ -262,31 +284,11 @@ class CrewInviteUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-
-		private final InMemoryAuthUserRepository authUserRepository;
 		private final Map<Long, User> usersById = new HashMap<>();
-
-		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
-			this.authUserRepository = authUserRepository;
-			authUserRepository.usersById.values().stream()
-				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), true))
-				.forEach(user -> usersById.put(user.getId(), user));
-		}
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			User user = usersById.get(userId);
-			if (user != null) {
-				return Optional.of(user);
-			}
-			return authUserRepository.findById(userId)
-				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
-				.map(authUser -> {
-					User loaded = User.rehydrate(authUser.getId(), authUser.getNickname(), true);
-					usersById.put(loaded.getId(), loaded);
-					return loaded;
-				});
+			return Optional.ofNullable(usersById.get(userId));
 		}
 
 		public boolean existsByNickname(String nickname) {
@@ -299,13 +301,16 @@ class CrewInviteUseCaseServicesTest {
 			if (normalizedKeyword != null && normalizedKeyword.isEmpty()) {
 				normalizedKeyword = null;
 			}
-			authUserRepository.usersById.values().stream()
-				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL && authUser.getNickname() != null)
-				.map(authUser -> User.rehydrate(authUser.getId(), authUser.getNickname(), true))
-				.forEach(user -> usersById.putIfAbsent(user.getId(), user));
 			final String keyword = normalizedKeyword;
 			return usersById.values().stream()
 				.filter(user -> keyword == null || user.getNickname().toLowerCase().contains(keyword))
+				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
+				.toList();
+		}
+
+		@Override
+		public List<User> findAllCompletedUsers() {
+			return usersById.values().stream()
 				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
 				.toList();
 		}

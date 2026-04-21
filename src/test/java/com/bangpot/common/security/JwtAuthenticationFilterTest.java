@@ -81,7 +81,6 @@ class JwtAuthenticationFilterTest {
 			AuthProvider.KAKAO,
 			"provider-" + id,
 			AuthUserStatus.FULL,
-			"bangpot",
 			RequiredTermsAgreement.of("2026-04-14", java.time.Instant.parse("2026-04-14T00:00:00Z")),
 			null,
 			java.time.Instant.parse("2026-04-14T00:00:00Z"),

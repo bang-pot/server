@@ -105,15 +105,13 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected User completedUser(Long id, String nickname) {
-		User user = User.rehydrate(id, nickname, true);
+		User user = User.rehydrate(id, nickname);
 		userRepository.save(user);
 		return user;
 	}
 
 	protected User incompleteUser(Long id, String nickname) {
-		User user = User.rehydrate(id, nickname, false);
-		userRepository.save(user);
-		return user;
+		return User.rehydrate(id, nickname);
 	}
 
 	protected Meeting completedMeeting(Long crewId, Long hostUserId, String themeName) {
@@ -186,7 +184,6 @@ abstract class AbstractMeetingLogServicesTest {
 		@Override
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			return users.values().stream()
-				.filter(user -> !user.requiresCompletion())
 				.filter(user -> user.getNickname().contains(nickname))
 				.toList();
 		}

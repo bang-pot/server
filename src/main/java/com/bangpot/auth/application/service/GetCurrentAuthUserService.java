@@ -6,11 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.bangpot.auth.application.config.AuthRequiredTermsProperties;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
 import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
-import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.domain.User;
 
@@ -25,29 +24,32 @@ public class GetCurrentAuthUserService implements GetCurrentAuthUserUseCase {
 
 	@Override
 	public View handle(Query query) {
-		if (query.userId() == null) {
-			return View.guest(authRequiredTermsProperties.getRequiredTermsVersion());
-		}
-		AuthUser user = authUserRepository.findById(query.userId()).orElse(null);
+		Long userId = query.userId();
+		AuthUser user = userId == null
+				? null
+				: authUserRepository.findById(userId).orElse(null);
 		if (user == null) {
-			return View.guest(authRequiredTermsProperties.getRequiredTermsVersion());
+			return View.guest();
 		}
 
-		AuthStatus authStatus = user.requiresCompletion() ? AuthStatus.TEMP : AuthStatus.FULL;
+		boolean isTemp = user.isTemp();
+		AuthStatus authStatus = isTemp ? AuthStatus.TEMP : AuthStatus.FULL;
 		Instant requiredTermsAcceptedAt = user.getRequiredTermsAgreement() == null
 			? null
 			: user.getRequiredTermsAgreement().getAcceptedAt();
 		String nickname = null;
-		if (!user.requiresCompletion()) {
+		if (!isTemp) {
 			User profile = userRepository.findById(user.getId())
-				.orElseThrow(() -> new UserNotFoundException(user.getId()));
+				.orElseThrow(() -> new IllegalStateException(
+					"완료된 회원의 프로필 정보가 없습니다. userId=" + user.getId()
+				));
 			nickname = profile.getNickname();
 		}
 
 		return View.authenticated(
 			authStatus,
-			user.requiresCompletion(),
-			user.getPendingRedirectPath(),
+			isTemp,
+			isTemp ? user.getPendingRedirectPath() : null,
 			authRequiredTermsProperties.getRequiredTermsVersion(),
 			AuthenticatedUserView.of(user.getId(), nickname),
 			requiredTermsAcceptedAt

@@ -35,8 +35,8 @@ public class WithdrawMyAccountService implements WithdrawMyAccountUseCase {
 	public Result handle(Command command) {
 		AuthUser authUser = authUserRepository.findById(command.userId())
 			.orElseThrow(() -> new AuthUserNotFoundException(command.userId()));
-		if (authUser.requiresCompletion()) {
-			throw new AccessDeniedException("full user profile is required");
+		if (authUser.isTemp()) {
+			throw new AccessDeniedException("가입 완료 사용자만 이용할 수 있습니다.");
 		}
 		userRepository.findById(command.userId())
 			.orElseThrow(() -> new UserNotFoundException(command.userId()));

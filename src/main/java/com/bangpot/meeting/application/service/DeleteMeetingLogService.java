@@ -33,7 +33,7 @@ public class DeleteMeetingLogService implements DeleteMeetingLogUseCase {
 
 	@Override
 	public Result handle(Command command) {
-		completedUserAccessService.validateCompletedUser(command.userId(), "meeting log delete requires a completed user");
+		completedUserAccessService.validateCompletedUser(command.userId(), "방탈로그 삭제는 가입 완료 사용자만 가능합니다.");
 		crewRepository.findById(command.crewId()).orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
 		if (crewMemberRepository.findByCrewIdAndUserId(command.crewId(), command.userId()).isEmpty()) {

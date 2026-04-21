@@ -91,4 +91,3 @@ final class MeetingLogCommandValidator {
 	private record PhotoCandidate(String url, Long sizeBytes) {
 	}
 }
-

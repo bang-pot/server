@@ -21,7 +21,7 @@ class GetMyPendingCrewsServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsMyPendingCrewsForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 		pendingCrewReadRepository.putResult(
 			7L,
 			PendingCrewReadRepository.SearchResult.of(
@@ -31,7 +31,7 @@ class GetMyPendingCrewsServiceTest extends AbstractUserApplicationServiceTest {
 						11L,
 						"Alpha Crew",
 						"2026-04-17T09:30:00Z",
-						"같이 활동하고 싶습니다"
+						"같이 ?�동?�고 ?�습?�다"
 					)
 				),
 				PendingCrewReadRepository.PageInfo.of(0, 20, false)
@@ -47,7 +47,7 @@ class GetMyPendingCrewsServiceTest extends AbstractUserApplicationServiceTest {
 		assertThat(result.items().get(0).crewId()).isEqualTo(11L);
 		assertThat(result.items().get(0).crewName()).isEqualTo("Alpha Crew");
 		assertThat(result.items().get(0).requestedAt()).isEqualTo("2026-04-17T09:30:00Z");
-		assertThat(result.items().get(0).messageSummary()).isEqualTo("같이 활동하고 싶습니다");
+		assertThat(result.items().get(0).messageSummary()).isEqualTo("같이 ?�동?�고 ?�습?�다");
 		assertThat(result.pageInfo().hasNext()).isFalse();
 	}
 
@@ -55,7 +55,7 @@ class GetMyPendingCrewsServiceTest extends AbstractUserApplicationServiceTest {
 	void defaultsPendingCrewListToEmptyWhenNoPendingRequestsExist() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot", true));
+		userRepository.save(User.rehydrate(7L, "bangpot"));
 
 		GetMyPendingCrewsUseCase.Result result = getMyPendingCrewsUseCase.handle(
 			GetMyPendingCrewsUseCase.Query.of(7L, 0, 20)
