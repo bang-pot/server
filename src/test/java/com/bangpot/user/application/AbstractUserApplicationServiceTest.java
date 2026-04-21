@@ -16,8 +16,10 @@ import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
@@ -65,6 +67,7 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryProfileHubReadRepository profileHubReadRepository;
 	protected InMemoryMeetingRepository meetingRepository;
 	protected InMemoryCrewRepository crewRepository;
+	protected InMemoryCrewMemberRepository crewMemberRepository;
 	protected InMemoryCreatedMeetingReadRepository createdMeetingReadRepository;
 	protected InMemoryCalendarReadRepository calendarReadRepository;
 	protected InMemoryMyFavoriteThemeReadRepository myFavoriteThemeReadRepository;
@@ -73,7 +76,6 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryJoinedMeetingReadRepository joinedMeetingReadRepository;
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
 	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
-	protected InMemoryWithdrawalCheckReadRepository withdrawalCheckReadRepository;
 	protected InMemoryUserSearchReadRepository userSearchReadRepository;
 	protected InMemoryUserWithdrawalRepository userWithdrawalRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
@@ -98,8 +100,9 @@ abstract class AbstractUserApplicationServiceTest {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
 		profileHubReadRepository = new InMemoryProfileHubReadRepository();
+		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
-		crewRepository = new InMemoryCrewRepository();
+		crewRepository = new InMemoryCrewRepository(crewMemberRepository);
 		createdMeetingReadRepository = new InMemoryCreatedMeetingReadRepository();
 		calendarReadRepository = new InMemoryCalendarReadRepository();
 		myFavoriteThemeReadRepository = new InMemoryMyFavoriteThemeReadRepository();
@@ -108,7 +111,6 @@ abstract class AbstractUserApplicationServiceTest {
 		joinedMeetingReadRepository = new InMemoryJoinedMeetingReadRepository();
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
 		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
-		withdrawalCheckReadRepository = new InMemoryWithdrawalCheckReadRepository();
 		userSearchReadRepository = new InMemoryUserSearchReadRepository();
 		userWithdrawalRepository = new InMemoryUserWithdrawalRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
@@ -154,9 +156,8 @@ abstract class AbstractUserApplicationServiceTest {
 			pendingCrewReadRepository
 		);
 		getMyWithdrawalCheckUseCase = new GetMyWithdrawalCheckService(
-			authUserRepository,
 			userRepository,
-			withdrawalCheckReadRepository
+			crewRepository
 		);
 		searchUsersUseCase = new SearchUsersService(
 			authUserRepository,
@@ -334,7 +335,12 @@ abstract class AbstractUserApplicationServiceTest {
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private final Map<Long, Long> activeCountsByUserId = new HashMap<>();
 		private final Map<Long, Long> pendingCountsByUserId = new HashMap<>();
+		private final InMemoryCrewMemberRepository crewMemberRepository;
 		private long sequence = 1L;
+
+		private InMemoryCrewRepository(InMemoryCrewMemberRepository crewMemberRepository) {
+			this.crewMemberRepository = crewMemberRepository;
+		}
 
 		@Override
 		public boolean existsByName(String name) {
@@ -353,6 +359,15 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
+		}
+
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return crewsById.values().stream()
+				.filter(crew -> crewMemberRepository.findAllByUserId(userId).stream()
+					.anyMatch(crewMember -> crew.getId().equals(crewMember.getCrewId())))
+				.sorted(java.util.Comparator.comparing(Crew::getName).thenComparing(Crew::getId))
+				.toList();
 		}
 
 		@Override
@@ -375,6 +390,64 @@ abstract class AbstractUserApplicationServiceTest {
 		void putCounts(Long userId, long activeCount, long pendingCount) {
 			activeCountsByUserId.put(userId, activeCount);
 			pendingCountsByUserId.put(userId, pendingCount);
+		}
+	}
+
+	protected static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		private final Map<String, CrewMember> crewMembersByCrewAndUser = new HashMap<>();
+		private long sequence = 1L;
+
+		@Override
+		public CrewMember save(CrewMember crewMember) {
+			if (crewMember.getId() == null) {
+				crewMember.assignId(sequence++);
+			}
+			crewMembersByCrewAndUser.put(key(crewMember.getCrewId(), crewMember.getUserId()), crewMember);
+			return crewMember;
+		}
+
+		@Override
+		public boolean existsByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId).isPresent();
+		}
+
+		@Override
+		public boolean existsLeaderByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId)
+				.filter(crewMember -> crewMember.getRole() == com.bangpot.crew.domain.CrewRole.LEADER)
+				.isPresent();
+		}
+
+		@Override
+		public Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId) {
+			return Optional.ofNullable(crewMembersByCrewAndUser.get(key(crewId, userId)))
+				.filter(CrewMember::isActive);
+		}
+
+		@Override
+		public Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return Optional.ofNullable(crewMembersByCrewAndUser.get(key(crewId, userId)));
+		}
+
+		@Override
+		public List<CrewMember> findAllByCrewId(Long crewId) {
+			return crewMembersByCrewAndUser.values().stream()
+				.filter(CrewMember::isActive)
+				.filter(crewMember -> crewId.equals(crewMember.getCrewId()))
+				.toList();
+		}
+
+		@Override
+		public List<CrewMember> findAllByUserId(Long userId) {
+			return crewMembersByCrewAndUser.values().stream()
+				.filter(CrewMember::isActive)
+				.filter(crewMember -> userId.equals(crewMember.getUserId()))
+				.sorted(java.util.Comparator.comparing(CrewMember::getCrewId))
+				.toList();
+		}
+
+		private String key(Long crewId, Long userId) {
+			return crewId + ":" + userId;
 		}
 	}
 
@@ -505,20 +578,6 @@ abstract class AbstractUserApplicationServiceTest {
 
 		private String cancelKey(Long userId, Long joinRequestId) {
 			return userId + ":" + joinRequestId;
-		}
-	}
-
-	protected static final class InMemoryWithdrawalCheckReadRepository
-		implements com.bangpot.user.application.port.WithdrawalCheckReadRepository {
-		private final Map<Long, View> resultsByUserId = new HashMap<>();
-
-		@Override
-		public View load(Long userId) {
-			return resultsByUserId.getOrDefault(userId, View.of(List.of(), List.of()));
-		}
-
-		void putResult(Long userId, View view) {
-			resultsByUserId.put(userId, view);
 		}
 	}
 

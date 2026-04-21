@@ -3,13 +3,14 @@ package com.bangpot.user.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
 import com.bangpot.auth.application.exception.AuthUserNotFoundException;
 import com.bangpot.auth.domain.AuthUser;
+import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewMember;
+import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
@@ -57,15 +58,10 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
 		userRepository.save(User.create(7L, "bangpot"));
-		withdrawalCheckReadRepository.putResult(
-			7L,
-			com.bangpot.user.application.port.WithdrawalCheckReadRepository.View.of(
-				List.of(
-					com.bangpot.user.application.port.WithdrawalCheckReadRepository.ActiveCrew.of(31L, "Alpha Crew")
-				),
-				List.of()
-			)
-		);
+		Crew crew = Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null);
+		crew.assignId(31L);
+		crewRepository.save(crew);
+		crewMemberRepository.save(CrewMember.createMember(31L, 7L));
 
 		assertThatThrownBy(() -> withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.NOT_USING, null)

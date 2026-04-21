@@ -13,6 +13,8 @@ public interface CrewRepository {
 
 	Optional<Crew> findById(Long crewId);
 
+	List<Crew> findActiveByMemberUserId(Long userId);
+
 	long countActiveByMemberUserId(Long userId);
 
 	long countPendingPublicByUserId(Long userId);

@@ -21,6 +21,21 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	List<Crew> findAllByStatusAndVisibilityOrderByIdAsc(CrewStatus status, CrewVisibility visibility);
 
 	@Query("""
+		select c
+		from CrewMember cm, Crew c
+		where cm.crewId = c.id
+		  and cm.userId = :userId
+		  and cm.status = :memberStatus
+		  and c.status = :crewStatus
+		order by c.name asc, c.id asc
+		""")
+	List<Crew> findActiveByMemberUserId(
+		@Param("userId") Long userId,
+		@Param("memberStatus") CrewMemberStatus memberStatus,
+		@Param("crewStatus") CrewStatus crewStatus
+	);
+
+	@Query("""
 		select count(cm)
 		from CrewMember cm, Crew c
 		where cm.crewId = c.id

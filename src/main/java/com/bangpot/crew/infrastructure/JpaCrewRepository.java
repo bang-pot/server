@@ -36,6 +36,11 @@ class JpaCrewRepository implements CrewRepository {
 	}
 
 	@Override
+	public List<Crew> findActiveByMemberUserId(Long userId) {
+		return crewJpaRepository.findActiveByMemberUserId(userId, CrewMemberStatus.ACTIVE, CrewStatus.ACTIVE);
+	}
+
+	@Override
 	public long countActiveByMemberUserId(Long userId) {
 		return crewJpaRepository.countActiveByMemberUserId(userId, CrewMemberStatus.ACTIVE, CrewStatus.ACTIVE);
 	}
