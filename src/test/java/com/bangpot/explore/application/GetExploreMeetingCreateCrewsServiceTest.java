@@ -122,6 +122,13 @@ class GetExploreMeetingCreateCrewsServiceTest {
 				.findFirst();
 		}
 
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
 				@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return 0L;
@@ -228,3 +235,5 @@ class GetExploreMeetingCreateCrewsServiceTest {
 		}
 	}
 }
+
+

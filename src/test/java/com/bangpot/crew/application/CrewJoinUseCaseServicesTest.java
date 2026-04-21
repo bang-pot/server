@@ -74,7 +74,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsGuestStatusForUnauthenticatedUserOnPublicCrew() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 
 		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), null)
@@ -86,7 +86,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsCompletionRequiredStatusForTempUser() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 		AuthUser tempUser = tempUser(10L, "temp-user");
 		authUserRepository.save(tempUser);
 
@@ -99,7 +99,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsCanRequestStatusForFullNonMemberOnPublicCrew() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(11L, "full-user");
 		authUserRepository.save(fullUser);
 
@@ -112,10 +112,10 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsPendingStatusWhenJoinRequestAlreadyExists() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(12L, "full-user");
 		authUserRepository.save(fullUser);
-		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), "같이 달리고 싶어요"));
+		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), "같이 ?�리�??�어??));
 
 		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), fullUser.getId())
@@ -126,7 +126,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsMemberStatusWhenUserAlreadyJoinedCrew() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(13L, "full-user");
 		authUserRepository.save(fullUser);
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), fullUser.getId()));
@@ -140,7 +140,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsPrivateRestrictedStatusForPrivateCrewNonMember() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "비공개", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "비공�?, CrewVisibility.PRIVATE, null));
 		AuthUser fullUser = fullUser(14L, "full-user");
 		authUserRepository.save(fullUser);
 
@@ -153,24 +153,24 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void createsPendingJoinRequestForEligibleFullUser() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(15L, "full-user");
 		authUserRepository.save(fullUser);
 
 		RequestCrewJoinUseCase.Result result = requestCrewJoinUseCase.handle(
-			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), "  같이 달리고 싶어요  ")
+			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), "  같이 ?�리�??�어?? ")
 		);
 
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.myStatus()).isEqualTo(CrewJoinViewStatus.PENDING);
 		assertThat(crewJoinRequestRepository.findByCrewIdAndUserId(crew.getId(), fullUser.getId())).get()
 			.extracting(CrewJoinRequest::getMessage, CrewJoinRequest::getStatus)
-			.containsExactly("같이 달리고 싶어요", CrewJoinRequestStatus.PENDING);
+			.containsExactly("같이 ?�리�??�어??, CrewJoinRequestStatus.PENDING);
 	}
 
 	@Test
 	void rejectsJoinRequestForPrivateCrew() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "비공개", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "비공�?, CrewVisibility.PRIVATE, null));
 		AuthUser fullUser = fullUser(16L, "full-user");
 		authUserRepository.save(fullUser);
 
@@ -182,7 +182,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void rejectsJoinRequestWhenAlreadyJoined() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(17L, "full-user");
 		authUserRepository.save(fullUser);
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), fullUser.getId()));
@@ -195,7 +195,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void rejectsJoinRequestWhenAlreadyPending() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(18L, "full-user");
 		authUserRepository.save(fullUser);
 		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), null));
@@ -208,7 +208,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void rejectsJoinRequestForTempUser() {
-		Crew crew = crewRepository.save(Crew.create("방팟 러닝 크루", "달리기 크루", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 ?�닝 ?�루", "?�리�??�루", CrewVisibility.PUBLIC, null));
 		AuthUser tempUser = tempUser(19L, "temp-user");
 		authUserRepository.save(tempUser);
 
@@ -334,7 +334,14 @@ class CrewJoinUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
-		}		@Override
+		}
+
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return 0L;
 		}
@@ -458,3 +465,5 @@ class CrewJoinUseCaseServicesTest {
 
 	}
 }
+
+

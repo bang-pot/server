@@ -80,7 +80,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void returnsMyCrewInviteHistory() {
-		Crew crew = crewRepository.save(Crew.create("비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -102,13 +102,13 @@ class CrewInviteConsumerUseCaseServicesTest {
 				GetMyCrewInvitesUseCase.View::inviterNickname,
 				GetMyCrewInvitesUseCase.View::status
 			)
-			.containsExactly(crew.getId(), "비공개 크루", "leader", "PENDING");
+			.containsExactly(crew.getId(), "비공�??�루", "leader", "PENDING");
 	}
 
 	@Test
 	void hidesInvitesForDeletedCrew() {
-		Crew activeCrew = crewRepository.save(Crew.create("활성 크루", "crew", CrewVisibility.PRIVATE, null));
-		Crew deletedCrew = crewRepository.save(Crew.create("삭제된 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew activeCrew = crewRepository.save(Crew.create("?�성 ?�루", "crew", CrewVisibility.PRIVATE, null));
+		Crew deletedCrew = crewRepository.save(Crew.create("??��???�루", "crew", CrewVisibility.PRIVATE, null));
 		deletedCrew.delete();
 		crewRepository.save(deletedCrew);
 
@@ -126,12 +126,12 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 		assertThat(result)
 			.extracting(GetMyCrewInvitesUseCase.View::crewName)
-			.containsExactly("활성 크루");
+			.containsExactly("?�성 ?�루");
 	}
 
 	@Test
 	void acceptsPendingInviteAndCreatesCrewMembership() {
-		Crew crew = crewRepository.save(Crew.create("비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -153,7 +153,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsPendingInviteAndKeepsHistory() {
-		Crew crew = crewRepository.save(Crew.create("비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -174,7 +174,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteProcessingForTempUser() {
-		Crew crew = crewRepository.save(Crew.create("비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = tempUser(2L, "target-provider");
 		authUserRepository.save(inviter);
@@ -188,7 +188,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsAlreadyProcessedInvite() {
-		Crew crew = crewRepository.save(Crew.create("비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -313,7 +313,14 @@ class CrewInviteConsumerUseCaseServicesTest {
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId))
 				.filter(crew -> crew.getStatus() == CrewStatus.ACTIVE);
-		}		@Override
+		}
+
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return 0L;
 		}
@@ -440,3 +447,5 @@ class CrewInviteConsumerUseCaseServicesTest {
 		}
 	}
 }
+
+

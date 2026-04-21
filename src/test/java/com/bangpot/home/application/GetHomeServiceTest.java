@@ -166,7 +166,7 @@ class GetHomeServiceTest {
 
 		@Override
 		public Optional<AuthUser> findById(Long userId) {
-			return Optional.ofNullable(users.get(userId)).filter(user -> !user.isWithdrawn());
+			return Optional.ofNullable(users.get(userId));
 		}
 
 		@Override

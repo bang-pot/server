@@ -6,12 +6,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
-import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.domain.User;
@@ -89,14 +87,17 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 		assertThatThrownBy(() -> withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.NOT_USING, null)
 		))
-			.isInstanceOf(UserNotFoundException.class);
+			.isInstanceOf(AccessDeniedException.class);
 	}
 
 	@Test
 	void rejectsWithdrawalWhenAuthUserDoesNotExist() {
+		userRepository.save(User.create(7L, "bangpot"));
+
 		assertThatThrownBy(() -> withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.NOT_USING, null)
 		))
-			.isInstanceOf(AuthUserNotFoundException.class);
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("완료된 회원의 인증 정보가 없습니다.");
 	}
 }

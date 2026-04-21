@@ -76,7 +76,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void returnsInvitableCandidatesForPrivateCrewLeader() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		AuthUser invited = fullUser(2L, "invited-provider", "alpha");
 		AuthUser alreadyMember = fullUser(3L, "member-provider", "member");
@@ -105,7 +105,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void filtersInviteCandidatesByNickname() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		authUserRepository.save(leader);
 		authUserRepository.save(fullUser(2L, "alpha-provider", "alpha-runner"));
@@ -126,7 +126,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteCandidatesLookupForPublicCrew() {
-		Crew crew = crewRepository.save(Crew.create("방팟 공개 크루", "crew", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 공개 ?�루", "crew", CrewVisibility.PUBLIC, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		authUserRepository.save(leader);
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
@@ -139,7 +139,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void createsPendingInviteForPrivateCrewLeader() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "runner");
 		authUserRepository.save(leader);
@@ -162,7 +162,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteCreationWhenTargetAlreadyJoined() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "runner");
 		authUserRepository.save(leader);
@@ -178,7 +178,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteCreationWhenPendingInviteAlreadyExists() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser leader = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "runner");
 		authUserRepository.save(leader);
@@ -194,7 +194,7 @@ class CrewInviteUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteCreationForNonLeader() {
-		Crew crew = crewRepository.save(Crew.create("방팟 비공개 크루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("방팟 비공�??�루", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser member = fullUser(1L, "member-provider", "member");
 		AuthUser target = fullUser(2L, "target-provider", "runner");
 		authUserRepository.save(member);
@@ -339,7 +339,14 @@ class CrewInviteUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
-		}		@Override
+		}
+
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return 0L;
 		}
@@ -460,3 +467,5 @@ class CrewInviteUseCaseServicesTest {
 		}
 	}
 }
+
+

@@ -70,8 +70,8 @@ class CrewPoliciesUseCaseServicesTest {
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "private crew", CrewVisibility.PRIVATE, null));
 		crewMemberRepository.save(crewMember(10L, crew.getId(), requester.getId(), CrewRole.MEMBER, NOW.minusSeconds(120)));
-		crewPolicyRepository.save(policy(100L, crew.getId(), "모임 규칙", "시간 약속을 지켜주세요."));
-		crewPolicyRepository.save(policy(101L, crew.getId(), "참여 기준", "노쇼는 금지합니다.\n불참 시 미리 알려주세요."));
+		crewPolicyRepository.save(policy(100L, crew.getId(), "모임 규칙", "?�간 ?�속??지켜주?�요."));
+		crewPolicyRepository.save(policy(101L, crew.getId(), "참여 기�?", "?�쇼??금�??�니??\n불참 ??미리 ?�려주세??"));
 
 		List<GetCrewPoliciesUseCase.View> result = getCrewPoliciesUseCase.handle(
 			GetCrewPoliciesUseCase.Query.of(crew.getId(), requester.getId())
@@ -80,7 +80,7 @@ class CrewPoliciesUseCaseServicesTest {
 		assertThat(result).extracting(GetCrewPoliciesUseCase.View::policyId)
 			.containsExactly(100L, 101L);
 		assertThat(result.get(0).title()).isEqualTo("모임 규칙");
-		assertThat(result.get(1).content()).isEqualTo("노쇼는 금지합니다.\n불참 시 미리 알려주세요.");
+		assertThat(result.get(1).content()).isEqualTo("?�쇼??금�??�니??\n불참 ??미리 ?�려주세??");
 	}
 
 	@Test
@@ -227,7 +227,14 @@ class CrewPoliciesUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
-		}		@Override
+		}
+
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return 0L;
 		}
@@ -380,3 +387,5 @@ class CrewPoliciesUseCaseServicesTest {
 		}
 	}
 }
+
+

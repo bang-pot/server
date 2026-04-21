@@ -265,7 +265,14 @@ class CrewMembersUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
-		}		@Override
+		}
+
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return 0L;
 		}
@@ -365,3 +372,5 @@ class CrewMembersUseCaseServicesTest {
 		}
 	}
 }
+
+

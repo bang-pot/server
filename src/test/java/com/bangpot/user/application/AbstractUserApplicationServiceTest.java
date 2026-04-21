@@ -213,14 +213,12 @@ abstract class AbstractUserApplicationServiceTest {
 
 		@Override
 		public Optional<AuthUser> findById(Long userId) {
-			return Optional.ofNullable(authUsers.get(userId))
-				.filter(user -> !user.isWithdrawn());
+			return Optional.ofNullable(authUsers.get(userId));
 		}
 
 		@Override
 		public Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId) {
 			return authUsers.values().stream()
-				.filter(user -> !user.isWithdrawn())
 				.filter(user -> user.getProvider() == provider && providerId.equals(user.getProviderId()))
 				.findFirst();
 		}

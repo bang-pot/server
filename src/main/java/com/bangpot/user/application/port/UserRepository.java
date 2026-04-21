@@ -15,7 +15,5 @@ public interface UserRepository {
 
 	User save(User user);
 
-	default void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
-		throw new UnsupportedOperationException("withdrawById is not implemented");
-	}
+	void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt);
 }

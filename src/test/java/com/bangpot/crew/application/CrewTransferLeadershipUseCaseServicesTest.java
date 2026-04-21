@@ -242,6 +242,13 @@ class CrewTransferLeadershipUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
 				@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return 0L;
@@ -308,7 +315,7 @@ class CrewTransferLeadershipUseCaseServicesTest {
 				createdAtField.setAccessible(true);
 				createdAtField.set(crewMember, createdAt);
 			} catch (ReflectiveOperationException exception) {
-				throw new IllegalStateException("테스트용 CrewMember 생성일시를 설정할 수 없습니다.", exception);
+				throw new IllegalStateException("?�스?�용 CrewMember ?�성?�시�??�정?????�습?�다.", exception);
 			}
 		}
 	}
@@ -341,3 +348,5 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		}
 	}
 }
+
+

@@ -241,6 +241,13 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
 				@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return 0L;
@@ -440,3 +447,5 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 	}
 }
+
+
