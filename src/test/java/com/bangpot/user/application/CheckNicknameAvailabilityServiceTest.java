@@ -40,4 +40,34 @@ class CheckNicknameAvailabilityServiceTest extends AbstractUserApplicationServic
 		assertThat(result.nickname()).isNull();
 		assertThat(result.available()).isFalse();
 	}
+
+	@Test
+	void returnsInvalidWhenNicknameIsTooShort() {
+		CheckNicknameAvailabilityUseCase.Result result = checkNicknameAvailabilityUseCase.handle(
+			CheckNicknameAvailabilityUseCase.Query.of("a")
+		);
+
+		assertThat(result.nickname()).isNull();
+		assertThat(result.available()).isFalse();
+	}
+
+	@Test
+	void returnsInvalidWhenNicknameIsTooLong() {
+		CheckNicknameAvailabilityUseCase.Result result = checkNicknameAvailabilityUseCase.handle(
+			CheckNicknameAvailabilityUseCase.Query.of("abcdefghijklmn")
+		);
+
+		assertThat(result.nickname()).isNull();
+		assertThat(result.available()).isFalse();
+	}
+
+	@Test
+	void returnsInvalidWhenNicknameContainsDisallowedCharacters() {
+		CheckNicknameAvailabilityUseCase.Result result = checkNicknameAvailabilityUseCase.handle(
+			CheckNicknameAvailabilityUseCase.Query.of("bang-pot")
+		);
+
+		assertThat(result.nickname()).isNull();
+		assertThat(result.available()).isFalse();
+	}
 }

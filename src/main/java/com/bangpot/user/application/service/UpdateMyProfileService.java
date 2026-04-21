@@ -8,6 +8,7 @@ import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
+import com.bangpot.user.domain.NicknamePolicy;
 import com.bangpot.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class UpdateMyProfileService implements UpdateMyProfileUseCase {
 		User user = userRepository.findById(command.userId())
 			.orElseThrow(() -> new AccessDeniedException("프로필 완료가 필요합니다."));
 
-		String normalizedNickname = normalizeNickname(command.nickname());
+		String normalizedNickname = NicknamePolicy.normalize(command.nickname());
 		if (normalizedNickname == null) {
 			throw new InvalidNicknameException();
 		}
@@ -35,16 +36,5 @@ public class UpdateMyProfileService implements UpdateMyProfileUseCase {
 		user.updateNickname(normalizedNickname);
 		userRepository.save(user);
 		return Result.of(user.getId(), user.getNickname());
-	}
-
-	private String normalizeNickname(String nickname) {
-		if (nickname == null) {
-			return null;
-		}
-		String normalizedNickname = nickname.trim();
-		if (normalizedNickname.isEmpty()) {
-			return null;
-		}
-		return normalizedNickname;
 	}
 }

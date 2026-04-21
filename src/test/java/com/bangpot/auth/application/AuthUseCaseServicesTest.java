@@ -34,6 +34,7 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
+import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.GetMyProfileService;
@@ -191,24 +192,36 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"existing",
 			AuthUserStatus.FULL,
-			"dupe-name",
+			"dupename",
 			RequiredTermsAgreement.of("2026-03-01", NOW.minusSeconds(10)),
 			null,
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
-		userRepository.save(User.create(10L, "dupe-name"));
+		userRepository.save(User.create(10L, "dupename"));
 		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "4004", null)
 		);
 
 		assertThat(checkNicknameAvailabilityUseCase.handle(
-			CheckNicknameAvailabilityUseCase.Query.of("dupe-name")
+			CheckNicknameAvailabilityUseCase.Query.of("dupename")
 		).available()).isFalse();
 		assertThatThrownBy(() -> completeTempUserUseCase.handle(
-			CompleteTempUserUseCase.Command.of(loginResult.userId(), "dupe-name", true)
+			CompleteTempUserUseCase.Command.of(loginResult.userId(), "dupename", true)
 		))
 			.isInstanceOf(DuplicateNicknameException.class);
+	}
+
+	@Test
+	void rejectsInvalidNicknameAtCompletionTime() {
+		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
+			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "5005", null)
+		);
+
+		assertThatThrownBy(() -> completeTempUserUseCase.handle(
+			CompleteTempUserUseCase.Command.of(loginResult.userId(), "pot-master", true)
+		))
+			.isInstanceOf(InvalidNicknameException.class);
 	}
 
 	@Test
@@ -273,7 +286,7 @@ class AuthUseCaseServicesTest {
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
-		userRepository.save(User.create(10L, "dupe-name"));
+		userRepository.save(User.create(10L, "dupename"));
 		AuthUser fullUser = AuthUser.rehydrate(
 			11L,
 			AuthProvider.KAKAO,
@@ -289,7 +302,7 @@ class AuthUseCaseServicesTest {
 		userRepository.save(User.create(fullUser.getId(), "before"));
 
 		assertThatThrownBy(() -> updateMyProfileUseCase.handle(
-			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "dupe-name")
+			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "dupename")
 		))
 			.isInstanceOf(DuplicateNicknameException.class);
 	}

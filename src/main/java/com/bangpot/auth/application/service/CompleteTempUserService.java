@@ -20,6 +20,7 @@ import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.domain.NicknamePolicy;
 import com.bangpot.user.domain.User;
 
 @Service
@@ -43,7 +44,7 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 			throw new AuthCompletionNotAllowedException(command.userId());
 		}
 
-		String normalizedNickname = normalizeNickname(command.nickname());
+		String normalizedNickname = NicknamePolicy.normalize(command.nickname());
 		if (normalizedNickname == null) {
 			throw new InvalidNicknameException();
 		}
@@ -70,16 +71,5 @@ public class CompleteTempUserService implements CompleteTempUserUseCase {
 			"profile_completed"
 		);
 		return Result.completed(user.getId(), nextPath);
-	}
-
-	private String normalizeNickname(String nickname) {
-		if (nickname == null) {
-			return null;
-		}
-		String normalizedNickname = nickname.trim();
-		if (normalizedNickname.isEmpty()) {
-			return null;
-		}
-		return normalizedNickname;
 	}
 }
