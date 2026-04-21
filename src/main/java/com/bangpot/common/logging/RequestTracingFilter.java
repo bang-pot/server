@@ -20,6 +20,8 @@ import jakarta.servlet.http.HttpServletResponse;
 public class RequestTracingFilter extends OncePerRequestFilter {
 
 	private static final long SLOW_REQUEST_THRESHOLD_MS = 3_000L;
+	private static final String REQUEST_COMPLETED_MESSAGE = "\uC694\uCCAD \uCC98\uB9AC \uC644\uB8CC";
+	private static final String SLOW_REQUEST_MESSAGE = "\uB290\uB9B0 \uC694\uCCAD \uAC10\uC9C0";
 
 	@Override
 	protected void doFilterInternal(
@@ -38,7 +40,8 @@ public class RequestTracingFilter extends OncePerRequestFilter {
 			long durationMs = (currentNanoTime() - startedAt) / 1_000_000;
 			String sanitizedPath = RequestTrace.sanitizePath(request.getRequestURI());
 			log.info(
-				"event=request.completed message=\"요청 처리 완료\" requestId={} method={} path={} status={} durationMs={}",
+				"event=request.completed message=\"{}\" requestId={} method={} path={} status={} durationMs={}",
+				REQUEST_COMPLETED_MESSAGE,
 				requestId,
 				request.getMethod(),
 				sanitizedPath,
@@ -47,7 +50,8 @@ public class RequestTracingFilter extends OncePerRequestFilter {
 			);
 			if (durationMs >= SLOW_REQUEST_THRESHOLD_MS) {
 				log.warn(
-					"event=request.slow message=\"느린 요청 감지\" requestId={} method={} path={} status={} durationMs={} thresholdMs={} context=request.slow",
+					"event=request.slow message=\"{}\" requestId={} method={} path={} status={} durationMs={} thresholdMs={} context=request.slow",
+					SLOW_REQUEST_MESSAGE,
 					requestId,
 					request.getMethod(),
 					sanitizedPath,

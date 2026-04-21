@@ -19,6 +19,9 @@ import jakarta.servlet.ServletException;
 @ExtendWith(OutputCaptureExtension.class)
 class RequestTracingFilterTest {
 
+	private static final String REQUEST_COMPLETED_MESSAGE = "\uC694\uCCAD \uCC98\uB9AC \uC644\uB8CC";
+	private static final String SLOW_REQUEST_MESSAGE = "\uB290\uB9B0 \uC694\uCCAD \uAC10\uC9C0";
+
 	@AfterEach
 	void clearMdc() {
 		MDC.clear();
@@ -38,7 +41,7 @@ class RequestTracingFilterTest {
 		assertThat(response.getHeader("X-Request-Id")).isEqualTo("req-health-1");
 		assertThat(output.getOut())
 			.contains("event=request.completed")
-			.contains("message=\"?�청 처리 ?�료\"")
+			.contains("message=\"" + REQUEST_COMPLETED_MESSAGE + "\"")
 			.contains("requestId=req-health-1")
 			.contains("method=GET")
 			.contains("path=/api/auth/me");
@@ -56,7 +59,7 @@ class RequestTracingFilterTest {
 		assertThat(response.getHeader("X-Request-Id")).isNotBlank();
 		assertThat(output.getOut())
 			.contains("event=request.completed")
-			.contains("message=\"?�청 처리 ?�료\"");
+			.contains("message=\"" + REQUEST_COMPLETED_MESSAGE + "\"");
 	}
 
 	@Test
@@ -79,7 +82,7 @@ class RequestTracingFilterTest {
 
 		assertThat(output.getOut())
 			.contains("event=request.slow")
-			.contains("message=\"?�린 ?�청 감�?\"")
+			.contains("message=\"" + SLOW_REQUEST_MESSAGE + "\"")
 			.contains("requestId=req-slow-1")
 			.contains("durationMs=3200")
 			.contains("thresholdMs=3000")
