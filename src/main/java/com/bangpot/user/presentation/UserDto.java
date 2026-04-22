@@ -246,22 +246,9 @@ final class UserDto {
 	) {
 	}
 
-	record BlockingParticipatingMeetingResponse(
-		Long meetingId,
-		String meetingTitle,
-		Long crewId,
-		String crewName,
-		String meetingStatus,
-		String date,
-		String time,
-		String participationRole
-	) {
-	}
-
 	record WithdrawalCheckResponse(
 		boolean canWithdraw,
-		List<BlockingActiveCrewResponse> blockingActiveCrews,
-		List<BlockingParticipatingMeetingResponse> blockingParticipatingMeetings
+		List<BlockingActiveCrewResponse> blockingActiveCrews
 	) {
 	}
 

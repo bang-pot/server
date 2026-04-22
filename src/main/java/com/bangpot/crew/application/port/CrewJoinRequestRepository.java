@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.crew.domain.CrewJoinRequest;
-
 public interface CrewJoinRequestRepository {
 
 	CrewJoinRequest save(CrewJoinRequest crewJoinRequest);

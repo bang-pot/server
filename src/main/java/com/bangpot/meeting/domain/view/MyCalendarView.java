@@ -1,21 +1,16 @@
-package com.bangpot.user.application.port;
+package com.bangpot.meeting.domain.view;
 
 import java.util.List;
 
-public interface CalendarReadRepository {
-
-	View load(Long userId);
-
-	record View(
-		List<Item> items,
-		int totalCount
-	) {
-		public static View of(List<Item> items, int totalCount) {
-			return new View(items, totalCount);
-		}
+public record MyCalendarView(
+	List<MyCalendarView.Item> items,
+	int totalCount
+) {
+	public static MyCalendarView of(List<MyCalendarView.Item> items, int totalCount) {
+		return new MyCalendarView(items, totalCount);
 	}
 
-	record Item(
+	public record Item(
 		Long meetingId,
 		String meetingTitle,
 		Long crewId,

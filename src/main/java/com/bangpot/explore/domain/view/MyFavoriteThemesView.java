@@ -1,21 +1,16 @@
-package com.bangpot.user.application.port;
+package com.bangpot.explore.domain.view;
 
 import java.util.List;
 
-public interface MyFavoriteThemeReadRepository {
-
-	SearchResult search(Long userId, int page, int size);
-
-	record SearchResult(
-		List<Item> items,
-		PageInfo pageInfo
-	) {
-		public static SearchResult of(List<Item> items, PageInfo pageInfo) {
-			return new SearchResult(items, pageInfo);
-		}
+public record MyFavoriteThemesView(
+	List<MyFavoriteThemesView.Item> items,
+	MyFavoriteThemesView.Page page
+) {
+	public static MyFavoriteThemesView of(List<MyFavoriteThemesView.Item> items, MyFavoriteThemesView.Page page) {
+		return new MyFavoriteThemesView(items, page);
 	}
 
-	record Item(
+	public record Item(
 		Long themeId,
 		String themeName,
 		String storeName,
@@ -37,13 +32,13 @@ public interface MyFavoriteThemeReadRepository {
 		}
 	}
 
-	record PageInfo(
+	public record Page(
 		int page,
 		int size,
 		boolean hasNext
 	) {
-		public static PageInfo of(int page, int size, boolean hasNext) {
-			return new PageInfo(page, size, hasNext);
+		public static Page of(int page, int size, boolean hasNext) {
+			return new Page(page, size, hasNext);
 		}
 	}
 }

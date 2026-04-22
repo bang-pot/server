@@ -1,4 +1,4 @@
-package com.bangpot.user.domain;
+package com.bangpot.user.domain.service;
 
 import java.util.regex.Pattern;
 

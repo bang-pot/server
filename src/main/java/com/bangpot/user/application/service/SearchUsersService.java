@@ -1,14 +1,12 @@
 package com.bangpot.user.application.service;
 
-import java.util.List;
-
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.usecase.SearchUsersUseCase;
-import com.bangpot.user.domain.UserSearchResult;
+import com.bangpot.user.domain.view.UserSearchView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,11 +19,11 @@ public class SearchUsersService implements SearchUsersUseCase {
 	private static final int MIN_SIZE = 1;
 	private static final int MAX_SIZE = 50;
 
-	private final UserRepository userRepository;
+	private final UserQueryRepository userQueryRepository;
 
 	@Override
-	public Result handle(Query query) {
-		if (userRepository.findById(query.userId()).isEmpty()) {
+	public UserSearchView handle(Query query) {
+		if (!userQueryRepository.existsCompletedUser(query.userId())) {
 			throw new AccessDeniedException("프로필 완료가 필요합니다.");
 		}
 
@@ -33,20 +31,13 @@ public class SearchUsersService implements SearchUsersUseCase {
 		int normalizedSize = normalizeSize(query.size());
 		String normalizedKeyword = normalizeKeyword(query.keyword());
 		if (normalizedKeyword == null) {
-			return Result.of(
-				List.of(),
-				SearchUsersUseCase.PageInfo.of(normalizedPage, normalizedSize, 0L, 0)
+			return UserSearchView.of(
+				java.util.List.of(),
+				UserSearchView.Page.of(normalizedPage, normalizedSize, 0L, 0)
 			);
 		}
 
-		List<UserSearchResult> items = userRepository.searchByNickname(normalizedKeyword, normalizedPage, normalizedSize);
-		long totalElements = userRepository.countByNickname(normalizedKeyword);
-		int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / normalizedSize);
-
-		return Result.of(
-			items,
-			SearchUsersUseCase.PageInfo.of(normalizedPage, normalizedSize, totalElements, totalPages)
-		);
+		return userQueryRepository.searchUsersByNickname(normalizedKeyword, normalizedPage, normalizedSize);
 	}
 
 	private String normalizeKeyword(String keyword) {

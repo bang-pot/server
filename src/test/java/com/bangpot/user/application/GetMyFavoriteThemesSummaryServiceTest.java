@@ -3,13 +3,13 @@ package com.bangpot.user.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.port.FavoriteThemeSummaryReadRepository;
-import com.bangpot.user.application.exception.UserNotFoundException;
+import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
+import com.bangpot.explore.domain.view.MyFavoriteThemesView;
 import com.bangpot.user.application.usecase.GetMyFavoriteThemesSummaryUseCase;
 import com.bangpot.user.domain.User;
 
@@ -17,14 +17,12 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 
 	@Test
 	void returnsFavoriteThemeSummaryForCompletedUser() {
-		AuthUser authUser = fullUser(7L, "bangpot");
-		authUserRepository.save(authUser);
 		userRepository.save(User.create(7L, "bangpot"));
-		favoriteThemeSummaryReadRepository.putView(
+		themeFavoriteRepository.putView(
 			7L,
-			FavoriteThemeSummaryReadRepository.View.of(
-				java.util.List.of(
-					FavoriteThemeSummaryReadRepository.Item.of(
+			MyFavoriteThemesView.of(
+				List.of(
+					MyFavoriteThemesView.Item.of(
 						101L,
 						"Deep Blue",
 						"Seoul Escape",
@@ -32,17 +30,62 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 						"https://cdn.example.com/theme-101.jpg",
 						13,
 						true
+					),
+					MyFavoriteThemesView.Item.of(
+						102L,
+						"Red Room",
+						"Busan Escape",
+						"부산",
+						"https://cdn.example.com/theme-102.jpg",
+						11,
+						true
+					),
+					MyFavoriteThemesView.Item.of(
+						103L,
+						"Golden Key",
+						"Incheon Escape",
+						"인천",
+						"https://cdn.example.com/theme-103.jpg",
+						9,
+						true
+					),
+					MyFavoriteThemesView.Item.of(
+						104L,
+						"Blue Night",
+						"Daegu Escape",
+						"대구",
+						"https://cdn.example.com/theme-104.jpg",
+						7,
+						true
+					),
+					MyFavoriteThemesView.Item.of(
+						105L,
+						"Secret Hall",
+						"Daejeon Escape",
+						"대전",
+						"https://cdn.example.com/theme-105.jpg",
+						5,
+						true
+					),
+					MyFavoriteThemesView.Item.of(
+						106L,
+						"Final Door",
+						"Gwangju Escape",
+						"광주",
+						"https://cdn.example.com/theme-106.jpg",
+						3,
+						true
 					)
 				),
-				6L
+				MyFavoriteThemesView.Page.of(0, 20, false)
 			)
 		);
 
-		GetMyFavoriteThemesSummaryUseCase.Result result = getMyFavoriteThemesSummaryUseCase.handle(
+		MyFavoriteThemesSummaryView result = getMyFavoriteThemesSummaryUseCase.handle(
 			GetMyFavoriteThemesSummaryUseCase.Query.of(7L)
 		);
 
-		assertThat(result.items()).hasSize(1);
+		assertThat(result.items()).hasSize(5);
 		assertThat(result.items().get(0).themeId()).isEqualTo(101L);
 		assertThat(result.items().get(0).themeName()).isEqualTo("Deep Blue");
 		assertThat(result.items().get(0).storeName()).isEqualTo("Seoul Escape");
@@ -56,11 +99,9 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 
 	@Test
 	void returnsEmptyFavoriteThemeSummaryWhenNoFavoritesExist() {
-		AuthUser authUser = fullUser(7L, "bangpot");
-		authUserRepository.save(authUser);
 		userRepository.save(User.create(7L, "bangpot"));
 
-		GetMyFavoriteThemesSummaryUseCase.Result result = getMyFavoriteThemesSummaryUseCase.handle(
+		MyFavoriteThemesSummaryView result = getMyFavoriteThemesSummaryUseCase.handle(
 			GetMyFavoriteThemesSummaryUseCase.Query.of(7L)
 		);
 
@@ -70,27 +111,9 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 	}
 
 	@Test
-	void rejectsFavoriteSummaryLookupForTempUser() {
-		authUserRepository.save(tempUser(7L));
-
+	void rejectsFavoriteSummaryLookupWhenUserRowIsMissing() {
 		assertThatThrownBy(() -> getMyFavoriteThemesSummaryUseCase.handle(
 			GetMyFavoriteThemesSummaryUseCase.Query.of(7L)
 		)).isInstanceOf(AccessDeniedException.class);
-	}
-
-	@Test
-	void rejectsFavoriteSummaryLookupWhenUserRowIsMissing() {
-		authUserRepository.save(fullUser(7L, "bangpot"));
-
-		assertThatThrownBy(() -> getMyFavoriteThemesSummaryUseCase.handle(
-			GetMyFavoriteThemesSummaryUseCase.Query.of(7L)
-		)).isInstanceOf(UserNotFoundException.class);
-	}
-
-	@Test
-	void rejectsFavoriteSummaryLookupWhenAuthUserDoesNotExist() {
-		assertThatThrownBy(() -> getMyFavoriteThemesSummaryUseCase.handle(
-			GetMyFavoriteThemesSummaryUseCase.Query.of(77L)
-		)).isInstanceOf(AuthUserNotFoundException.class);
 	}
 }

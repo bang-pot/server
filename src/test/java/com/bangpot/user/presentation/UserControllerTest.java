@@ -24,6 +24,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.auth.presentation.AuthCookieFactory;
+import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
+import com.bangpot.explore.domain.view.MyFavoriteThemesView;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
@@ -40,7 +42,18 @@ import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
-import com.bangpot.user.domain.UserSearchResult;
+import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.MyPendingCrewsView;
+import com.bangpot.meeting.domain.MeetingResult;
+import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyMeetingLogsView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.user.domain.view.MyProfileView;
+import com.bangpot.user.domain.view.MyWithdrawalCheckView;
+import com.bangpot.user.domain.view.UserSearchView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -102,7 +115,7 @@ class UserControllerTest {
 	@Test
 	void returnsCurrentProfileFromNewUserPath() throws Exception {
 		when(getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(77L)))
-			.thenReturn(GetMyProfileUseCase.View.of(77L, "bangpot", null, 4L, 3L, 2L, 1L));
+			.thenReturn(MyProfileView.of(77L, "bangpot", null, 4L, 3L, 2L, 1L));
 
 		mockMvc.perform(
 			get("/api/users/me")
@@ -121,19 +134,19 @@ class UserControllerTest {
 	@Test
 	void returnsMyCreatedMeetingsFromNewUserPath() throws Exception {
 		when(getMyCreatedMeetingsUseCase.handle(GetMyCreatedMeetingsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyCreatedMeetingsUseCase.Result.of(
+			.thenReturn(MyCreatedMeetingsView.of(
 				List.of(
-					GetMyCreatedMeetingsUseCase.Item.of(
+					MyCreatedMeetingsView.Item.of(
 						101L,
 						"Friday Escape",
-						"COMPLETED",
+						MeetingStatus.COMPLETED,
 						"2026-04-17",
 						"19:00",
 						5L,
 						"Room Escape Crew"
 					)
 				),
-				GetMyCreatedMeetingsUseCase.PageInfo.of(0, 20, false)
+				MyCreatedMeetingsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -158,9 +171,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyCalendarFromNewUserPath() throws Exception {
 		when(getMyCalendarUseCase.handle(GetMyCalendarUseCase.Query.of(77L)))
-			.thenReturn(GetMyCalendarUseCase.Result.of(
+			.thenReturn(MyCalendarView.of(
 				List.of(
-					GetMyCalendarUseCase.Item.of(
+					MyCalendarView.Item.of(
 						301L,
 						"Friday Escape",
 						5L,
@@ -171,7 +184,7 @@ class UserControllerTest {
 						false,
 						"HOST"
 					),
-					GetMyCalendarUseCase.Item.of(
+					MyCalendarView.Item.of(
 						302L,
 						"Canceled Escape",
 						6L,
@@ -209,9 +222,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyFavoriteThemesSummaryFromNewUserPath() throws Exception {
 		when(getMyFavoriteThemesSummaryUseCase.handle(GetMyFavoriteThemesSummaryUseCase.Query.of(77L)))
-			.thenReturn(GetMyFavoriteThemesSummaryUseCase.Result.of(
+			.thenReturn(MyFavoriteThemesSummaryView.of(
 				List.of(
-					GetMyFavoriteThemesSummaryUseCase.Item.of(
+					MyFavoriteThemesSummaryView.Item.of(
 						901L,
 						"Deep Blue",
 						"Seoul Escape",
@@ -244,9 +257,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyFavoriteThemesFromNewUserPath() throws Exception {
 		when(getMyFavoriteThemesUseCase.handle(GetMyFavoriteThemesUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyFavoriteThemesUseCase.Result.of(
+			.thenReturn(MyFavoriteThemesView.of(
 				List.of(
-					GetMyFavoriteThemesUseCase.Item.of(
+					MyFavoriteThemesView.Item.of(
 						901L,
 						"Deep Blue",
 						"Seoul Escape",
@@ -256,7 +269,7 @@ class UserControllerTest {
 						true
 					)
 				),
-				GetMyFavoriteThemesUseCase.PageInfo.of(0, 20, false)
+				MyFavoriteThemesView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -281,9 +294,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyMeetingLogsFromNewUserPath() throws Exception {
 		when(getMyMeetingLogsUseCase.handle(GetMyMeetingLogsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyMeetingLogsUseCase.Result.of(
+			.thenReturn(MyMeetingLogsView.of(
 				List.of(
-					GetMyMeetingLogsUseCase.Item.of(
+					MyMeetingLogsView.Item.of(
 						501L,
 						31L,
 						"Alpha Crew",
@@ -296,7 +309,7 @@ class UserControllerTest {
 						3L
 					)
 				),
-				GetMyMeetingLogsUseCase.PageInfo.of(0, 20, false)
+				MyMeetingLogsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -324,9 +337,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyJoinedMeetingsFromNewUserPath() throws Exception {
 		when(getMyJoinedMeetingsUseCase.handle(GetMyJoinedMeetingsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyJoinedMeetingsUseCase.Result.of(
+			.thenReturn(MyJoinedMeetingsView.of(
 				List.of(
-					GetMyJoinedMeetingsUseCase.Item.of(
+					MyJoinedMeetingsView.Item.of(
 						201L,
 						"Sunday Escape",
 						"Deep Blue",
@@ -334,12 +347,12 @@ class UserControllerTest {
 						"Room Escape Crew",
 						"2026-04-18",
 						"19:00",
-						"COMPLETED",
-						"SUCCESS",
+						MeetingStatus.COMPLETED,
+						MeetingResult.SUCCESS,
 						true
 					)
 				),
-				GetMyJoinedMeetingsUseCase.PageInfo.of(0, 20, false)
+				MyJoinedMeetingsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -367,17 +380,17 @@ class UserControllerTest {
 	@Test
 	void returnsMyCrewsFromNewUserPath() throws Exception {
 		when(getMyCrewsUseCase.handle(GetMyCrewsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyCrewsUseCase.Result.of(
+			.thenReturn(MyCrewsView.of(
 				List.of(
-					GetMyCrewsUseCase.Item.of(
+					MyCrewsView.Item.of(
 						31L,
 						"Alpha Crew",
-						"PUBLIC",
+						CrewVisibility.PUBLIC,
 						"leader-pot",
 						"https://cdn.example.com/crew-alpha.jpg"
 					)
 				),
-				GetMyCrewsUseCase.PageInfo.of(0, 20, false)
+				MyCrewsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -400,9 +413,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyPendingCrewsFromNewUserPath() throws Exception {
 		when(getMyPendingCrewsUseCase.handle(GetMyPendingCrewsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyPendingCrewsUseCase.Result.of(
+			.thenReturn(MyPendingCrewsView.of(
 				List.of(
-					GetMyPendingCrewsUseCase.Item.of(
+					MyPendingCrewsView.Item.of(
 						101L,
 						31L,
 						"Alpha Crew",
@@ -410,7 +423,7 @@ class UserControllerTest {
 						"I want to join this crew"
 					)
 				),
-				GetMyPendingCrewsUseCase.PageInfo.of(0, 20, false)
+				MyPendingCrewsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -433,9 +446,9 @@ class UserControllerTest {
 	@Test
 	void returnsUserSearchResultsFromNewUserPath() throws Exception {
 		when(searchUsersUseCase.handle(SearchUsersUseCase.Query.of(77L, "pot", 0, 20)))
-			.thenReturn(SearchUsersUseCase.Result.of(
+			.thenReturn(UserSearchView.of(
 				List.of(
-					UserSearchResult.of(
+					UserSearchView.Item.of(
 						101L,
 						"bangpot",
 						"https://cdn.example.com/users/101.jpg",
@@ -444,7 +457,7 @@ class UserControllerTest {
 						0
 					)
 				),
-				SearchUsersUseCase.PageInfo.of(0, 20, 1L, 1)
+				UserSearchView.Page.of(0, 20, 1L, 1)
 			));
 
 		mockMvc.perform(
@@ -484,22 +497,10 @@ class UserControllerTest {
 	@Test
 	void returnsMyWithdrawalCheckFromNewUserPath() throws Exception {
 		when(getMyWithdrawalCheckUseCase.handle(GetMyWithdrawalCheckUseCase.Query.of(77L)))
-			.thenReturn(GetMyWithdrawalCheckUseCase.Result.of(
+			.thenReturn(MyWithdrawalCheckView.of(
 				false,
 				List.of(
-					GetMyWithdrawalCheckUseCase.BlockingActiveCrew.of(31L, "Alpha Crew")
-				),
-				List.of(
-					GetMyWithdrawalCheckUseCase.BlockingParticipatingMeeting.of(
-						101L,
-						"Friday Escape",
-						31L,
-						"Alpha Crew",
-						"RECRUITING",
-						"2026-04-20",
-						"19:00",
-						"HOST"
-					)
+					MyWithdrawalCheckView.BlockingActiveCrew.of(31L, "Alpha Crew")
 				)
 			));
 
@@ -510,15 +511,7 @@ class UserControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.canWithdraw").value(false))
 			.andExpect(jsonPath("$.blockingActiveCrews[0].crewId").value(31))
-			.andExpect(jsonPath("$.blockingActiveCrews[0].crewName").value("Alpha Crew"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingId").value(101))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingTitle").value("Friday Escape"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].crewId").value(31))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].crewName").value("Alpha Crew"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingStatus").value("RECRUITING"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].date").value("2026-04-20"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].time").value("19:00"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].participationRole").value("HOST"));
+			.andExpect(jsonPath("$.blockingActiveCrews[0].crewName").value("Alpha Crew"));
 	}
 
 	@Test

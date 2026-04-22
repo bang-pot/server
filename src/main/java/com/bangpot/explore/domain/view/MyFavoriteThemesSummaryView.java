@@ -1,12 +1,21 @@
-package com.bangpot.user.application.port;
+package com.bangpot.explore.domain.view;
 
 import java.util.List;
 
-public interface FavoriteThemeSummaryReadRepository {
+public record MyFavoriteThemesSummaryView(
+	List<MyFavoriteThemesSummaryView.Item> items,
+	Long totalCount,
+	boolean hasMore
+) {
+	public static MyFavoriteThemesSummaryView of(
+		List<MyFavoriteThemesSummaryView.Item> items,
+		Long totalCount,
+		boolean hasMore
+	) {
+		return new MyFavoriteThemesSummaryView(items, totalCount, hasMore);
+	}
 
-	View load(Long userId, int limit);
-
-	record Item(
+	public record Item(
 		Long themeId,
 		String themeName,
 		String storeName,
@@ -25,15 +34,6 @@ public interface FavoriteThemeSummaryReadRepository {
 			boolean isFavorite
 		) {
 			return new Item(themeId, themeName, storeName, regionName, thumbnailUrl, favoriteCount, isFavorite);
-		}
-	}
-
-	record View(
-		List<Item> items,
-		Long totalCount
-	) {
-		public static View of(List<Item> items, Long totalCount) {
-			return new View(items, totalCount);
 		}
 	}
 }

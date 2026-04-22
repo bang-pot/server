@@ -4,14 +4,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.exception.UserNotFoundException;
-import com.bangpot.user.application.port.FavoriteThemeSummaryReadRepository;
-import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.explore.application.port.ThemeFavoriteQueryRepository;
+import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
+import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.usecase.GetMyFavoriteThemesSummaryUseCase;
-import com.bangpot.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,36 +18,18 @@ public class GetMyFavoriteThemesSummaryService implements GetMyFavoriteThemesSum
 
 	private static final int SUMMARY_LIMIT = 5;
 
-	private final AuthUserRepository authUserRepository;
-	private final UserRepository userRepository;
-	private final FavoriteThemeSummaryReadRepository favoriteThemeSummaryReadRepository;
+	private final UserQueryRepository userQueryRepository;
+	private final ThemeFavoriteQueryRepository themeFavoriteQueryRepository;
 
 	@Override
-	public Result handle(Query query) {
-		AuthUser authUser = authUserRepository.findById(query.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(query.userId()));
-		if (authUser.requiresCompletion()) {
-			throw new AccessDeniedException("full user profile is required");
+	public MyFavoriteThemesSummaryView handle(Query query) {
+		if (!userQueryRepository.existsCompletedUser(query.userId())) {
+			throw new AccessDeniedException("프로필 완료가 필요합니다.");
 		}
 
-		User user = userRepository.findById(query.userId())
-			.orElseThrow(() -> new UserNotFoundException(query.userId()));
-
-		FavoriteThemeSummaryReadRepository.View view = favoriteThemeSummaryReadRepository.load(user.getId(), SUMMARY_LIMIT);
-		return Result.of(
-			view.items().stream()
-				.map(item -> Item.of(
-					item.themeId(),
-					item.themeName(),
-					item.storeName(),
-					item.regionName(),
-					item.thumbnailUrl(),
-					item.favoriteCount(),
-					item.isFavorite()
-				))
-				.toList(),
-			view.totalCount(),
-			view.totalCount() > SUMMARY_LIMIT
+		return themeFavoriteQueryRepository.findMyFavoriteThemesSummaryViewByUserId(
+			query.userId(),
+			SUMMARY_LIMIT
 		);
 	}
 }

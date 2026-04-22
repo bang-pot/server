@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.domain.CrewJoinRequest;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
-
 import lombok.RequiredArgsConstructor;
 
 @Repository

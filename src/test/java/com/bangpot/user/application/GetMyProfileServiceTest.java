@@ -8,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.domain.User;
+import com.bangpot.user.domain.view.MyProfileView;
 
 class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 
@@ -17,7 +18,7 @@ class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 		meetingRepository.putCounts(7L, 5L, 3L);
 		crewRepository.putCounts(7L, 2L, 1L);
 
-		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
+		MyProfileView result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
 
 		assertThat(result.id()).isEqualTo(7L);
 		assertThat(result.nickname()).isEqualTo("bangpot");
@@ -32,7 +33,7 @@ class GetMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void defaultsHubCountsToZeroWhenNoActivityExists() {
 		userRepository.save(User.create(7L, "bangpot"));
 
-		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
+		MyProfileView result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(7L));
 
 		assertThat(result.createdMeetingsCount()).isZero();
 		assertThat(result.joinedMeetingsCount()).isZero();

@@ -3,16 +3,22 @@ package com.bangpot.user.presentation;
 import java.util.List;
 
 import com.bangpot.common.error.ApiErrorField;
+import com.bangpot.explore.domain.view.MyFavoriteThemesView;
+import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
+import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.MyPendingCrewsView;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.MyMeetingLogsView;
 import com.bangpot.user.application.exception.UserWithdrawalRequestValidationException;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
-import com.bangpot.user.application.usecase.GetMyFavoriteThemesUseCase;
 import com.bangpot.user.application.usecase.GetMyFavoriteThemesSummaryUseCase;
 import com.bangpot.user.application.usecase.GetMyJoinedMeetingsUseCase;
-import com.bangpot.user.application.usecase.GetMyMeetingLogsUseCase;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
@@ -20,6 +26,9 @@ import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.domain.WithdrawalReasonCode;
+import com.bangpot.user.domain.view.MyProfileView;
+import com.bangpot.user.domain.view.MyWithdrawalCheckView;
+import com.bangpot.user.domain.view.UserSearchView;
 
 final class UserDtoMapper {
 
@@ -33,7 +42,7 @@ final class UserDtoMapper {
 		return UpdateMyProfileUseCase.Command.of(userId, request.nickname());
 	}
 
-	static UserDto.UserProfileResponse toResponse(GetMyProfileUseCase.View result) {
+	static UserDto.UserProfileResponse toResponse(MyProfileView result) {
 		return new UserDto.UserProfileResponse(
 			result.id(),
 			result.nickname(),
@@ -49,13 +58,13 @@ final class UserDtoMapper {
 		return new UserDto.UserProfileResponse(result.id(), result.nickname(), null, null, null, null, null);
 	}
 
-	static UserDto.CreatedMeetingsResponse toResponse(GetMyCreatedMeetingsUseCase.Result result) {
+	static UserDto.CreatedMeetingsResponse toResponse(MyCreatedMeetingsView result) {
 		return new UserDto.CreatedMeetingsResponse(
 			result.items().stream()
 				.map(item -> new UserDto.CreatedMeetingItemResponse(
 					item.meetingId(),
 					item.title(),
-					item.status(),
+					item.status().name(),
 					item.date(),
 					item.time(),
 					item.crewId(),
@@ -63,14 +72,14 @@ final class UserDtoMapper {
 				))
 				.toList(),
 			new UserDto.CreatedMeetingsPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				result.page().page(),
+				result.page().size(),
+				result.page().hasNext()
 			)
 		);
 	}
 
-	static UserDto.CalendarResponse toResponse(GetMyCalendarUseCase.Result result) {
+	static UserDto.CalendarResponse toResponse(MyCalendarView result) {
 		return new UserDto.CalendarResponse(
 			result.items().stream()
 				.map(item -> new UserDto.CalendarItemResponse(
@@ -89,7 +98,7 @@ final class UserDtoMapper {
 		);
 	}
 
-	static UserDto.FavoriteThemeSummaryResponse toResponse(GetMyFavoriteThemesSummaryUseCase.Result result) {
+	static UserDto.FavoriteThemeSummaryResponse toResponse(MyFavoriteThemesSummaryView result) {
 		return new UserDto.FavoriteThemeSummaryResponse(
 			result.items().stream()
 				.map(item -> new UserDto.FavoriteThemeSummaryItemResponse(
@@ -107,7 +116,7 @@ final class UserDtoMapper {
 		);
 	}
 
-	static UserDto.FavoriteThemesResponse toResponse(GetMyFavoriteThemesUseCase.Result result) {
+	static UserDto.FavoriteThemesResponse toResponse(MyFavoriteThemesView result) {
 		return new UserDto.FavoriteThemesResponse(
 			result.items().stream()
 				.map(item -> new UserDto.FavoriteThemeItemResponse(
@@ -121,14 +130,14 @@ final class UserDtoMapper {
 				))
 				.toList(),
 			new UserDto.FavoriteThemesPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				result.page().page(),
+				result.page().size(),
+				result.page().hasNext()
 			)
 		);
 	}
 
-	static UserDto.MyMeetingLogsResponse toResponse(GetMyMeetingLogsUseCase.Result result) {
+	static UserDto.MyMeetingLogsResponse toResponse(MyMeetingLogsView result) {
 		return new UserDto.MyMeetingLogsResponse(
 			result.items().stream()
 				.map(item -> new UserDto.MyMeetingLogItemResponse(
@@ -145,14 +154,14 @@ final class UserDtoMapper {
 				))
 				.toList(),
 			new UserDto.MyMeetingLogsPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				result.page().page(),
+				result.page().size(),
+				result.page().hasNext()
 			)
 		);
 	}
 
-	static UserDto.JoinedMeetingsResponse toResponse(GetMyJoinedMeetingsUseCase.Result result) {
+	static UserDto.JoinedMeetingsResponse toResponse(MyJoinedMeetingsView result) {
 		return new UserDto.JoinedMeetingsResponse(
 			result.items().stream()
 				.map(item -> new UserDto.JoinedMeetingItemResponse(
@@ -163,39 +172,39 @@ final class UserDtoMapper {
 					item.crewName(),
 					item.date(),
 					item.time(),
-					item.status(),
-					item.result(),
+					item.status().name(),
+					item.result() == null ? null : item.result().name(),
 					item.canWriteReview()
 				))
 				.toList(),
 			new UserDto.JoinedMeetingsPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				result.page().page(),
+				result.page().size(),
+				result.page().hasNext()
 			)
 		);
 	}
 
-	static UserDto.MyCrewsResponse toResponse(GetMyCrewsUseCase.Result result) {
+	static UserDto.MyCrewsResponse toResponse(MyCrewsView result) {
 		return new UserDto.MyCrewsResponse(
 			result.items().stream()
 				.map(item -> new UserDto.MyCrewItemResponse(
 					item.crewId(),
 					item.crewName(),
-					item.visibility(),
+					item.visibility().name(),
 					item.leaderNickname(),
 					item.coverImageUrl()
 				))
 				.toList(),
 			new UserDto.MyCrewsPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				result.page().page(),
+				result.page().size(),
+				result.page().hasNext()
 			)
 		);
 	}
 
-	static UserDto.PendingCrewsResponse toResponse(GetMyPendingCrewsUseCase.Result result) {
+	static UserDto.PendingCrewsResponse toResponse(MyPendingCrewsView result) {
 		return new UserDto.PendingCrewsResponse(
 			result.items().stream()
 				.map(item -> new UserDto.PendingCrewItemResponse(
@@ -207,14 +216,14 @@ final class UserDtoMapper {
 				))
 				.toList(),
 			new UserDto.PendingCrewsPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				result.page().page(),
+				result.page().size(),
+				result.page().hasNext()
 			)
 		);
 	}
 
-	static UserDto.UserSearchResponse toResponse(SearchUsersUseCase.Result result) {
+	static UserDto.UserSearchResponse toResponse(UserSearchView result) {
 		return new UserDto.UserSearchResponse(
 			result.items().stream()
 				.map(item -> new UserDto.UserSearchItemResponse(
@@ -227,10 +236,10 @@ final class UserDtoMapper {
 				))
 				.toList(),
 			new UserDto.UserSearchPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().totalElements(),
-				result.pageInfo().totalPages()
+				result.page().page(),
+				result.page().size(),
+				result.page().totalElements(),
+				result.page().totalPages()
 			)
 		);
 	}
@@ -241,25 +250,13 @@ final class UserDtoMapper {
 		return new UserDto.CancelPendingCrewJoinRequestResponse(result.joinRequestId(), result.crewId());
 	}
 
-	static UserDto.WithdrawalCheckResponse toResponse(GetMyWithdrawalCheckUseCase.Result result) {
+	static UserDto.WithdrawalCheckResponse toResponse(MyWithdrawalCheckView result) {
 		return new UserDto.WithdrawalCheckResponse(
 			result.canWithdraw(),
 			result.blockingActiveCrews().stream()
 				.map(crew -> new UserDto.BlockingActiveCrewResponse(
 					crew.crewId(),
 					crew.crewName()
-				))
-				.toList(),
-			result.blockingParticipatingMeetings().stream()
-				.map(meeting -> new UserDto.BlockingParticipatingMeetingResponse(
-					meeting.meetingId(),
-					meeting.meetingTitle(),
-					meeting.crewId(),
-					meeting.crewName(),
-					meeting.meetingStatus(),
-					meeting.date(),
-					meeting.time(),
-					meeting.participationRole()
 				))
 				.toList()
 		);

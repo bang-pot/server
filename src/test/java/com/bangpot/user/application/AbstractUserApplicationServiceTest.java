@@ -15,15 +15,37 @@ import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
+import com.bangpot.explore.application.port.ThemeFavoriteRepository;
+import com.bangpot.explore.application.port.ThemeFavoriteQueryRepository;
+import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
+import com.bangpot.explore.domain.view.MyFavoriteThemesView;
+import com.bangpot.crew.application.port.CrewJoinRequestRepository;
+import com.bangpot.crew.application.port.CrewJoinRequestQueryRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewJoinRequest;
 import com.bangpot.crew.domain.CrewMember;
+import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.MyPendingCrewsView;
+import com.bangpot.meeting.domain.MeetingResult;
+import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingLog;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.MyMeetingLogsView;
+import com.bangpot.meeting.application.port.MeetingLogRepository;
+import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
 import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.application.service.GetMyCreatedMeetingsService;
@@ -57,7 +79,7 @@ import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.domain.UserWithdrawal;
 import com.bangpot.user.domain.User;
-import com.bangpot.user.domain.UserSearchResult;
+import com.bangpot.user.domain.view.UserSearchView;
 
 abstract class AbstractUserApplicationServiceTest {
 
@@ -65,16 +87,21 @@ abstract class AbstractUserApplicationServiceTest {
 
 	protected InMemoryAuthUserRepository authUserRepository;
 	protected InMemoryUserRepository userRepository;
+	protected InMemoryUserQueryRepository userQueryRepository;
+	protected InMemoryMeetingQueryRepository meetingQueryRepository;
+	protected InMemoryCrewQueryRepository crewQueryRepository;
 	protected InMemoryProfileHubReadRepository profileHubReadRepository;
 	protected InMemoryMeetingRepository meetingRepository;
 	protected InMemoryCrewRepository crewRepository;
+	protected InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
+	protected InMemoryCrewJoinRequestQueryRepository crewJoinRequestQueryRepository;
 	protected InMemoryCrewMemberRepository crewMemberRepository;
 	protected InMemoryCreatedMeetingReadRepository createdMeetingReadRepository;
 	protected InMemoryCalendarReadRepository calendarReadRepository;
-	protected InMemoryMyFavoriteThemeReadRepository myFavoriteThemeReadRepository;
-	protected InMemoryFavoriteThemeSummaryReadRepository favoriteThemeSummaryReadRepository;
-	protected InMemoryMyMeetingLogReadRepository myMeetingLogReadRepository;
-	protected InMemoryJoinedMeetingReadRepository joinedMeetingReadRepository;
+	protected InMemoryThemeFavoriteRepository themeFavoriteRepository;
+	protected InMemoryThemeFavoriteQueryRepository themeFavoriteQueryRepository;
+	protected InMemoryMeetingLogRepository meetingLogRepository;
+	protected InMemoryMeetingLogQueryRepository meetingLogQueryRepository;
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
 	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
 	protected InMemoryUserWithdrawalRepository userWithdrawalRepository;
@@ -102,63 +129,60 @@ abstract class AbstractUserApplicationServiceTest {
 		profileHubReadRepository = new InMemoryProfileHubReadRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
-		crewRepository = new InMemoryCrewRepository(crewMemberRepository);
+		crewRepository = new InMemoryCrewRepository(crewMemberRepository, userRepository);
+		meetingQueryRepository = new InMemoryMeetingQueryRepository(meetingRepository);
+		crewQueryRepository = new InMemoryCrewQueryRepository(crewRepository);
+		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
+		crewJoinRequestQueryRepository = new InMemoryCrewJoinRequestQueryRepository(crewJoinRequestRepository);
 		createdMeetingReadRepository = new InMemoryCreatedMeetingReadRepository();
 		calendarReadRepository = new InMemoryCalendarReadRepository();
-		myFavoriteThemeReadRepository = new InMemoryMyFavoriteThemeReadRepository();
-		favoriteThemeSummaryReadRepository = new InMemoryFavoriteThemeSummaryReadRepository();
-		myMeetingLogReadRepository = new InMemoryMyMeetingLogReadRepository();
-		joinedMeetingReadRepository = new InMemoryJoinedMeetingReadRepository();
+		themeFavoriteRepository = new InMemoryThemeFavoriteRepository();
+		themeFavoriteQueryRepository = new InMemoryThemeFavoriteQueryRepository(themeFavoriteRepository);
+		meetingLogRepository = new InMemoryMeetingLogRepository();
+		meetingLogQueryRepository = new InMemoryMeetingLogQueryRepository(meetingLogRepository);
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
 		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
 		userWithdrawalRepository = new InMemoryUserWithdrawalRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
-		getMyProfileUseCase = new GetMyProfileService(userRepository, meetingRepository, crewRepository);
+		userQueryRepository = new InMemoryUserQueryRepository(userRepository);
+		getMyProfileUseCase = new GetMyProfileService(userQueryRepository, meetingQueryRepository, crewQueryRepository);
 		getMyCreatedMeetingsUseCase = new GetMyCreatedMeetingsService(
-			authUserRepository,
-			userRepository,
-			createdMeetingReadRepository
+			userQueryRepository,
+			meetingQueryRepository
 		);
 		getMyCalendarUseCase = new GetMyCalendarService(
-			authUserRepository,
-			userRepository,
-			calendarReadRepository
+			userQueryRepository,
+			meetingQueryRepository
 		);
 		getMyFavoriteThemesUseCase = new GetMyFavoriteThemesService(
-			authUserRepository,
-			userRepository,
-			myFavoriteThemeReadRepository
+			userQueryRepository,
+			themeFavoriteQueryRepository
 		);
 		getMyFavoriteThemesSummaryUseCase = new GetMyFavoriteThemesSummaryService(
-			authUserRepository,
-			userRepository,
-			favoriteThemeSummaryReadRepository
+			userQueryRepository,
+			themeFavoriteQueryRepository
 		);
 		getMyMeetingLogsUseCase = new GetMyMeetingLogsService(
-			authUserRepository,
-			userRepository,
-			myMeetingLogReadRepository
+			userQueryRepository,
+			meetingLogQueryRepository
 		);
 		getMyJoinedMeetingsUseCase = new GetMyJoinedMeetingsService(
-			authUserRepository,
-			userRepository,
-			joinedMeetingReadRepository
+			userQueryRepository,
+			meetingQueryRepository
 		);
 		getMyCrewsUseCase = new GetMyCrewsService(
-			authUserRepository,
-			userRepository,
-			myCrewReadRepository
+			userQueryRepository,
+			crewQueryRepository
 		);
 		getMyPendingCrewsUseCase = new GetMyPendingCrewsService(
-			authUserRepository,
-			userRepository,
-			pendingCrewReadRepository
+			userQueryRepository,
+			crewJoinRequestQueryRepository
 		);
 		getMyWithdrawalCheckUseCase = new GetMyWithdrawalCheckService(
-			userRepository,
-			crewRepository
+			userQueryRepository,
+			crewQueryRepository
 		);
-		searchUsersUseCase = new SearchUsersService(userRepository);
+		searchUsersUseCase = new SearchUsersService(userQueryRepository);
 		withdrawMyAccountUseCase = new WithdrawMyAccountService(
 			authUserRepository,
 			userRepository,
@@ -252,20 +276,18 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
-		public List<UserSearchResult> searchByNickname(String nickname, int page, int size) {
+		public UserSearchView searchByNickname(String nickname, int page, int size) {
 			searchCount++;
 			lastSearchPage = page;
 			lastSearchSize = size;
-			List<UserSearchResult> allItems = searchItemsByKeyword.getOrDefault(nickname, List.of());
-			return allItems.stream()
+			List<UserSearchView.Item> allItems = searchItemsByKeyword.getOrDefault(nickname, List.of());
+			List<UserSearchView.Item> items = allItems.stream()
 				.skip((long)page * size)
 				.limit(size)
 				.toList();
-		}
-
-		@Override
-		public long countByNickname(String nickname) {
-			return searchItemsByKeyword.getOrDefault(nickname, List.of()).size();
+			long totalElements = allItems.size();
+			int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);
+			return UserSearchView.of(items, UserSearchView.Page.of(page, size, totalElements, totalPages));
 		}
 
 		@Override
@@ -279,7 +301,7 @@ abstract class AbstractUserApplicationServiceTest {
 			withdrawnUserIds.add(userId);
 		}
 
-		void putSearchResult(String keyword, List<UserSearchResult> items) {
+		void putSearchResult(String keyword, List<UserSearchView.Item> items) {
 			searchItemsByKeyword.put(keyword, items);
 		}
 
@@ -295,11 +317,105 @@ abstract class AbstractUserApplicationServiceTest {
 			return lastSearchPage;
 		}
 
-		private final Map<String, List<UserSearchResult>> searchItemsByKeyword = new HashMap<>();
+		private final Map<String, List<UserSearchView.Item>> searchItemsByKeyword = new HashMap<>();
 		private int searchCount;
 		private int lastSearchPage;
 		private int lastSearchSize;
 		private final java.util.Set<Long> withdrawnUserIds = new java.util.HashSet<>();
+	}
+
+	protected static final class InMemoryUserQueryRepository implements UserQueryRepository {
+		private final InMemoryUserRepository userRepository;
+
+		private InMemoryUserQueryRepository(InMemoryUserRepository userRepository) {
+			this.userRepository = userRepository;
+		}
+
+		@Override
+		public com.bangpot.user.domain.view.UserProfileView findMyProfileUserViewByUserId(Long userId) {
+			return userRepository.findById(userId)
+				.map(user -> com.bangpot.user.domain.view.UserProfileView.of(
+					user.getId(),
+					user.getNickname(),
+					null
+				));
+		}
+
+		@Override
+		public boolean existsCompletedUser(Long userId) {
+			return userRepository.findById(userId).isPresent();
+		}
+
+		@Override
+		public UserSearchView searchUsersByNickname(String nickname, int page, int size) {
+			return userRepository.searchByNickname(nickname, page, size);
+		}
+	}
+
+	protected static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+		private final InMemoryMeetingRepository meetingRepository;
+
+		private InMemoryMeetingQueryRepository(InMemoryMeetingRepository meetingRepository) {
+			this.meetingRepository = meetingRepository;
+		}
+
+		@Override
+		public MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return meetingRepository.findMyCalendarViewByUserId(userId);
+		}
+
+		@Override
+		public MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return meetingRepository.findMyCreatedMeetingsViewByHostUserId(userId, page, size);
+		}
+
+		@Override
+		public MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return meetingRepository.findMyJoinedMeetingsViewByUserId(userId, page, size);
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return meetingRepository.countCreatedByHostUserId(userId);
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return meetingRepository.countJoinedByUserId(userId);
+		}
+	}
+
+	protected static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+		private final InMemoryCrewRepository crewRepository;
+
+		private InMemoryCrewQueryRepository(InMemoryCrewRepository crewRepository) {
+			this.crewRepository = crewRepository;
+		}
+
+		@Override
+		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return crewRepository.findMyCrewsViewByMemberUserId(userId, page, size);
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return crewRepository.countActiveByMemberUserId(userId);
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return crewRepository.countPendingPublicByUserId(userId);
+		}
+
+		@Override
+		public List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			return crewRepository.findActiveByMemberUserId(userId).stream()
+				.map(crew -> com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew.of(
+					crew.getId(),
+					crew.getName()
+				))
+				.toList();
+		}
 	}
 
 	protected static final class InMemoryProfileHubReadRepository
@@ -323,6 +439,9 @@ abstract class AbstractUserApplicationServiceTest {
 		private final Map<Long, Meeting> meetingsById = new HashMap<>();
 		private final Map<Long, Long> createdCountsByUserId = new HashMap<>();
 		private final Map<Long, Long> joinedCountsByUserId = new HashMap<>();
+		private final Map<Long, MyCalendarView> calendarViewsByUserId = new HashMap<>();
+		private final Map<Long, MyCreatedMeetingsView> createdMeetingsViewsByUserId = new HashMap<>();
+		private final Map<Long, MyJoinedMeetingsView> joinedMeetingsViewsByUserId = new HashMap<>();
 
 		@Override
 		public Meeting save(Meeting meeting) {
@@ -346,6 +465,27 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return createdMeetingsViewsByUserId.getOrDefault(
+				userId,
+				MyCreatedMeetingsView.of(List.of(), MyCreatedMeetingsView.Page.of(page, size, false))
+			);
+		}
+
+		@Override
+		public MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return joinedMeetingsViewsByUserId.getOrDefault(
+				userId,
+				MyJoinedMeetingsView.of(List.of(), MyJoinedMeetingsView.Page.of(page, size, false))
+			);
+		}
+
+		@Override
+		public MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return calendarViewsByUserId.getOrDefault(userId, MyCalendarView.of(List.of(), 0));
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return createdCountsByUserId.getOrDefault(userId, 0L);
 		}
@@ -359,6 +499,18 @@ abstract class AbstractUserApplicationServiceTest {
 			createdCountsByUserId.put(userId, createdMeetingsCount);
 			joinedCountsByUserId.put(userId, joinedMeetingsCount);
 		}
+
+		void putCalendarView(Long userId, MyCalendarView view) {
+			calendarViewsByUserId.put(userId, view);
+		}
+
+		void putCreatedMeetingsView(Long userId, MyCreatedMeetingsView view) {
+			createdMeetingsViewsByUserId.put(userId, view);
+		}
+
+		void putJoinedMeetingsView(Long userId, MyJoinedMeetingsView view) {
+			joinedMeetingsViewsByUserId.put(userId, view);
+		}
 	}
 
 	protected static final class InMemoryCrewRepository implements CrewRepository {
@@ -366,10 +518,15 @@ abstract class AbstractUserApplicationServiceTest {
 		private final Map<Long, Long> activeCountsByUserId = new HashMap<>();
 		private final Map<Long, Long> pendingCountsByUserId = new HashMap<>();
 		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryUserRepository userRepository;
 		private long sequence = 1L;
 
-		private InMemoryCrewRepository(InMemoryCrewMemberRepository crewMemberRepository) {
+		private InMemoryCrewRepository(
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryUserRepository userRepository
+		) {
 			this.crewMemberRepository = crewMemberRepository;
+			this.userRepository = userRepository;
 		}
 
 		@Override
@@ -401,6 +558,24 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			List<MyCrewsView.Item> items = findActiveByMemberUserId(userId).stream()
+				.skip((long) page * size)
+				.limit(size + 1L)
+				.map(crew -> MyCrewsView.Item.of(
+					crew.getId(),
+					crew.getName(),
+					crew.getVisibility(),
+					findLeaderNickname(crew.getId()),
+					crew.getImageUrl()
+				))
+				.toList();
+			boolean hasNext = items.size() > size;
+			List<MyCrewsView.Item> pageItems = hasNext ? items.subList(0, size) : items;
+			return MyCrewsView.of(pageItems, MyCrewsView.Page.of(page, size, hasNext));
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return activeCountsByUserId.getOrDefault(userId, 0L);
 		}
@@ -420,6 +595,16 @@ abstract class AbstractUserApplicationServiceTest {
 		void putCounts(Long userId, long activeCount, long pendingCount) {
 			activeCountsByUserId.put(userId, activeCount);
 			pendingCountsByUserId.put(userId, pendingCount);
+		}
+
+		private String findLeaderNickname(Long crewId) {
+			return crewMemberRepository.findAllByCrewId(crewId).stream()
+				.filter(crewMember -> crewMember.getRole() == CrewRole.LEADER)
+				.findFirst()
+				.map(CrewMember::getUserId)
+				.flatMap(userRepository::findById)
+				.map(User::getNickname)
+				.orElse(null);
 		}
 	}
 
@@ -481,6 +666,55 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 	}
 
+	protected static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
+		private final Map<Long, MyPendingCrewsView> pendingViewsByUserId = new HashMap<>();
+
+		@Override
+		public CrewJoinRequest save(CrewJoinRequest crewJoinRequest) {
+			return crewJoinRequest;
+		}
+
+		@Override
+		public boolean existsPendingByCrewIdAndUserId(Long crewId, Long userId) {
+			return false;
+		}
+
+		@Override
+		public List<CrewJoinRequest> findByCrewId(Long crewId) {
+			return List.of();
+		}
+
+		@Override
+		public List<CrewJoinRequest> findPendingByCrewId(Long crewId) {
+			return List.of();
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
+			return Optional.empty();
+		}
+
+		void putPendingView(Long userId, MyPendingCrewsView view) {
+			pendingViewsByUserId.put(userId, view);
+		}
+	}
+
+	protected static final class InMemoryCrewJoinRequestQueryRepository implements CrewJoinRequestQueryRepository {
+		private final InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
+
+		private InMemoryCrewJoinRequestQueryRepository(InMemoryCrewJoinRequestRepository crewJoinRequestRepository) {
+			this.crewJoinRequestRepository = crewJoinRequestRepository;
+		}
+
+		@Override
+		public MyPendingCrewsView findMyPendingCrewsViewByUserId(Long userId, int page, int size) {
+			return crewJoinRequestRepository.pendingViewsByUserId.getOrDefault(
+				userId,
+				MyPendingCrewsView.of(List.of(), MyPendingCrewsView.Page.of(page, size, false))
+			);
+		}
+	}
+
 	protected static final class InMemoryCreatedMeetingReadRepository
 		implements com.bangpot.user.application.port.CreatedMeetingReadRepository {
 		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
@@ -523,31 +757,121 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 	}
 
-	protected static final class InMemoryMyFavoriteThemeReadRepository
-		implements com.bangpot.user.application.port.MyFavoriteThemeReadRepository {
-		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
+	protected static final class InMemoryThemeFavoriteRepository implements ThemeFavoriteRepository {
+		private final Map<Long, MyFavoriteThemesView> viewsByUserId = new HashMap<>();
 
 		@Override
-		public SearchResult search(Long userId, int page, int size) {
-			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
+		public boolean create(Long userId, Long themeId, Instant createdAt) {
+			return false;
 		}
 
-		void putResult(Long userId, SearchResult result) {
-			resultsByUserId.put(userId, result);
+		@Override
+		public boolean delete(Long userId, Long themeId) {
+			return false;
+		}
+
+		@Override
+		public boolean exists(Long userId, Long themeId) {
+			return false;
+		}
+
+		@Override
+		public java.util.Set<Long> findFavoritedThemeIds(Long userId, List<Long> themeIds) {
+			return java.util.Set.of();
+		}
+
+		void putView(Long userId, MyFavoriteThemesView view) {
+			viewsByUserId.put(userId, view);
 		}
 	}
 
-	protected static final class InMemoryMyMeetingLogReadRepository
-		implements com.bangpot.user.application.port.MyMeetingLogReadRepository {
-		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
+	protected static final class InMemoryThemeFavoriteQueryRepository implements ThemeFavoriteQueryRepository {
+		private final InMemoryThemeFavoriteRepository themeFavoriteRepository;
 
-		@Override
-		public SearchResult search(Long userId, int page, int size) {
-			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
+		private InMemoryThemeFavoriteQueryRepository(InMemoryThemeFavoriteRepository themeFavoriteRepository) {
+			this.themeFavoriteRepository = themeFavoriteRepository;
 		}
 
-		void putResult(Long userId, SearchResult result) {
-			resultsByUserId.put(userId, result);
+		@Override
+		public MyFavoriteThemesView findMyFavoriteThemesViewByUserId(Long userId, int page, int size) {
+			return themeFavoriteRepository.viewsByUserId.getOrDefault(
+				userId,
+				MyFavoriteThemesView.of(List.of(), MyFavoriteThemesView.Page.of(page, size, false))
+			);
+		}
+
+		@Override
+		public MyFavoriteThemesSummaryView findMyFavoriteThemesSummaryViewByUserId(Long userId, int limit) {
+			MyFavoriteThemesView view = themeFavoriteRepository.viewsByUserId.getOrDefault(
+				userId,
+				MyFavoriteThemesView.of(List.of(), MyFavoriteThemesView.Page.of(0, limit, false))
+			);
+			return MyFavoriteThemesSummaryView.of(
+				view.items().stream().limit(limit).map(item -> MyFavoriteThemesSummaryView.Item.of(
+					item.themeId(),
+					item.themeName(),
+					item.storeName(),
+					item.regionName(),
+					item.thumbnailUrl(),
+					item.favoriteCount(),
+					item.isFavorite()
+				)).toList(),
+				(long) view.items().size(),
+				view.items().size() > limit
+			);
+		}
+	}
+
+	protected static final class InMemoryMeetingLogRepository implements MeetingLogRepository {
+		private final Map<Long, MeetingLog> logsById = new HashMap<>();
+		private final Map<Long, MyMeetingLogsView> viewsByUserId = new HashMap<>();
+
+		@Override
+		public MeetingLog save(MeetingLog log) {
+			logsById.put(log.getId(), log);
+			return log;
+		}
+
+		@Override
+		public Optional<MeetingLog> findById(Long logId) {
+			return Optional.ofNullable(logsById.get(logId));
+		}
+
+		@Override
+		public Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return logsById.values().stream()
+				.filter(log -> meetingId.equals(log.getMeetingId()) && authorUserId.equals(log.getAuthorUserId()))
+				.findFirst();
+		}
+
+		@Override
+		public boolean existsAnyByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return findByMeetingIdAndAuthorUserId(meetingId, authorUserId).isPresent();
+		}
+
+		@Override
+		public boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return false;
+		}
+
+		void putView(Long userId, MyMeetingLogsView view) {
+			viewsByUserId.put(userId, view);
+		}
+	}
+
+	protected static final class InMemoryMeetingLogQueryRepository implements MeetingLogQueryRepository {
+		private final InMemoryMeetingLogRepository meetingLogRepository;
+
+		private InMemoryMeetingLogQueryRepository(InMemoryMeetingLogRepository meetingLogRepository) {
+			this.meetingLogRepository = meetingLogRepository;
+		}
+
+		@Override
+		public MyMeetingLogsView findMyMeetingLogsViewByAuthorUserId(Long userId, int page, int size) {
+			return meetingLogRepository.viewsByUserId.getOrDefault(
+				userId,
+				MyMeetingLogsView.of(List.of(), MyMeetingLogsView.Page.of(page, size, false))
+			);
 		}
 	}
 

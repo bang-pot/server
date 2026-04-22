@@ -10,7 +10,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.domain.User;
-import com.bangpot.user.domain.UserSearchResult;
+import com.bangpot.user.domain.view.UserSearchView;
 
 class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 
@@ -20,7 +20,7 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 		userRepository.putSearchResult(
 			"pot",
 			List.of(
-				UserSearchResult.of(
+				UserSearchView.Item.of(
 					11L,
 					"alpha-pot",
 					"https://cdn.example.com/users/11.jpg",
@@ -28,7 +28,7 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 					"FEMALE",
 					0
 				),
-				UserSearchResult.of(
+				UserSearchView.Item.of(
 					12L,
 					"bangpot",
 					null,
@@ -39,12 +39,12 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 			)
 		);
 
-		SearchUsersUseCase.Result result = searchUsersUseCase.handle(
+		UserSearchView result = searchUsersUseCase.handle(
 			SearchUsersUseCase.Query.of(7L, " pot ", 0, 20)
 		);
 
 		assertThat(result.items()).hasSize(2);
-		assertThat(result.pageInfo()).isEqualTo(SearchUsersUseCase.PageInfo.of(0, 20, 2L, 1));
+		assertThat(result.page()).isEqualTo(UserSearchView.Page.of(0, 20, 2L, 1));
 		assertThat(result.items().get(0).userId()).isEqualTo(11L);
 		assertThat(result.items().get(0).nickname()).isEqualTo("alpha-pot");
 		assertThat(result.items().get(0).profileImageUrl()).isEqualTo("https://cdn.example.com/users/11.jpg");
@@ -58,31 +58,32 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 	void returnsEmptyResultForBlankKeywordWithoutQueryingRepository() {
 		userRepository.save(User.create(7L, "bangpot"));
 
-		SearchUsersUseCase.Result result = searchUsersUseCase.handle(
+		UserSearchView result = searchUsersUseCase.handle(
 			SearchUsersUseCase.Query.of(7L, "   ", 0, 20)
 		);
 
 		assertThat(result.items()).isEmpty();
-		assertThat(result.pageInfo()).isEqualTo(SearchUsersUseCase.PageInfo.of(0, 20, 0L, 0));
+		assertThat(result.page()).isEqualTo(UserSearchView.Page.of(0, 20, 0L, 0));
 		assertThat(userRepository.getSearchCount()).isZero();
 	}
 
 	@Test
 	void rejectsSearchWhenUserRowIsMissing() {
 		assertThatThrownBy(() -> searchUsersUseCase.handle(SearchUsersUseCase.Query.of(7L, "pot", 0, 20)))
-			.isInstanceOf(AccessDeniedException.class);
+			.isInstanceOf(AccessDeniedException.class)
+			.hasMessage("프로필 완료가 필요합니다.");
 	}
 
 	@Test
 	void returnsEmptyResultWhenSearchResultDoesNotExist() {
 		userRepository.save(User.create(7L, "bangpot"));
 
-		SearchUsersUseCase.Result result = searchUsersUseCase.handle(
+		UserSearchView result = searchUsersUseCase.handle(
 			SearchUsersUseCase.Query.of(7L, "pot", 0, 20)
 		);
 
 		assertThat(result.items()).isEmpty();
-		assertThat(result.pageInfo()).isEqualTo(SearchUsersUseCase.PageInfo.of(0, 20, 0L, 0));
+		assertThat(result.page()).isEqualTo(UserSearchView.Page.of(0, 20, 0L, 0));
 	}
 
 	@Test
@@ -91,17 +92,17 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 		userRepository.putSearchResult(
 			"pot",
 			List.of(
-				UserSearchResult.of(11L, "alpha-pot", null, null, null, 0),
-				UserSearchResult.of(12L, "beta-pot", null, null, null, 0)
+				UserSearchView.Item.of(11L, "alpha-pot", null, null, null, 0),
+				UserSearchView.Item.of(12L, "beta-pot", null, null, null, 0)
 			)
 		);
 
-		SearchUsersUseCase.Result result = searchUsersUseCase.handle(
+		UserSearchView result = searchUsersUseCase.handle(
 			SearchUsersUseCase.Query.of(7L, "pot", 0, 0)
 		);
 
 		assertThat(result.items()).hasSize(1);
-		assertThat(result.pageInfo()).isEqualTo(SearchUsersUseCase.PageInfo.of(0, 1, 2L, 2));
+		assertThat(result.page()).isEqualTo(UserSearchView.Page.of(0, 1, 2L, 2));
 		assertThat(userRepository.getLastSearchPage()).isEqualTo(0);
 		assertThat(userRepository.getLastSearchSize()).isEqualTo(1);
 	}
@@ -112,18 +113,18 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 		userRepository.putSearchResult(
 			"pot",
 			List.of(
-				UserSearchResult.of(11L, "alpha-pot", null, null, null, 0),
-				UserSearchResult.of(12L, "beta-pot", null, null, null, 0),
-				UserSearchResult.of(13L, "gamma-pot", null, null, null, 0)
+				UserSearchView.Item.of(11L, "alpha-pot", null, null, null, 0),
+				UserSearchView.Item.of(12L, "beta-pot", null, null, null, 0),
+				UserSearchView.Item.of(13L, "gamma-pot", null, null, null, 0)
 			)
 		);
 
-		SearchUsersUseCase.Result result = searchUsersUseCase.handle(
+		UserSearchView result = searchUsersUseCase.handle(
 			SearchUsersUseCase.Query.of(7L, "pot", 1, 1)
 		);
 
-		assertThat(result.items()).extracting(UserSearchResult::userId)
+		assertThat(result.items()).extracting(UserSearchView.Item::userId)
 			.containsExactly(12L);
-		assertThat(result.pageInfo()).isEqualTo(SearchUsersUseCase.PageInfo.of(1, 1, 3L, 3));
+		assertThat(result.page()).isEqualTo(UserSearchView.Page.of(1, 1, 3L, 3));
 	}
 }

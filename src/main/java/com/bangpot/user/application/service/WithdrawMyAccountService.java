@@ -14,6 +14,7 @@ import com.bangpot.user.application.port.UserWithdrawalRepository;
 import com.bangpot.user.application.usecase.GetMyWithdrawalCheckUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.domain.UserWithdrawal;
+import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,7 +35,7 @@ public class WithdrawMyAccountService implements WithdrawMyAccountUseCase {
 		userRepository.findById(command.userId())
 			.orElseThrow(() -> new AccessDeniedException("프로필 완료가 필요합니다."));
 
-		GetMyWithdrawalCheckUseCase.Result withdrawalCheck = getMyWithdrawalCheckUseCase.handle(
+		MyWithdrawalCheckView withdrawalCheck = getMyWithdrawalCheckUseCase.handle(
 			GetMyWithdrawalCheckUseCase.Query.of(command.userId())
 		);
 		if (!withdrawalCheck.canWithdraw()) {
@@ -42,8 +43,7 @@ public class WithdrawMyAccountService implements WithdrawMyAccountUseCase {
 		}
 		if (authUserRepository.findById(command.userId()).isEmpty()) {
 			throw new IllegalStateException(
-				"완료된 회원의 인증 정보가 없습니다. userId="
-					+ command.userId()
+				"완료된 회원의 인증 정보가 없습니다. userId=" + command.userId()
 			);
 		}
 

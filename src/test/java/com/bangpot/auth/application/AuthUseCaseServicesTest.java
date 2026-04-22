@@ -29,12 +29,18 @@ import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
+import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.GetMyProfileService;
@@ -43,6 +49,8 @@ import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.domain.User;
+import com.bangpot.user.domain.view.MyProfileView;
+import com.bangpot.user.domain.view.UserProfileView;
 
 class AuthUseCaseServicesTest {
 
@@ -50,8 +58,11 @@ class AuthUseCaseServicesTest {
 
 	private InMemoryAuthUserRepository authUserRepository;
 	private InMemoryUserRepository userRepository;
+	private InMemoryUserQueryRepository userQueryRepository;
 	private InMemoryMeetingRepository meetingRepository;
 	private InMemoryCrewRepository crewRepository;
+	private InMemoryMeetingQueryRepository meetingQueryRepository;
+	private InMemoryCrewQueryRepository crewQueryRepository;
 	private LoginWithProviderUseCase loginWithProviderUseCase;
 	private CompleteTempUserUseCase completeTempUserUseCase;
 	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
@@ -66,6 +77,9 @@ class AuthUseCaseServicesTest {
 		userRepository = new InMemoryUserRepository();
 		meetingRepository = new InMemoryMeetingRepository();
 		crewRepository = new InMemoryCrewRepository();
+		userQueryRepository = new InMemoryUserQueryRepository(userRepository);
+		meetingQueryRepository = new InMemoryMeetingQueryRepository(meetingRepository);
+		crewQueryRepository = new InMemoryCrewQueryRepository(crewRepository);
 		Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 		authAuditLogger = org.mockito.Mockito.mock(AuthAuditLogger.class);
 		AuthRequiredTermsProperties authRequiredTermsProperties = new AuthRequiredTermsProperties();
@@ -85,7 +99,7 @@ class AuthUseCaseServicesTest {
 			userRepository,
 			authRequiredTermsProperties
 		);
-		getMyProfileUseCase = new GetMyProfileService(userRepository, meetingRepository, crewRepository);
+		getMyProfileUseCase = new GetMyProfileService(userQueryRepository, meetingQueryRepository, crewQueryRepository);
 		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
 	}
 
@@ -240,7 +254,7 @@ class AuthUseCaseServicesTest {
 		authUserRepository.save(fullUser);
 		userRepository.save(User.create(fullUser.getId(), "bangpot"));
 
-		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(fullUser.getId()));
+		MyProfileView result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(fullUser.getId()));
 
 		assertThat(result.id()).isEqualTo(fullUser.getId());
 		assertThat(result.nickname()).isEqualTo("bangpot");
@@ -371,6 +385,88 @@ class AuthUseCaseServicesTest {
 		public User save(User user) {
 			usersById.put(user.getId(), user);
 			return user;
+		}
+	}
+
+	private static final class InMemoryUserQueryRepository implements UserQueryRepository {
+
+		private final InMemoryUserRepository userRepository;
+
+		private InMemoryUserQueryRepository(InMemoryUserRepository userRepository) {
+			this.userRepository = userRepository;
+		}
+
+		@Override
+		public UserProfileView findMyProfileUserViewByUserId(Long userId) {
+			return userRepository.findById(userId)
+				.map(user -> UserProfileView.of(
+					user.getId(),
+					user.getNickname(),
+					null
+				));
+		}
+
+		@Override
+		public boolean existsCompletedUser(Long userId) {
+			return userRepository.findById(userId).isPresent();
+		}
+
+		@Override
+		public com.bangpot.user.domain.view.UserSearchView searchUsersByNickname(String nickname, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+	}
+
+	private static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+
+		private final InMemoryMeetingRepository meetingRepository;
+
+		private InMemoryMeetingQueryRepository(InMemoryMeetingRepository meetingRepository) {
+			this.meetingRepository = meetingRepository;
+		}
+
+		@Override
+		public MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return MyCalendarView.of(List.of(), 0);
+		}
+
+		@Override
+		public MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return MyCreatedMeetingsView.of(List.of(), MyCreatedMeetingsView.Page.of(page, size, false));
+		}
+
+		@Override
+		public MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return MyJoinedMeetingsView.of(List.of(), MyJoinedMeetingsView.Page.of(page, size, false));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return meetingRepository.countCreatedByHostUserId(userId);
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return meetingRepository.countJoinedByUserId(userId);
+		}
+	}
+
+	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+
+		private final InMemoryCrewRepository crewRepository;
+
+		private InMemoryCrewQueryRepository(InMemoryCrewRepository crewRepository) {
+			this.crewRepository = crewRepository;
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return crewRepository.countActiveByMemberUserId(userId);
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return crewRepository.countPendingPublicByUserId(userId);
 		}
 	}
 

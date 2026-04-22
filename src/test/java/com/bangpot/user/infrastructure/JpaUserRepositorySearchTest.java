@@ -10,8 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
-import com.bangpot.user.application.port.UserRepository;
-import com.bangpot.user.domain.UserSearchResult;
+import com.bangpot.user.application.port.UserQueryRepository;
+import com.bangpot.user.domain.view.UserSearchView;
 
 @DataJpaTest
 class JpaUserRepositorySearchTest {
@@ -20,7 +20,7 @@ class JpaUserRepositorySearchTest {
 	private TestEntityManager entityManager;
 
 	@Autowired
-	private UserRepository repository;
+	private UserQueryRepository repository;
 
 	@Test
 	void returnsOnlyActiveUsersMatchingNicknameInStableOrder() {
@@ -35,23 +35,22 @@ class JpaUserRepositorySearchTest {
 		insertUser(16L, "other-user", null, null, null, null);
 		entityManager.clear();
 
-		var result = repository.searchByNickname("pot", 0, 20);
-		var totalCount = repository.countByNickname("pot");
+		UserSearchView result = repository.searchByNickname("pot", 0, 20);
 
-		assertThat(result).hasSize(4);
-		assertThat(result).extracting(UserSearchResult::userId)
+		assertThat(result.items()).hasSize(4);
+		assertThat(result.items()).extracting(UserSearchView.Item::userId)
 			.containsExactly(10L, 11L, 12L, 13L);
-		assertThat(result).extracting(UserSearchResult::nickname)
+		assertThat(result.items()).extracting(UserSearchView.Item::nickname)
 			.containsExactly("BangPot", "bangpot", "potter", "temp-pot");
-		assertThat(result).extracting(UserSearchResult::profileImageUrl)
+		assertThat(result.items()).extracting(UserSearchView.Item::profileImageUrl)
 			.containsExactly("https://cdn.example.com/users/10.jpg", null, null, null);
-		assertThat(result).extracting(UserSearchResult::bio)
+		assertThat(result.items()).extracting(UserSearchView.Item::bio)
 			.containsExactly("bio-10", null, "bio-12", null);
-		assertThat(result).extracting(UserSearchResult::gender)
+		assertThat(result.items()).extracting(UserSearchView.Item::gender)
 			.containsExactly("MALE", null, "FEMALE", null);
-		assertThat(result).extracting(UserSearchResult::escapeCount)
+		assertThat(result.items()).extracting(UserSearchView.Item::escapeCount)
 			.containsExactly(0, 0, 0, 0);
-		assertThat(totalCount).isEqualTo(4L);
+		assertThat(result.page()).isEqualTo(UserSearchView.Page.of(0, 20, 4L, 1));
 	}
 
 	@Test
@@ -61,11 +60,10 @@ class JpaUserRepositorySearchTest {
 		insertUser(22L, "pot-zone", null, null, null, null);
 		entityManager.clear();
 
-		var result = repository.searchByNickname("pot", 0, 2);
-		var totalCount = repository.countByNickname("pot");
+		UserSearchView result = repository.searchByNickname("pot", 0, 2);
 
-		assertThat(result).hasSize(2);
-		assertThat(totalCount).isEqualTo(3L);
+		assertThat(result.items()).hasSize(2);
+		assertThat(result.page()).isEqualTo(UserSearchView.Page.of(0, 2, 3L, 2));
 	}
 
 	@Test
@@ -75,12 +73,12 @@ class JpaUserRepositorySearchTest {
 		insertUser(32L, "ordinary", null, null, null, null);
 		entityManager.clear();
 
-		var underscoreResult = repository.searchByNickname("\\_", 0, 20);
-		var percentResult = repository.searchByNickname("\\%", 0, 20);
+		UserSearchView underscoreResult = repository.searchByNickname("\\_", 0, 20);
+		UserSearchView percentResult = repository.searchByNickname("\\%", 0, 20);
 
-		assertThat(underscoreResult).extracting(UserSearchResult::userId)
+		assertThat(underscoreResult.items()).extracting(UserSearchView.Item::userId)
 			.containsExactly(30L);
-		assertThat(percentResult).extracting(UserSearchResult::userId)
+		assertThat(percentResult.items()).extracting(UserSearchView.Item::userId)
 			.containsExactly(31L);
 	}
 

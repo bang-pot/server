@@ -1,22 +1,17 @@
-package com.bangpot.user.application.port;
+package com.bangpot.meeting.domain.view;
 
 import java.time.Instant;
 import java.util.List;
 
-public interface MyMeetingLogReadRepository {
-
-	SearchResult search(Long userId, int page, int size);
-
-	record SearchResult(
-		List<Item> items,
-		PageInfo pageInfo
-	) {
-		public static SearchResult of(List<Item> items, PageInfo pageInfo) {
-			return new SearchResult(items, pageInfo);
-		}
+public record MyMeetingLogsView(
+	List<MyMeetingLogsView.Item> items,
+	MyMeetingLogsView.Page page
+) {
+	public static MyMeetingLogsView of(List<MyMeetingLogsView.Item> items, MyMeetingLogsView.Page page) {
+		return new MyMeetingLogsView(items, page);
 	}
 
-	record Item(
+	public record Item(
 		Long logId,
 		Long crewId,
 		String crewName,
@@ -24,7 +19,7 @@ public interface MyMeetingLogReadRepository {
 		String meetingTitle,
 		String meetingDate,
 		Instant createdAt,
-		String body,
+		String excerpt,
 		String coverPhotoUrl,
 		Long photoCount
 	) {
@@ -36,7 +31,7 @@ public interface MyMeetingLogReadRepository {
 			String meetingTitle,
 			String meetingDate,
 			Instant createdAt,
-			String body,
+			String excerpt,
 			String coverPhotoUrl,
 			Long photoCount
 		) {
@@ -48,20 +43,20 @@ public interface MyMeetingLogReadRepository {
 				meetingTitle,
 				meetingDate,
 				createdAt,
-				body,
+				excerpt,
 				coverPhotoUrl,
 				photoCount
 			);
 		}
 	}
 
-	record PageInfo(
+	public record Page(
 		int page,
 		int size,
 		boolean hasNext
 	) {
-		public static PageInfo of(int page, int size, boolean hasNext) {
-			return new PageInfo(page, size, hasNext);
+		public static Page of(int page, int size, boolean hasNext) {
+			return new Page(page, size, hasNext);
 		}
 	}
 }
