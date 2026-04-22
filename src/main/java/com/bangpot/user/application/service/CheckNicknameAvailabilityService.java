@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
-import com.bangpot.user.domain.NicknamePolicy;
+import com.bangpot.user.domain.service.NicknamePolicy;
 
 import lombok.RequiredArgsConstructor;
 

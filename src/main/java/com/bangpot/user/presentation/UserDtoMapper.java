@@ -225,7 +225,13 @@ final class UserDtoMapper {
 					item.gender(),
 					item.escapeCount()
 				))
-				.toList()
+				.toList(),
+			new UserDto.UserSearchPageInfo(
+				result.pageInfo().page(),
+				result.pageInfo().size(),
+				result.pageInfo().totalElements(),
+				result.pageInfo().totalPages()
+			)
 		);
 	}
 

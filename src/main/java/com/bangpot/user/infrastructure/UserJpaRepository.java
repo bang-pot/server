@@ -3,7 +3,10 @@ package com.bangpot.user.infrastructure;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 
@@ -14,4 +17,26 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 	List<UserJpaEntity> findAllByWithdrawnAtIsNullOrderByIdAsc();
 
 	List<UserJpaEntity> findAllByNicknameContainingIgnoreCaseAndWithdrawnAtIsNullOrderByIdAsc(String nickname);
+
+	@Query("""
+		select u
+		from UserJpaEntity u
+		where u.withdrawnAt is null
+		  and lower(u.nickname) like lower(concat('%', :keyword, '%'))
+		  escape '\\'
+		order by lower(u.nickname) asc, u.id asc
+		""")
+	List<UserJpaEntity> searchByNickname(
+		@Param("keyword") String keyword,
+		Pageable pageable
+	);
+
+	@Query("""
+		select count(u)
+		from UserJpaEntity u
+		where u.withdrawnAt is null
+		  and lower(u.nickname) like lower(concat('%', :keyword, '%'))
+		  escape '\\'
+		""")
+	long countByNickname(@Param("keyword") String keyword);
 }

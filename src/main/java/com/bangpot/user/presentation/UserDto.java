@@ -220,8 +220,17 @@ final class UserDto {
 	) {
 	}
 
+	record UserSearchPageInfo(
+		int page,
+		int size,
+		long totalElements,
+		int totalPages
+	) {
+	}
+
 	record UserSearchResponse(
-		List<UserSearchItemResponse> items
+		List<UserSearchItemResponse> items,
+		UserSearchPageInfo pageInfo
 	) {
 	}
 

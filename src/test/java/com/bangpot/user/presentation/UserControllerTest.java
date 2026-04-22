@@ -40,6 +40,7 @@ import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
+import com.bangpot.user.domain.UserSearchResult;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -431,10 +432,10 @@ class UserControllerTest {
 
 	@Test
 	void returnsUserSearchResultsFromNewUserPath() throws Exception {
-		when(searchUsersUseCase.handle(SearchUsersUseCase.Query.of(77L, "pot", 20)))
+		when(searchUsersUseCase.handle(SearchUsersUseCase.Query.of(77L, "pot", 0, 20)))
 			.thenReturn(SearchUsersUseCase.Result.of(
 				List.of(
-					SearchUsersUseCase.Item.of(
+					UserSearchResult.of(
 						101L,
 						"bangpot",
 						"https://cdn.example.com/users/101.jpg",
@@ -442,13 +443,15 @@ class UserControllerTest {
 						"MALE",
 						0
 					)
-				)
+				),
+				SearchUsersUseCase.PageInfo.of(0, 20, 1L, 1)
 			));
 
 		mockMvc.perform(
 			get("/api/users/search")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 				.param("keyword", "pot")
+				.param("page", "0")
 				.param("size", "20")
 		)
 			.andExpect(status().isOk())
@@ -457,7 +460,11 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[0].profileImageUrl").value("https://cdn.example.com/users/101.jpg"))
 			.andExpect(jsonPath("$.items[0].bio").value("escape lover"))
 			.andExpect(jsonPath("$.items[0].gender").value("MALE"))
-			.andExpect(jsonPath("$.items[0].escapeCount").value(0));
+			.andExpect(jsonPath("$.items[0].escapeCount").value(0))
+			.andExpect(jsonPath("$.pageInfo.page").value(0))
+			.andExpect(jsonPath("$.pageInfo.size").value(20))
+			.andExpect(jsonPath("$.pageInfo.totalElements").value(1))
+			.andExpect(jsonPath("$.pageInfo.totalPages").value(1));
 	}
 
 	@Test

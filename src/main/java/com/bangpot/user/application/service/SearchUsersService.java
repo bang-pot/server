@@ -6,14 +6,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.port.UserRepository;
-import com.bangpot.user.application.port.UserSearchReadRepository;
 import com.bangpot.user.application.usecase.SearchUsersUseCase;
-import com.bangpot.user.domain.User;
+import com.bangpot.user.domain.UserSearchResult;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,37 +17,35 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SearchUsersService implements SearchUsersUseCase {
 
-	private final AuthUserRepository authUserRepository;
+	private static final int MIN_PAGE = 0;
+	private static final int MIN_SIZE = 1;
+	private static final int MAX_SIZE = 50;
+
 	private final UserRepository userRepository;
-	private final UserSearchReadRepository userSearchReadRepository;
 
 	@Override
 	public Result handle(Query query) {
-		AuthUser authUser = authUserRepository.findById(query.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(query.userId()));
-		if (authUser.requiresCompletion()) {
-			throw new AccessDeniedException("full user profile is required");
+		if (userRepository.findById(query.userId()).isEmpty()) {
+			throw new AccessDeniedException("프로필 완료가 필요합니다.");
 		}
 
-		User user = userRepository.findById(query.userId())
-			.orElseThrow(() -> new UserNotFoundException(query.userId()));
-
+		int normalizedPage = normalizePage(query.page());
+		int normalizedSize = normalizeSize(query.size());
 		String normalizedKeyword = normalizeKeyword(query.keyword());
 		if (normalizedKeyword == null) {
-			return Result.of(List.of());
+			return Result.of(
+				List.of(),
+				SearchUsersUseCase.PageInfo.of(normalizedPage, normalizedSize, 0L, 0)
+			);
 		}
 
+		List<UserSearchResult> items = userRepository.searchByNickname(normalizedKeyword, normalizedPage, normalizedSize);
+		long totalElements = userRepository.countByNickname(normalizedKeyword);
+		int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / normalizedSize);
+
 		return Result.of(
-			userSearchReadRepository.search(normalizedKeyword, query.size()).stream()
-				.map(item -> Item.of(
-					item.userId(),
-					item.nickname(),
-					item.profileImageUrl(),
-					item.bio(),
-					item.gender(),
-					item.escapeCount()
-				))
-				.toList()
+			items,
+			SearchUsersUseCase.PageInfo.of(normalizedPage, normalizedSize, totalElements, totalPages)
 		);
 	}
 
@@ -61,6 +54,24 @@ public class SearchUsersService implements SearchUsersUseCase {
 			return null;
 		}
 		String trimmed = keyword.trim();
-		return trimmed.isEmpty() ? null : trimmed;
+		return trimmed.isEmpty() ? null : escapeLikeKeyword(trimmed);
+	}
+
+	private int normalizePage(int page) {
+		return Math.max(page, MIN_PAGE);
+	}
+
+	private int normalizeSize(int size) {
+		if (size < MIN_SIZE) {
+			return MIN_SIZE;
+		}
+		return Math.min(size, MAX_SIZE);
+	}
+
+	private String escapeLikeKeyword(String keyword) {
+		return keyword
+			.replace("\\", "\\\\")
+			.replace("%", "\\%")
+			.replace("_", "\\_");
 	}
 }

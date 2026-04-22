@@ -8,7 +8,7 @@ import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
-import com.bangpot.user.domain.NicknamePolicy;
+import com.bangpot.user.domain.service.NicknamePolicy;
 import com.bangpot.user.domain.User;
 
 import lombok.RequiredArgsConstructor;

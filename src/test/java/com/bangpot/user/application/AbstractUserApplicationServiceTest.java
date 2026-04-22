@@ -57,6 +57,7 @@ import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.domain.UserWithdrawal;
 import com.bangpot.user.domain.User;
+import com.bangpot.user.domain.UserSearchResult;
 
 abstract class AbstractUserApplicationServiceTest {
 
@@ -76,7 +77,6 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryJoinedMeetingReadRepository joinedMeetingReadRepository;
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
 	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
-	protected InMemoryUserSearchReadRepository userSearchReadRepository;
 	protected InMemoryUserWithdrawalRepository userWithdrawalRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	protected CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
@@ -111,7 +111,6 @@ abstract class AbstractUserApplicationServiceTest {
 		joinedMeetingReadRepository = new InMemoryJoinedMeetingReadRepository();
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
 		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
-		userSearchReadRepository = new InMemoryUserSearchReadRepository();
 		userWithdrawalRepository = new InMemoryUserWithdrawalRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		getMyProfileUseCase = new GetMyProfileService(userRepository, meetingRepository, crewRepository);
@@ -159,11 +158,7 @@ abstract class AbstractUserApplicationServiceTest {
 			userRepository,
 			crewRepository
 		);
-		searchUsersUseCase = new SearchUsersService(
-			authUserRepository,
-			userRepository,
-			userSearchReadRepository
-		);
+		searchUsersUseCase = new SearchUsersService(userRepository);
 		withdrawMyAccountUseCase = new WithdrawMyAccountService(
 			authUserRepository,
 			userRepository,
@@ -257,6 +252,23 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public List<UserSearchResult> searchByNickname(String nickname, int page, int size) {
+			searchCount++;
+			lastSearchPage = page;
+			lastSearchSize = size;
+			List<UserSearchResult> allItems = searchItemsByKeyword.getOrDefault(nickname, List.of());
+			return allItems.stream()
+				.skip((long)page * size)
+				.limit(size)
+				.toList();
+		}
+
+		@Override
+		public long countByNickname(String nickname) {
+			return searchItemsByKeyword.getOrDefault(nickname, List.of()).size();
+		}
+
+		@Override
 		public User save(User user) {
 			users.put(user.getId(), user);
 			return user;
@@ -267,6 +279,26 @@ abstract class AbstractUserApplicationServiceTest {
 			withdrawnUserIds.add(userId);
 		}
 
+		void putSearchResult(String keyword, List<UserSearchResult> items) {
+			searchItemsByKeyword.put(keyword, items);
+		}
+
+		int getSearchCount() {
+			return searchCount;
+		}
+
+		int getLastSearchSize() {
+			return lastSearchSize;
+		}
+
+		int getLastSearchPage() {
+			return lastSearchPage;
+		}
+
+		private final Map<String, List<UserSearchResult>> searchItemsByKeyword = new HashMap<>();
+		private int searchCount;
+		private int lastSearchPage;
+		private int lastSearchSize;
 		private final java.util.Set<Long> withdrawnUserIds = new java.util.HashSet<>();
 	}
 
@@ -576,28 +608,6 @@ abstract class AbstractUserApplicationServiceTest {
 
 		private String cancelKey(Long userId, Long joinRequestId) {
 			return userId + ":" + joinRequestId;
-		}
-	}
-
-	protected static final class InMemoryUserSearchReadRepository
-		implements com.bangpot.user.application.port.UserSearchReadRepository {
-		private final Map<String, List<Item>> itemsByKeyword = new HashMap<>();
-		private int searchCount;
-
-		@Override
-		public List<Item> search(String keyword, int size) {
-			searchCount++;
-			return itemsByKeyword.getOrDefault(keyword, List.of()).stream()
-				.limit(size)
-				.toList();
-		}
-
-		void putResult(String keyword, List<Item> items) {
-			itemsByKeyword.put(keyword, items);
-		}
-
-		int getSearchCount() {
-			return searchCount;
 		}
 	}
 

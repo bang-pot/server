@@ -125,9 +125,9 @@ class UserController {
 	@GetMapping("/api/users/me/joined-meetings")
 	ResponseEntity<UserDto.JoinedMeetingsResponse> joinedMeetings(
 		Authentication authentication,
-		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page??0 ?댁긽?댁뼱???⑸땲??") int page,
-		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size??1 ?댁긽?댁뼱???⑸땲??")
-		@Max(value = 50, message = "size??50 ?댄븯?ъ빞 ?⑸땲??") int size
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
 	) {
 		GetMyJoinedMeetingsUseCase.Result result = getMyJoinedMeetingsUseCase.handle(
 			GetMyJoinedMeetingsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
@@ -138,9 +138,9 @@ class UserController {
 	@GetMapping("/api/users/me/crews")
 	ResponseEntity<UserDto.MyCrewsResponse> myCrews(
 		Authentication authentication,
-		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page??0 ?댁긽?댁뼱???⑸땲??") int page,
-		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size??1 ?댁긽?댁뼱???⑸땲??")
-		@Max(value = 50, message = "size??50 ?댄븯?ъ빞 ?⑸땲??") int size
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
 	) {
 		GetMyCrewsUseCase.Result result = getMyCrewsUseCase.handle(
 			GetMyCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication), page, size)
@@ -173,11 +173,12 @@ class UserController {
 	ResponseEntity<UserDto.UserSearchResponse> searchUsers(
 		Authentication authentication,
 		@RequestParam("keyword") String keyword,
-		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size must be at least 1")
-		@Max(value = 50, message = "size must be at most 50") int size
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
 	) {
 		SearchUsersUseCase.Result result = searchUsersUseCase.handle(
-			SearchUsersUseCase.Query.of(requireAuthenticatedUserId(authentication), keyword, size)
+			SearchUsersUseCase.Query.of(requireAuthenticatedUserId(authentication), keyword, page, size)
 		);
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}
