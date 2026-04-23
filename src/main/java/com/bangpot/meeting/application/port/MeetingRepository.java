@@ -19,31 +19,21 @@ public interface MeetingRepository {
 
 	Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId);
 
-	default MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
-		return MyCreatedMeetingsView.of(List.of(), MyCreatedMeetingsView.Page.of(page, size, false));
-	}
+	MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size);
 
-	default MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
-		return MyJoinedMeetingsView.of(List.of(), MyJoinedMeetingsView.Page.of(page, size, false));
-	}
+	MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size);
 
-	default MyCalendarView findMyCalendarViewByUserId(Long userId) {
-		return MyCalendarView.of(List.of(), 0);
-	}
+	MyCalendarView findMyCalendarViewByUserId(Long userId);
 
 	long countCreatedByHostUserId(Long userId);
 
 	long countJoinedByUserId(Long userId);
 
-	default boolean existsByCrewIdAndHostUserIdAndStatusIn(
+	boolean existsByCrewIdAndHostUserIdAndStatusIn(
 		Long crewId,
 		Long hostUserId,
 		List<MeetingStatus> statuses
-	) {
-		return false;
-	}
+	);
 
-	default boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses) {
-		return false;
-	}
+	boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses);
 }

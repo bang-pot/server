@@ -14,10 +14,7 @@ public interface UserRepository {
 
 	User save(User user);
 
-	default boolean updateNickname(Long userId, String nickname) {
-		return false;
-	}
+	boolean updateNickname(Long userId, String nickname);
 
-	default void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
-	}
+	void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt);
 }

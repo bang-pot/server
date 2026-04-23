@@ -7,14 +7,11 @@ import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
 public interface CrewQueryRepository {
 
-	default MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
-		return MyCrewsView.of(List.of(), MyCrewsView.Page.of(page, size, false));
-	}
+	MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size);
+
 	long countActiveByMemberUserId(Long userId);
 
 	long countPendingPublicByUserId(Long userId);
 
-	default List<MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
-		return List.of();
-	}
+	List<MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId);
 }

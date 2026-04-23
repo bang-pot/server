@@ -16,17 +16,13 @@ public interface CrewRepository {
 
 	List<Crew> findActiveByMemberUserId(Long userId);
 
-	default MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
-		return MyCrewsView.of(List.of(), MyCrewsView.Page.of(page, size, false));
-	}
+	MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size);
 
 	long countActiveByMemberUserId(Long userId);
 
 	long countPendingPublicByUserId(Long userId);
 
-	default Optional<Crew> findAnyById(Long crewId) {
-		return findById(crewId);
-	}
+	Optional<Crew> findAnyById(Long crewId);
 
 	List<Crew> findPublicCrews();
 }

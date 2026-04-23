@@ -92,6 +92,14 @@ class GetExploreMeetingCreateCrewsServiceTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final List<Crew> crews = new ArrayList<>();
 
@@ -207,6 +215,15 @@ class GetExploreMeetingCreateCrewsServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 
 		private final List<User> users = new ArrayList<>();
 

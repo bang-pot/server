@@ -433,6 +433,20 @@ abstract class AbstractUserApplicationServiceTest {
 	}
 
 	protected static final class InMemoryMeetingRepository implements MeetingRepository {
+		@Override
+		public boolean existsByCrewIdAndStatusIn(Long crewId, java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+			return false;
+		}
+
+		@Override
+		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
+			Long crewId,
+			Long hostUserId,
+			java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses
+		) {
+			return false;
+		}
+
 		private final Map<Long, Meeting> meetingsById = new HashMap<>();
 		private final Map<Long, Long> createdCountsByUserId = new HashMap<>();
 		private final Map<Long, Long> joinedCountsByUserId = new HashMap<>();
@@ -511,6 +525,11 @@ abstract class AbstractUserApplicationServiceTest {
 	}
 
 	protected static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.Crew> findAnyById(Long crewId) {
+			return findById(crewId);
+		}
+
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private final Map<Long, Long> activeCountsByUserId = new HashMap<>();
 		private final Map<Long, Long> pendingCountsByUserId = new HashMap<>();

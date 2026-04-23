@@ -151,6 +151,15 @@ class GetArchivedMeetingsServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 		private final Map<Long, AuthUser> authUsers = new HashMap<>();
 
 		@Override

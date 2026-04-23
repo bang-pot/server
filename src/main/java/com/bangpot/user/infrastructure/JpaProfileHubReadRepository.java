@@ -11,25 +11,14 @@ import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
-import com.bangpot.user.application.port.ProfileHubReadRepository;
 
-interface JpaProfileHubReadRepository extends Repository<UserJpaEntity, Long>, ProfileHubReadRepository {
+interface JpaProfileHubReadRepository extends Repository<UserJpaEntity, Long> {
 
 	List<MeetingParticipationStatus> JOINED_STATUSES = List.of(
 		MeetingParticipationStatus.JOINED,
 		MeetingParticipationStatus.PENDING,
 		MeetingParticipationStatus.APPROVED
 	);
-
-	@Override
-	default Counts loadCounts(Long userId) {
-		return Counts.of(
-			countCreatedMeetings(userId),
-			countJoinedMeetings(userId, JOINED_STATUSES),
-			countMyCrews(userId, CrewMemberStatus.ACTIVE, CrewStatus.ACTIVE),
-			countPendingCrews(userId, CrewJoinRequestStatus.PENDING, CrewStatus.ACTIVE, CrewVisibility.PUBLIC)
-		);
-	}
 
 	@Query("""
 		select count(m)

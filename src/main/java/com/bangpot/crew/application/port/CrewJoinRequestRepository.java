@@ -16,7 +16,5 @@ public interface CrewJoinRequestRepository {
 
 	Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId);
 
-	default Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
-		return Optional.empty();
-	}
+	Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId);
 }

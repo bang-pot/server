@@ -226,6 +226,10 @@ class CrewDeleteUseCaseServicesTest {
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
+		@Override
+		public void deleteById(Long userId) {
+		}
+
 
 		private final Map<Long, AuthUser> usersById = new HashMap<>();
 
@@ -249,6 +253,15 @@ class CrewDeleteUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 
 		private final InMemoryAuthUserRepository authUserRepository;
 
@@ -280,6 +293,14 @@ class CrewDeleteUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
@@ -333,6 +354,11 @@ class CrewDeleteUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		@Override
+		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
+			return java.util.List.of();
+		}
+
 
 		private final Map<Long, CrewMember> membersById = new HashMap<>();
 		private long sequence = 1L;
@@ -385,6 +411,27 @@ class CrewDeleteUseCaseServicesTest {
 	}
 
 	private static final class InMemoryMeetingRepository implements MeetingRepository {
+		@Override
+		public com.bangpot.meeting.domain.view.MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MyCalendarView.of(java.util.List.of(), 0);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return com.bangpot.meeting.domain.view.MyJoinedMeetingsView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.MyJoinedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return com.bangpot.meeting.domain.view.MyCreatedMeetingsView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.MyCreatedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final Map<Long, Meeting> meetingsById = new HashMap<>();
 		private long sequence = 1L;
@@ -441,6 +488,11 @@ class CrewDeleteUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
+			return java.util.Optional.empty();
+		}
+
 
 		private final Map<Long, CrewJoinRequest> requestsById = new HashMap<>();
 

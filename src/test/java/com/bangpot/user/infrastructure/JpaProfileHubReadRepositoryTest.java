@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.context.annotation.Import;
 
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequest;
@@ -17,6 +18,7 @@ import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.user.application.port.ProfileHubReadRepository;
 
 @DataJpaTest
+@Import(JpaProfileHubReadRepositoryAdapter.class)
 class JpaProfileHubReadRepositoryTest {
 
 	@Autowired

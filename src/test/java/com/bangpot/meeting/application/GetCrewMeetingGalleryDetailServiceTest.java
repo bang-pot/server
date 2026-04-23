@@ -112,6 +112,15 @@ class GetCrewMeetingGalleryDetailServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 		private final java.util.Map<Long, User> users = new java.util.HashMap<>();
 
 		@Override
@@ -139,6 +148,14 @@ class GetCrewMeetingGalleryDetailServiceTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 		private final java.util.Map<Long, Crew> crews = new java.util.HashMap<>();
 		private long sequence = 1L;
 
@@ -190,6 +207,16 @@ class GetCrewMeetingGalleryDetailServiceTest {
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		@Override
+		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId);
+		}
+
 		private final java.util.Map<Long, CrewMember> members = new java.util.HashMap<>();
 		private long sequence = 1L;
 
