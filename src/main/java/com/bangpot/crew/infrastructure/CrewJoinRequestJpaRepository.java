@@ -25,6 +25,8 @@ interface CrewJoinRequestJpaRepository extends JpaRepository<CrewJoinRequest, Lo
 
 	Optional<CrewJoinRequest> findByIdAndCrewIdAndStatus(Long id, Long crewId, CrewJoinRequestStatus status);
 
+	Optional<CrewJoinRequest> findByIdAndUserIdAndStatus(Long id, Long userId, CrewJoinRequestStatus status);
+
 	@Query("""
 		select
 			cjr.id as joinRequestId,

@@ -24,6 +24,7 @@ import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.CancelCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
@@ -94,6 +95,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private RejectCrewJoinRequestUseCase rejectCrewJoinRequestUseCase;
+
+	@MockitoBean
+	private CancelCrewJoinRequestUseCase cancelCrewJoinRequestUseCase;
 
 	@MockitoBean
 	private UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
@@ -624,6 +628,20 @@ class CrewControllerTest {
 	}
 
 	@Test
+	void cancelsMyJoinRequest() throws Exception {
+		when(cancelCrewJoinRequestUseCase.handle(CancelCrewJoinRequestUseCase.Command.of(77L, 10L)))
+			.thenReturn(CancelCrewJoinRequestUseCase.Result.of(10L, 1L));
+
+		mockMvc.perform(
+			post("/api/crews/join-requests/10/cancel")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.requestId").value(10))
+			.andExpect(jsonPath("$.crewId").value(1));
+	}
+
+	@Test
 	void returnsUnauthorizedWhenPendingJoinRequestsAreQueriedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/crews/1/join-requests/pending"))
 			.andExpect(status().isUnauthorized())
@@ -633,6 +651,13 @@ class CrewControllerTest {
 	@Test
 	void returnsUnauthorizedWhenJoinRequestsAreQueriedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/crews/1/join-requests"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenJoinRequestCancelIsRequestedWithoutAuthentication() throws Exception {
+		mockMvc.perform(post("/api/crews/join-requests/10/cancel"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

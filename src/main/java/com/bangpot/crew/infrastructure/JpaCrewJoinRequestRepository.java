@@ -51,4 +51,13 @@ class JpaCrewJoinRequestRepository implements CrewJoinRequestRepository {
 			CrewJoinRequestStatus.PENDING
 		);
 	}
+
+	@Override
+	public Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
+		return crewJoinRequestJpaRepository.findByIdAndUserIdAndStatus(
+			requestId,
+			userId,
+			CrewJoinRequestStatus.PENDING
+		);
+	}
 }

@@ -5,9 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,7 +22,6 @@ import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 import com.bangpot.meeting.domain.view.MyMeetingLogsView;
-import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
@@ -58,7 +55,6 @@ class UserController {
 	private static final String SIZE_MAX_MESSAGE = "size는 50 이하여야 합니다.";
 
 	private final CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
-	private final CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 	private final GetMyCalendarUseCase getMyCalendarUseCase;
 	private final GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	private final GetMyCrewsUseCase getMyCrewsUseCase;
@@ -210,17 +206,6 @@ class UserController {
 		return ResponseEntity.ok()
 			.header(HttpHeaders.SET_COOKIE, authCookieFactory.createLogoutCookieHeader())
 			.body(UserDtoMapper.toResponse(result));
-	}
-
-	@DeleteMapping("/api/users/me/pending-crews/{joinRequestId}")
-	ResponseEntity<UserDto.CancelPendingCrewJoinRequestResponse> cancelMyPendingCrew(
-		Authentication authentication,
-		@PathVariable Long joinRequestId
-	) {
-		CancelMyPendingCrewJoinRequestUseCase.Result result = cancelMyPendingCrewJoinRequestUseCase.handle(
-			CancelMyPendingCrewJoinRequestUseCase.Command.of(requireAuthenticatedUserId(authentication), joinRequestId)
-		);
-		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}
 
 	@GetMapping("/api/users/nickname-availability")

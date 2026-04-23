@@ -15,4 +15,6 @@ public interface CrewJoinRequestRepository {
 	List<CrewJoinRequest> findPendingByCrewId(Long crewId);
 
 	Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId);
+
+	Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId);
 }

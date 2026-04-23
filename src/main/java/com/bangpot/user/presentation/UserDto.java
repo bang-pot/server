@@ -234,12 +234,6 @@ final class UserDto {
 	) {
 	}
 
-	record CancelPendingCrewJoinRequestResponse(
-		Long joinRequestId,
-		Long crewId
-	) {
-	}
-
 	record BlockingActiveCrewResponse(
 		Long crewId,
 		String crewName

@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.bangpot.common.error.ApiErrorField;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.CancelCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
@@ -262,6 +263,14 @@ final class CrewDtoMapper {
 
 	static CrewDto.RejectCrewJoinRequestResponse toResponse(RejectCrewJoinRequestUseCase.Result result) {
 		return new CrewDto.RejectCrewJoinRequestResponse(result.crewId(), result.requestId());
+	}
+
+	static CancelCrewJoinRequestUseCase.Command toCancelCommand(Long userId, Long requestId) {
+		return CancelCrewJoinRequestUseCase.Command.of(userId, requestId);
+	}
+
+	static CrewDto.CancelCrewJoinRequestResponse toResponse(CancelCrewJoinRequestUseCase.Result result) {
+		return new CrewDto.CancelCrewJoinRequestResponse(result.requestId(), result.crewId());
 	}
 
 	static GetCrewInviteCandidatesUseCase.Query toInviteCandidatesQuery(

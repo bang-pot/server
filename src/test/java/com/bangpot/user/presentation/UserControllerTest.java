@@ -1,7 +1,6 @@
 package com.bangpot.user.presentation;
 
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -26,7 +25,6 @@ import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.auth.presentation.AuthCookieFactory;
 import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
 import com.bangpot.explore.domain.view.MyFavoriteThemesView;
-import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
@@ -93,9 +91,6 @@ class UserControllerTest {
 
 	@MockitoBean
 	private GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
-
-	@MockitoBean
-	private CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 
 	@MockitoBean
 	private GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
@@ -481,20 +476,6 @@ class UserControllerTest {
 	}
 
 	@Test
-	void cancelsMyPendingCrewRequestFromNewUserPath() throws Exception {
-		when(cancelMyPendingCrewJoinRequestUseCase.handle(CancelMyPendingCrewJoinRequestUseCase.Command.of(77L, 101L)))
-			.thenReturn(CancelMyPendingCrewJoinRequestUseCase.Result.of(101L, 31L));
-
-		mockMvc.perform(
-			delete("/api/users/me/pending-crews/101")
-				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.joinRequestId").value(101))
-			.andExpect(jsonPath("$.crewId").value(31));
-	}
-
-	@Test
 	void returnsMyWithdrawalCheckFromNewUserPath() throws Exception {
 		when(getMyWithdrawalCheckUseCase.handle(GetMyWithdrawalCheckUseCase.Query.of(77L)))
 			.thenReturn(MyWithdrawalCheckView.of(
@@ -781,15 +762,6 @@ class UserControllerTest {
 		)
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"));
-	}
-
-	@Test
-	void returnsUnauthorizedWhenMyPendingCrewCancelRequestedWithoutAuthentication() throws Exception {
-		mockMvc.perform(delete("/api/users/me/pending-crews/101"))
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
-			.andExpect(jsonPath("$.fieldErrors").isArray())
-			.andExpect(jsonPath("$.fieldErrors").isEmpty());
 	}
 
 	@Test

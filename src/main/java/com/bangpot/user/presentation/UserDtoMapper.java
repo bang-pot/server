@@ -13,7 +13,6 @@ import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 import com.bangpot.meeting.domain.view.MyMeetingLogsView;
 import com.bangpot.user.application.exception.UserWithdrawalRequestValidationException;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
-import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCrewsUseCase;
@@ -242,12 +241,6 @@ final class UserDtoMapper {
 				result.page().totalPages()
 			)
 		);
-	}
-
-	static UserDto.CancelPendingCrewJoinRequestResponse toResponse(
-		CancelMyPendingCrewJoinRequestUseCase.Result result
-	) {
-		return new UserDto.CancelPendingCrewJoinRequestResponse(result.joinRequestId(), result.crewId());
 	}
 
 	static UserDto.WithdrawalCheckResponse toResponse(MyWithdrawalCheckView result) {

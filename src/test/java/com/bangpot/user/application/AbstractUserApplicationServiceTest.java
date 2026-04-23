@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 
-import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
@@ -27,6 +26,7 @@ import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequest;
+import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
@@ -55,14 +55,12 @@ import com.bangpot.user.application.service.GetMyFavoriteThemesSummaryService;
 import com.bangpot.user.application.service.GetMyMeetingLogsService;
 import com.bangpot.user.application.service.GetMyJoinedMeetingsService;
 import com.bangpot.user.application.service.GetMyCrewsService;
-import com.bangpot.user.application.service.CancelMyPendingCrewJoinRequestService;
 import com.bangpot.user.application.service.GetMyPendingCrewsService;
 import com.bangpot.user.application.service.GetMyProfileService;
 import com.bangpot.user.application.service.GetMyWithdrawalCheckService;
 import com.bangpot.user.application.service.SearchUsersService;
 import com.bangpot.user.application.service.WithdrawMyAccountService;
 import com.bangpot.user.application.service.UpdateMyProfileService;
-import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
 import com.bangpot.user.application.usecase.GetMyFavoriteThemesUseCase;
@@ -103,10 +101,8 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryMeetingLogRepository meetingLogRepository;
 	protected InMemoryMeetingLogQueryRepository meetingLogQueryRepository;
 	protected InMemoryMyCrewReadRepository myCrewReadRepository;
-	protected InMemoryPendingCrewReadRepository pendingCrewReadRepository;
 	protected InMemoryUserWithdrawalRepository userWithdrawalRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
-	protected CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
 	protected GetMyProfileUseCase getMyProfileUseCase;
 	protected GetMyCreatedMeetingsUseCase getMyCreatedMeetingsUseCase;
 	protected GetMyCalendarUseCase getMyCalendarUseCase;
@@ -141,7 +137,6 @@ abstract class AbstractUserApplicationServiceTest {
 		meetingLogRepository = new InMemoryMeetingLogRepository();
 		meetingLogQueryRepository = new InMemoryMeetingLogQueryRepository(meetingLogRepository);
 		myCrewReadRepository = new InMemoryMyCrewReadRepository();
-		pendingCrewReadRepository = new InMemoryPendingCrewReadRepository();
 		userWithdrawalRepository = new InMemoryUserWithdrawalRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		userQueryRepository = new InMemoryUserQueryRepository(userRepository);
@@ -189,11 +184,6 @@ abstract class AbstractUserApplicationServiceTest {
 			getMyWithdrawalCheckUseCase,
 			userWithdrawalRepository,
 			Clock.fixed(BASE_TIME, ZoneOffset.UTC)
-		);
-		cancelMyPendingCrewJoinRequestUseCase = new CancelMyPendingCrewJoinRequestService(
-			authUserRepository,
-			userRepository,
-			pendingCrewReadRepository
 		);
 		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
@@ -668,9 +658,15 @@ abstract class AbstractUserApplicationServiceTest {
 
 	protected static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
 		private final Map<Long, MyPendingCrewsView> pendingViewsByUserId = new HashMap<>();
+		private final Map<Long, CrewJoinRequest> storedJoinRequests = new HashMap<>();
+		private long sequence = 1L;
 
 		@Override
 		public CrewJoinRequest save(CrewJoinRequest crewJoinRequest) {
+			if (crewJoinRequest.getId() == null) {
+				crewJoinRequest.assignId(sequence++);
+			}
+			storedJoinRequests.put(crewJoinRequest.getId(), crewJoinRequest);
 			return crewJoinRequest;
 		}
 
@@ -692,6 +688,15 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
 			return Optional.empty();
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
+			return storedJoinRequests.values().stream()
+				.filter(joinRequest -> requestId.equals(joinRequest.getId()))
+				.filter(joinRequest -> userId.equals(joinRequest.getUserId()))
+				.filter(joinRequest -> joinRequest.getStatus() == CrewJoinRequestStatus.PENDING)
+				.findFirst();
 		}
 
 		void putPendingView(Long userId, MyPendingCrewsView view) {
@@ -900,38 +905,6 @@ abstract class AbstractUserApplicationServiceTest {
 
 		void putResult(Long userId, SearchResult result) {
 			resultsByUserId.put(userId, result);
-		}
-	}
-
-	protected static final class InMemoryPendingCrewReadRepository
-		implements com.bangpot.user.application.port.PendingCrewReadRepository {
-		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
-		private final Map<String, CancelResult> cancelResultsByOwnerAndRequestId = new HashMap<>();
-
-		@Override
-		public SearchResult search(Long userId, int page, int size) {
-			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
-		}
-
-		@Override
-		public CancelResult cancel(Long userId, Long joinRequestId) {
-			CancelResult cancelResult = cancelResultsByOwnerAndRequestId.get(cancelKey(userId, joinRequestId));
-			if (cancelResult == null) {
-				throw new CrewJoinRequestNotFoundException(joinRequestId);
-			}
-			return cancelResult;
-		}
-
-		void putResult(Long userId, SearchResult result) {
-			resultsByUserId.put(userId, result);
-		}
-
-		void putCancelable(Long userId, CancelResult cancelResult) {
-			cancelResultsByOwnerAndRequestId.put(cancelKey(userId, cancelResult.joinRequestId()), cancelResult);
-		}
-
-		private String cancelKey(Long userId, Long joinRequestId) {
-			return userId + ":" + joinRequestId;
 		}
 	}
 
