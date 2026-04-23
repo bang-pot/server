@@ -20,12 +20,8 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 		authUserRepository.save(authUser);
 		userRepository.save(User.create(7L, "bangpot"));
 
-		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
-			UpdateMyProfileUseCase.Command.of(7L, "  newpot  ")
-		);
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "  newpot  "));
 
-		assertThat(result.id()).isEqualTo(7L);
-		assertThat(result.nickname()).isEqualTo("newpot");
 		assertThat(userRepository.findById(7L)).get().extracting(User::getNickname).isEqualTo("newpot");
 	}
 
@@ -36,11 +32,9 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 		userRepository.save(User.create(7L, "bangpot"));
 		userRepository.save(User.create(8L, "other"));
 
-		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
-			UpdateMyProfileUseCase.Command.of(7L, "bangpot")
-		);
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "bangpot"));
 
-		assertThat(result.nickname()).isEqualTo("bangpot");
+		assertThat(userRepository.findById(7L)).get().extracting(User::getNickname).isEqualTo("bangpot");
 	}
 
 	@Test

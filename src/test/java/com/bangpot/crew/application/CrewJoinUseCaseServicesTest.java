@@ -74,7 +74,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsGuestStatusForUnauthenticatedUserOnPublicCrew() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 
 		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), null)
@@ -86,7 +86,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsCompletionRequiredStatusForTempUser() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 		AuthUser tempUser = tempUser(10L, "temp-user");
 		authUserRepository.save(tempUser);
 
@@ -99,7 +99,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsCanRequestStatusForFullNonMemberOnPublicCrew() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(11L, "full-user");
 		authUserRepository.save(fullUser);
 
@@ -112,10 +112,10 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsPendingStatusWhenJoinRequestAlreadyExists() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(12L, "full-user");
 		authUserRepository.save(fullUser);
-		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), "Í∞ôÏù¥ ?¨Î¶¨Í≥??∂Ïñ¥??));
+		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), "?? ??? ???"));
 
 		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), fullUser.getId())
@@ -126,7 +126,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsMemberStatusWhenUserAlreadyJoinedCrew() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(13L, "full-user");
 		authUserRepository.save(fullUser);
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), fullUser.getId()));
@@ -140,7 +140,7 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void returnsPrivateRestrictedStatusForPrivateCrewNonMember() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ÎπÑÍ≥µÍ∞??¨Î£®", "ÎπÑÍ≥µÍ∞?, CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("?? ??? ??", "??? ??", CrewVisibility.PRIVATE, null));
 		AuthUser fullUser = fullUser(14L, "full-user");
 		authUserRepository.save(fullUser);
 
@@ -153,62 +153,62 @@ class CrewJoinUseCaseServicesTest {
 
 	@Test
 	void createsPendingJoinRequestForEligibleFullUser() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(15L, "full-user");
 		authUserRepository.save(fullUser);
 
 		RequestCrewJoinUseCase.Result result = requestCrewJoinUseCase.handle(
-			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), "  Í∞ôÏù¥ ?¨Î¶¨Í≥??∂Ïñ¥?? ")
+			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), "  ?? ??? ??? ")
 		);
 
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.myStatus()).isEqualTo(CrewJoinViewStatus.PENDING);
 		assertThat(crewJoinRequestRepository.findByCrewIdAndUserId(crew.getId(), fullUser.getId())).get()
 			.extracting(CrewJoinRequest::getMessage, CrewJoinRequest::getStatus)
-			.containsExactly("Í∞ôÏù¥ ?¨Î¶¨Í≥??∂Ïñ¥??, CrewJoinRequestStatus.PENDING);
+			.containsExactly("?? ??? ???", CrewJoinRequestStatus.PENDING);
 	}
 
 	@Test
 	void rejectsJoinRequestForPrivateCrew() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ÎπÑÍ≥µÍ∞??¨Î£®", "ÎπÑÍ≥µÍ∞?, CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("?? ??? ??", "??? ??", CrewVisibility.PRIVATE, null));
 		AuthUser fullUser = fullUser(16L, "full-user");
 		authUserRepository.save(fullUser);
 
 		assertThatThrownBy(() -> requestCrewJoinUseCase.handle(
-			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), null)
+			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), "  ?? ??? ??? ")
 		))
 			.isInstanceOf(CrewJoinRequestNotAllowedException.class);
 	}
 
 	@Test
 	void rejectsJoinRequestWhenAlreadyJoined() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(17L, "full-user");
 		authUserRepository.save(fullUser);
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), fullUser.getId()));
 
 		assertThatThrownBy(() -> requestCrewJoinUseCase.handle(
-			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), null)
+			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), "  ?? ??? ??? ")
 		))
 			.isInstanceOf(CrewAlreadyJoinedException.class);
 	}
 
 	@Test
 	void rejectsJoinRequestWhenAlreadyPending() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 		AuthUser fullUser = fullUser(18L, "full-user");
 		authUserRepository.save(fullUser);
-		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), null));
+		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), "?? ??? ???"));
 
 		assertThatThrownBy(() -> requestCrewJoinUseCase.handle(
-			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), null)
+			RequestCrewJoinUseCase.Command.of(crew.getId(), fullUser.getId(), "  ?? ??? ??? ")
 		))
 			.isInstanceOf(CrewJoinRequestAlreadyPendingException.class);
 	}
 
 	@Test
 	void rejectsJoinRequestForTempUser() {
-		Crew crew = crewRepository.save(Crew.create("Î∞©Ìåü ?¨Îãù ?¨Î£®", "?¨Î¶¨Í∏??¨Î£®", CrewVisibility.PUBLIC, null));
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 		AuthUser tempUser = tempUser(19L, "temp-user");
 		authUserRepository.save(tempUser);
 
@@ -289,7 +289,9 @@ class CrewJoinUseCaseServicesTest {
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId).map(this::toDomain);
+			return authUserRepository.findById(userId)
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(this::toDomain);
 		}
 
 		@Override
@@ -465,5 +467,4 @@ class CrewJoinUseCaseServicesTest {
 
 	}
 }
-
 

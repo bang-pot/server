@@ -38,7 +38,7 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 
 	@Query(
 		value = """
-			select new com.bangpot.user.domain.view.UserSearchView.Item(
+			select new com.bangpot.user.domain.view.UserSearchView$Item(
 				u.id,
 				u.nickname,
 				u.profileImageUrl,

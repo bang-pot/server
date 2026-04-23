@@ -29,7 +29,7 @@ interface ThemeFavoriteJpaRepository extends JpaRepository<ThemeFavorite, Long> 
 	List<Long> findThemeIdsByUserIdAndThemeIdIn(@Param("userId") Long userId, @Param("themeIds") List<Long> themeIds);
 
 	@Query("""
-		select new com.bangpot.explore.domain.view.MyFavoriteThemesView.Item(
+		select new com.bangpot.explore.domain.view.MyFavoriteThemesView$Item(
 			tf.themeId,
 			t.name,
 			s.name,
@@ -48,7 +48,7 @@ interface ThemeFavoriteJpaRepository extends JpaRepository<ThemeFavorite, Long> 
 	Slice<MyFavoriteThemesView.Item> findMyFavoriteThemesViewByUserId(@Param("userId") Long userId, Pageable pageable);
 
 	@Query("""
-		select new com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView.Item(
+		select new com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView$Item(
 			tf.themeId,
 			t.name,
 			s.name,

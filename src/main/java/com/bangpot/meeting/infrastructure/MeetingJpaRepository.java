@@ -30,14 +30,14 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	Optional<Meeting> findByIdAndCrewId(Long id, Long crewId);
 
 	@Query("""
-		select new com.bangpot.meeting.domain.view.MyCalendarView.Item(
+		select new com.bangpot.meeting.domain.view.MyCalendarView$Item(
 			m.id,
 			m.title,
 			c.id,
 			c.name,
 			m.meetingDate,
 			m.meetingTime,
-			m.status.name,
+			concat('', m.status),
 			case when m.status = :canceledStatus then true else false end,
 			'HOST'
 		)
@@ -56,14 +56,14 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	);
 
 	@Query("""
-		select new com.bangpot.meeting.domain.view.MyCalendarView.Item(
+		select new com.bangpot.meeting.domain.view.MyCalendarView$Item(
 			m.id,
 			m.title,
 			c.id,
 			c.name,
 			m.meetingDate,
 			m.meetingTime,
-			m.status.name,
+			concat('', m.status),
 			case when m.status = :canceledStatus then true else false end,
 			'PARTICIPANT'
 		)
@@ -86,7 +86,7 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	);
 
 	@Query("""
-		select new com.bangpot.meeting.domain.view.MyCreatedMeetingsView.Item(
+		select new com.bangpot.meeting.domain.view.MyCreatedMeetingsView$Item(
 			m.id,
 			m.title,
 			m.status,
@@ -110,7 +110,7 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	);
 
 	@Query("""
-		select new com.bangpot.meeting.domain.view.MyJoinedMeetingsView.Item(
+		select new com.bangpot.meeting.domain.view.MyJoinedMeetingsView$Item(
 			m.id,
 			m.title,
 			m.themeName,

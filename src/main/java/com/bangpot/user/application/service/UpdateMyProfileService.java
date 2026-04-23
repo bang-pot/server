@@ -21,7 +21,7 @@ public class UpdateMyProfileService implements UpdateMyProfileUseCase {
 	private final UserRepository userRepository;
 
 	@Override
-	public Result handle(Command command) {
+	public void handle(Command command) {
 		User user = userRepository.findById(command.userId())
 			.orElseThrow(() -> new AccessDeniedException("프로필 완료가 필요합니다."));
 
@@ -36,6 +36,5 @@ public class UpdateMyProfileService implements UpdateMyProfileUseCase {
 		if (!userRepository.updateNickname(command.userId(), normalizedNickname)) {
 			throw new AccessDeniedException("프로필 수정 권한이 없습니다.");
 		}
-		return Result.of(command.userId(), normalizedNickname);
 	}
 }

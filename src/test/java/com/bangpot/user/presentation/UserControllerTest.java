@@ -858,11 +858,6 @@ class UserControllerTest {
 
 	@Test
 	void updatesCurrentProfileFromNewUserPath() throws Exception {
-		when(updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(77L, "new-pot")))
-			.thenReturn(UpdateMyProfileUseCase.Result.of(77L, "new-pot"));
-		when(getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(77L)))
-			.thenReturn(MyProfileView.of(77L, "new-pot", "https://cdn.example.com/users/77.jpg", 4L, 3L, 2L, 1L));
-
 		mockMvc.perform(
 			patch("/api/users/me")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
@@ -873,14 +868,7 @@ class UserControllerTest {
 					}
 					""")
 		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(77))
-			.andExpect(jsonPath("$.nickname").value("new-pot"))
-			.andExpect(jsonPath("$.profileImageUrl").value("https://cdn.example.com/users/77.jpg"))
-			.andExpect(jsonPath("$.createdMeetingsCount").value(4))
-			.andExpect(jsonPath("$.joinedMeetingsCount").value(3))
-			.andExpect(jsonPath("$.myCrewsCount").value(2))
-			.andExpect(jsonPath("$.pendingCrewsCount").value(1));
+			.andExpect(status().isNoContent());
 	}
 
 	@Test

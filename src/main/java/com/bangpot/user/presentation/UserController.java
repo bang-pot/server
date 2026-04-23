@@ -218,14 +218,12 @@ class UserController {
 	}
 
 	@PatchMapping("/api/users/me")
-	ResponseEntity<UserDto.UserProfileResponse> updateProfile(
+	ResponseEntity<Void> updateProfile(
 		Authentication authentication,
 		@Valid @RequestBody UserDto.UpdateMyProfileRequest request
 	) {
-		Long userId = requireAuthenticatedUserId(authentication);
-		updateMyProfileUseCase.handle(UserDtoMapper.toCommand(userId, request));
-		MyProfileView result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(userId));
-		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
+		updateMyProfileUseCase.handle(UserDtoMapper.toCommand(requireAuthenticatedUserId(authentication), request));
+		return ResponseEntity.noContent().build();
 	}
 
 	private Long requireAuthenticatedUserId(Authentication authentication) {

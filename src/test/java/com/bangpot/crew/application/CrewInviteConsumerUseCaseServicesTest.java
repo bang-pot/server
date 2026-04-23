@@ -80,7 +80,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void returnsMyCrewInviteHistory() {
-		Crew crew = crewRepository.save(Crew.create("ë¹„ê³µê°??¬ë£¨", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -102,13 +102,13 @@ class CrewInviteConsumerUseCaseServicesTest {
 				GetMyCrewInvitesUseCase.View::inviterNickname,
 				GetMyCrewInvitesUseCase.View::status
 			)
-			.containsExactly(crew.getId(), "ë¹„ê³µê°??¬ë£¨", "leader", "PENDING");
+			.containsExactly(crew.getId(), "??? ??", "leader", "PENDING");
 	}
 
 	@Test
 	void hidesInvitesForDeletedCrew() {
-		Crew activeCrew = crewRepository.save(Crew.create("?œì„± ?¬ë£¨", "crew", CrewVisibility.PRIVATE, null));
-		Crew deletedCrew = crewRepository.save(Crew.create("?? œ???¬ë£¨", "crew", CrewVisibility.PRIVATE, null));
+		Crew activeCrew = crewRepository.save(Crew.create("?? ??", "crew", CrewVisibility.PRIVATE, null));
+		Crew deletedCrew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		deletedCrew.delete();
 		crewRepository.save(deletedCrew);
 
@@ -126,12 +126,12 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 		assertThat(result)
 			.extracting(GetMyCrewInvitesUseCase.View::crewName)
-			.containsExactly("?œì„± ?¬ë£¨");
+			.containsExactly("?? ??");
 	}
 
 	@Test
 	void acceptsPendingInviteAndCreatesCrewMembership() {
-		Crew crew = crewRepository.save(Crew.create("ë¹„ê³µê°??¬ë£¨", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -153,7 +153,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsPendingInviteAndKeepsHistory() {
-		Crew crew = crewRepository.save(Crew.create("ë¹„ê³µê°??¬ë£¨", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -174,7 +174,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteProcessingForTempUser() {
-		Crew crew = crewRepository.save(Crew.create("ë¹„ê³µê°??¬ë£¨", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = tempUser(2L, "target-provider");
 		authUserRepository.save(inviter);
@@ -188,7 +188,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsAlreadyProcessedInvite() {
-		Crew crew = crewRepository.save(Crew.create("ë¹„ê³µê°??¬ë£¨", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -267,7 +267,9 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId).map(this::toDomain);
+			return authUserRepository.findById(userId)
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(this::toDomain);
 		}
 
 		@Override
@@ -447,5 +449,4 @@ class CrewInviteConsumerUseCaseServicesTest {
 		}
 	}
 }
-
 

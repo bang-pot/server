@@ -60,15 +60,15 @@ class CrewUseCaseServicesTest {
 		authUserRepository.save(creator);
 
 		CreateCrewUseCase.Result result = createCrewUseCase.handle(
-			CreateCrewUseCase.Command.of(creator.getId(), "  방팟 ?�식 ?�루  ", "같이 먹고 같이 ?�리�?, null, null)
+			CreateCrewUseCase.Command.of(creator.getId(), "  ?? ?? ??  ", "?? ?? ?? ??", null, null)
 		);
 
 		assertThat(result.crewId()).isNotNull();
-		assertThat(result.name()).isEqualTo("방팟 ?�식 ?�루");
+		assertThat(result.name()).isEqualTo("?? ?? ??");
 		assertThat(result.myRole()).isEqualTo(CrewRole.LEADER);
 		assertThat(crewRepository.findById(result.crewId())).get()
 			.extracting(Crew::getName, Crew::getDescription, Crew::getVisibility)
-			.containsExactly("방팟 ?�식 ?�루", "같이 먹고 같이 ?�리�?, CrewVisibility.PUBLIC);
+			.containsExactly("?? ?? ??", "?? ?? ?? ??", CrewVisibility.PUBLIC);
 		assertThat(crewMemberRepository.findLeaderByCrewId(result.crewId())).get()
 			.extracting(CrewMember::getUserId, CrewMember::getRole)
 			.containsExactly(creator.getId(), CrewRole.LEADER);
@@ -80,7 +80,7 @@ class CrewUseCaseServicesTest {
 		authUserRepository.save(tempUser);
 
 		assertThatThrownBy(() -> createCrewUseCase.handle(
-			CreateCrewUseCase.Command.of(tempUser.getId(), "방팟 ?�식 ?�루", null, "PUBLIC", null)
+			CreateCrewUseCase.Command.of(tempUser.getId(), "?? ?? ??", null, "PUBLIC", null)
 		))
 			.isInstanceOf(AccessDeniedException.class);
 	}
@@ -89,10 +89,10 @@ class CrewUseCaseServicesTest {
 	void rejectsDuplicateCrewName() {
 		AuthUser creator = fullUser(1L, "creator");
 		authUserRepository.save(creator);
-		crewRepository.save(Crew.create("방팟 ?�식 ?�루", null, CrewVisibility.PUBLIC, null));
+		crewRepository.save(Crew.create("?? ?? ??", null, CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> createCrewUseCase.handle(
-			CreateCrewUseCase.Command.of(creator.getId(), "방팟 ?�식 ?�루", null, "PUBLIC", null)
+			CreateCrewUseCase.Command.of(creator.getId(), "  ?? ?? ??  ", "?? ?? ?? ??", null, null)
 		))
 			.isInstanceOf(DuplicateCrewNameException.class);
 	}
@@ -100,7 +100,7 @@ class CrewUseCaseServicesTest {
 	@Test
 	void rejectsUnknownAuthenticatedUser() {
 		assertThatThrownBy(() -> createCrewUseCase.handle(
-			CreateCrewUseCase.Command.of(99L, "방팟 ?�식 ?�루", null, "PUBLIC", null)
+			CreateCrewUseCase.Command.of(99L, "?? ?? ??", null, "PUBLIC", null)
 		))
 			.isInstanceOf(AccessDeniedException.class);
 	}
@@ -216,7 +216,9 @@ class CrewUseCaseServicesTest {
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId).map(this::toDomain);
+			return authUserRepository.findById(userId)
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(this::toDomain);
 		}
 
 		@Override
@@ -290,5 +292,4 @@ class CrewUseCaseServicesTest {
 		}
 	}
 }
-
 

@@ -34,7 +34,7 @@ class GetMyCrewsServiceTest extends AbstractUserApplicationServiceTest {
 		assertThat(result.items()).hasSize(1);
 		assertThat(result.items().get(0).crewId()).isEqualTo(crew.getId());
 		assertThat(result.items().get(0).crewName()).isEqualTo("Alpha Crew");
-		assertThat(result.items().get(0).visibility()).isEqualTo("PUBLIC");
+		assertThat(result.items().get(0).visibility()).isEqualTo(CrewVisibility.PUBLIC);
 		assertThat(result.items().get(0).leaderNickname()).isEqualTo("leader-pot");
 		assertThat(result.items().get(0).coverImageUrl()).isEqualTo("https://cdn.example.com/crew-alpha.jpg");
 		assertThat(result.page().hasNext()).isFalse();

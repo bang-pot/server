@@ -198,7 +198,9 @@ class CrewHubUseCaseServicesTest {
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return authUserRepository.findById(userId).map(this::toDomain);
+			return authUserRepository.findById(userId)
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(this::toDomain);
 		}
 
 		@Override

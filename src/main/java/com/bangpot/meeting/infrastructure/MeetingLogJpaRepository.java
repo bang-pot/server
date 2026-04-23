@@ -23,7 +23,7 @@ interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 	boolean existsByMeetingIdAndAuthorUserIdAndDeletedAtIsNotNull(Long meetingId, Long authorUserId);
 
 	@Query("""
-		select new com.bangpot.meeting.domain.view.MyMeetingLogsView.Item(
+		select new com.bangpot.meeting.domain.view.MyMeetingLogsView$Item(
 			ml.id,
 			c.id,
 			c.name,

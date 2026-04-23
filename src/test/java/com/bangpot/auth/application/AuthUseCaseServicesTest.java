@@ -276,12 +276,7 @@ class AuthUseCaseServicesTest {
 		authUserRepository.save(fullUser);
 		userRepository.save(User.create(fullUser.getId(), "before"));
 
-		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
-			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "  after  ")
-		);
-
-		assertThat(result.id()).isEqualTo(fullUser.getId());
-		assertThat(result.nickname()).isEqualTo("after");
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(fullUser.getId(), "  after  "));
 		assertThat(userRepository.findById(fullUser.getId())).get()
 			.extracting(User::getNickname)
 			.isEqualTo("after");
@@ -385,6 +380,16 @@ class AuthUseCaseServicesTest {
 		public User save(User user) {
 			usersById.put(user.getId(), user);
 			return user;
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			User user = usersById.get(userId);
+			if (user == null) {
+				return false;
+			}
+			user.updateNickname(nickname);
+			return true;
 		}
 	}
 

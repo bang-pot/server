@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.bangpot.auth.application.port.AuthUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 
 import com.bangpot.auth.domain.AuthProvider;
@@ -89,19 +90,15 @@ abstract class AbstractUserApplicationServiceTest {
 	protected InMemoryUserQueryRepository userQueryRepository;
 	protected InMemoryMeetingQueryRepository meetingQueryRepository;
 	protected InMemoryCrewQueryRepository crewQueryRepository;
-	protected InMemoryProfileHubReadRepository profileHubReadRepository;
 	protected InMemoryMeetingRepository meetingRepository;
 	protected InMemoryCrewRepository crewRepository;
 	protected InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
 	protected InMemoryCrewJoinRequestQueryRepository crewJoinRequestQueryRepository;
 	protected InMemoryCrewMemberRepository crewMemberRepository;
-	protected InMemoryCreatedMeetingReadRepository createdMeetingReadRepository;
-	protected InMemoryCalendarReadRepository calendarReadRepository;
 	protected InMemoryThemeFavoriteRepository themeFavoriteRepository;
 	protected InMemoryThemeFavoriteQueryRepository themeFavoriteQueryRepository;
 	protected InMemoryMeetingLogRepository meetingLogRepository;
 	protected InMemoryMeetingLogQueryRepository meetingLogQueryRepository;
-	protected InMemoryMyCrewReadRepository myCrewReadRepository;
 	protected InMemoryUserWithdrawalRepository userWithdrawalRepository;
 	protected CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
 	protected GetMyProfileUseCase getMyProfileUseCase;
@@ -123,7 +120,6 @@ abstract class AbstractUserApplicationServiceTest {
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
-		profileHubReadRepository = new InMemoryProfileHubReadRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
 		crewRepository = new InMemoryCrewRepository(crewMemberRepository, userRepository);
@@ -131,13 +127,10 @@ abstract class AbstractUserApplicationServiceTest {
 		crewQueryRepository = new InMemoryCrewQueryRepository(crewRepository);
 		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
 		crewJoinRequestQueryRepository = new InMemoryCrewJoinRequestQueryRepository(crewJoinRequestRepository);
-		createdMeetingReadRepository = new InMemoryCreatedMeetingReadRepository();
-		calendarReadRepository = new InMemoryCalendarReadRepository();
 		themeFavoriteRepository = new InMemoryThemeFavoriteRepository();
 		themeFavoriteQueryRepository = new InMemoryThemeFavoriteQueryRepository(themeFavoriteRepository);
 		meetingLogRepository = new InMemoryMeetingLogRepository();
 		meetingLogQueryRepository = new InMemoryMeetingLogQueryRepository(meetingLogRepository);
-		myCrewReadRepository = new InMemoryMyCrewReadRepository();
 		userWithdrawalRepository = new InMemoryUserWithdrawalRepository();
 		checkNicknameAvailabilityUseCase = new CheckNicknameAvailabilityService(userRepository);
 		userQueryRepository = new InMemoryUserQueryRepository(userRepository);
@@ -182,8 +175,8 @@ abstract class AbstractUserApplicationServiceTest {
 		withdrawMyAccountUseCase = new WithdrawMyAccountService(
 			authUserRepository,
 			userRepository,
-			getMyWithdrawalCheckUseCase,
 			userWithdrawalRepository,
+			getMyWithdrawalCheckUseCase,
 			Clock.fixed(BASE_TIME, ZoneOffset.UTC)
 		);
 		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
@@ -436,23 +429,6 @@ abstract class AbstractUserApplicationServiceTest {
 					crew.getName()
 				))
 				.toList();
-		}
-	}
-
-	protected static final class InMemoryProfileHubReadRepository
-		implements com.bangpot.user.application.port.ProfileHubReadRepository {
-		private final Map<Long, Counts> countsByUserId = new HashMap<>();
-
-		@Override
-		public Counts loadCounts(Long userId) {
-			return countsByUserId.getOrDefault(userId, Counts.of(0L, 0L, 0L, 0L));
-		}
-
-		void putCounts(Long userId, long createdMeetingsCount, long joinedMeetingsCount, long myCrewsCount, long pendingCrewsCount) {
-			countsByUserId.put(
-				userId,
-				Counts.of(createdMeetingsCount, joinedMeetingsCount, myCrewsCount, pendingCrewsCount)
-			);
 		}
 	}
 
@@ -751,48 +727,6 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 	}
 
-	protected static final class InMemoryCreatedMeetingReadRepository
-		implements com.bangpot.user.application.port.CreatedMeetingReadRepository {
-		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
-
-		@Override
-		public SearchResult search(Long userId, int page, int size) {
-			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
-		}
-
-		void putResult(Long userId, SearchResult result) {
-			resultsByUserId.put(userId, result);
-		}
-	}
-
-	protected static final class InMemoryCalendarReadRepository
-		implements com.bangpot.user.application.port.CalendarReadRepository {
-		private final Map<Long, View> viewsByUserId = new HashMap<>();
-
-		@Override
-		public View load(Long userId) {
-			return viewsByUserId.getOrDefault(userId, View.of(List.of(), 0));
-		}
-
-		void putView(Long userId, View view) {
-			viewsByUserId.put(userId, view);
-		}
-	}
-
-	protected static final class InMemoryFavoriteThemeSummaryReadRepository
-		implements com.bangpot.user.application.port.FavoriteThemeSummaryReadRepository {
-		private final Map<Long, View> viewsByUserId = new HashMap<>();
-
-		@Override
-		public View load(Long userId, int limit) {
-			return viewsByUserId.getOrDefault(userId, View.of(List.of(), 0L));
-		}
-
-		void putView(Long userId, View view) {
-			viewsByUserId.put(userId, view);
-		}
-	}
-
 	protected static final class InMemoryThemeFavoriteRepository implements ThemeFavoriteRepository {
 		private final Map<Long, MyFavoriteThemesView> viewsByUserId = new HashMap<>();
 
@@ -908,34 +842,6 @@ abstract class AbstractUserApplicationServiceTest {
 				userId,
 				MyMeetingLogsView.of(List.of(), MyMeetingLogsView.Page.of(page, size, false))
 			);
-		}
-	}
-
-	protected static final class InMemoryJoinedMeetingReadRepository
-		implements com.bangpot.user.application.port.JoinedMeetingReadRepository {
-		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
-
-		@Override
-		public SearchResult search(Long userId, int page, int size) {
-			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
-		}
-
-		void putResult(Long userId, SearchResult result) {
-			resultsByUserId.put(userId, result);
-		}
-	}
-
-	protected static final class InMemoryMyCrewReadRepository
-		implements com.bangpot.user.application.port.MyCrewReadRepository {
-		private final Map<Long, SearchResult> resultsByUserId = new HashMap<>();
-
-		@Override
-		public SearchResult search(Long userId, int page, int size) {
-			return resultsByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
-		}
-
-		void putResult(Long userId, SearchResult result) {
-			resultsByUserId.put(userId, result);
 		}
 	}
 

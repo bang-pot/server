@@ -315,7 +315,7 @@ class CrewTransferLeadershipUseCaseServicesTest {
 				createdAtField.setAccessible(true);
 				createdAtField.set(crewMember, createdAt);
 			} catch (ReflectiveOperationException exception) {
-				throw new IllegalStateException("?ŒìŠ¤?¸ìš© CrewMember ?ì„±?¼ì‹œë¥??¤ì •?????†ìŠµ?ˆë‹¤.", exception);
+				throw new IllegalStateException("???? CrewMember ?? ??? ??? ? ????.", exception);
 			}
 		}
 	}

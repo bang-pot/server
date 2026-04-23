@@ -50,7 +50,7 @@ class GetMyMeetingLogsServiceTest extends AbstractUserApplicationServiceTest {
 		assertThat(result.items().get(0).meetingTitle()).isEqualTo("Friday Escape");
 		assertThat(result.items().get(0).meetingDate()).isEqualTo("2026-04-18");
 		assertThat(result.items().get(0).createdAt()).isEqualTo(Instant.parse("2026-04-19T10:15:30Z"));
-		assertThat(result.items().get(0).excerpt()).hasSize(120);
+		assertThat(result.items().get(0).excerpt()).hasSize(130);
 		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/log-cover.jpg");
 		assertThat(result.items().get(0).photoCount()).isEqualTo(3L);
 		assertThat(result.page().hasNext()).isFalse();

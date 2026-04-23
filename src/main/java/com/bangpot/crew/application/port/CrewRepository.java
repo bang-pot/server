@@ -16,7 +16,9 @@ public interface CrewRepository {
 
 	List<Crew> findActiveByMemberUserId(Long userId);
 
-	MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size);
+	default MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+		return MyCrewsView.of(List.of(), MyCrewsView.Page.of(page, size, false));
+	}
 
 	long countActiveByMemberUserId(Long userId);
 

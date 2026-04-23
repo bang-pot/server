@@ -40,7 +40,7 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	);
 
 	@Query("""
-		select new com.bangpot.crew.domain.view.MyCrewsView.Item(
+		select new com.bangpot.crew.domain.view.MyCrewsView$Item(
 			c.id,
 			c.name,
 			c.visibility,
