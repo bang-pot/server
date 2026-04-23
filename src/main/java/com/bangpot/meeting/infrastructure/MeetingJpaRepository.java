@@ -1,5 +1,6 @@
 package com.bangpot.meeting.infrastructure;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,6 +19,11 @@ import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 
 interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
+
+	interface UserMeetingCountRow {
+		Long getUserId();
+		long getMeetingCount();
+	}
 
 	List<Meeting> findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(Long crewId);
 
@@ -171,6 +177,34 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	long countJoinedByUserId(
 		@Param("userId") Long userId,
 		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses
+	);
+
+	@Query("""
+		select m.hostUserId as userId, count(m) as meetingCount
+		from Meeting m
+		where m.hostUserId in :userIds
+		  and m.status = :completedStatus
+		group by m.hostUserId
+		""")
+	List<UserMeetingCountRow> countCompletedHostedMeetingsByUserIds(
+		@Param("userIds") Collection<Long> userIds,
+		@Param("completedStatus") MeetingStatus completedStatus
+	);
+
+	@Query("""
+		select mp.userId as userId, count(mp) as meetingCount
+		from MeetingParticipant mp, Meeting m
+		where mp.meetingId = m.id
+		  and mp.userId in :userIds
+		  and mp.status in :joinedStatuses
+		  and m.status = :completedStatus
+		  and m.hostUserId <> mp.userId
+		group by mp.userId
+		""")
+	List<UserMeetingCountRow> countCompletedJoinedMeetingsByUserIds(
+		@Param("userIds") Collection<Long> userIds,
+		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses,
+		@Param("completedStatus") MeetingStatus completedStatus
 	);
 
 	boolean existsByCrewIdAndHostUserIdAndStatusIn(Long crewId, Long hostUserId, List<MeetingStatus> statuses);

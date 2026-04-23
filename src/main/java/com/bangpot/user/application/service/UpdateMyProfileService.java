@@ -8,8 +8,8 @@ import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
-import com.bangpot.user.domain.service.NicknamePolicy;
 import com.bangpot.user.domain.User;
+import com.bangpot.user.domain.service.NicknamePolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,8 +33,9 @@ public class UpdateMyProfileService implements UpdateMyProfileUseCase {
 			throw new DuplicateNicknameException(normalizedNickname);
 		}
 
-		user.updateNickname(normalizedNickname);
-		userRepository.save(user);
-		return Result.of(user.getId(), user.getNickname());
+		if (!userRepository.updateNickname(command.userId(), normalizedNickname)) {
+			throw new AccessDeniedException("프로필 수정 권한이 없습니다.");
+		}
+		return Result.of(command.userId(), normalizedNickname);
 	}
 }

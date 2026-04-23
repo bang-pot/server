@@ -14,5 +14,7 @@ public interface UserRepository {
 
 	User save(User user);
 
+	boolean updateNickname(Long userId, String nickname);
+
 	void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt);
 }

@@ -3,6 +3,7 @@ package com.bangpot.user.application;
 import java.time.Instant;
 import java.time.Clock;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -177,7 +178,7 @@ abstract class AbstractUserApplicationServiceTest {
 			userQueryRepository,
 			crewQueryRepository
 		);
-		searchUsersUseCase = new SearchUsersService(userQueryRepository);
+		searchUsersUseCase = new SearchUsersService(meetingQueryRepository, userQueryRepository);
 		withdrawMyAccountUseCase = new WithdrawMyAccountService(
 			authUserRepository,
 			userRepository,
@@ -265,7 +266,6 @@ abstract class AbstractUserApplicationServiceTest {
 				.toList();
 		}
 
-		@Override
 		public UserSearchView searchByNickname(String nickname, int page, int size) {
 			searchCount++;
 			lastSearchPage = page;
@@ -284,6 +284,19 @@ abstract class AbstractUserApplicationServiceTest {
 		public User save(User user) {
 			users.put(user.getId(), user);
 			return user;
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			if (withdrawnUserIds.contains(userId)) {
+				return false;
+			}
+			User user = users.get(userId);
+			if (user == null) {
+				return false;
+			}
+			user.updateNickname(nickname);
+			return true;
 		}
 
 		@Override
@@ -328,7 +341,8 @@ abstract class AbstractUserApplicationServiceTest {
 					user.getId(),
 					user.getNickname(),
 					null
-				));
+				))
+				.orElse(null);
 		}
 
 		@Override
@@ -373,6 +387,23 @@ abstract class AbstractUserApplicationServiceTest {
 		public long countJoinedByUserId(Long userId) {
 			return meetingRepository.countJoinedByUserId(userId);
 		}
+
+		@Override
+		public Map<Long, Integer> countCompletedByUserIds(Collection<Long> userIds) {
+			return userIds.stream()
+				.distinct()
+				.filter(completedCountsByUserId::containsKey)
+				.collect(java.util.stream.Collectors.toMap(
+					java.util.function.Function.identity(),
+					completedCountsByUserId::get
+				));
+		}
+
+		void putCompletedCount(Long userId, int count) {
+			completedCountsByUserId.put(userId, count);
+		}
+
+		private final Map<Long, Integer> completedCountsByUserId = new HashMap<>();
 	}
 
 	protected static final class InMemoryCrewQueryRepository implements CrewQueryRepository {

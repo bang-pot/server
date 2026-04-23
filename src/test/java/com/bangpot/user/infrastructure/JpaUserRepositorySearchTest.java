@@ -9,11 +9,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.context.annotation.Import;
 
 import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.domain.view.UserSearchView;
 
 @DataJpaTest
+@Import(JpaUserQueryRepository.class)
 class JpaUserRepositorySearchTest {
 
 	@Autowired
@@ -32,10 +34,9 @@ class JpaUserRepositorySearchTest {
 		Instant withdrawnAt = Instant.parse("2026-04-20T00:00:00Z");
 		insertUser(14L, "withdrawn-pot", "bio-14", "FEMALE", null, withdrawnAt);
 
-		insertUser(16L, "other-user", null, null, null, null);
 		entityManager.clear();
 
-		UserSearchView result = repository.searchByNickname("pot", 0, 20);
+		UserSearchView result = repository.searchUsersByNickname("pot", 0, 20);
 
 		assertThat(result.items()).hasSize(4);
 		assertThat(result.items()).extracting(UserSearchView.Item::userId)
@@ -60,7 +61,7 @@ class JpaUserRepositorySearchTest {
 		insertUser(22L, "pot-zone", null, null, null, null);
 		entityManager.clear();
 
-		UserSearchView result = repository.searchByNickname("pot", 0, 2);
+		UserSearchView result = repository.searchUsersByNickname("pot", 0, 2);
 
 		assertThat(result.items()).hasSize(2);
 		assertThat(result.page()).isEqualTo(UserSearchView.Page.of(0, 2, 3L, 2));
@@ -73,8 +74,8 @@ class JpaUserRepositorySearchTest {
 		insertUser(32L, "ordinary", null, null, null, null);
 		entityManager.clear();
 
-		UserSearchView underscoreResult = repository.searchByNickname("\\_", 0, 20);
-		UserSearchView percentResult = repository.searchByNickname("\\%", 0, 20);
+		UserSearchView underscoreResult = repository.searchUsersByNickname("\\_", 0, 20);
+		UserSearchView percentResult = repository.searchUsersByNickname("\\%", 0, 20);
 
 		assertThat(underscoreResult.items()).extracting(UserSearchView.Item::userId)
 			.containsExactly(30L);

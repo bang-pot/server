@@ -1,8 +1,10 @@
 package com.bangpot.meeting.infrastructure;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
@@ -28,11 +30,11 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 		MeetingStatus.CANCELED
 	);
 
-	private static final List<MeetingParticipationStatus> JOINED_STATUSES = List.of(
-		MeetingParticipationStatus.JOINED,
-		MeetingParticipationStatus.PENDING,
-		MeetingParticipationStatus.APPROVED
-	);
+	private static final List<MeetingParticipationStatus> JOINED_STATUSES = java.util.Arrays.stream(
+		MeetingParticipationStatus.values()
+	)
+		.filter(MeetingParticipationStatus::representsJoined)
+		.toList();
 
 	private final MeetingJpaRepository meetingJpaRepository;
 
@@ -106,5 +108,22 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 	@Override
 	public long countJoinedByUserId(Long userId) {
 		return meetingJpaRepository.countJoinedByUserId(userId, JOINED_STATUSES);
+	}
+
+	@Override
+	public Map<Long, Integer> countCompletedByUserIds(Collection<Long> userIds) {
+		if (userIds.isEmpty()) {
+			return Map.of();
+		}
+
+		Map<Long, Integer> countsByUserId = new java.util.HashMap<>();
+		meetingJpaRepository.countCompletedHostedMeetingsByUserIds(userIds, MeetingStatus.COMPLETED)
+			.forEach(row -> countsByUserId.put(row.getUserId(), Math.toIntExact(row.getMeetingCount())));
+		meetingJpaRepository.countCompletedJoinedMeetingsByUserIds(
+			userIds,
+			JOINED_STATUSES,
+			MeetingStatus.COMPLETED
+		).forEach(row -> countsByUserId.merge(row.getUserId(), Math.toIntExact(row.getMeetingCount()), Integer::sum));
+		return countsByUserId;
 	}
 }

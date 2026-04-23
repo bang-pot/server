@@ -5,8 +5,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.user.application.port.UserQueryRepository;
-import com.bangpot.user.domain.view.UserSearchView;
 import com.bangpot.user.domain.view.UserProfileView;
+import com.bangpot.user.domain.view.UserSearchView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,23 +34,13 @@ public class JpaUserQueryRepository implements UserQueryRepository {
 
 	@Override
 	public UserSearchView searchUsersByNickname(String nickname, int page, int size) {
-		Page<UserJpaEntity> resultPage = userJpaRepository.searchByNickname(nickname, PageRequest.of(page, size));
-		return UserSearchView.of(
-			resultPage.getContent().stream()
-				.map(this::toSearchViewItem)
-				.toList(),
-			UserSearchView.Page.of(page, size, resultPage.getTotalElements(), resultPage.getTotalPages())
+		Page<UserSearchView.Item> resultPage = userJpaRepository.searchRowsByNickname(
+			nickname,
+			PageRequest.of(page, size)
 		);
-	}
-
-	private UserSearchView.Item toSearchViewItem(UserJpaEntity userJpaEntity) {
-		return UserSearchView.Item.of(
-			userJpaEntity.getId(),
-			userJpaEntity.getNickname(),
-			userJpaEntity.getProfileImageUrl(),
-			userJpaEntity.getBio(),
-			userJpaEntity.getGender(),
-			0
+		return UserSearchView.of(
+			resultPage.getContent(),
+			UserSearchView.Page.of(page, size, resultPage.getTotalElements(), resultPage.getTotalPages())
 		);
 	}
 }

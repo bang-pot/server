@@ -6,8 +6,11 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.bangpot.user.domain.view.UserSearchView;
 
 interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 
@@ -21,15 +24,41 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 
 	List<UserJpaEntity> findAllByNicknameContainingIgnoreCaseAndWithdrawnAtIsNullOrderByIdAsc(String nickname);
 
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
 	@Query("""
-		select u
-		from UserJpaEntity u
-		where u.withdrawnAt is null
-		  and lower(u.nickname) like lower(concat('%', :keyword, '%'))
-		  escape '\\'
-		order by lower(u.nickname) asc, u.id asc
+		update UserJpaEntity u
+		set u.nickname = :nickname
+		where u.id = :userId
+		  and u.withdrawnAt is null
 		""")
-	Page<UserJpaEntity> searchByNickname(
+	int updateNicknameById(
+		@Param("userId") Long userId,
+		@Param("nickname") String nickname
+	);
+
+	@Query(
+		value = """
+			select new com.bangpot.user.domain.view.UserSearchView.Item(
+				u.id,
+				u.nickname,
+				u.profileImageUrl,
+				u.bio,
+				u.gender,
+				0
+			)
+			from UserJpaEntity u
+			where u.withdrawnAt is null
+			  and lower(u.nickname) like lower(concat('%', :keyword, '%')) escape '\\'
+			order by lower(u.nickname) asc, u.id asc
+			""",
+		countQuery = """
+			select count(u)
+			from UserJpaEntity u
+			where u.withdrawnAt is null
+			  and lower(u.nickname) like lower(concat('%', :keyword, '%')) escape '\\'
+			"""
+	)
+	Page<UserSearchView.Item> searchRowsByNickname(
 		@Param("keyword") String keyword,
 		Pageable pageable
 	);

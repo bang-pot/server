@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -503,7 +504,7 @@ class UserControllerTest {
 				com.bangpot.user.domain.WithdrawalReasonCode.OTHER,
 				null
 			)
-		)).thenReturn(WithdrawMyAccountUseCase.Result.of("2026-04-17T10:15:30Z", false));
+		)).thenReturn(WithdrawMyAccountUseCase.Result.of(Instant.parse("2026-04-17T10:15:30Z"), false));
 		when(authCookieFactory.createLogoutCookieHeader()).thenReturn(
 			"access_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax"
 		);
@@ -560,6 +561,27 @@ class UserControllerTest {
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
 			.andExpect(jsonPath("$.fieldErrors[0].field").value("confirmationChecked"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenWithdrawalReasonDetailExceedsMaximumLength() throws Exception {
+		String tooLongReasonDetail = "a".repeat(501);
+
+		mockMvc.perform(
+			post("/api/users/me/withdrawal")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "reasonCode": "OTHER",
+					  "reasonDetail": "%s",
+					  "confirmationChecked": true
+					}
+					""".formatted(tooLongReasonDetail))
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("reasonDetail"));
 	}
 
 	@Test
@@ -838,6 +860,8 @@ class UserControllerTest {
 	void updatesCurrentProfileFromNewUserPath() throws Exception {
 		when(updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(77L, "new-pot")))
 			.thenReturn(UpdateMyProfileUseCase.Result.of(77L, "new-pot"));
+		when(getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(77L)))
+			.thenReturn(MyProfileView.of(77L, "new-pot", "https://cdn.example.com/users/77.jpg", 4L, 3L, 2L, 1L));
 
 		mockMvc.perform(
 			patch("/api/users/me")
@@ -851,7 +875,12 @@ class UserControllerTest {
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(77))
-			.andExpect(jsonPath("$.nickname").value("new-pot"));
+			.andExpect(jsonPath("$.nickname").value("new-pot"))
+			.andExpect(jsonPath("$.profileImageUrl").value("https://cdn.example.com/users/77.jpg"))
+			.andExpect(jsonPath("$.createdMeetingsCount").value(4))
+			.andExpect(jsonPath("$.joinedMeetingsCount").value(3))
+			.andExpect(jsonPath("$.myCrewsCount").value(2))
+			.andExpect(jsonPath("$.pendingCrewsCount").value(1));
 	}
 
 	@Test

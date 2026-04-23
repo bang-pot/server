@@ -51,6 +51,11 @@ public class JpaUserRepository implements UserRepository {
 	}
 
 	@Override
+	public boolean updateNickname(Long userId, String nickname) {
+		return userJpaRepository.updateNicknameById(userId, nickname) == 1;
+	}
+
+	@Override
 	public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
 		userJpaRepository.findById(userId)
 			.ifPresent(user -> {

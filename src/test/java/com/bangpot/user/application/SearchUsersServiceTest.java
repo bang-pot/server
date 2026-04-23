@@ -38,6 +38,7 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 				)
 			)
 		);
+		meetingQueryRepository.putCompletedCount(11L, 3);
 
 		UserSearchView result = searchUsersUseCase.handle(
 			SearchUsersUseCase.Query.of(7L, " pot ", 0, 20)
@@ -50,7 +51,7 @@ class SearchUsersServiceTest extends AbstractUserApplicationServiceTest {
 		assertThat(result.items().get(0).profileImageUrl()).isEqualTo("https://cdn.example.com/users/11.jpg");
 		assertThat(result.items().get(0).bio()).isEqualTo("love escape rooms");
 		assertThat(result.items().get(0).gender()).isEqualTo("FEMALE");
-		assertThat(result.items().get(0).escapeCount()).isZero();
+		assertThat(result.items().get(0).escapeCount()).isEqualTo(3);
 		assertThat(result.items().get(1).userId()).isEqualTo(12L);
 	}
 

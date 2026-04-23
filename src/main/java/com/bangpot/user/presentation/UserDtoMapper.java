@@ -53,10 +53,6 @@ final class UserDtoMapper {
 		);
 	}
 
-	static UserDto.UserProfileResponse toResponse(UpdateMyProfileUseCase.Result result) {
-		return new UserDto.UserProfileResponse(result.id(), result.nickname(), null, null, null, null, null);
-	}
-
 	static UserDto.CreatedMeetingsResponse toResponse(MyCreatedMeetingsView result) {
 		return new UserDto.CreatedMeetingsResponse(
 			result.items().stream()
@@ -267,7 +263,7 @@ final class UserDtoMapper {
 	}
 
 	static UserDto.WithdrawMyAccountResponse toResponse(WithdrawMyAccountUseCase.Result result) {
-		return new UserDto.WithdrawMyAccountResponse(result.withdrawnAt(), result.canLogin());
+		return new UserDto.WithdrawMyAccountResponse(result.withdrawnAt().toString(), result.canLogin());
 	}
 
 	static UserDto.NicknameAvailabilityResponse toResponse(

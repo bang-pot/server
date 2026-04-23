@@ -222,9 +222,9 @@ class UserController {
 		Authentication authentication,
 		@Valid @RequestBody UserDto.UpdateMyProfileRequest request
 	) {
-		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
-			UserDtoMapper.toCommand(requireAuthenticatedUserId(authentication), request)
-		);
+		Long userId = requireAuthenticatedUserId(authentication);
+		updateMyProfileUseCase.handle(UserDtoMapper.toCommand(userId, request));
+		MyProfileView result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(userId));
 		return ResponseEntity.ok(UserDtoMapper.toResponse(result));
 	}
 

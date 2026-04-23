@@ -403,7 +403,8 @@ class AuthUseCaseServicesTest {
 					user.getId(),
 					user.getNickname(),
 					null
-				));
+				))
+				.orElse(null);
 		}
 
 		@Override
@@ -448,6 +449,11 @@ class AuthUseCaseServicesTest {
 		@Override
 		public long countJoinedByUserId(Long userId) {
 			return meetingRepository.countJoinedByUserId(userId);
+		}
+
+		@Override
+		public java.util.Map<Long, Integer> countCompletedByUserIds(java.util.Collection<Long> userIds) {
+			return java.util.Map.of();
 		}
 	}
 

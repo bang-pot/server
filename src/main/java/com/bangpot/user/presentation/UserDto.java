@@ -3,8 +3,9 @@ package com.bangpot.user.presentation;
 import java.time.Instant;
 import java.util.List;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 final class UserDto {
 
@@ -247,9 +248,9 @@ final class UserDto {
 	}
 
 	record WithdrawMyAccountRequest(
-		@NotBlank(message = "reasonCode is required") String reasonCode,
-		String reasonDetail,
-		@AssertTrue(message = "confirmationChecked must be true") boolean confirmationChecked
+		@NotBlank(message = "탈퇴 사유를 선택해 주세요.") String reasonCode,
+		@Size(max = 500, message = "탈퇴 상세 사유는 500자 이하여야 합니다.") String reasonDetail,
+		@AssertTrue(message = "탈퇴 안내 사항에 동의해 주세요.") boolean confirmationChecked
 	) {
 	}
 

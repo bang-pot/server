@@ -54,7 +54,7 @@ public class WithdrawMyAccountService implements WithdrawMyAccountUseCase {
 		authUserRepository.deleteById(command.userId());
 		userRepository.withdrawById(command.userId(), tombstoneNickname(command.userId()), withdrawnAt);
 
-		return Result.of(withdrawnAt.toString(), false);
+		return Result.of(withdrawnAt, false);
 	}
 
 	private String tombstoneNickname(Long userId) {

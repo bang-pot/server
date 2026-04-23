@@ -27,7 +27,7 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.OTHER, null)
 		);
 
-		assertThat(result.withdrawnAt()).isEqualTo(BASE_TIME.toString());
+		assertThat(result.withdrawnAt()).isEqualTo(BASE_TIME);
 		assertThat(result.canLogin()).isFalse();
 		assertThat(authUserRepository.findById(7L)).isEmpty();
 		assertThat(userRepository.findById(7L)).isEmpty();

@@ -1,5 +1,8 @@
 package com.bangpot.meeting.application.port;
 
+import java.util.Collection;
+import java.util.Map;
+
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -15,4 +18,6 @@ public interface MeetingQueryRepository {
 	long countCreatedByHostUserId(Long userId);
 
 	long countJoinedByUserId(Long userId);
+
+	Map<Long, Integer> countCompletedByUserIds(Collection<Long> userIds);
 }

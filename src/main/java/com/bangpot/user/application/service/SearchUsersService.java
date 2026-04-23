@@ -1,9 +1,13 @@
 package com.bangpot.user.application.service;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.domain.view.UserSearchView;
@@ -19,6 +23,7 @@ public class SearchUsersService implements SearchUsersUseCase {
 	private static final int MIN_SIZE = 1;
 	private static final int MAX_SIZE = 50;
 
+	private final MeetingQueryRepository meetingQueryRepository;
 	private final UserQueryRepository userQueryRepository;
 
 	@Override
@@ -32,12 +37,34 @@ public class SearchUsersService implements SearchUsersUseCase {
 		String normalizedKeyword = normalizeKeyword(query.keyword());
 		if (normalizedKeyword == null) {
 			return UserSearchView.of(
-				java.util.List.of(),
+				List.of(),
 				UserSearchView.Page.of(normalizedPage, normalizedSize, 0L, 0)
 			);
 		}
 
-		return userQueryRepository.searchUsersByNickname(normalizedKeyword, normalizedPage, normalizedSize);
+		UserSearchView queryResult = userQueryRepository.searchUsersByNickname(
+			normalizedKeyword,
+			normalizedPage,
+			normalizedSize
+		);
+		Map<Long, Integer> completedMeetingCountsByUserId = meetingQueryRepository.countCompletedByUserIds(
+			queryResult.items().stream()
+				.map(UserSearchView.Item::userId)
+				.toList()
+		);
+		return UserSearchView.of(
+			queryResult.items().stream()
+				.map(item -> UserSearchView.Item.of(
+					item.userId(),
+					item.nickname(),
+					item.profileImageUrl(),
+					item.bio(),
+					item.gender(),
+					completedMeetingCountsByUserId.getOrDefault(item.userId(), 0)
+				))
+				.toList(),
+			queryResult.page()
+		);
 	}
 
 	private String normalizeKeyword(String keyword) {
