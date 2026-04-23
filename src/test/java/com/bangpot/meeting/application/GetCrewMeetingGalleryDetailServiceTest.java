@@ -48,7 +48,7 @@ class GetCrewMeetingGalleryDetailServiceTest {
 
 	@Test
 	void returnsMeetingGalleryDetailForActiveCrewMember() {
-		userRepository.save(User.rehydrate(7L, "member"));
+		userRepository.save(User.create(7L, "member"));
 		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), 7L));
 		meetingGalleryReadRepository.detail = Optional.of(
@@ -80,7 +80,7 @@ class GetCrewMeetingGalleryDetailServiceTest {
 
 	@Test
 	void throwsMeetingGalleryNotFoundWhenMeetingIsNotGalleryTarget() {
-		userRepository.save(User.rehydrate(7L, "member"));
+		userRepository.save(User.create(7L, "member"));
 		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), 7L));
 
@@ -92,7 +92,7 @@ class GetCrewMeetingGalleryDetailServiceTest {
 
 	@Test
 	void throwsCrewNotFoundWhenCrewDoesNotExist() {
-		userRepository.save(User.rehydrate(7L, "member"));
+		userRepository.save(User.create(7L, "member"));
 
 		assertThatThrownBy(() -> getCrewMeetingGalleryDetailUseCase.handle(
 			GetCrewMeetingGalleryDetailUseCase.Query.of(999L, 31L, 7L)
@@ -102,7 +102,7 @@ class GetCrewMeetingGalleryDetailServiceTest {
 
 	@Test
 	void throwsAccessDeniedWhenUserIsNotActiveCrewMember() {
-		userRepository.save(User.rehydrate(7L, "member"));
+		userRepository.save(User.create(7L, "member"));
 		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> getCrewMeetingGalleryDetailUseCase.handle(
@@ -112,6 +112,15 @@ class GetCrewMeetingGalleryDetailServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 		private final java.util.Map<Long, User> users = new java.util.HashMap<>();
 
 		@Override
@@ -132,6 +141,11 @@ class GetCrewMeetingGalleryDetailServiceTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			users.put(user.getId(), user);
 			return user;
@@ -139,6 +153,14 @@ class GetCrewMeetingGalleryDetailServiceTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 		private final java.util.Map<Long, Crew> crews = new java.util.HashMap<>();
 		private long sequence = 1L;
 
@@ -168,6 +190,20 @@ class GetCrewMeetingGalleryDetailServiceTest {
 		}
 
 		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crews.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -176,6 +212,16 @@ class GetCrewMeetingGalleryDetailServiceTest {
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		@Override
+		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId);
+		}
+
 		private final java.util.Map<Long, CrewMember> members = new java.util.HashMap<>();
 		private long sequence = 1L;
 
@@ -234,3 +280,5 @@ class GetCrewMeetingGalleryDetailServiceTest {
 		}
 	}
 }
+
+

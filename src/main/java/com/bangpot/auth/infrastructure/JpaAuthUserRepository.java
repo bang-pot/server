@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import com.bangpot.auth.application.port.AuthUserRepository;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.auth.domain.AuthUserStatus;
 
 @Repository
 @RequiredArgsConstructor
@@ -18,16 +17,12 @@ public class JpaAuthUserRepository implements AuthUserRepository {
 
 	@Override
 	public Optional<AuthUser> findById(Long userId) {
-		return authUserJpaRepository.findByIdAndStatusNot(userId, AuthUserStatus.WITHDRAWN);
+		return authUserJpaRepository.findById(userId);
 	}
 
 	@Override
 	public Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId) {
-		return authUserJpaRepository.findByProviderAndProviderIdAndStatusNot(
-			provider,
-			providerId,
-			AuthUserStatus.WITHDRAWN
-		);
+		return authUserJpaRepository.findByProviderAndProviderId(provider, providerId);
 	}
 
 	@Override

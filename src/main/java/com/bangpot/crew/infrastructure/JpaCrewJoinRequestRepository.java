@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.domain.CrewJoinRequest;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
-
 import lombok.RequiredArgsConstructor;
 
 @Repository
@@ -49,6 +48,15 @@ class JpaCrewJoinRequestRepository implements CrewJoinRequestRepository {
 		return crewJoinRequestJpaRepository.findByIdAndCrewIdAndStatus(
 			requestId,
 			crewId,
+			CrewJoinRequestStatus.PENDING
+		);
+	}
+
+	@Override
+	public Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
+		return crewJoinRequestJpaRepository.findByIdAndUserIdAndStatus(
+			requestId,
+			userId,
 			CrewJoinRequestStatus.PENDING
 		);
 	}

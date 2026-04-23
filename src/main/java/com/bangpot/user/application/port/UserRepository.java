@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.user.domain.User;
-
 public interface UserRepository {
 
 	Optional<User> findById(Long userId);
@@ -13,13 +12,11 @@ public interface UserRepository {
 
 	List<User> findCompletedUsersByNicknameContaining(String nickname);
 
-	default List<User> findAllCompletedUsers() {
-		throw new UnsupportedOperationException("findAllCompletedUsers is not implemented");
-	}
+	List<User> findAllCompletedUsers();
 
 	User save(User user);
 
-	default void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
-		throw new UnsupportedOperationException("withdrawById is not implemented");
-	}
+	boolean updateNickname(Long userId, String nickname);
+
+	void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt);
 }

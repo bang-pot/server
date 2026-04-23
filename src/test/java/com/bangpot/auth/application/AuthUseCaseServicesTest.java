@@ -29,8 +29,18 @@ import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.auth.application.config.AuthRequiredTermsProperties;
+import com.bangpot.crew.application.port.CrewQueryRepository;
+import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.crew.domain.Crew;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
+import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
-import com.bangpot.user.application.port.ProfileHubReadRepository;
+import com.bangpot.user.application.exception.InvalidNicknameException;
+import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
 import com.bangpot.user.application.service.GetMyProfileService;
@@ -39,6 +49,8 @@ import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyProfileUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.domain.User;
+import com.bangpot.user.domain.view.MyProfileView;
+import com.bangpot.user.domain.view.UserProfileView;
 
 class AuthUseCaseServicesTest {
 
@@ -46,7 +58,11 @@ class AuthUseCaseServicesTest {
 
 	private InMemoryAuthUserRepository authUserRepository;
 	private InMemoryUserRepository userRepository;
-	private ProfileHubReadRepository profileHubReadRepository;
+	private InMemoryUserQueryRepository userQueryRepository;
+	private InMemoryMeetingRepository meetingRepository;
+	private InMemoryCrewRepository crewRepository;
+	private InMemoryMeetingQueryRepository meetingQueryRepository;
+	private InMemoryCrewQueryRepository crewQueryRepository;
 	private LoginWithProviderUseCase loginWithProviderUseCase;
 	private CompleteTempUserUseCase completeTempUserUseCase;
 	private CheckNicknameAvailabilityUseCase checkNicknameAvailabilityUseCase;
@@ -59,7 +75,11 @@ class AuthUseCaseServicesTest {
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
 		userRepository = new InMemoryUserRepository();
-		profileHubReadRepository = userId -> ProfileHubReadRepository.Counts.of(0L, 0L, 0L, 0L);
+		meetingRepository = new InMemoryMeetingRepository();
+		crewRepository = new InMemoryCrewRepository();
+		userQueryRepository = new InMemoryUserQueryRepository(userRepository);
+		meetingQueryRepository = new InMemoryMeetingQueryRepository(meetingRepository);
+		crewQueryRepository = new InMemoryCrewQueryRepository(crewRepository);
 		Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 		authAuditLogger = org.mockito.Mockito.mock(AuthAuditLogger.class);
 		AuthRequiredTermsProperties authRequiredTermsProperties = new AuthRequiredTermsProperties();
@@ -79,8 +99,8 @@ class AuthUseCaseServicesTest {
 			userRepository,
 			authRequiredTermsProperties
 		);
-		getMyProfileUseCase = new GetMyProfileService(authUserRepository, userRepository, profileHubReadRepository);
-		updateMyProfileUseCase = new UpdateMyProfileService(authUserRepository, userRepository);
+		getMyProfileUseCase = new GetMyProfileService(userQueryRepository, meetingQueryRepository, crewQueryRepository);
+		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
 	}
 
 	@Test
@@ -90,13 +110,14 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"1001",
 			AuthUserStatus.FULL,
+			"bangpot",
 			RequiredTermsAgreement.of("2026-03-01", NOW.minusSeconds(3600)),
 			null,
 			NOW.minusSeconds(7200),
 			NOW.minusSeconds(3600)
 		);
 		authUserRepository.save(existingUser);
-		userRepository.save(User.rehydrate(existingUser.getId(), "bangpot"));
+		userRepository.save(User.create(existingUser.getId(), "bangpot"));
 
 		LoginWithProviderUseCase.Result result = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "1001", "/protected-demo")
@@ -142,20 +163,6 @@ class AuthUseCaseServicesTest {
 	}
 
 	@Test
-	void returnsPendingRedirectPathOnlyForTempUser() {
-		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
-			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "2500", "/protected-demo")
-		);
-
-		GetCurrentAuthUserUseCase.View meView = getCurrentAuthUserUseCase.handle(
-			GetCurrentAuthUserUseCase.Query.of(loginResult.userId())
-		);
-
-		assertThat(meView.authStatus()).isEqualTo(GetCurrentAuthUserUseCase.AuthStatus.TEMP);
-		assertThat(meView.redirectTo()).isEqualTo("/protected-demo");
-	}
-
-	@Test
 	void completesTempUserProfileAndPromotesUserToFull() {
 		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "3003", "/protected-demo")
@@ -172,6 +179,10 @@ class AuthUseCaseServicesTest {
 			.get()
 			.extracting(User::getNickname)
 			.isEqualTo("potmaster");
+		assertThat(authUserRepository.findById(loginResult.userId())).isPresent()
+			.get()
+			.extracting(AuthUser::getNickname)
+			.isNull();
 
 		GetCurrentAuthUserUseCase.View meView = getCurrentAuthUserUseCase.handle(
 			GetCurrentAuthUserUseCase.Query.of(loginResult.userId())
@@ -179,7 +190,6 @@ class AuthUseCaseServicesTest {
 		assertThat(meView.authStatus()).isEqualTo(GetCurrentAuthUserUseCase.AuthStatus.FULL);
 		assertThat(meView.user()).isNotNull();
 		assertThat(meView.user().nickname()).isEqualTo("potmaster");
-		assertThat(meView.redirectTo()).isNull();
 		assertThat(meView.requiredTermsVersion()).isEqualTo("2026-03-25");
 		verify(authAuditLogger).authStateChanged(
 			loginResult.userId(),
@@ -190,59 +200,42 @@ class AuthUseCaseServicesTest {
 	}
 
 	@Test
-	void throwsInternalInvariantErrorWhenFullAuthUserHasNoProfile() {
-		AuthUser fullUser = AuthUser.rehydrate(
-			88L,
-			AuthProvider.KAKAO,
-			"full-without-profile",
-			AuthUserStatus.FULL,
-			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
-			null,
-			NOW.minusSeconds(3600),
-			NOW.minusSeconds(60)
-		);
-		authUserRepository.save(fullUser);
-
-		assertThatThrownBy(() -> getCurrentAuthUserUseCase.handle(
-			GetCurrentAuthUserUseCase.Query.of(fullUser.getId())
-		))
-			.isInstanceOf(IllegalStateException.class)
-			.hasMessageContaining("완료된 회원의 프로필 정보가 없습니다.")
-			.hasMessageContaining("userId=88");
-	}
-
-	@Test
-	void authUserDoesNotOwnNicknameState() {
-		assertThat(AuthUser.class.getDeclaredFields())
-			.extracting(java.lang.reflect.Field::getName)
-			.asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.list(String.class))
-			.doesNotContain("nickname");
-	}
-
-	@Test
 	void rejectsDuplicateNicknameAtCompletionTime() {
 		authUserRepository.save(AuthUser.rehydrate(
 			10L,
 			AuthProvider.KAKAO,
 			"existing",
 			AuthUserStatus.FULL,
+			"dupename",
 			RequiredTermsAgreement.of("2026-03-01", NOW.minusSeconds(10)),
 			null,
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
-		userRepository.save(User.rehydrate(10L, "dupe-name"));
+		userRepository.save(User.create(10L, "dupename"));
 		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
 			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "4004", null)
 		);
 
 		assertThat(checkNicknameAvailabilityUseCase.handle(
-			CheckNicknameAvailabilityUseCase.Query.of("dupe-name")
+			CheckNicknameAvailabilityUseCase.Query.of("dupename")
 		).available()).isFalse();
 		assertThatThrownBy(() -> completeTempUserUseCase.handle(
-			CompleteTempUserUseCase.Command.of(loginResult.userId(), "dupe-name", true)
+			CompleteTempUserUseCase.Command.of(loginResult.userId(), "dupename", true)
 		))
 			.isInstanceOf(DuplicateNicknameException.class);
+	}
+
+	@Test
+	void rejectsInvalidNicknameAtCompletionTime() {
+		LoginWithProviderUseCase.Result loginResult = loginWithProviderUseCase.handle(
+			LoginWithProviderUseCase.Command.of(AuthProvider.KAKAO, "5005", null)
+		);
+
+		assertThatThrownBy(() -> completeTempUserUseCase.handle(
+			CompleteTempUserUseCase.Command.of(loginResult.userId(), "pot-master", true)
+		))
+			.isInstanceOf(InvalidNicknameException.class);
 	}
 
 	@Test
@@ -252,15 +245,16 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"full-user",
 			AuthUserStatus.FULL,
+			"bangpot",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
 			NOW.minusSeconds(60)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "bangpot"));
+		userRepository.save(User.create(fullUser.getId(), "bangpot"));
 
-		GetMyProfileUseCase.View result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(fullUser.getId()));
+		MyProfileView result = getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(fullUser.getId()));
 
 		assertThat(result.id()).isEqualTo(fullUser.getId());
 		assertThat(result.nickname()).isEqualTo("bangpot");
@@ -273,20 +267,16 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"full-user",
 			AuthUserStatus.FULL,
+			"before",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
 			NOW.minusSeconds(60)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "before"));
+		userRepository.save(User.create(fullUser.getId(), "before"));
 
-		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
-			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "  after  ")
-		);
-
-		assertThat(result.id()).isEqualTo(fullUser.getId());
-		assertThat(result.nickname()).isEqualTo("after");
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(fullUser.getId(), "  after  "));
 		assertThat(userRepository.findById(fullUser.getId())).get()
 			.extracting(User::getNickname)
 			.isEqualTo("after");
@@ -299,32 +289,38 @@ class AuthUseCaseServicesTest {
 			AuthProvider.KAKAO,
 			"existing",
 			AuthUserStatus.FULL,
+			"dupe-name",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(10)),
 			null,
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		));
-		userRepository.save(User.rehydrate(10L, "dupe-name"));
+		userRepository.save(User.create(10L, "dupename"));
 		AuthUser fullUser = AuthUser.rehydrate(
 			11L,
 			AuthProvider.KAKAO,
 			"updating-user",
 			AuthUserStatus.FULL,
+			"before",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(10)),
 			null,
 			NOW.minusSeconds(100),
 			NOW.minusSeconds(10)
 		);
 		authUserRepository.save(fullUser);
-		userRepository.save(User.rehydrate(fullUser.getId(), "before"));
+		userRepository.save(User.create(fullUser.getId(), "before"));
 
 		assertThatThrownBy(() -> updateMyProfileUseCase.handle(
-			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "dupe-name")
+			UpdateMyProfileUseCase.Command.of(fullUser.getId(), "dupename")
 		))
 			.isInstanceOf(DuplicateNicknameException.class);
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
+		@Override
+		public void deleteById(Long userId) {
+		}
+
 
 		private final Map<Long, AuthUser> usersById = new HashMap<>();
 		private final Map<String, Long> idsByProviderId = new HashMap<>();
@@ -340,6 +336,12 @@ class AuthUseCaseServicesTest {
 			Long userId = idsByProviderId.get(provider.name() + ":" + providerId);
 			return userId == null ? Optional.empty() : findById(userId);
 		}
+
+		public boolean existsByNickname(String nickname) {
+			return usersById.values().stream()
+				.anyMatch(user -> nickname.equals(user.getNickname()));
+		}
+
 		@Override
 		public AuthUser save(AuthUser user) {
 			if (user.getId() == null) {
@@ -352,6 +354,10 @@ class AuthUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
 
 		private final Map<Long, User> usersById = new HashMap<>();
 
@@ -379,9 +385,248 @@ class AuthUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			usersById.put(user.getId(), user);
 			return user;
 		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			User user = usersById.get(userId);
+			if (user == null) {
+				return false;
+			}
+			user.updateNickname(nickname);
+			return true;
+		}
+	}
+
+	private static final class InMemoryUserQueryRepository implements UserQueryRepository {
+
+		private final InMemoryUserRepository userRepository;
+
+		private InMemoryUserQueryRepository(InMemoryUserRepository userRepository) {
+			this.userRepository = userRepository;
+		}
+
+		@Override
+		public UserProfileView findMyProfileUserViewByUserId(Long userId) {
+			return userRepository.findById(userId)
+				.map(user -> UserProfileView.of(
+					user.getId(),
+					user.getNickname(),
+					null
+				))
+				.orElse(null);
+		}
+
+		@Override
+		public boolean existsCompletedUser(Long userId) {
+			return userRepository.findById(userId).isPresent();
+		}
+
+		@Override
+		public com.bangpot.user.domain.view.UserSearchView searchUsersByNickname(String nickname, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+	}
+
+	private static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+
+		private final InMemoryMeetingRepository meetingRepository;
+
+		private InMemoryMeetingQueryRepository(InMemoryMeetingRepository meetingRepository) {
+			this.meetingRepository = meetingRepository;
+		}
+
+		@Override
+		public MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return MyCalendarView.of(List.of(), 0);
+		}
+
+		@Override
+		public MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return MyCreatedMeetingsView.of(List.of(), MyCreatedMeetingsView.Page.of(page, size, false));
+		}
+
+		@Override
+		public MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return MyJoinedMeetingsView.of(List.of(), MyJoinedMeetingsView.Page.of(page, size, false));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return meetingRepository.countCreatedByHostUserId(userId);
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return meetingRepository.countJoinedByUserId(userId);
+		}
+
+		@Override
+		public java.util.Map<Long, Integer> countCompletedByUserIds(java.util.Collection<Long> userIds) {
+			return java.util.Map.of();
+		}
+	}
+
+	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+		@Override
+		public java.util.List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
+
+		private final InMemoryCrewRepository crewRepository;
+
+		private InMemoryCrewQueryRepository(InMemoryCrewRepository crewRepository) {
+			this.crewRepository = crewRepository;
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return crewRepository.countActiveByMemberUserId(userId);
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return crewRepository.countPendingPublicByUserId(userId);
+		}
+	}
+
+	private static final class InMemoryMeetingRepository implements MeetingRepository {
+		@Override
+		public com.bangpot.meeting.domain.view.MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MyCalendarView.of(java.util.List.of(), 0);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return com.bangpot.meeting.domain.view.MyJoinedMeetingsView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.MyJoinedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return com.bangpot.meeting.domain.view.MyCreatedMeetingsView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.MyCreatedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public boolean existsByCrewIdAndStatusIn(Long crewId, java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+			return false;
+		}
+
+		@Override
+		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
+			Long crewId,
+			Long hostUserId,
+			java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses
+		) {
+			return false;
+		}
+
+
+		@Override
+		public Meeting save(Meeting meeting) {
+			return meeting;
+		}
+
+		@Override
+		public List<Meeting> findAllByCrewId(Long crewId) {
+			return List.of();
+		}
+
+		@Override
+		public Optional<Meeting> findById(Long meetingId) {
+			return Optional.empty();
+		}
+
+		@Override
+		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
+			return Optional.empty();
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
+		}
+	}
+
+	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.Crew> findAnyById(Long crewId) {
+			return findById(crewId);
+		}
+
+
+		@Override
+		public boolean existsByName(String name) {
+			return false;
+		}
+
+		@Override
+		public Crew save(Crew crew) {
+			return crew;
+		}
+
+		@Override
+		public Optional<Crew> findById(Long crewId) {
+			return Optional.empty();
+		}
+
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public List<Crew> findPublicCrews() {
+			return List.of();
+		}
 	}
 }
+
+

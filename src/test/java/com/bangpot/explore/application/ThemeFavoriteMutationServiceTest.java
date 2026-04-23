@@ -56,7 +56,7 @@ class ThemeFavoriteMutationServiceTest {
 
 	@Test
 	void addsFavoriteAndIncreasesFavoriteCount() {
-		userRepository.save(User.rehydrate(7L, "alpha"));
+		userRepository.save(User.create(7L, "alpha"));
 		Theme theme = themeRepository.save(activeTheme(5L));
 
 		AddThemeFavoriteUseCase.Result result = addThemeFavoriteUseCase.handle(AddThemeFavoriteUseCase.Command.of(7L, 5L));
@@ -70,7 +70,7 @@ class ThemeFavoriteMutationServiceTest {
 
 	@Test
 	void ignoresDuplicateFavoriteRequest() {
-		userRepository.save(User.rehydrate(7L, "alpha"));
+		userRepository.save(User.create(7L, "alpha"));
 		Theme theme = themeRepository.save(activeTheme(5L));
 		themeFavoriteRepository.create(7L, 5L, Instant.now());
 		theme.increaseFavoriteCount();
@@ -83,7 +83,7 @@ class ThemeFavoriteMutationServiceTest {
 
 	@Test
 	void removesFavoriteAndDecreasesFavoriteCount() {
-		userRepository.save(User.rehydrate(7L, "alpha"));
+		userRepository.save(User.create(7L, "alpha"));
 		Theme theme = themeRepository.save(activeTheme(5L));
 		themeFavoriteRepository.create(7L, 5L, Instant.now());
 		theme.increaseFavoriteCount();
@@ -101,7 +101,7 @@ class ThemeFavoriteMutationServiceTest {
 
 	@Test
 	void ignoresDeleteWhenFavoriteDoesNotExist() {
-		userRepository.save(User.rehydrate(7L, "alpha"));
+		userRepository.save(User.create(7L, "alpha"));
 		Theme theme = themeRepository.save(activeTheme(5L));
 
 		RemoveThemeFavoriteUseCase.Result result = removeThemeFavoriteUseCase.handle(
@@ -122,7 +122,7 @@ class ThemeFavoriteMutationServiceTest {
 
 	@Test
 	void throwsWhenThemeDoesNotExist() {
-		userRepository.save(User.rehydrate(7L, "alpha"));
+		userRepository.save(User.create(7L, "alpha"));
 
 		assertThatThrownBy(() -> removeThemeFavoriteUseCase.handle(RemoveThemeFavoriteUseCase.Command.of(7L, 999L)))
 			.isInstanceOf(ExploreThemeNotFoundException.class);
@@ -191,6 +191,15 @@ class ThemeFavoriteMutationServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 
 		private final Map<Long, User> users = new HashMap<>();
 
@@ -207,6 +216,11 @@ class ThemeFavoriteMutationServiceTest {
 		@Override
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
 		}
 
 		@Override

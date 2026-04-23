@@ -12,27 +12,8 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
-import com.bangpot.home.application.port.HomePublicCrewPreviewReadRepository;
 
-interface JpaHomePublicCrewPreviewReadRepository extends Repository<Crew, Long>, HomePublicCrewPreviewReadRepository {
-
-	@Override
-	default List<Item> findPreviewItems(int limit) {
-		return findRows(
-			CrewStatus.ACTIVE,
-			CrewVisibility.PUBLIC,
-			CrewMemberStatus.ACTIVE,
-			PageRequest.of(0, limit)
-		).stream()
-			.map(row -> Item.of(
-				row.getCrewId(),
-				row.getCrewName(),
-				row.getCoverImageUrl(),
-				row.getMemberCount(),
-				true
-			))
-			.toList();
-	}
+interface JpaHomePublicCrewPreviewReadRepository extends Repository<Crew, Long> {
 
 	@Query("""
 		select

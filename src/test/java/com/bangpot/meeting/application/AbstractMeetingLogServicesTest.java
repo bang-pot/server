@@ -105,13 +105,13 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected User completedUser(Long id, String nickname) {
-		User user = User.rehydrate(id, nickname);
+		User user = User.create(id, nickname);
 		userRepository.save(user);
 		return user;
 	}
 
 	protected User incompleteUser(Long id, String nickname) {
-		return User.rehydrate(id, nickname);
+		return User.create(id, nickname);
 	}
 
 	protected Meeting completedMeeting(Long crewId, Long hostUserId, String themeName) {
@@ -169,6 +169,15 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 		private final Map<Long, User> users = new HashMap<>();
 
 		@Override
@@ -189,6 +198,11 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			users.put(user.getId(), user);
 			return user;
@@ -196,6 +210,14 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 		private final Map<Long, Crew> crews = new HashMap<>();
 		private long sequence = 1L;
 
@@ -225,6 +247,20 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 
 		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crews.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -233,6 +269,16 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		@Override
+		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId);
+		}
+
 		private final Map<Long, CrewMember> members = new HashMap<>();
 		private long sequence = 1L;
 
@@ -282,6 +328,41 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected static final class InMemoryMeetingRepository implements MeetingRepository {
+		@Override
+		public boolean existsByCrewIdAndStatusIn(Long crewId, java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+			return false;
+		}
+
+		@Override
+		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
+			Long crewId,
+			Long hostUserId,
+			java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses
+		) {
+			return false;
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MyCalendarView.of(java.util.List.of(), 0);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return com.bangpot.meeting.domain.view.MyJoinedMeetingsView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.MyJoinedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return com.bangpot.meeting.domain.view.MyCreatedMeetingsView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.MyCreatedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
 		private final Map<Long, Meeting> meetings = new HashMap<>();
 		private long sequence = 1L;
 
@@ -307,6 +388,16 @@ abstract class AbstractMeetingLogServicesTest {
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return findById(meetingId).filter(meeting -> meeting.getCrewId().equals(crewId));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
 		}
 	}
 
@@ -418,3 +509,5 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 	}
 }
+
+

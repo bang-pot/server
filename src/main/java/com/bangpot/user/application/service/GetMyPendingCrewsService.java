@@ -4,14 +4,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.exception.UserNotFoundException;
-import com.bangpot.user.application.port.PendingCrewReadRepository;
-import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.crew.application.port.CrewJoinRequestQueryRepository;
+import com.bangpot.crew.domain.view.MyPendingCrewsView;
+import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.usecase.GetMyPendingCrewsUseCase;
-import com.bangpot.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,37 +16,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetMyPendingCrewsService implements GetMyPendingCrewsUseCase {
 
-	private final AuthUserRepository authUserRepository;
-	private final UserRepository userRepository;
-	private final PendingCrewReadRepository pendingCrewReadRepository;
+	private final UserQueryRepository userQueryRepository;
+	private final CrewJoinRequestQueryRepository crewJoinRequestQueryRepository;
 
 	@Override
-	public Result handle(Query query) {
-		AuthUser authUser = authUserRepository.findById(query.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(query.userId()));
-		if (authUser.isTemp()) {
-			throw new AccessDeniedException("가입 완료 사용자만 이용할 수 있습니다.");
+	public MyPendingCrewsView handle(Query query) {
+		if (!userQueryRepository.existsCompletedUser(query.userId())) {
+			throw new AccessDeniedException("프로필 완료가 필요합니다.");
 		}
 
-		User user = userRepository.findById(query.userId())
-			.orElseThrow(() -> new UserNotFoundException(query.userId()));
-
-		PendingCrewReadRepository.SearchResult searchResult = pendingCrewReadRepository.search(
-			user.getId(),
+		return crewJoinRequestQueryRepository.findMyPendingCrewsViewByUserId(
+			query.userId(),
 			query.page(),
 			query.size()
-		);
-		return Result.of(
-			searchResult.items().stream()
-				.map(item -> Item.of(
-					item.joinRequestId(),
-					item.crewId(),
-					item.crewName(),
-					item.requestedAt(),
-					item.messageSummary()
-				))
-				.toList(),
-			PageInfo.of(searchResult.pageInfo().page(), searchResult.pageInfo().size(), searchResult.pageInfo().hasNext())
 		);
 	}
 }

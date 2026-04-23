@@ -4,14 +4,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.exception.UserNotFoundException;
-import com.bangpot.user.application.port.CalendarReadRepository;
-import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
-import com.bangpot.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,37 +16,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetMyCalendarService implements GetMyCalendarUseCase {
 
-	private final AuthUserRepository authUserRepository;
-	private final UserRepository userRepository;
-	private final CalendarReadRepository calendarReadRepository;
+	private final UserQueryRepository userQueryRepository;
+	private final MeetingQueryRepository meetingQueryRepository;
 
 	@Override
-	public Result handle(Query query) {
-		AuthUser authUser = authUserRepository.findById(query.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(query.userId()));
-		if (authUser.isTemp()) {
-			throw new AccessDeniedException("가입 완료 사용자만 이용할 수 있습니다.");
+	public MyCalendarView handle(Query query) {
+		if (!userQueryRepository.existsCompletedUser(query.userId())) {
+			throw new AccessDeniedException("프로필 완료가 필요합니다.");
 		}
-
-		User user = userRepository.findById(query.userId())
-			.orElseThrow(() -> new UserNotFoundException(query.userId()));
-
-		CalendarReadRepository.View view = calendarReadRepository.load(user.getId());
-		return Result.of(
-			view.items().stream()
-				.map(item -> Item.of(
-					item.meetingId(),
-					item.meetingTitle(),
-					item.crewId(),
-					item.crewName(),
-					item.date(),
-					item.time(),
-					item.meetingStatus(),
-					item.isCanceled(),
-					item.participationRole()
-				))
-				.toList(),
-			view.totalCount()
-		);
+		return meetingQueryRepository.findMyCalendarViewByUserId(query.userId());
 	}
 }

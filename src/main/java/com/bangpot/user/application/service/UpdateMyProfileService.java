@@ -4,15 +4,12 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
-import com.bangpot.user.application.exception.UserNotFoundException;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.domain.User;
+import com.bangpot.user.domain.service.NicknamePolicy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,21 +18,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UpdateMyProfileService implements UpdateMyProfileUseCase {
 
-	private final AuthUserRepository authUserRepository;
 	private final UserRepository userRepository;
 
 	@Override
-	public Result handle(Command command) {
-		AuthUser authUser = authUserRepository.findById(command.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(command.userId()));
-		if (authUser.isTemp()) {
-			throw new AccessDeniedException("가입 완료 사용자만 이용할 수 있습니다.");
-		}
-
+	public void handle(Command command) {
 		User user = userRepository.findById(command.userId())
-			.orElseThrow(() -> new UserNotFoundException(command.userId()));
+			.orElseThrow(() -> new AccessDeniedException("프로필 완료가 필요합니다."));
 
-		String normalizedNickname = normalizeNickname(command.nickname());
+		String normalizedNickname = NicknamePolicy.normalize(command.nickname());
 		if (normalizedNickname == null) {
 			throw new InvalidNicknameException();
 		}
@@ -43,19 +33,8 @@ public class UpdateMyProfileService implements UpdateMyProfileUseCase {
 			throw new DuplicateNicknameException(normalizedNickname);
 		}
 
-		user.updateNickname(normalizedNickname);
-		userRepository.save(user);
-		return Result.of(user.getId(), user.getNickname());
-	}
-
-	private String normalizeNickname(String nickname) {
-		if (nickname == null) {
-			return null;
+		if (!userRepository.updateNickname(command.userId(), normalizedNickname)) {
+			throw new AccessDeniedException("프로필 수정 권한이 없습니다.");
 		}
-		String normalizedNickname = nickname.trim();
-		if (normalizedNickname.isEmpty()) {
-			return null;
-		}
-		return normalizedNickname;
 	}
 }

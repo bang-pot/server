@@ -15,13 +15,9 @@ public interface CrewMemberRepository {
 
 	Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId);
 
-	default Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
-		return findByCrewIdAndUserId(crewId, userId);
-	}
+	Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId);
 
 	List<CrewMember> findAllByCrewId(Long crewId);
 
-	default List<CrewMember> findAllByUserId(Long userId) {
-		throw new UnsupportedOperationException();
-	}
+	List<CrewMember> findAllByUserId(Long userId);
 }

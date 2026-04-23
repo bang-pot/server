@@ -82,7 +82,7 @@ class CrewScheduleUseCaseServicesTest {
 	void returnsCrewScheduleForJoinedMemberIncludingRecruitingCompletedAndCanceled() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(7L, "requester"));
+		userRepository.save(User.create(7L, "requester"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(1L, crew.getId(), requester.getId(), CrewRole.MEMBER));
@@ -136,7 +136,7 @@ class CrewScheduleUseCaseServicesTest {
 	void sortsCrewScheduleByDateTimeAndMeetingIdAscending() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(7L, "requester"));
+		userRepository.save(User.create(7L, "requester"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(1L, crew.getId(), requester.getId(), CrewRole.MEMBER));
@@ -167,7 +167,7 @@ class CrewScheduleUseCaseServicesTest {
 	void appliesAutomaticMeetingTransitionBeforeBuildingSchedule() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(7L, "requester"));
+		userRepository.save(User.create(7L, "requester"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(1L, crew.getId(), requester.getId(), CrewRole.MEMBER));
@@ -192,7 +192,7 @@ class CrewScheduleUseCaseServicesTest {
 	void rejectsCrewScheduleForNonMember() {
 		AuthUser outsider = fullAuthUser(99L, "outsider-provider", "outsider");
 		authUserRepository.save(outsider);
-		userRepository.save(User.rehydrate(99L, "outsider"));
+		userRepository.save(User.create(99L, "outsider"));
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> getCrewScheduleUseCase.handle(
@@ -216,7 +216,7 @@ class CrewScheduleUseCaseServicesTest {
 	void rejectsCrewScheduleForUnknownCrew() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(7L, "requester"));
+		userRepository.save(User.create(7L, "requester"));
 
 		assertThatThrownBy(() -> getCrewScheduleUseCase.handle(
 			GetCrewScheduleUseCase.Query.of(999L, requester.getId(), "2026-04-20", "2026-04-22")
@@ -224,12 +224,12 @@ class CrewScheduleUseCaseServicesTest {
 	}
 
 	private AuthUser fullAuthUser(Long id, String providerId, String nickname) {
-		userRepository.save(User.rehydrate(id, nickname));
 		return AuthUser.rehydrate(
 			id,
 			AuthProvider.KAKAO,
 			providerId,
 			AuthUserStatus.FULL,
+			nickname,
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
@@ -260,6 +260,10 @@ class CrewScheduleUseCaseServicesTest {
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
+		@Override
+		public void deleteById(Long userId) {
+		}
+
 
 		private final Map<Long, AuthUser> usersById = new HashMap<>();
 
@@ -283,6 +287,15 @@ class CrewScheduleUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 
 		private final Map<Long, User> usersById = new HashMap<>();
 
@@ -305,6 +318,11 @@ class CrewScheduleUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			usersById.put(user.getId(), user);
 			return user;
@@ -312,6 +330,19 @@ class CrewScheduleUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.Crew> findAnyById(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
@@ -336,6 +367,20 @@ class CrewScheduleUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -344,6 +389,16 @@ class CrewScheduleUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		@Override
+		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId);
+		}
+
 
 		private final List<CrewMember> members = new ArrayList<>();
 
@@ -382,6 +437,41 @@ class CrewScheduleUseCaseServicesTest {
 	}
 
 	private static final class InMemoryMeetingRepository implements MeetingRepository {
+		@Override
+		public boolean existsByCrewIdAndStatusIn(Long crewId, java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+			return false;
+		}
+
+		@Override
+		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
+			Long crewId,
+			Long hostUserId,
+			java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses
+		) {
+			return false;
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MyCalendarView.of(java.util.List.of(), 0);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return com.bangpot.meeting.domain.view.MyJoinedMeetingsView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.MyJoinedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return com.bangpot.meeting.domain.view.MyCreatedMeetingsView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.MyCreatedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final Map<Long, Meeting> meetingsById = new HashMap<>();
 		private long sequence = 1L;
@@ -414,6 +504,16 @@ class CrewScheduleUseCaseServicesTest {
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return findById(meetingId).filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
 		}
 	}
 
@@ -453,3 +553,5 @@ class CrewScheduleUseCaseServicesTest {
 		}
 	}
 }
+
+

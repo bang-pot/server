@@ -3,14 +3,13 @@ package com.bangpot.user.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
 import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.exception.UserNotFoundException;
+import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewMember;
+import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.domain.User;
@@ -22,13 +21,13 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 	void withdrawsAccountWhenNoBlockingReasonExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot"));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		WithdrawMyAccountUseCase.Result result = withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.OTHER, null)
 		);
 
-		assertThat(result.withdrawnAt()).isEqualTo(BASE_TIME.toString());
+		assertThat(result.withdrawnAt()).isEqualTo(BASE_TIME);
 		assertThat(result.canLogin()).isFalse();
 		assertThat(authUserRepository.findById(7L)).isEmpty();
 		assertThat(userRepository.findById(7L)).isEmpty();
@@ -41,7 +40,7 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 	void storesOptionalReasonDetailWhenProvided() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot"));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.SERVICE_UNSATISFIED, "Need a break")
@@ -56,16 +55,11 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 	void rejectsWithdrawalWhenBlockingReasonExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot"));
-		withdrawalCheckReadRepository.putResult(
-			7L,
-			com.bangpot.user.application.port.WithdrawalCheckReadRepository.View.of(
-				List.of(
-					com.bangpot.user.application.port.WithdrawalCheckReadRepository.ActiveCrew.of(31L, "Alpha Crew")
-				),
-				List.of()
-			)
-		);
+		userRepository.save(User.create(7L, "bangpot"));
+		Crew crew = Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null);
+		crew.assignId(31L);
+		crewRepository.save(crew);
+		crewMemberRepository.save(CrewMember.createMember(31L, 7L));
 
 		assertThatThrownBy(() -> withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.NOT_USING, null)
@@ -93,14 +87,17 @@ class WithdrawMyAccountServiceTest extends AbstractUserApplicationServiceTest {
 		assertThatThrownBy(() -> withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.NOT_USING, null)
 		))
-			.isInstanceOf(UserNotFoundException.class);
+			.isInstanceOf(AccessDeniedException.class);
 	}
 
 	@Test
 	void rejectsWithdrawalWhenAuthUserDoesNotExist() {
+		userRepository.save(User.create(7L, "bangpot"));
+
 		assertThatThrownBy(() -> withdrawMyAccountUseCase.handle(
 			WithdrawMyAccountUseCase.Command.of(7L, WithdrawalReasonCode.NOT_USING, null)
 		))
-			.isInstanceOf(AuthUserNotFoundException.class);
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("완료된 회원의 인증 정보가 없습니다.");
 	}
 }

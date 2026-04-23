@@ -3,8 +3,9 @@ package com.bangpot.user.presentation;
 import java.time.Instant;
 import java.util.List;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 final class UserDto {
 
@@ -220,14 +221,17 @@ final class UserDto {
 	) {
 	}
 
-	record UserSearchResponse(
-		List<UserSearchItemResponse> items
+	record UserSearchPageInfo(
+		int page,
+		int size,
+		long totalElements,
+		int totalPages
 	) {
 	}
 
-	record CancelPendingCrewJoinRequestResponse(
-		Long joinRequestId,
-		Long crewId
+	record UserSearchResponse(
+		List<UserSearchItemResponse> items,
+		UserSearchPageInfo pageInfo
 	) {
 	}
 
@@ -237,29 +241,16 @@ final class UserDto {
 	) {
 	}
 
-	record BlockingParticipatingMeetingResponse(
-		Long meetingId,
-		String meetingTitle,
-		Long crewId,
-		String crewName,
-		String meetingStatus,
-		String date,
-		String time,
-		String participationRole
-	) {
-	}
-
 	record WithdrawalCheckResponse(
 		boolean canWithdraw,
-		List<BlockingActiveCrewResponse> blockingActiveCrews,
-		List<BlockingParticipatingMeetingResponse> blockingParticipatingMeetings
+		List<BlockingActiveCrewResponse> blockingActiveCrews
 	) {
 	}
 
 	record WithdrawMyAccountRequest(
-		@NotBlank(message = "탈퇴 사유를 선택해야 합니다.") String reasonCode,
-		String reasonDetail,
-		@AssertTrue(message = "탈퇴 진행 동의가 필요합니다.") boolean confirmationChecked
+		@NotBlank(message = "탈퇴 사유를 선택해 주세요.") String reasonCode,
+		@Size(max = 500, message = "탈퇴 상세 사유는 500자 이하여야 합니다.") String reasonDetail,
+		@AssertTrue(message = "탈퇴 안내 사항에 동의해 주세요.") boolean confirmationChecked
 	) {
 	}
 

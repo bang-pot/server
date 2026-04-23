@@ -55,7 +55,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
-		userRepository = new InMemoryUserRepository();
+		userRepository = new InMemoryUserRepository(authUserRepository);
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
@@ -80,7 +80,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void returnsMyCrewInviteHistory() {
-		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -102,13 +102,13 @@ class CrewInviteConsumerUseCaseServicesTest {
 				GetMyCrewInvitesUseCase.View::inviterNickname,
 				GetMyCrewInvitesUseCase.View::status
 			)
-			.containsExactly(crew.getId(), "비공�??�루", "leader", "PENDING");
+			.containsExactly(crew.getId(), "??? ??", "leader", "PENDING");
 	}
 
 	@Test
 	void hidesInvitesForDeletedCrew() {
-		Crew activeCrew = crewRepository.save(Crew.create("?�성 ?�루", "crew", CrewVisibility.PRIVATE, null));
-		Crew deletedCrew = crewRepository.save(Crew.create("??��???�루", "crew", CrewVisibility.PRIVATE, null));
+		Crew activeCrew = crewRepository.save(Crew.create("?? ??", "crew", CrewVisibility.PRIVATE, null));
+		Crew deletedCrew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		deletedCrew.delete();
 		crewRepository.save(deletedCrew);
 
@@ -126,12 +126,12 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 		assertThat(result)
 			.extracting(GetMyCrewInvitesUseCase.View::crewName)
-			.containsExactly("?�성 ?�루");
+			.containsExactly("?? ??");
 	}
 
 	@Test
 	void acceptsPendingInviteAndCreatesCrewMembership() {
-		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -153,7 +153,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsPendingInviteAndKeepsHistory() {
-		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -174,7 +174,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsInviteProcessingForTempUser() {
-		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = tempUser(2L, "target-provider");
 		authUserRepository.save(inviter);
@@ -188,7 +188,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 	@Test
 	void rejectsAlreadyProcessedInvite() {
-		Crew crew = crewRepository.save(Crew.create("비공�??�루", "crew", CrewVisibility.PRIVATE, null));
+		Crew crew = crewRepository.save(Crew.create("??? ??", "crew", CrewVisibility.PRIVATE, null));
 		AuthUser inviter = fullUser(1L, "leader-provider", "leader");
 		AuthUser target = fullUser(2L, "target-provider", "target");
 		authUserRepository.save(inviter);
@@ -203,12 +203,12 @@ class CrewInviteConsumerUseCaseServicesTest {
 	}
 
 	private AuthUser fullUser(Long id, String providerId, String nickname) {
-		userRepository.save(User.rehydrate(id, nickname));
 		return AuthUser.rehydrate(
 			id,
 			AuthProvider.KAKAO,
 			providerId,
 			AuthUserStatus.FULL,
+			nickname,
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
@@ -231,6 +231,10 @@ class CrewInviteConsumerUseCaseServicesTest {
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
+		@Override
+		public void deleteById(Long userId) {
+		}
+
 
 		private final Map<Long, AuthUser> usersById = new HashMap<>();
 
@@ -246,6 +250,10 @@ class CrewInviteConsumerUseCaseServicesTest {
 				.findFirst();
 		}
 
+		public boolean existsByNickname(String nickname) {
+			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
+		}
+
 		@Override
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
@@ -254,16 +262,32 @@ class CrewInviteConsumerUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-		private final Map<Long, User> usersById = new HashMap<>();
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
+
+		private final InMemoryAuthUserRepository authUserRepository;
+
+		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
+			this.authUserRepository = authUserRepository;
+		}
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return Optional.ofNullable(usersById.get(userId));
+			return authUserRepository.findById(userId)
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(this::toDomain);
 		}
 
 		@Override
 		public boolean existsByNickname(String nickname) {
-			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
+			return authUserRepository.existsByNickname(nickname);
 		}
 
 		@Override
@@ -272,13 +296,29 @@ class CrewInviteConsumerUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
-			usersById.put(user.getId(), user);
-			return user;
+			throw new UnsupportedOperationException();
+		}
+
+		private User toDomain(AuthUser authUser) {
+			return User.create(authUser.getId(), authUser.getNickname());
 		}
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
@@ -304,6 +344,20 @@ class CrewInviteConsumerUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
 		public Optional<Crew> findAnyById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
@@ -318,6 +372,16 @@ class CrewInviteConsumerUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		@Override
+		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId);
+		}
+
 
 		private final Map<Long, CrewMember> membersById = new HashMap<>();
 		private long sequence = 1L;
@@ -421,3 +485,4 @@ class CrewInviteConsumerUseCaseServicesTest {
 		}
 	}
 }
+

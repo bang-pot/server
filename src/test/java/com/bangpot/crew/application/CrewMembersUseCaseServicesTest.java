@@ -63,10 +63,10 @@ class CrewMembersUseCaseServicesTest {
 	void returnsCrewMembersSortedByLeaderThenJoinedAtDescending() {
 		AuthUser requester = fullAuthUser(1L, "requester-provider", "requester");
 		authUserRepository.save(requester);
-		userRepository.save(User.rehydrate(1L, "requester"));
-		userRepository.save(User.rehydrate(2L, "leader-pot"));
-		userRepository.save(User.rehydrate(3L, "new-member"));
-		userRepository.save(User.rehydrate(4L, "old-member"));
+		userRepository.save(User.create(1L, "requester"));
+		userRepository.save(User.create(2L, "leader-pot"));
+		userRepository.save(User.create(3L, "new-member"));
+		userRepository.save(User.create(4L, "old-member"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(10L, crew.getId(), 2L, CrewRole.LEADER, NOW.minusSeconds(300)));
@@ -94,7 +94,7 @@ class CrewMembersUseCaseServicesTest {
 	void returnsSingleLeaderWhenCrewHasOnlyOneMember() {
 		AuthUser leader = fullAuthUser(2L, "leader-provider", "leader-pot");
 		authUserRepository.save(leader);
-		userRepository.save(User.rehydrate(2L, "leader-pot"));
+		userRepository.save(User.create(2L, "leader-pot"));
 
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(10L, crew.getId(), leader.getId(), CrewRole.LEADER, NOW.minusSeconds(60)));
@@ -112,7 +112,7 @@ class CrewMembersUseCaseServicesTest {
 	void rejectsCrewMembersForNonMember() {
 		AuthUser outsider = fullAuthUser(99L, "outsider-provider", "outsider");
 		authUserRepository.save(outsider);
-		userRepository.save(User.rehydrate(99L, "outsider"));
+		userRepository.save(User.create(99L, "outsider"));
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), outsider.getId())))
@@ -148,12 +148,12 @@ class CrewMembersUseCaseServicesTest {
 	}
 
 	private AuthUser fullAuthUser(Long id, String providerId, String nickname) {
-		userRepository.save(User.rehydrate(id, nickname));
 		return AuthUser.rehydrate(
 			id,
 			AuthProvider.KAKAO,
 			providerId,
 			AuthUserStatus.FULL,
+			nickname,
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
@@ -188,6 +188,10 @@ class CrewMembersUseCaseServicesTest {
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
+		@Override
+		public void deleteById(Long userId) {
+		}
+
 
 		private final Map<Long, AuthUser> usersById = new HashMap<>();
 
@@ -203,6 +207,10 @@ class CrewMembersUseCaseServicesTest {
 				.findFirst();
 		}
 
+		public boolean existsByNickname(String nickname) {
+			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
+		}
+
 		@Override
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
@@ -211,6 +219,15 @@ class CrewMembersUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 
 		private final Map<Long, User> usersById = new HashMap<>();
 
@@ -233,6 +250,11 @@ class CrewMembersUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			usersById.put(user.getId(), user);
 			return user;
@@ -240,6 +262,19 @@ class CrewMembersUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.Crew> findAnyById(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
@@ -264,6 +299,20 @@ class CrewMembersUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -272,6 +321,16 @@ class CrewMembersUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		@Override
+		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId);
+		}
+
 
 		private final List<CrewMember> members = new ArrayList<>();
 
@@ -354,3 +413,5 @@ class CrewMembersUseCaseServicesTest {
 		}
 	}
 }
+
+

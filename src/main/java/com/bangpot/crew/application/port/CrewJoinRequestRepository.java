@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.crew.domain.CrewJoinRequest;
-
 public interface CrewJoinRequestRepository {
 
 	CrewJoinRequest save(CrewJoinRequest crewJoinRequest);
@@ -16,4 +15,6 @@ public interface CrewJoinRequestRepository {
 	List<CrewJoinRequest> findPendingByCrewId(Long crewId);
 
 	Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId);
+
+	Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId);
 }

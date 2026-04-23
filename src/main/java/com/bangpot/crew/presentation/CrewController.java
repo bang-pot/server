@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
+import com.bangpot.crew.application.usecase.CancelCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CreateCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
@@ -60,6 +61,7 @@ class CrewController {
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
 	private final GetPendingCrewJoinRequestsUseCase getPendingCrewJoinRequestsUseCase;
 	private final GetCrewJoinRequestsUseCase getCrewJoinRequestsUseCase;
+	private final CancelCrewJoinRequestUseCase cancelCrewJoinRequestUseCase;
 	private final GetCrewInviteCandidatesUseCase getCrewInviteCandidatesUseCase;
 	private final CreateCrewInviteUseCase createCrewInviteUseCase;
 	private final ApproveCrewJoinRequestUseCase approveCrewJoinRequestUseCase;
@@ -285,6 +287,17 @@ class CrewController {
 	) {
 		RejectCrewJoinRequestUseCase.Result result = rejectCrewJoinRequestUseCase.handle(
 			CrewDtoMapper.toRejectCommand(crewId, requestId, requireAuthenticatedUserId(authentication))
+		);
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
+	}
+
+	@PostMapping("/join-requests/{requestId}/cancel")
+	ResponseEntity<CrewDto.CancelCrewJoinRequestResponse> cancelJoinRequest(
+		@PathVariable Long requestId,
+		Authentication authentication
+	) {
+		CancelCrewJoinRequestUseCase.Result result = cancelCrewJoinRequestUseCase.handle(
+			CrewDtoMapper.toCancelCommand(requireAuthenticatedUserId(authentication), requestId)
 		);
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
 	}

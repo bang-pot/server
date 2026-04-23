@@ -1,7 +1,6 @@
 package com.bangpot.user.presentation;
 
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.auth.presentation.AuthCookieFactory;
-import com.bangpot.user.application.usecase.CancelMyPendingCrewJoinRequestUseCase;
+import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
+import com.bangpot.explore.domain.view.MyFavoriteThemesView;
 import com.bangpot.user.application.usecase.CheckNicknameAvailabilityUseCase;
 import com.bangpot.user.application.usecase.GetMyCreatedMeetingsUseCase;
 import com.bangpot.user.application.usecase.GetMyCalendarUseCase;
@@ -40,6 +41,18 @@ import com.bangpot.user.application.usecase.SearchUsersUseCase;
 import com.bangpot.user.application.usecase.UpdateMyProfileUseCase;
 import com.bangpot.user.application.usecase.WithdrawMyAccountUseCase;
 import com.bangpot.user.application.exception.WithdrawalNotAllowedException;
+import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.MyPendingCrewsView;
+import com.bangpot.meeting.domain.MeetingResult;
+import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyMeetingLogsView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.user.domain.view.MyProfileView;
+import com.bangpot.user.domain.view.MyWithdrawalCheckView;
+import com.bangpot.user.domain.view.UserSearchView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -81,9 +94,6 @@ class UserControllerTest {
 	private GetMyPendingCrewsUseCase getMyPendingCrewsUseCase;
 
 	@MockitoBean
-	private CancelMyPendingCrewJoinRequestUseCase cancelMyPendingCrewJoinRequestUseCase;
-
-	@MockitoBean
 	private GetMyWithdrawalCheckUseCase getMyWithdrawalCheckUseCase;
 
 	@MockitoBean
@@ -101,7 +111,7 @@ class UserControllerTest {
 	@Test
 	void returnsCurrentProfileFromNewUserPath() throws Exception {
 		when(getMyProfileUseCase.handle(GetMyProfileUseCase.Query.of(77L)))
-			.thenReturn(GetMyProfileUseCase.View.of(77L, "bangpot", null, 4L, 3L, 2L, 1L));
+			.thenReturn(MyProfileView.of(77L, "bangpot", null, 4L, 3L, 2L, 1L));
 
 		mockMvc.perform(
 			get("/api/users/me")
@@ -120,19 +130,19 @@ class UserControllerTest {
 	@Test
 	void returnsMyCreatedMeetingsFromNewUserPath() throws Exception {
 		when(getMyCreatedMeetingsUseCase.handle(GetMyCreatedMeetingsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyCreatedMeetingsUseCase.Result.of(
+			.thenReturn(MyCreatedMeetingsView.of(
 				List.of(
-					GetMyCreatedMeetingsUseCase.Item.of(
+					MyCreatedMeetingsView.Item.of(
 						101L,
 						"Friday Escape",
-						"COMPLETED",
+						MeetingStatus.COMPLETED,
 						"2026-04-17",
 						"19:00",
 						5L,
 						"Room Escape Crew"
 					)
 				),
-				GetMyCreatedMeetingsUseCase.PageInfo.of(0, 20, false)
+				MyCreatedMeetingsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -157,9 +167,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyCalendarFromNewUserPath() throws Exception {
 		when(getMyCalendarUseCase.handle(GetMyCalendarUseCase.Query.of(77L)))
-			.thenReturn(GetMyCalendarUseCase.Result.of(
+			.thenReturn(MyCalendarView.of(
 				List.of(
-					GetMyCalendarUseCase.Item.of(
+					MyCalendarView.Item.of(
 						301L,
 						"Friday Escape",
 						5L,
@@ -170,7 +180,7 @@ class UserControllerTest {
 						false,
 						"HOST"
 					),
-					GetMyCalendarUseCase.Item.of(
+					MyCalendarView.Item.of(
 						302L,
 						"Canceled Escape",
 						6L,
@@ -208,9 +218,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyFavoriteThemesSummaryFromNewUserPath() throws Exception {
 		when(getMyFavoriteThemesSummaryUseCase.handle(GetMyFavoriteThemesSummaryUseCase.Query.of(77L)))
-			.thenReturn(GetMyFavoriteThemesSummaryUseCase.Result.of(
+			.thenReturn(MyFavoriteThemesSummaryView.of(
 				List.of(
-					GetMyFavoriteThemesSummaryUseCase.Item.of(
+					MyFavoriteThemesSummaryView.Item.of(
 						901L,
 						"Deep Blue",
 						"Seoul Escape",
@@ -243,9 +253,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyFavoriteThemesFromNewUserPath() throws Exception {
 		when(getMyFavoriteThemesUseCase.handle(GetMyFavoriteThemesUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyFavoriteThemesUseCase.Result.of(
+			.thenReturn(MyFavoriteThemesView.of(
 				List.of(
-					GetMyFavoriteThemesUseCase.Item.of(
+					MyFavoriteThemesView.Item.of(
 						901L,
 						"Deep Blue",
 						"Seoul Escape",
@@ -255,7 +265,7 @@ class UserControllerTest {
 						true
 					)
 				),
-				GetMyFavoriteThemesUseCase.PageInfo.of(0, 20, false)
+				MyFavoriteThemesView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -280,9 +290,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyMeetingLogsFromNewUserPath() throws Exception {
 		when(getMyMeetingLogsUseCase.handle(GetMyMeetingLogsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyMeetingLogsUseCase.Result.of(
+			.thenReturn(MyMeetingLogsView.of(
 				List.of(
-					GetMyMeetingLogsUseCase.Item.of(
+					MyMeetingLogsView.Item.of(
 						501L,
 						31L,
 						"Alpha Crew",
@@ -295,7 +305,7 @@ class UserControllerTest {
 						3L
 					)
 				),
-				GetMyMeetingLogsUseCase.PageInfo.of(0, 20, false)
+				MyMeetingLogsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -323,9 +333,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyJoinedMeetingsFromNewUserPath() throws Exception {
 		when(getMyJoinedMeetingsUseCase.handle(GetMyJoinedMeetingsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyJoinedMeetingsUseCase.Result.of(
+			.thenReturn(MyJoinedMeetingsView.of(
 				List.of(
-					GetMyJoinedMeetingsUseCase.Item.of(
+					MyJoinedMeetingsView.Item.of(
 						201L,
 						"Sunday Escape",
 						"Deep Blue",
@@ -333,12 +343,12 @@ class UserControllerTest {
 						"Room Escape Crew",
 						"2026-04-18",
 						"19:00",
-						"COMPLETED",
-						"SUCCESS",
+						MeetingStatus.COMPLETED,
+						MeetingResult.SUCCESS,
 						true
 					)
 				),
-				GetMyJoinedMeetingsUseCase.PageInfo.of(0, 20, false)
+				MyJoinedMeetingsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -366,17 +376,17 @@ class UserControllerTest {
 	@Test
 	void returnsMyCrewsFromNewUserPath() throws Exception {
 		when(getMyCrewsUseCase.handle(GetMyCrewsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyCrewsUseCase.Result.of(
+			.thenReturn(MyCrewsView.of(
 				List.of(
-					GetMyCrewsUseCase.Item.of(
+					MyCrewsView.Item.of(
 						31L,
 						"Alpha Crew",
-						"PUBLIC",
+						CrewVisibility.PUBLIC,
 						"leader-pot",
 						"https://cdn.example.com/crew-alpha.jpg"
 					)
 				),
-				GetMyCrewsUseCase.PageInfo.of(0, 20, false)
+				MyCrewsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -399,9 +409,9 @@ class UserControllerTest {
 	@Test
 	void returnsMyPendingCrewsFromNewUserPath() throws Exception {
 		when(getMyPendingCrewsUseCase.handle(GetMyPendingCrewsUseCase.Query.of(77L, 0, 20)))
-			.thenReturn(GetMyPendingCrewsUseCase.Result.of(
+			.thenReturn(MyPendingCrewsView.of(
 				List.of(
-					GetMyPendingCrewsUseCase.Item.of(
+					MyPendingCrewsView.Item.of(
 						101L,
 						31L,
 						"Alpha Crew",
@@ -409,7 +419,7 @@ class UserControllerTest {
 						"I want to join this crew"
 					)
 				),
-				GetMyPendingCrewsUseCase.PageInfo.of(0, 20, false)
+				MyPendingCrewsView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(
@@ -431,10 +441,10 @@ class UserControllerTest {
 
 	@Test
 	void returnsUserSearchResultsFromNewUserPath() throws Exception {
-		when(searchUsersUseCase.handle(SearchUsersUseCase.Query.of(77L, "pot", 20)))
-			.thenReturn(SearchUsersUseCase.Result.of(
+		when(searchUsersUseCase.handle(SearchUsersUseCase.Query.of(77L, "pot", 0, 20)))
+			.thenReturn(UserSearchView.of(
 				List.of(
-					SearchUsersUseCase.Item.of(
+					UserSearchView.Item.of(
 						101L,
 						"bangpot",
 						"https://cdn.example.com/users/101.jpg",
@@ -442,13 +452,15 @@ class UserControllerTest {
 						"MALE",
 						0
 					)
-				)
+				),
+				UserSearchView.Page.of(0, 20, 1L, 1)
 			));
 
 		mockMvc.perform(
 			get("/api/users/search")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 				.param("keyword", "pot")
+				.param("page", "0")
 				.param("size", "20")
 		)
 			.andExpect(status().isOk())
@@ -457,42 +469,20 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[0].profileImageUrl").value("https://cdn.example.com/users/101.jpg"))
 			.andExpect(jsonPath("$.items[0].bio").value("escape lover"))
 			.andExpect(jsonPath("$.items[0].gender").value("MALE"))
-			.andExpect(jsonPath("$.items[0].escapeCount").value(0));
-	}
-
-	@Test
-	void cancelsMyPendingCrewRequestFromNewUserPath() throws Exception {
-		when(cancelMyPendingCrewJoinRequestUseCase.handle(CancelMyPendingCrewJoinRequestUseCase.Command.of(77L, 101L)))
-			.thenReturn(CancelMyPendingCrewJoinRequestUseCase.Result.of(101L, 31L));
-
-		mockMvc.perform(
-			delete("/api/users/me/pending-crews/101")
-				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.joinRequestId").value(101))
-			.andExpect(jsonPath("$.crewId").value(31));
+			.andExpect(jsonPath("$.items[0].escapeCount").value(0))
+			.andExpect(jsonPath("$.pageInfo.page").value(0))
+			.andExpect(jsonPath("$.pageInfo.size").value(20))
+			.andExpect(jsonPath("$.pageInfo.totalElements").value(1))
+			.andExpect(jsonPath("$.pageInfo.totalPages").value(1));
 	}
 
 	@Test
 	void returnsMyWithdrawalCheckFromNewUserPath() throws Exception {
 		when(getMyWithdrawalCheckUseCase.handle(GetMyWithdrawalCheckUseCase.Query.of(77L)))
-			.thenReturn(GetMyWithdrawalCheckUseCase.Result.of(
+			.thenReturn(MyWithdrawalCheckView.of(
 				false,
 				List.of(
-					GetMyWithdrawalCheckUseCase.BlockingActiveCrew.of(31L, "Alpha Crew")
-				),
-				List.of(
-					GetMyWithdrawalCheckUseCase.BlockingParticipatingMeeting.of(
-						101L,
-						"Friday Escape",
-						31L,
-						"Alpha Crew",
-						"RECRUITING",
-						"2026-04-20",
-						"19:00",
-						"HOST"
-					)
+					MyWithdrawalCheckView.BlockingActiveCrew.of(31L, "Alpha Crew")
 				)
 			));
 
@@ -503,15 +493,7 @@ class UserControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.canWithdraw").value(false))
 			.andExpect(jsonPath("$.blockingActiveCrews[0].crewId").value(31))
-			.andExpect(jsonPath("$.blockingActiveCrews[0].crewName").value("Alpha Crew"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingId").value(101))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingTitle").value("Friday Escape"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].crewId").value(31))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].crewName").value("Alpha Crew"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].meetingStatus").value("RECRUITING"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].date").value("2026-04-20"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].time").value("19:00"))
-			.andExpect(jsonPath("$.blockingParticipatingMeetings[0].participationRole").value("HOST"));
+			.andExpect(jsonPath("$.blockingActiveCrews[0].crewName").value("Alpha Crew"));
 	}
 
 	@Test
@@ -522,7 +504,7 @@ class UserControllerTest {
 				com.bangpot.user.domain.WithdrawalReasonCode.OTHER,
 				null
 			)
-		)).thenReturn(WithdrawMyAccountUseCase.Result.of("2026-04-17T10:15:30Z", false));
+		)).thenReturn(WithdrawMyAccountUseCase.Result.of(Instant.parse("2026-04-17T10:15:30Z"), false));
 		when(authCookieFactory.createLogoutCookieHeader()).thenReturn(
 			"access_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax"
 		);
@@ -579,6 +561,27 @@ class UserControllerTest {
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
 			.andExpect(jsonPath("$.fieldErrors[0].field").value("confirmationChecked"));
+	}
+
+	@Test
+	void returnsValidationErrorWhenWithdrawalReasonDetailExceedsMaximumLength() throws Exception {
+		String tooLongReasonDetail = "a".repeat(501);
+
+		mockMvc.perform(
+			post("/api/users/me/withdrawal")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.contentType("application/json")
+				.content("""
+					{
+					  "reasonCode": "OTHER",
+					  "reasonDetail": "%s",
+					  "confirmationChecked": true
+					}
+					""".formatted(tooLongReasonDetail))
+		)
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.code").value("COMMON_VALIDATION_ERROR"))
+			.andExpect(jsonPath("$.fieldErrors[0].field").value("reasonDetail"));
 	}
 
 	@Test
@@ -784,15 +787,6 @@ class UserControllerTest {
 	}
 
 	@Test
-	void returnsUnauthorizedWhenMyPendingCrewCancelRequestedWithoutAuthentication() throws Exception {
-		mockMvc.perform(delete("/api/users/me/pending-crews/101"))
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"))
-			.andExpect(jsonPath("$.fieldErrors").isArray())
-			.andExpect(jsonPath("$.fieldErrors").isEmpty());
-	}
-
-	@Test
 	void returnsValidationErrorWhenMyCrewsPageIsNegative() throws Exception {
 		mockMvc.perform(
 			get("/api/users/me/crews")
@@ -864,9 +858,6 @@ class UserControllerTest {
 
 	@Test
 	void updatesCurrentProfileFromNewUserPath() throws Exception {
-		when(updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(77L, "new-pot")))
-			.thenReturn(UpdateMyProfileUseCase.Result.of(77L, "new-pot"));
-
 		mockMvc.perform(
 			patch("/api/users/me")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
@@ -877,9 +868,7 @@ class UserControllerTest {
 					}
 					""")
 		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(77))
-			.andExpect(jsonPath("$.nickname").value("new-pot"));
+			.andExpect(status().isNoContent());
 	}
 
 	@Test

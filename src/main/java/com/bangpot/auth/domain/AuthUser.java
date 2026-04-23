@@ -13,13 +13,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 
 @Entity
 @Getter
-@Table(name = "auth_users", uniqueConstraints = {
-	@jakarta.persistence.UniqueConstraint(name = "uk_auth_users_provider_provider_id", columnNames = {"provider", "provider_id"})
-})
+@Table(
+	name = "auth_users",
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uk_auth_users_provider_provider_id", columnNames = {"provider", "provider_id"})
+	}
+)
 public class AuthUser {
 
 	@Id
@@ -37,6 +42,9 @@ public class AuthUser {
 	@Column(name = "status", nullable = false)
 	private AuthUserStatus status;
 
+	@Transient
+	private String nickname;
+
 	@Embedded
 	private RequiredTermsAgreement requiredTermsAgreement;
 
@@ -49,9 +57,6 @@ public class AuthUser {
 	@Column(name = "updated_at", nullable = false)
 	private Instant updatedAt;
 
-	@Column(name = "withdrawn_at")
-	private Instant withdrawnAt;
-
 	protected AuthUser() {
 	}
 
@@ -60,21 +65,21 @@ public class AuthUser {
 		AuthProvider provider,
 		String providerId,
 		AuthUserStatus status,
+		String nickname,
 		RequiredTermsAgreement requiredTermsAgreement,
 		String pendingRedirectPath,
 		Instant createdAt,
-		Instant updatedAt,
-		Instant withdrawnAt
+		Instant updatedAt
 	) {
 		this.id = id;
 		this.provider = provider;
 		this.providerId = providerId;
 		this.status = status;
+		this.nickname = nickname;
 		this.requiredTermsAgreement = requiredTermsAgreement;
 		this.pendingRedirectPath = pendingRedirectPath;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
-		this.withdrawnAt = withdrawnAt;
 	}
 
 	public static AuthUser createTemp(AuthProvider provider, String providerId, String pendingRedirectPath) {
@@ -84,34 +89,10 @@ public class AuthUser {
 			providerId,
 			AuthUserStatus.TEMP,
 			null,
-			pendingRedirectPath,
 			null,
+			pendingRedirectPath,
 			null,
 			null
-		);
-	}
-
-	public static AuthUser rehydrate(
-		Long id,
-		AuthProvider provider,
-		String providerId,
-		AuthUserStatus status,
-		RequiredTermsAgreement requiredTermsAgreement,
-		String pendingRedirectPath,
-		Instant createdAt,
-		Instant updatedAt,
-		Instant withdrawnAt
-	) {
-		return new AuthUser(
-			id,
-			provider,
-			providerId,
-			status,
-			requiredTermsAgreement,
-			pendingRedirectPath,
-			createdAt,
-			updatedAt,
-			withdrawnAt
 		);
 	}
 
@@ -130,11 +111,35 @@ public class AuthUser {
 			provider,
 			providerId,
 			status,
+			null,
 			requiredTermsAgreement,
 			pendingRedirectPath,
 			createdAt,
-			updatedAt,
-			null
+			updatedAt
+		);
+	}
+
+	public static AuthUser rehydrate(
+		Long id,
+		AuthProvider provider,
+		String providerId,
+		AuthUserStatus status,
+		String nickname,
+		RequiredTermsAgreement requiredTermsAgreement,
+		String pendingRedirectPath,
+		Instant createdAt,
+		Instant updatedAt
+	) {
+		return new AuthUser(
+			id,
+			provider,
+			providerId,
+			status,
+			nickname,
+			requiredTermsAgreement,
+			pendingRedirectPath,
+			createdAt,
+			updatedAt
 		);
 	}
 
@@ -158,8 +163,12 @@ public class AuthUser {
 		this.id = id;
 	}
 
-	public boolean isTemp() {
+	public boolean requiresCompletion() {
 		return status == AuthUserStatus.TEMP;
+	}
+
+	public boolean isTemp() {
+		return requiresCompletion();
 	}
 
 	public void updatePendingRedirectPath(String redirectPath) {
@@ -179,13 +188,5 @@ public class AuthUser {
 			: pendingRedirectPath;
 		pendingRedirectPath = null;
 		return nextPath;
-	}
-
-	public void withdraw(String tombstoneProviderId, Instant withdrawnAt) {
-		this.status = AuthUserStatus.WITHDRAWN;
-		this.providerId = tombstoneProviderId;
-		this.requiredTermsAgreement = null;
-		this.pendingRedirectPath = null;
-		this.withdrawnAt = withdrawnAt;
 	}
 }

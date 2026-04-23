@@ -1,19 +1,16 @@
 package com.bangpot.user.application.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.auth.application.exception.AuthUserNotFoundException;
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.user.application.exception.UserNotFoundException;
-import com.bangpot.user.application.port.UserRepository;
-import com.bangpot.user.application.port.UserSearchReadRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
+import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.usecase.SearchUsersUseCase;
-import com.bangpot.user.domain.User;
+import com.bangpot.user.domain.view.UserSearchView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,37 +19,51 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SearchUsersService implements SearchUsersUseCase {
 
-	private final AuthUserRepository authUserRepository;
-	private final UserRepository userRepository;
-	private final UserSearchReadRepository userSearchReadRepository;
+	private static final int MIN_PAGE = 0;
+	private static final int MIN_SIZE = 1;
+	private static final int MAX_SIZE = 50;
+
+	private final MeetingQueryRepository meetingQueryRepository;
+	private final UserQueryRepository userQueryRepository;
 
 	@Override
-	public Result handle(Query query) {
-		AuthUser authUser = authUserRepository.findById(query.userId())
-			.orElseThrow(() -> new AuthUserNotFoundException(query.userId()));
-		if (authUser.isTemp()) {
-			throw new AccessDeniedException("가입 완료 사용자만 회원 검색을 할 수 있습니다.");
+	public UserSearchView handle(Query query) {
+		if (!userQueryRepository.existsCompletedUser(query.userId())) {
+			throw new AccessDeniedException("프로필 완료가 필요합니다.");
 		}
 
-		User user = userRepository.findById(query.userId())
-			.orElseThrow(() -> new UserNotFoundException(query.userId()));
-
+		int normalizedPage = normalizePage(query.page());
+		int normalizedSize = normalizeSize(query.size());
 		String normalizedKeyword = normalizeKeyword(query.keyword());
 		if (normalizedKeyword == null) {
-			return Result.of(List.of());
+			return UserSearchView.of(
+				List.of(),
+				UserSearchView.Page.of(normalizedPage, normalizedSize, 0L, 0)
+			);
 		}
 
-		return Result.of(
-			userSearchReadRepository.search(normalizedKeyword, query.size()).stream()
-				.map(item -> Item.of(
+		UserSearchView queryResult = userQueryRepository.searchUsersByNickname(
+			normalizedKeyword,
+			normalizedPage,
+			normalizedSize
+		);
+		Map<Long, Integer> completedMeetingCountsByUserId = meetingQueryRepository.countCompletedByUserIds(
+			queryResult.items().stream()
+				.map(UserSearchView.Item::userId)
+				.toList()
+		);
+		return UserSearchView.of(
+			queryResult.items().stream()
+				.map(item -> UserSearchView.Item.of(
 					item.userId(),
 					item.nickname(),
 					item.profileImageUrl(),
 					item.bio(),
 					item.gender(),
-					item.escapeCount()
+					completedMeetingCountsByUserId.getOrDefault(item.userId(), 0)
 				))
-				.toList()
+				.toList(),
+			queryResult.page()
 		);
 	}
 
@@ -61,6 +72,24 @@ public class SearchUsersService implements SearchUsersUseCase {
 			return null;
 		}
 		String trimmed = keyword.trim();
-		return trimmed.isEmpty() ? null : trimmed;
+		return trimmed.isEmpty() ? null : escapeLikeKeyword(trimmed);
+	}
+
+	private int normalizePage(int page) {
+		return Math.max(page, MIN_PAGE);
+	}
+
+	private int normalizeSize(int size) {
+		if (size < MIN_SIZE) {
+			return MIN_SIZE;
+		}
+		return Math.min(size, MAX_SIZE);
+	}
+
+	private String escapeLikeKeyword(String keyword) {
+		return keyword
+			.replace("\\", "\\\\")
+			.replace("%", "\\%")
+			.replace("_", "\\_");
 	}
 }

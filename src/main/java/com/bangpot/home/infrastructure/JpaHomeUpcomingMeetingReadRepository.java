@@ -9,47 +9,11 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
 import com.bangpot.crew.domain.CrewStatus;
-import com.bangpot.home.application.port.HomeUpcomingMeetingReadRepository;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
 
-interface JpaHomeUpcomingMeetingReadRepository extends Repository<Meeting, Long>, HomeUpcomingMeetingReadRepository {
-
-	@Override
-	default Result findUpcomingMeetings(Long userId, int limit, String currentDate, String currentTime) {
-		List<Row> rows = findRows(
-			userId,
-			CrewStatus.ACTIVE,
-			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED),
-			List.of(MeetingParticipationStatus.JOINED, MeetingParticipationStatus.PENDING, MeetingParticipationStatus.APPROVED),
-			currentDate,
-			currentTime,
-			PageRequest.of(0, limit)
-		);
-
-		return Result.of(
-			rows.stream()
-				.map(row -> Item.of(
-					row.getMeetingId(),
-					row.getTitle(),
-					row.getCrewId(),
-					row.getCrewName(),
-					row.getDate(),
-					row.getTime(),
-					row.getStatus().name()
-				))
-				.toList(),
-			countRows(
-				userId,
-				CrewStatus.ACTIVE,
-				List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED),
-				List.of(MeetingParticipationStatus.JOINED, MeetingParticipationStatus.PENDING, MeetingParticipationStatus.APPROVED),
-				currentDate,
-				currentTime
-			)
-		);
-	}
+interface JpaHomeUpcomingMeetingReadRepository extends Repository<Meeting, Long> {
 
 	@Query("""
 		select

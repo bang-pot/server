@@ -44,7 +44,7 @@ class CrewUseCaseServicesTest {
 	@BeforeEach
 	void setUp() {
 		authUserRepository = new InMemoryAuthUserRepository();
-		userRepository = new InMemoryUserRepository();
+		userRepository = new InMemoryUserRepository(authUserRepository);
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		createCrewUseCase = new CreateCrewService(
@@ -60,15 +60,15 @@ class CrewUseCaseServicesTest {
 		authUserRepository.save(creator);
 
 		CreateCrewUseCase.Result result = createCrewUseCase.handle(
-			CreateCrewUseCase.Command.of(creator.getId(), "  방팟 야식 크루  ", "같이 먹고 같이 달려요", null, null)
+			CreateCrewUseCase.Command.of(creator.getId(), "  ?? ?? ??  ", "?? ?? ?? ??", null, null)
 		);
 
 		assertThat(result.crewId()).isNotNull();
-		assertThat(result.name()).isEqualTo("방팟 야식 크루");
+		assertThat(result.name()).isEqualTo("?? ?? ??");
 		assertThat(result.myRole()).isEqualTo(CrewRole.LEADER);
 		assertThat(crewRepository.findById(result.crewId())).get()
 			.extracting(Crew::getName, Crew::getDescription, Crew::getVisibility)
-			.containsExactly("방팟 야식 크루", "같이 먹고 같이 달려요", CrewVisibility.PUBLIC);
+			.containsExactly("?? ?? ??", "?? ?? ?? ??", CrewVisibility.PUBLIC);
 		assertThat(crewMemberRepository.findLeaderByCrewId(result.crewId())).get()
 			.extracting(CrewMember::getUserId, CrewMember::getRole)
 			.containsExactly(creator.getId(), CrewRole.LEADER);
@@ -80,7 +80,7 @@ class CrewUseCaseServicesTest {
 		authUserRepository.save(tempUser);
 
 		assertThatThrownBy(() -> createCrewUseCase.handle(
-			CreateCrewUseCase.Command.of(tempUser.getId(), "방팟 야식 크루", null, "PUBLIC", null)
+			CreateCrewUseCase.Command.of(tempUser.getId(), "?? ?? ??", null, "PUBLIC", null)
 		))
 			.isInstanceOf(AccessDeniedException.class);
 	}
@@ -89,10 +89,10 @@ class CrewUseCaseServicesTest {
 	void rejectsDuplicateCrewName() {
 		AuthUser creator = fullUser(1L, "creator");
 		authUserRepository.save(creator);
-		crewRepository.save(Crew.create("방팟 야식 크루", null, CrewVisibility.PUBLIC, null));
+		crewRepository.save(Crew.create("?? ?? ??", null, CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> createCrewUseCase.handle(
-			CreateCrewUseCase.Command.of(creator.getId(), "방팟 야식 크루", null, "PUBLIC", null)
+			CreateCrewUseCase.Command.of(creator.getId(), "  ?? ?? ??  ", "?? ?? ?? ??", null, null)
 		))
 			.isInstanceOf(DuplicateCrewNameException.class);
 	}
@@ -100,18 +100,18 @@ class CrewUseCaseServicesTest {
 	@Test
 	void rejectsUnknownAuthenticatedUser() {
 		assertThatThrownBy(() -> createCrewUseCase.handle(
-			CreateCrewUseCase.Command.of(99L, "방팟 야식 크루", null, "PUBLIC", null)
+			CreateCrewUseCase.Command.of(99L, "?? ?? ??", null, "PUBLIC", null)
 		))
 			.isInstanceOf(AccessDeniedException.class);
 	}
 
 	private AuthUser fullUser(Long id, String providerId) {
-		userRepository.save(User.rehydrate(id, "bangpot"));
 		return AuthUser.rehydrate(
 			id,
 			AuthProvider.KAKAO,
 			providerId,
 			AuthUserStatus.FULL,
+			"bangpot",
 			RequiredTermsAgreement.of("2026-03-25", NOW.minusSeconds(60)),
 			null,
 			NOW.minusSeconds(3600),
@@ -134,6 +134,10 @@ class CrewUseCaseServicesTest {
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
+		@Override
+		public void deleteById(Long userId) {
+		}
+
 
 		private final Map<Long, AuthUser> usersById = new HashMap<>();
 
@@ -149,6 +153,10 @@ class CrewUseCaseServicesTest {
 				.findFirst();
 		}
 
+		public boolean existsByNickname(String nickname) {
+			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
+		}
+
 		@Override
 		public AuthUser save(AuthUser user) {
 			usersById.put(user.getId(), user);
@@ -157,6 +165,19 @@ class CrewUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.Crew> findAnyById(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
@@ -181,6 +202,20 @@ class CrewUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -189,16 +224,32 @@ class CrewUseCaseServicesTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-		private final Map<Long, User> usersById = new HashMap<>();
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
+
+		private final InMemoryAuthUserRepository authUserRepository;
+
+		private InMemoryUserRepository(InMemoryAuthUserRepository authUserRepository) {
+			this.authUserRepository = authUserRepository;
+		}
 
 		@Override
 		public Optional<User> findById(Long userId) {
-			return Optional.ofNullable(usersById.get(userId));
+			return authUserRepository.findById(userId)
+				.filter(authUser -> authUser.getStatus() == AuthUserStatus.FULL)
+				.map(this::toDomain);
 		}
 
 		@Override
 		public boolean existsByNickname(String nickname) {
-			return usersById.values().stream().anyMatch(user -> nickname.equals(user.getNickname()));
+			return authUserRepository.existsByNickname(nickname);
 		}
 
 		@Override
@@ -207,13 +258,31 @@ class CrewUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
-			usersById.put(user.getId(), user);
-			return user;
+			throw new UnsupportedOperationException();
+		}
+
+		private User toDomain(AuthUser authUser) {
+			return User.create(authUser.getId(), authUser.getNickname());
 		}
 	}
 
 	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
+		@Override
+		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
+			return findByCrewIdAndUserId(crewId, userId);
+		}
+
 
 		private final Map<Long, CrewMember> membersById = new HashMap<>();
 		private long sequence = 1L;
@@ -264,3 +333,4 @@ class CrewUseCaseServicesTest {
 		}
 	}
 }
+

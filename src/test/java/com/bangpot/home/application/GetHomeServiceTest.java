@@ -95,7 +95,7 @@ class GetHomeServiceTest {
 	@Test
 	void returnsLoggedInHomeWithPersonalizedSummaries() {
 		authUserRepository.save(fullUser(7L, "bangpot"));
-		userRepository.save(User.rehydrate(7L, "bangpot"));
+		userRepository.save(User.create(7L, "bangpot"));
 		profileHubReadRepository.putCounts(7L, 0L, 0L, 3L, 0L);
 		myCrewReadRepository.resultByUserId.put(
 			7L,
@@ -153,6 +153,7 @@ class GetHomeServiceTest {
 			AuthProvider.KAKAO,
 			"provider-" + id,
 			AuthUserStatus.FULL,
+			nickname,
 			RequiredTermsAgreement.of("2026-04-14", BASE_TIME),
 			null,
 			BASE_TIME,
@@ -161,12 +162,15 @@ class GetHomeServiceTest {
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
+		@Override
+		public void deleteById(Long userId) {
+		}
+
 		private final Map<Long, AuthUser> users = new HashMap<>();
 
 		@Override
 		public Optional<AuthUser> findById(Long userId) {
-			return Optional.ofNullable(users.get(userId))
-				.filter(user -> user.getStatus() != com.bangpot.auth.domain.AuthUserStatus.WITHDRAWN);
+			return Optional.ofNullable(users.get(userId));
 		}
 
 		@Override
@@ -182,6 +186,15 @@ class GetHomeServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 		private final Map<Long, User> users = new HashMap<>();
 
 		@Override
@@ -197,6 +210,11 @@ class GetHomeServiceTest {
 		@Override
 		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
 			return List.of();
+		}
+
+		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
 		}
 
 		@Override

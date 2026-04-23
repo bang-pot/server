@@ -58,6 +58,14 @@ class CrewPublicCardUseCaseServicesTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final List<Crew> crews = new ArrayList<>();
 		private long sequence = 1L;
@@ -86,6 +94,21 @@ class CrewPublicCardUseCaseServicesTest {
 		@Override
 		public java.util.Optional<Crew> findAnyById(Long crewId) {
 			return crews.stream().filter(crew -> crewId.equals(crew.getId())).findFirst();
+		}
+
+		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
 		}
 
 		@Override

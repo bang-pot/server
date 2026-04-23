@@ -5,6 +5,9 @@ import java.util.Optional;
 
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 
 public interface MeetingRepository {
 
@@ -16,15 +19,21 @@ public interface MeetingRepository {
 
 	Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId);
 
-	default boolean existsByCrewIdAndHostUserIdAndStatusIn(
+	MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size);
+
+	MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size);
+
+	MyCalendarView findMyCalendarViewByUserId(Long userId);
+
+	long countCreatedByHostUserId(Long userId);
+
+	long countJoinedByUserId(Long userId);
+
+	boolean existsByCrewIdAndHostUserIdAndStatusIn(
 		Long crewId,
 		Long hostUserId,
 		List<MeetingStatus> statuses
-	) {
-		return false;
-	}
+	);
 
-	default boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses) {
-		return false;
-	}
+	boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses);
 }

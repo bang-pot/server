@@ -17,10 +17,6 @@ public class User {
 		return new User(id, nickname);
 	}
 
-	public static User rehydrate(Long id, String nickname) {
-		return new User(id, nickname);
-	}
-
 	public void updateNickname(String nickname) {
 		this.nickname = nickname;
 	}

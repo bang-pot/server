@@ -1,7 +1,10 @@
 package com.bangpot.user.domain;
 
+import lombok.Getter;
+
 import java.time.Instant;
 
+@Getter
 public class UserWithdrawal {
 
 	private final Long userId;
@@ -28,21 +31,5 @@ public class UserWithdrawal {
 		Instant withdrawnAt
 	) {
 		return new UserWithdrawal(userId, reasonCode, reasonDetail, withdrawnAt);
-	}
-
-	public Long getUserId() {
-		return userId;
-	}
-
-	public WithdrawalReasonCode getReasonCode() {
-		return reasonCode;
-	}
-
-	public String getReasonDetail() {
-		return reasonDetail;
-	}
-
-	public Instant getWithdrawnAt() {
-		return withdrawnAt;
 	}
 }

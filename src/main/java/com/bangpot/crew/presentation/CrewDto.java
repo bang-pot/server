@@ -152,6 +152,9 @@ final class CrewDto {
 	record RejectCrewJoinRequestResponse(Long crewId, Long requestId) {
 	}
 
+	record CancelCrewJoinRequestResponse(Long requestId, Long crewId) {
+	}
+
 	record CrewInviteCandidateResponse(Long userId, String nickname) {
 	}
 

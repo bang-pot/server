@@ -1,5 +1,7 @@
 package com.bangpot.user.application.usecase;
 
+import java.time.Instant;
+
 import com.bangpot.user.domain.WithdrawalReasonCode;
 
 public interface WithdrawMyAccountUseCase {
@@ -17,10 +19,10 @@ public interface WithdrawMyAccountUseCase {
 	}
 
 	record Result(
-		String withdrawnAt,
+		Instant withdrawnAt,
 		boolean canLogin
 	) {
-		public static Result of(String withdrawnAt, boolean canLogin) {
+		public static Result of(Instant withdrawnAt, boolean canLogin) {
 			return new Result(withdrawnAt, canLogin);
 		}
 	}

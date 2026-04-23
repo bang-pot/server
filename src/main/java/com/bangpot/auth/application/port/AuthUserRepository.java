@@ -13,7 +13,5 @@ public interface AuthUserRepository {
 
 	AuthUser save(AuthUser user);
 
-	default void deleteById(Long userId) {
-		throw new UnsupportedOperationException("deleteById is not implemented");
-	}
+	void deleteById(Long userId);
 }

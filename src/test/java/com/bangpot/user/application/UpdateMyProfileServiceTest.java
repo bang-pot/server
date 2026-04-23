@@ -18,36 +18,30 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void updatesNicknameForCompletedUser() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot"));
+		userRepository.save(User.create(7L, "bangpot"));
 
-		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
-			UpdateMyProfileUseCase.Command.of(7L, "  new-pot  ")
-		);
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "  newpot  "));
 
-		assertThat(result.id()).isEqualTo(7L);
-		assertThat(result.nickname()).isEqualTo("new-pot");
-		assertThat(userRepository.findById(7L)).get().extracting(User::getNickname).isEqualTo("new-pot");
+		assertThat(userRepository.findById(7L)).get().extracting(User::getNickname).isEqualTo("newpot");
 	}
 
 	@Test
 	void allowsKeepingSameNicknameWithoutDuplicateFailure() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot"));
-		userRepository.save(User.rehydrate(8L, "other"));
+		userRepository.save(User.create(7L, "bangpot"));
+		userRepository.save(User.create(8L, "other"));
 
-		UpdateMyProfileUseCase.Result result = updateMyProfileUseCase.handle(
-			UpdateMyProfileUseCase.Command.of(7L, "bangpot")
-		);
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "bangpot"));
 
-		assertThat(result.nickname()).isEqualTo("bangpot");
+		assertThat(userRepository.findById(7L)).get().extracting(User::getNickname).isEqualTo("bangpot");
 	}
 
 	@Test
 	void rejectsNicknameUpdateForBlankNickname() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot"));
+		userRepository.save(User.create(7L, "bangpot"));
 
 		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "   ")))
 			.isInstanceOf(InvalidNicknameException.class);
@@ -57,10 +51,10 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	void rejectsNicknameUpdateWhenNicknameAlreadyExists() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);
-		userRepository.save(User.rehydrate(7L, "bangpot"));
-		userRepository.save(User.rehydrate(8L, "taken"));
+		userRepository.save(User.create(7L, "bangpot"));
+		userRepository.save(User.create(8L, "taken123"));
 
-		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "taken")))
+		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "taken123")))
 			.isInstanceOf(DuplicateNicknameException.class);
 	}
 
@@ -69,7 +63,17 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 		AuthUser authUser = tempUser(7L);
 		authUserRepository.save(authUser);
 
-		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "new-pot")))
+		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "newpot")))
 			.isInstanceOf(AccessDeniedException.class);
+	}
+
+	@Test
+	void rejectsNicknameUpdateWhenNicknameContainsDisallowedCharacters() {
+		AuthUser authUser = fullUser(7L, "bangpot");
+		authUserRepository.save(authUser);
+		userRepository.save(User.create(7L, "bangpot"));
+
+		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "new-pot")))
+			.isInstanceOf(InvalidNicknameException.class);
 	}
 }

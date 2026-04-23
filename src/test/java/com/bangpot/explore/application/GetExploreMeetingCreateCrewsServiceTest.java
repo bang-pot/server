@@ -43,7 +43,7 @@ class GetExploreMeetingCreateCrewsServiceTest {
 
 	@Test
 	void returnsActiveCrewsForCompletedUser() {
-		userRepository.save(User.rehydrate(1L, "alpha"));
+		userRepository.save(User.create(1L, "alpha"));
 		crewRepository.save(activeCrew(100L, "Alpha Crew"));
 		crewRepository.save(activeCrew(200L, "Beta Crew"));
 		crewRepository.save(deletedCrew(300L, "Deleted Crew"));
@@ -64,7 +64,7 @@ class GetExploreMeetingCreateCrewsServiceTest {
 
 	@Test
 	void returnsEmptyArrayWhenUserHasNoActiveCrews() {
-		userRepository.save(User.rehydrate(1L, "alpha"));
+		userRepository.save(User.create(1L, "alpha"));
 
 		GetExploreMeetingCreateCrewsUseCase.Result result = useCase.handle(
 			GetExploreMeetingCreateCrewsUseCase.Query.of(1L)
@@ -92,6 +92,14 @@ class GetExploreMeetingCreateCrewsServiceTest {
 	}
 
 	private static final class InMemoryCrewRepository implements CrewRepository {
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return com.bangpot.crew.domain.view.MyCrewsView.of(
+				java.util.List.of(),
+				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+			);
+		}
+
 
 		private final List<Crew> crews = new ArrayList<>();
 
@@ -123,6 +131,20 @@ class GetExploreMeetingCreateCrewsServiceTest {
 		}
 
 		@Override
+		public List<Crew> findActiveByMemberUserId(Long userId) {
+			return List.of();
+		}
+
+
+
+				@Override
+		public long countActiveByMemberUserId(Long userId) {
+			return 0L;
+		}
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}@Override
 		public List<Crew> findPublicCrews() {
 			throw new UnsupportedOperationException();
 		}
@@ -193,6 +215,15 @@ class GetExploreMeetingCreateCrewsServiceTest {
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
 
 		private final List<User> users = new ArrayList<>();
 
@@ -214,6 +245,11 @@ class GetExploreMeetingCreateCrewsServiceTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			users.removeIf(existing -> existing.getId().equals(user.getId()));
 			users.add(user);
@@ -221,3 +257,5 @@ class GetExploreMeetingCreateCrewsServiceTest {
 		}
 	}
 }
+
+
