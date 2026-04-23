@@ -258,6 +258,11 @@ class CrewUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			throw new UnsupportedOperationException();
 		}

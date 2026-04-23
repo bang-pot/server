@@ -17,4 +17,3 @@ public class MeetingLogRequestValidationException extends RuntimeException {
 		return fieldErrors;
 	}
 }
-

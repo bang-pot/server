@@ -43,7 +43,7 @@ class MeetingGalleryDetailControllerTest {
 			.thenReturn(GetCrewMeetingGalleryDetailUseCase.Result.of(
 				55L,
 				"2026-04-12",
-				"금요일 이스케이프",
+				"湲덉슂???댁뒪耳?댄봽",
 				List.of(
 					GetCrewMeetingGalleryDetailUseCase.Photo.of(501L, "https://cdn.example.com/a.jpg", 1),
 					GetCrewMeetingGalleryDetailUseCase.Photo.of(502L, "https://cdn.example.com/b.jpg", 2)
@@ -58,7 +58,7 @@ class MeetingGalleryDetailControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.meetingId").value(55))
 			.andExpect(jsonPath("$.meetingDate").value("2026-04-12"))
-			.andExpect(jsonPath("$.meetingTitle").value("금요일 이스케이프"))
+			.andExpect(jsonPath("$.meetingTitle").value("湲덉슂???댁뒪耳?댄봽"))
 			.andExpect(jsonPath("$.photos[0].photoId").value(501))
 			.andExpect(jsonPath("$.photos[0].url").value("https://cdn.example.com/a.jpg"))
 			.andExpect(jsonPath("$.photos[0].order").value(1))

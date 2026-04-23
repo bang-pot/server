@@ -33,7 +33,7 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 
 	@Override
 	public Result handle(Command command) {
-		completedUserAccessService.validateCompletedUser(command.userId(), "meeting log create requires a completed user");
+		completedUserAccessService.validateCompletedUser(command.userId(), "방탈로그 작성은 가입 완료 사용자만 가능합니다.");
 		Meeting meeting = meetingRepository.findById(command.meetingId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
 		MeetingLogAccessPolicy.validateWritableMeeting(meeting);
@@ -62,4 +62,3 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 			.toList();
 	}
 }
-

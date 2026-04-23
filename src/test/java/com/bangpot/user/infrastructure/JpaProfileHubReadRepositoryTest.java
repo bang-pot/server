@@ -62,27 +62,27 @@ class JpaProfileHubReadRepositoryTest {
 		entityManager.persist(approvedJoinRequest);
 
 		entityManager.persist(Meeting.create(
-			crewA.getId(), 7L, "내가 만든 모집중 모임", "Theme A", "홍대", "2026-04-20", "10:00", 4, null, null, "desc"
+			crewA.getId(), 7L, "?��? 만든 모집�?모임", "Theme A", "?��?", "2026-04-20", "10:00", 4, null, null, "desc"
 		));
 		Meeting createdCanceled = entityManager.persist(Meeting.create(
-			crewA.getId(), 7L, "내가 만든 취소 모임", "Theme B", "강남", "2026-04-21", "11:00", 4, null, null, "desc"
+			crewA.getId(), 7L, "?��? 만든 취소 모임", "Theme B", "강남", "2026-04-21", "11:00", 4, null, null, "desc"
 		));
 		createdCanceled.cancel();
 
 		Meeting joinedMeeting = entityManager.persist(Meeting.create(
-			crewA.getId(), 8L, "참여한 타인 모임", "Theme C", "건대", "2026-04-22", "12:00", 4, null, null, "desc"
+			crewA.getId(), 8L, "참여???�??모임", "Theme C", "건�?", "2026-04-22", "12:00", 4, null, null, "desc"
 		));
 		Meeting leftMeeting = entityManager.persist(Meeting.create(
-			crewA.getId(), 9L, "나간 타인 모임", "Theme D", "신촌", "2026-04-23", "13:00", 4, null, null, "desc"
+			crewA.getId(), 9L, "?�간 ?�??모임", "Theme D", "?�촌", "2026-04-23", "13:00", 4, null, null, "desc"
 		));
 		Meeting pendingMeeting = entityManager.persist(Meeting.create(
-			crewB.getId(), 8L, "레거시 pending 모임", "Theme E", "잠실", "2026-04-24", "14:00", 4, null, null, "desc"
+			crewB.getId(), 8L, "?�거??pending 모임", "Theme E", "?�실", "2026-04-24", "14:00", 4, null, null, "desc"
 		));
 		Meeting approvedMeeting = entityManager.persist(Meeting.create(
-			crewB.getId(), 8L, "레거시 approved 모임", "Theme F", "성수", "2026-04-25", "15:00", 4, null, null, "desc"
+			crewB.getId(), 8L, "?�거??approved 모임", "Theme F", "?�수", "2026-04-25", "15:00", 4, null, null, "desc"
 		));
 		Meeting hostedParticipationMeeting = entityManager.persist(Meeting.create(
-			crewB.getId(), 7L, "호스트인 내 모임", "Theme G", "합정", "2026-04-26", "16:00", 4, null, null, "desc"
+			crewB.getId(), 7L, "?�스?�인 ??모임", "Theme G", "?�정", "2026-04-26", "16:00", 4, null, null, "desc"
 		));
 
 		entityManager.persist(MeetingParticipant.join(joinedMeeting.getId(), 7L));

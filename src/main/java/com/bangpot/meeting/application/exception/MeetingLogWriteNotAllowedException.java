@@ -6,4 +6,3 @@ public class MeetingLogWriteNotAllowedException extends RuntimeException {
 		super("meeting log write not allowed: meetingId=" + meetingId);
 	}
 }
-

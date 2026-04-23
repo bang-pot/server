@@ -12,6 +12,12 @@ import ch.qos.logback.classic.spi.LoggingEvent;
 
 class SlackWebhookAppenderTest {
 
+	private static final String STARTUP_COMPLETED_MESSAGE = "\uC560\uD50C\uB9AC\uCF00\uC774\uC158 \uAE30\uB3D9 \uC644\uB8CC";
+	private static final String PROTECTED_RESOURCE_MESSAGE = "\uBCF4\uD638 \uC790\uC6D0 \uC811\uADFC \uC2E4\uD328";
+	private static final String SERVER_ERROR_MESSAGE = "\uC694\uCCAD \uCC98\uB9AC \uC911 \uC11C\uBC84 \uC624\uB958 \uBC1C\uC0DD";
+	private static final String SLOW_REQUEST_MESSAGE = "\uB290\uB9B0 \uC694\uCCAD \uAC10\uC9C0";
+	private static final String STARTUP_FAILURE_MESSAGE = "\uC560\uD50C\uB9AC\uCF00\uC774\uC158 \uC2DC\uC791 \uC2E4\uD328";
+
 	@Test
 	void targetsStartupInfoLog() {
 		SlackWebhookAppender appender = appender();
@@ -19,7 +25,7 @@ class SlackWebhookAppenderTest {
 		assertThat(appender.isSlackTarget(loggingEvent(
 			Level.INFO,
 			"com.bangpot.common.logging.StartupLifecycleLogger",
-			"event=application.startup.completed message=\"애플리케이션 기동 완료\""
+			"event=application.startup.completed message=\"" + STARTUP_COMPLETED_MESSAGE + "\""
 		))).isTrue();
 	}
 
@@ -30,7 +36,7 @@ class SlackWebhookAppenderTest {
 		assertThat(appender.isSlackTarget(loggingEvent(
 			Level.WARN,
 			"com.bangpot.auth.infrastructure.logging.AuthAuditLogger",
-			"event=auth.protected_resource_access_failed message=\"보호 자원 접근 실패\" path=/api/sonicos/tfa"
+			"event=auth.protected_resource_access_failed message=\"" + PROTECTED_RESOURCE_MESSAGE + "\" path=/api/sonicos/tfa"
 		))).isFalse();
 	}
 
@@ -40,14 +46,14 @@ class SlackWebhookAppenderTest {
 		LoggingEvent event = loggingEvent(
 			Level.ERROR,
 			"com.bangpot.common.logging.ServerErrorLoggingFilter",
-			"event=request.failed message=\"요청 처리 중 서버 오류 발생\" path=/api/auth/me?token=secret context=request.failed exceptionType=IllegalStateException"
+			"event=request.failed message=\"" + SERVER_ERROR_MESSAGE + "\" path=/api/auth/me?token=secret context=request.failed exceptionType=IllegalStateException"
 		);
 		event.setMDCPropertyMap(Map.of("requestId", "req-ops-500"));
 
 		String payload = appender.buildPayload(event);
 
 		assertThat(payload)
-			.contains("\"text\":\"[ERROR] 요청 처리 중 서버 오류 발생\\n")
+			.contains("\"text\":\"[ERROR] " + SERVER_ERROR_MESSAGE + "\\n")
 			.contains("- service: bangpot-backend\\n")
 			.contains("- environment: prod\\n")
 			.contains("- requestId: req-ops-500\\n")
@@ -63,19 +69,19 @@ class SlackWebhookAppenderTest {
 		LoggingEvent event = loggingEvent(
 			Level.WARN,
 			"com.bangpot.common.logging.RequestTracingFilter",
-			"event=request.slow message=\"느린 요청 감지\" path=/api/auth/me context=request.slow durationMs=3200 thresholdMs=3000"
+			"event=request.slow message=\"" + SLOW_REQUEST_MESSAGE + "\" path=/api/auth/me context=request.slow durationMs=3200 thresholdMs=3000"
 		);
 		event.setMDCPropertyMap(Map.of("requestId", "req-slow-1"));
 
 		String payload = appender.buildPayload(event);
 
 		assertThat(payload)
-			.contains("\"text\":\"[WARN] 느린 요청 감지\\n")
+			.contains("\"text\":\"[WARN] " + SLOW_REQUEST_MESSAGE + "\\n")
 			.contains("- requestId: req-slow-1\\n")
 			.contains("- path: /api/auth/me\\n")
 			.contains("- context: request.slow\\n")
 			.contains("- durationMs: 3200\\n")
-			.contains("- summary: 느린 요청 감지");
+			.contains("- summary: " + SLOW_REQUEST_MESSAGE);
 	}
 
 	@Test
@@ -102,7 +108,7 @@ class SlackWebhookAppenderTest {
 		String payload = appender.buildPayload(event);
 
 		assertThat(payload)
-			.contains("\"text\":\"[ERROR] 애플리케이션 시작 실패\\n")
+			.contains("\"text\":\"[ERROR] " + STARTUP_FAILURE_MESSAGE + "\\n")
 			.contains("- context: application.startup\\n")
 			.contains("- reason: Web server failed to start. Port 8080 was already in use.\\n")
 			.doesNotContain("APPLICATION FAILED TO START")

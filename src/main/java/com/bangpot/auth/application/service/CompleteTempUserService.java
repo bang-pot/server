@@ -15,7 +15,7 @@ import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
-import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
+import com.bangpot.auth.application.config.AuthRequiredTermsProperties;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;

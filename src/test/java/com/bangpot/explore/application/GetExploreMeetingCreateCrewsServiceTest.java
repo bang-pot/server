@@ -245,6 +245,11 @@ class GetExploreMeetingCreateCrewsServiceTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			users.removeIf(existing -> existing.getId().equals(user.getId()));
 			users.add(user);

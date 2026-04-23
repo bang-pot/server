@@ -65,8 +65,8 @@ final class CrewDto {
 	}
 
 	record CrewScheduleRequest(
-		@Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "from must use yyyy-MM-dd.") String from,
-		@Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "to must use yyyy-MM-dd.") String to
+		@Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "from은 yyyy-MM-dd 형식이어야 합니다.") String from,
+		@Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "to는 yyyy-MM-dd 형식이어야 합니다.") String to
 	) {
 	}
 

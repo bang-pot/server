@@ -28,7 +28,7 @@ import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.auth.infrastructure.logging.AuthAuditLogger;
-import com.bangpot.auth.infrastructure.config.AuthRequiredTermsProperties;
+import com.bangpot.auth.application.config.AuthRequiredTermsProperties;
 import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
@@ -382,6 +382,11 @@ class AuthUseCaseServicesTest {
 				.filter(user -> keyword == null || (user.getNickname() != null && user.getNickname().toLowerCase().contains(keyword)))
 				.sorted((left, right) -> Long.compare(left.getId(), right.getId()))
 				.toList();
+		}
+
+		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
 		}
 
 		@Override

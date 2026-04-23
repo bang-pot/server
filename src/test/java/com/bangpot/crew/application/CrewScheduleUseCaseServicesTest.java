@@ -318,6 +318,11 @@ class CrewScheduleUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			usersById.put(user.getId(), user);
 			return user;

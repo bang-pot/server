@@ -44,12 +44,13 @@ class AuthControllerTest {
 	@Test
 	void returnsGuestStatusWhenNoAuthenticatedUserExists() throws Exception {
 		when(getCurrentAuthUserUseCase.handle(GetCurrentAuthUserUseCase.Query.of(null)))
-			.thenReturn(GetCurrentAuthUserUseCase.View.guest("2026-03-25"));
+			.thenReturn(GetCurrentAuthUserUseCase.View.guest());
 
 		mockMvc.perform(get("/api/auth/me"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.authStatus").value("GUEST"))
 			.andExpect(jsonPath("$.completionRequired").value(false))
+			.andExpect(jsonPath("$.requiredTermsVersion").isEmpty())
 			.andExpect(jsonPath("$.user").doesNotExist());
 	}
 
@@ -102,6 +103,23 @@ class AuthControllerTest {
 			.andExpect(jsonPath("$.completionRequired").value(false))
 			.andExpect(jsonPath("$.user.nickname").value("bangpot"))
 			.andExpect(jsonPath("$.requiredTermsAcceptedAt").value("2026-03-31T00:00:00Z"));
+	}
+
+	@Test
+	void returnsCommonEnvelopeForInternalFailureOnMe() throws Exception {
+		when(getCurrentAuthUserUseCase.handle(GetCurrentAuthUserUseCase.Query.of(77L)))
+			.thenThrow(new IllegalStateException("완료된 회원의 프로필 정보가 없습니다. userId=77"));
+
+		mockMvc.perform(
+			get("/api/auth/me")
+				.header(HttpHeaders.COOKIE, "BANGPOT_ACCESS_TOKEN=test")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isInternalServerError())
+			.andExpect(jsonPath("$.code").value("COMMON_INTERNAL_ERROR"))
+			.andExpect(jsonPath("$.requestId").value("na"))
+			.andExpect(jsonPath("$.fieldErrors").isArray())
+			.andExpect(jsonPath("$.fieldErrors").isEmpty());
 	}
 
 	@Test

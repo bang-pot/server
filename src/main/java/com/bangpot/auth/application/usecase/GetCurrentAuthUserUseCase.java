@@ -41,8 +41,8 @@ public interface GetCurrentAuthUserUseCase {
 		Instant requiredTermsAcceptedAt
 	) {
 
-		public static View guest(String requiredTermsVersion) {
-			return new View(AuthStatus.GUEST, false, null, requiredTermsVersion, null, null);
+		public static View guest() {
+			return new View(AuthStatus.GUEST, false, null, null, null, null);
 		}
 
 		public static View authenticated(

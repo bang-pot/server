@@ -29,7 +29,7 @@ public class GetMyMeetingLogService implements GetMyMeetingLogUseCase {
 
 	@Override
 	public Result handle(Query query) {
-		completedUserAccessService.validateCompletedUser(query.userId(), "meeting log read requires a completed user");
+		completedUserAccessService.validateCompletedUser(query.userId(), "내 방탈로그 조회는 가입 완료 사용자만 가능합니다.");
 		Meeting meeting = meetingRepository.findById(query.meetingId())
 			.orElseThrow(() -> new MeetingNotFoundException(query.meetingId()));
 		return meetingLogRepository.findByMeetingIdAndAuthorUserId(query.meetingId(), query.userId())
@@ -67,4 +67,3 @@ public class GetMyMeetingLogService implements GetMyMeetingLogUseCase {
 		return Result.notWritten();
 	}
 }
-

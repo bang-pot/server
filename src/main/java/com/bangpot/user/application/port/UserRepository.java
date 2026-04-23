@@ -12,6 +12,8 @@ public interface UserRepository {
 
 	List<User> findCompletedUsersByNicknameContaining(String nickname);
 
+	List<User> findAllCompletedUsers();
+
 	User save(User user);
 
 	boolean updateNickname(Long userId, String nickname);

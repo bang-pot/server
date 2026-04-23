@@ -20,9 +20,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.bangpot.auth.application.usecase.LogoutUseCase;
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
+import com.bangpot.auth.application.usecase.LogoutUseCase;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 
@@ -69,7 +69,7 @@ class AuthLogoutControllerTest {
 			"access_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax"
 		);
 		when(getCurrentAuthUserUseCase.handle(GetCurrentAuthUserUseCase.Query.of(null)))
-			.thenReturn(GetCurrentAuthUserUseCase.View.guest("2026-03-25"));
+			.thenReturn(GetCurrentAuthUserUseCase.View.guest());
 
 		mockMvc.perform(post("/api/auth/logout")
 			.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of())))
@@ -79,6 +79,7 @@ class AuthLogoutControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.authStatus").value("GUEST"))
 			.andExpect(jsonPath("$.completionRequired").value(false))
+			.andExpect(jsonPath("$.requiredTermsVersion").isEmpty())
 			.andExpect(jsonPath("$.user").doesNotExist());
 	}
 }

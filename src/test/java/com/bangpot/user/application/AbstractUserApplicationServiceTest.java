@@ -259,6 +259,11 @@ abstract class AbstractUserApplicationServiceTest {
 				.toList();
 		}
 
+		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
 		public UserSearchView searchByNickname(String nickname, int page, int size) {
 			searchCount++;
 			lastSearchPage = page;

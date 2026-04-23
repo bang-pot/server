@@ -101,6 +101,29 @@ public class AuthUser {
 		AuthProvider provider,
 		String providerId,
 		AuthUserStatus status,
+		RequiredTermsAgreement requiredTermsAgreement,
+		String pendingRedirectPath,
+		Instant createdAt,
+		Instant updatedAt
+	) {
+		return rehydrate(
+			id,
+			provider,
+			providerId,
+			status,
+			null,
+			requiredTermsAgreement,
+			pendingRedirectPath,
+			createdAt,
+			updatedAt
+		);
+	}
+
+	public static AuthUser rehydrate(
+		Long id,
+		AuthProvider provider,
+		String providerId,
+		AuthUserStatus status,
 		String nickname,
 		RequiredTermsAgreement requiredTermsAgreement,
 		String pendingRedirectPath,
@@ -142,6 +165,10 @@ public class AuthUser {
 
 	public boolean requiresCompletion() {
 		return status == AuthUserStatus.TEMP;
+	}
+
+	public boolean isTemp() {
+		return requiresCompletion();
 	}
 
 	public void updatePendingRedirectPath(String redirectPath) {

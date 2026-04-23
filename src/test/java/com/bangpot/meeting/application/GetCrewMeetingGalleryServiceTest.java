@@ -126,6 +126,11 @@ class GetCrewMeetingGalleryServiceTest {
 		}
 
 		@Override
+		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
+			return findCompletedUsersByNicknameContaining(null);
+		}
+
+		@Override
 		public User save(User user) {
 			users.put(user.getId(), user);
 			return user;

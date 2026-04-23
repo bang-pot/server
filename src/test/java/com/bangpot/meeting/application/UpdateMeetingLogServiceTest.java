@@ -21,14 +21,14 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"원래 작성한 후기입니다.",
+			"?�래 ?�성???�기?�니??",
 			List.of(CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.jpg", 1024L))
 		));
 
 		var result = updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
 			created.logId(),
 			10L,
-			"수정한 후기입니다.",
+			"?�정???�기?�니??",
 			List.of(
 				UpdateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/b.png", 2048L),
 				UpdateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/c.jpeg", 2048L)
@@ -37,7 +37,7 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
 		assertThat(result.logId()).isEqualTo(created.logId());
 		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 10L));
-		assertThat(detail.body()).isEqualTo("수정한 후기입니다.");
+		assertThat(detail.body()).isEqualTo("?�정???�기?�니??");
 		assertThat(detail.photos()).containsExactly(
 			"https://cdn.example.com/b.png",
 			"https://cdn.example.com/c.jpeg"
@@ -49,12 +49,12 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		completedUser(10L, "host");
 		completedUser(11L, "other");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
-		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "후기입니다.", List.of()));
+		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "?�기?�니??", List.of()));
 
 		assertThatThrownBy(() -> updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
 			created.logId(),
 			11L,
-			"다른 사용자가 수정 시도",
+			"?�른 ?�용?��? ?�정 ?�도",
 			List.of()
 		))).isInstanceOf(AccessDeniedException.class);
 	}
