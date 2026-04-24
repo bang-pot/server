@@ -4,7 +4,11 @@ spring:
     driver-class-name: ${BANGPOT_TEST_DB_DRIVER:org.testcontainers.jdbc.ContainerDatabaseDriver}
     username: ${BANGPOT_TEST_DB_USERNAME:}
     password: ${BANGPOT_TEST_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 0
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: create-drop
     show-sql: false
