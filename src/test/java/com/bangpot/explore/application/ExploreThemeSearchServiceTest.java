@@ -20,6 +20,9 @@ import com.bangpot.explore.application.service.GetExploreFiltersService;
 import com.bangpot.explore.application.service.GetExploreThemesService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 
 class ExploreThemeSearchServiceTest {
@@ -48,21 +51,21 @@ class ExploreThemeSearchServiceTest {
 			"THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0
 		);
 
-		GetExploreThemesUseCase.Result result = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView result = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of("Hongdae", List.of(), null, null, 0, 20)
 		);
 
 		assertThat(result.items()).hasSize(1);
 		assertThat(result.items().getFirst().themeName()).isEqualTo("Deep Blue");
 
-		GetExploreThemesUseCase.Result byThemeName = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView byThemeName = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of("Time", List.of(), null, null, 0, 20)
 		);
 
 		assertThat(byThemeName.items()).hasSize(1);
 		assertThat(byThemeName.items().getFirst().storeName()).isEqualTo("Busan Escape Haeundae");
 
-		GetExploreThemesUseCase.Result byRegion = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView byRegion = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of("Busan", List.of(), null, null, 0, 20)
 		);
 
@@ -76,7 +79,7 @@ class ExploreThemeSearchServiceTest {
 		repository.append(2L, 101L, "Lost Temple", "Store A", "Seoul", "Gangnam", "HORROR", null, 3, "MEDIUM", "3-5 players", 75, 0);
 		repository.append(3L, 102L, "Comedy Room", "Store B", "Seoul", "Mapo", "COMEDY", null, 2, "LOW", "2-3 players", 50, 0);
 
-		GetExploreThemesUseCase.Result firstPage = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView firstPage = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "Seoul", "Gangnam", 0, 1)
 		);
 
@@ -85,14 +88,14 @@ class ExploreThemeSearchServiceTest {
 		assertThat(firstPage.pageInfo().size()).isEqualTo(1);
 		assertThat(firstPage.pageInfo().hasNext()).isTrue();
 
-		GetExploreThemesUseCase.Result secondPage = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView secondPage = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "Seoul", "Gangnam", 1, 1)
 		);
 
 		assertThat(secondPage.items()).hasSize(1);
 		assertThat(secondPage.pageInfo().hasNext()).isFalse();
 		assertThat(secondPage.items())
-			.extracting(GetExploreThemesUseCase.Item::genre)
+			.extracting(ExploreThemeSearchView.Item::genre)
 			.containsOnly("HORROR");
 	}
 
@@ -108,17 +111,32 @@ class ExploreThemeSearchServiceTest {
 		);
 		themeFavoriteRepository.favorite(7L, 1L);
 
-		GetExploreThemesUseCase.Result guestResult = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView guestResult = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(null, null, List.of(), null, null, 0, 20)
 		);
-		GetExploreThemesUseCase.Result userResult = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView userResult = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(7L, null, List.of(), null, null, 0, 20)
 		);
 
-		assertThat(guestResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorite)
+		assertThat(guestResult.items()).extracting(ExploreThemeSearchView.Item::isFavorite)
 			.containsExactly(false, false);
-		assertThat(userResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorite)
+		assertThat(userResult.items()).extracting(ExploreThemeSearchView.Item::isFavorite)
 			.containsExactly(false, true);
+	}
+
+	@Test
+	void skipsFavoriteLookupWhenAuthenticatedSearchResultIsEmpty() {
+		repository.append(
+			1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam",
+			"HORROR", null, 4, "HIGH", "2-4 players", 60, 3
+		);
+
+		ExploreThemeSearchView result = getExploreThemesUseCase.handle(
+			GetExploreThemesUseCase.Query.of(7L, "No Match", List.of(), null, null, 0, 20)
+		);
+
+		assertThat(result.items()).isEmpty();
+		assertThat(themeFavoriteRepository.findFavoritedThemeIdsCallCount).isZero();
 	}
 
 	@Test
@@ -127,7 +145,7 @@ class ExploreThemeSearchServiceTest {
 		repository.append(2L, 102L, "Lost Temple", "Store B", "Seoul", "Mapo", "THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0);
 		repository.append(3L, 103L, "Comedy Room", "Store C", "Busan", "Haeundae", "COMEDY", null, 2, "LOW", "2-3 players", 50, 0);
 
-		GetExploreFiltersUseCase.Result result = getExploreFiltersUseCase.handle();
+		ExploreFiltersView result = getExploreFiltersUseCase.handle();
 
 		assertThat(result.genres()).containsExactly("COMEDY", "HORROR", "THRILLER");
 		assertThat(result.regions()).hasSize(2);
@@ -174,19 +192,19 @@ class ExploreThemeSearchServiceTest {
 		}
 
 		@Override
-		public SearchResult search(Condition condition) {
+		public ExploreThemeSearchView search(SearchCondition searchCondition) {
 			List<Row> filtered = rows.stream()
-				.filter(row -> matchesKeyword(row, condition.keyword()))
-				.filter(row -> matchesGenres(row, condition.genres()))
-				.filter(row -> matchesRegion(row, condition.region()))
-				.filter(row -> matchesDistrict(row, condition.district()))
+				.filter(row -> matchesKeyword(row, searchCondition.keyword()))
+				.filter(row -> matchesGenres(row, searchCondition.genres()))
+				.filter(row -> matchesRegion(row, searchCondition.region()))
+				.filter(row -> matchesDistrict(row, searchCondition.district()))
 				.sorted(Comparator.comparing(Row::themeId).reversed())
 				.toList();
 
-			int fromIndex = Math.min(condition.page() * condition.size(), filtered.size());
-			int toIndex = Math.min(fromIndex + condition.size(), filtered.size());
-			List<GetExploreThemesUseCase.Item> items = filtered.subList(fromIndex, toIndex).stream()
-				.map(row -> GetExploreThemesUseCase.Item.of(
+			int fromIndex = Math.min(searchCondition.page() * searchCondition.size(), filtered.size());
+			int toIndex = Math.min(fromIndex + searchCondition.size(), filtered.size());
+			List<ExploreThemeSearchView.Item> items = filtered.subList(fromIndex, toIndex).stream()
+				.map(row -> ExploreThemeSearchView.Item.of(
 					row.themeId(),
 					row.themeName(),
 					row.storeId(),
@@ -198,31 +216,30 @@ class ExploreThemeSearchServiceTest {
 					row.activityLabel(),
 					row.recommendedPlayers(),
 					row.runningTimeMinutes(),
-					row.favoriteCount(),
-					false
+					row.favoriteCount()
 				))
 				.toList();
 
 			boolean hasNext = toIndex < filtered.size();
-			return SearchResult.of(
+			return ExploreThemeSearchView.of(
 				items,
-				GetExploreThemesUseCase.PageInfo.of(condition.page(), condition.size(), hasNext)
+				ExploreThemeSearchView.PageInfo.of(searchCondition.page(), searchCondition.size(), hasNext)
 			);
 		}
 
 		@Override
-		public GetExploreFiltersUseCase.Result getFilters() {
+		public ExploreFiltersView getFilters() {
 			List<String> genres = rows.stream()
 				.map(Row::genre)
 				.distinct()
 				.sorted()
 				.toList();
 
-			List<GetExploreFiltersUseCase.RegionOption> regions = rows.stream()
+			List<ExploreFiltersView.Region> regions = rows.stream()
 				.collect(java.util.stream.Collectors.groupingBy(Row::region))
 				.entrySet()
 				.stream()
-				.map(entry -> GetExploreFiltersUseCase.RegionOption.of(
+				.map(entry -> ExploreFiltersView.Region.of(
 					entry.getKey(),
 					entry.getValue().stream()
 						.map(Row::district)
@@ -230,14 +247,14 @@ class ExploreThemeSearchServiceTest {
 						.sorted()
 						.toList()
 				))
-				.sorted(Comparator.comparing(GetExploreFiltersUseCase.RegionOption::name))
+				.sorted(Comparator.comparing(ExploreFiltersView.Region::name))
 				.toList();
 
-			return GetExploreFiltersUseCase.Result.of(genres, regions);
+			return ExploreFiltersView.of(genres, regions);
 		}
 
 		@Override
-		public Optional<ThemeDetail> getThemeDetail(Long themeId) {
+		public Optional<ExploreThemeDetailView> getThemeDetail(Long themeId) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -297,6 +314,7 @@ class ExploreThemeSearchServiceTest {
 
 	private static final class InMemoryThemeFavoriteRepository implements ThemeFavoriteRepository {
 		private final Map<Long, Set<Long>> favoriteThemeIdsByUserId = new HashMap<>();
+		private int findFavoritedThemeIdsCallCount;
 
 		@Override
 		public boolean create(Long userId, Long themeId, java.time.Instant createdAt) {
@@ -309,12 +327,8 @@ class ExploreThemeSearchServiceTest {
 		}
 
 		@Override
-		public boolean exists(Long userId, Long themeId) {
-			return favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).contains(themeId);
-		}
-
-		@Override
 		public Set<Long> findFavoritedThemeIds(Long userId, List<Long> themeIds) {
+			findFavoritedThemeIdsCallCount++;
 			Set<Long> favorites = favoriteThemeIdsByUserId.getOrDefault(userId, Set.of());
 			return themeIds.stream()
 				.filter(favorites::contains)

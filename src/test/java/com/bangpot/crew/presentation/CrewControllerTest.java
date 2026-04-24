@@ -33,6 +33,7 @@ import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
+import com.bangpot.crew.application.usecase.GetMeetingCreateCrewsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
@@ -68,6 +69,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private GetCrewMembersUseCase getCrewMembersUseCase;
+
+	@MockitoBean
+	private GetMeetingCreateCrewsUseCase getMeetingCreateCrewsUseCase;
 
 	@MockitoBean
 	private GetCrewPoliciesUseCase getCrewPoliciesUseCase;
@@ -339,6 +343,33 @@ class CrewControllerTest {
 	@Test
 	void returnsUnauthorizedWhenCrewMembersAreRequestedWithoutAuthentication() throws Exception {
 		mockMvc.perform(get("/api/crews/1/members"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	@Test
+	void returnsMyCrewsForMeetingCreateWhenAuthenticated() throws Exception {
+		when(getMeetingCreateCrewsUseCase.handle(GetMeetingCreateCrewsUseCase.Query.of(7L)))
+			.thenReturn(GetMeetingCreateCrewsUseCase.Result.of(
+				List.of(
+					GetMeetingCreateCrewsUseCase.CrewItem.of(101L, "Alpha Crew"),
+					GetMeetingCreateCrewsUseCase.CrewItem.of(202L, "Beta Crew")
+				)
+			));
+
+		mockMvc.perform(
+			get("/api/crews/me/meeting-create")
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crews[0].crewId").value(101))
+			.andExpect(jsonPath("$.crews[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.crews[1].crewId").value(202));
+	}
+
+	@Test
+	void returnsUnauthorizedWhenMeetingCreateCrewsIsUnauthenticated() throws Exception {
+		mockMvc.perform(get("/api/crews/me/meeting-create"))
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}

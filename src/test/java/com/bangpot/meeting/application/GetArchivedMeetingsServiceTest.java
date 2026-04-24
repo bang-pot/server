@@ -18,7 +18,9 @@ import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.explore.application.port.ExploreQueryRepository;
-import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
 import com.bangpot.meeting.application.service.GetArchivedMeetingsService;
@@ -126,17 +128,17 @@ class GetArchivedMeetingsServiceTest {
 		private final Map<String, String> posters = new HashMap<>();
 
 		@Override
-		public SearchResult search(Condition condition) {
+		public ExploreThemeSearchView search(SearchCondition searchCondition) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public GetExploreFiltersUseCase.Result getFilters() {
+		public ExploreFiltersView getFilters() {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public Optional<ThemeDetail> getThemeDetail(Long themeId) {
+		public Optional<ExploreThemeDetailView> getThemeDetail(Long themeId) {
 			throw new UnsupportedOperationException();
 		}
 

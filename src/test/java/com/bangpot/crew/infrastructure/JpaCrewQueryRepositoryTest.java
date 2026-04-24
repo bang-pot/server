@@ -12,6 +12,7 @@ import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 
 @DataJpaTest
 @Import(JpaCrewQueryRepository.class)
@@ -77,6 +78,32 @@ class JpaCrewQueryRepositoryTest {
 
 		assertThat(result.items()).hasSize(1);
 		assertThat(result.items().get(0).crewId()).isEqualTo(second.getId());
+	}
+
+	@Test
+	void returnsMeetingCreateCrewsForActiveMembershipsOnly() {
+		insertUser(1L, "member");
+		insertUser(2L, "left-member");
+
+		Crew alpha = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		Crew beta = entityManager.persist(Crew.create("Beta Crew", "desc", CrewVisibility.PUBLIC, null));
+		Crew deletedCrew = entityManager.persist(Crew.create("Deleted Crew", "desc", CrewVisibility.PUBLIC, null));
+		deletedCrew.delete();
+		entityManager.persistAndFlush(deletedCrew);
+
+		entityManager.persistAndFlush(CrewMember.createMember(beta.getId(), 1L));
+		entityManager.persistAndFlush(CrewMember.createLeader(alpha.getId(), 1L));
+		entityManager.persistAndFlush(CrewMember.createMember(deletedCrew.getId(), 1L));
+		CrewMember leftMember = CrewMember.createMember(alpha.getId(), 2L);
+		leftMember.leave();
+		entityManager.persistAndFlush(leftMember);
+
+		entityManager.clear();
+
+		MeetingCreateCrewsView result = repository.findMeetingCreateCrewsByMemberUserId(1L);
+
+		assertThat(result.items()).extracting(MeetingCreateCrewsView.Item::crewName)
+			.containsExactly("Alpha Crew", "Beta Crew");
 	}
 
 	private void insertUser(Long userId, String nickname) {

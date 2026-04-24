@@ -16,8 +16,10 @@ import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
 import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.service.GetExploreThemeDetailService;
-import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 
 class GetExploreThemeDetailServiceTest {
@@ -35,7 +37,7 @@ class GetExploreThemeDetailServiceTest {
 
 	@Test
 	void returnsThemeDetailWithRelatedThemes() {
-		repository.detail = ExploreQueryRepository.ThemeDetail.of(
+		repository.detail = ExploreThemeDetailView.of(
 			5L,
 			"Deep Blue",
 			1L,
@@ -48,7 +50,7 @@ class GetExploreThemeDetailServiceTest {
 			"Deep sea mystery theme",
 			"https://example.com/deep-blue",
 			List.of(
-				ExploreQueryRepository.RelatedThemeSummary.of(
+				ExploreThemeDetailView.RelatedTheme.of(
 					1L,
 					"Laugh Track",
 					1L,
@@ -60,7 +62,7 @@ class GetExploreThemeDetailServiceTest {
 					50,
 					4
 				),
-				ExploreQueryRepository.RelatedThemeSummary.of(
+				ExploreThemeDetailView.RelatedTheme.of(
 					3L,
 					"Time Attack",
 					1L,
@@ -78,20 +80,20 @@ class GetExploreThemeDetailServiceTest {
 		themeFavoriteRepository.favorite(7L, 5L);
 		themeFavoriteRepository.favorite(7L, 1L);
 
-		GetExploreThemeDetailUseCase.Result result = useCase.handle(GetExploreThemeDetailUseCase.Query.of(7L, 5L));
+		ExploreThemeDetailView result = useCase.handle(GetExploreThemeDetailUseCase.Query.of(7L, 5L));
 
 		assertThat(result.themeId()).isEqualTo(5L);
 		assertThat(result.themeName()).isEqualTo("Deep Blue");
 		assertThat(result.isFavorite()).isTrue();
 		assertThat(result.relatedThemes()).hasSize(2);
 		assertThat(result.relatedThemes())
-			.extracting(GetExploreThemeDetailUseCase.RelatedTheme::themeName)
+			.extracting(ExploreThemeDetailView.RelatedTheme::themeName)
 			.containsExactly("Laugh Track", "Time Attack");
 		assertThat(result.relatedThemes())
-			.extracting(GetExploreThemeDetailUseCase.RelatedTheme::favoriteCount)
+			.extracting(ExploreThemeDetailView.RelatedTheme::favoriteCount)
 			.containsExactly(4, 1);
 		assertThat(result.relatedThemes())
-			.extracting(GetExploreThemeDetailUseCase.RelatedTheme::isFavorite)
+			.extracting(ExploreThemeDetailView.RelatedTheme::isFavorite)
 			.containsExactly(true, false);
 	}
 
@@ -103,20 +105,20 @@ class GetExploreThemeDetailServiceTest {
 
 	private static final class InMemoryExploreQueryRepository implements ExploreQueryRepository {
 
-		private ThemeDetail detail;
+		private ExploreThemeDetailView detail;
 
 		@Override
-		public SearchResult search(Condition condition) {
+		public ExploreThemeSearchView search(SearchCondition searchCondition) {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public GetExploreFiltersUseCase.Result getFilters() {
+		public ExploreFiltersView getFilters() {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public Optional<ThemeDetail> getThemeDetail(Long themeId) {
+		public Optional<ExploreThemeDetailView> getThemeDetail(Long themeId) {
 			if (detail == null || !detail.themeId().equals(themeId)) {
 				return Optional.empty();
 			}
@@ -145,11 +147,6 @@ class GetExploreThemeDetailServiceTest {
 		@Override
 		public boolean delete(Long userId, Long themeId) {
 			return favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).remove(themeId);
-		}
-
-		@Override
-		public boolean exists(Long userId, Long themeId) {
-			return userId != null && favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).contains(themeId);
 		}
 
 		@Override

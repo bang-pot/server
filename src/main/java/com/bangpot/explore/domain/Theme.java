@@ -129,14 +129,6 @@ public class Theme {
 		);
 	}
 
-	public void increaseFavoriteCount() {
-		favoriteCount = favoriteCount + 1;
-	}
-
-	public void decreaseFavoriteCount() {
-		favoriteCount = Math.max(0, favoriteCount - 1);
-	}
-
 	public static Theme create(
 		Long storeId,
 		String name,

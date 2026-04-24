@@ -1,13 +1,14 @@
 package com.bangpot.explore.infrastructure;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
-import com.bangpot.explore.domain.ThemeFavorite;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,24 +17,20 @@ import lombok.RequiredArgsConstructor;
 class JpaThemeFavoriteRepository implements ThemeFavoriteRepository {
 
 	private final ThemeFavoriteJpaRepository themeFavoriteJpaRepository;
+	private final JdbcTemplate jdbcTemplate;
 
 	@Override
 	public boolean create(Long userId, Long themeId, Instant createdAt) {
-		if (themeFavoriteJpaRepository.existsByUserIdAndThemeId(userId, themeId)) {
-			return false;
-		}
-		themeFavoriteJpaRepository.save(ThemeFavorite.create(userId, themeId, createdAt));
-		return true;
+		return jdbcTemplate.update("""
+			insert into theme_favorites (user_id, theme_id, created_at)
+			values (?, ?, ?)
+			on conflict (user_id, theme_id) do nothing
+			""", userId, themeId, Timestamp.from(createdAt)) > 0;
 	}
 
 	@Override
 	public boolean delete(Long userId, Long themeId) {
 		return themeFavoriteJpaRepository.deleteByUserIdAndThemeId(userId, themeId) > 0;
-	}
-
-	@Override
-	public boolean exists(Long userId, Long themeId) {
-		return themeFavoriteJpaRepository.existsByUserIdAndThemeId(userId, themeId);
 	}
 
 	@Override

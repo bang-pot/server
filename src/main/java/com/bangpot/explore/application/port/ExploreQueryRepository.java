@@ -4,23 +4,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
-import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 
 public interface ExploreQueryRepository {
 
-	SearchResult search(Condition condition);
+	ExploreThemeSearchView search(SearchCondition searchCondition);
 
-	GetExploreFiltersUseCase.Result getFilters();
+	ExploreFiltersView getFilters();
 
-	Optional<ThemeDetail> getThemeDetail(Long themeId);
+	Optional<ExploreThemeDetailView> getThemeDetail(Long themeId);
 
 	Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames);
 
 	ThemePreviewView findThemePreviewView(Long userId, int limit);
 
-	record Condition(
+	record SearchCondition(
 		String keyword,
 		List<String> genres,
 		String region,
@@ -28,7 +29,7 @@ public interface ExploreQueryRepository {
 		int page,
 		int size
 	) {
-		public static Condition of(
+		public static SearchCondition of(
 			String keyword,
 			List<String> genres,
 			String region,
@@ -36,103 +37,8 @@ public interface ExploreQueryRepository {
 			int page,
 			int size
 		) {
-			return new Condition(keyword, genres, region, district, page, size);
+			return new SearchCondition(keyword, genres, region, district, page, size);
 		}
 	}
 
-	record SearchResult(
-		List<GetExploreThemesUseCase.Item> items,
-		GetExploreThemesUseCase.PageInfo pageInfo
-	) {
-		public static SearchResult of(
-			List<GetExploreThemesUseCase.Item> items,
-			GetExploreThemesUseCase.PageInfo pageInfo
-		) {
-			return new SearchResult(items, pageInfo);
-		}
-	}
-
-	record RelatedThemeSummary(
-		Long themeId,
-		String themeName,
-		Long storeId,
-		String storeName,
-		String regionLabel,
-		String genre,
-		String posterImageUrl,
-		Integer difficulty,
-		Integer runningTimeMinutes,
-		Integer favoriteCount
-	) {
-		public static RelatedThemeSummary of(
-			Long themeId,
-			String themeName,
-			Long storeId,
-			String storeName,
-			String regionLabel,
-			String genre,
-			String posterImageUrl,
-			Integer difficulty,
-			Integer runningTimeMinutes,
-			Integer favoriteCount
-		) {
-			return new RelatedThemeSummary(
-				themeId,
-				themeName,
-				storeId,
-				storeName,
-				regionLabel,
-				genre,
-				posterImageUrl,
-				difficulty,
-				runningTimeMinutes,
-				favoriteCount
-			);
-		}
-	}
-
-	record ThemeDetail(
-		Long themeId,
-		String themeName,
-		Long storeId,
-		String storeName,
-		String regionLabel,
-		String genre,
-		String posterImageUrl,
-		Integer difficulty,
-		Integer runningTimeMinutes,
-		String description,
-		String externalLink,
-		List<RelatedThemeSummary> relatedThemes
-	) {
-		public static ThemeDetail of(
-			Long themeId,
-			String themeName,
-			Long storeId,
-			String storeName,
-			String regionLabel,
-			String genre,
-			String posterImageUrl,
-			Integer difficulty,
-			Integer runningTimeMinutes,
-			String description,
-			String externalLink,
-			List<RelatedThemeSummary> relatedThemes
-		) {
-			return new ThemeDetail(
-				themeId,
-				themeName,
-				storeId,
-				storeName,
-				regionLabel,
-				genre,
-				posterImageUrl,
-				difficulty,
-				runningTimeMinutes,
-				description,
-				externalLink,
-				relatedThemes
-			);
-		}
-	}
 }

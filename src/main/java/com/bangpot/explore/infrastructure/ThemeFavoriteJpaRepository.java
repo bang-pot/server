@@ -15,8 +15,6 @@ import com.bangpot.explore.domain.view.MyFavoriteThemesView;
 
 interface ThemeFavoriteJpaRepository extends JpaRepository<ThemeFavorite, Long> {
 
-	boolean existsByUserIdAndThemeId(Long userId, Long themeId);
-
 	@Modifying
 	long deleteByUserIdAndThemeId(Long userId, Long themeId);
 

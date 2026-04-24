@@ -20,6 +20,20 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: bangpot_test
+          POSTGRES_USER: bangpot
+          POSTGRES_PASSWORD: bangpot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bangpot -d bangpot_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
@@ -36,4 +50,9 @@ jobs:
         run: chmod +x gradlew
 
       - name: Verify backend
+        env:
+          BANGPOT_TEST_DB_URL: jdbc:postgresql://localhost:5432/bangpot_test
+          BANGPOT_TEST_DB_DRIVER: org.postgresql.Driver
+          BANGPOT_TEST_DB_USERNAME: bangpot
+          BANGPOT_TEST_DB_PASSWORD: bangpot
         run: ./gradlew lint test build --no-daemon

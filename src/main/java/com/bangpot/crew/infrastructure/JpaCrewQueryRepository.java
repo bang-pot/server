@@ -11,6 +11,7 @@ import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
@@ -68,6 +69,15 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 			CrewStatus.ACTIVE,
 			CrewVisibility.PUBLIC
 		);
+	}
+
+	@Override
+	public MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+		return MeetingCreateCrewsView.of(crewJpaRepository.findMeetingCreateCrewItemsByMemberUserId(
+			userId,
+			CrewMemberStatus.ACTIVE,
+			CrewStatus.ACTIVE
+		));
 	}
 
 	@Override

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
@@ -13,7 +14,32 @@ import com.bangpot.explore.domain.Theme;
 
 interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 
-	Optional<Theme> findByIdAndActiveTrue(Long themeId);
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+		update Theme t
+		set t.favoriteCount = t.favoriteCount + 1
+		where t.id = :themeId
+		  and t.active = true
+		""")
+	int increaseFavoriteCount(@Param("themeId") Long themeId);
+
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+		update Theme t
+		set t.favoriteCount = t.favoriteCount - 1
+		where t.id = :themeId
+		  and t.active = true
+		  and t.favoriteCount > 0
+		""")
+	int decreaseFavoriteCount(@Param("themeId") Long themeId);
+
+	@Query("""
+		select t.favoriteCount
+		from Theme t
+		where t.id = :themeId
+		  and t.active = true
+		""")
+	Optional<Integer> findActiveFavoriteCountById(@Param("themeId") Long themeId);
 
 	@Query("""
 		select t.id as themeId,

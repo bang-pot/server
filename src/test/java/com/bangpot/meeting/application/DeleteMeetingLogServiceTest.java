@@ -55,7 +55,7 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			1L,
 			created.logId(),
 			10L,
-			"?댁쁺 ?뺤콉??留욎? ?딅뒗 ?꾧린"
+			"운영 정책에 맞지 않는 기록"
 		));
 
 		assertThat(result.logId()).isEqualTo(created.logId());

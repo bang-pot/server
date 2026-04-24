@@ -2,12 +2,12 @@ package com.bangpot.explore.presentation;
 
 import java.util.List;
 
-import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
-import com.bangpot.explore.application.usecase.GetExploreMeetingCreateCrewsUseCase;
-import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
-import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 import com.bangpot.explore.application.usecase.AddThemeFavoriteUseCase;
+import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 import com.bangpot.explore.application.usecase.RemoveThemeFavoriteUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 
 final class ExploreDtoMapper {
 
@@ -26,7 +26,7 @@ final class ExploreDtoMapper {
 		return GetExploreThemesUseCase.Query.of(userId, keyword, genres, region, district, page, size);
 	}
 
-	static ExploreDto.ExploreThemeListResponse toResponse(GetExploreThemesUseCase.Result result) {
+	static ExploreDto.ExploreThemeListResponse toResponse(ExploreThemeSearchView result) {
 		return new ExploreDto.ExploreThemeListResponse(
 			result.items().stream()
 				.map(ExploreDtoMapper::toResponse)
@@ -39,7 +39,7 @@ final class ExploreDtoMapper {
 		);
 	}
 
-	static ExploreDto.ExploreFiltersResponse toResponse(GetExploreFiltersUseCase.Result result) {
+	static ExploreDto.ExploreFiltersResponse toResponse(ExploreFiltersView result) {
 		return new ExploreDto.ExploreFiltersResponse(
 			result.genres(),
 			result.regions().stream()
@@ -48,7 +48,7 @@ final class ExploreDtoMapper {
 		);
 	}
 
-	static ExploreDto.ExploreThemeDetailResponse toResponse(GetExploreThemeDetailUseCase.Result result) {
+	static ExploreDto.ExploreThemeDetailResponse toResponse(ExploreThemeDetailView result) {
 		return new ExploreDto.ExploreThemeDetailResponse(
 			result.themeId(),
 			result.themeName(),
@@ -76,15 +76,7 @@ final class ExploreDtoMapper {
 		return new ExploreDto.ThemeFavoriteResponse(result.themeId(), result.isFavorite(), result.favoriteCount());
 	}
 
-	static ExploreDto.ExploreMeetingCreateCrewsResponse toResponse(GetExploreMeetingCreateCrewsUseCase.Result result) {
-		return new ExploreDto.ExploreMeetingCreateCrewsResponse(
-			result.crews().stream()
-				.map(crew -> new ExploreDto.ExploreMeetingCreateCrewResponse(crew.crewId(), crew.crewName()))
-				.toList()
-		);
-	}
-
-	private static ExploreDto.ExploreThemeCardResponse toResponse(GetExploreThemesUseCase.Item item) {
+	private static ExploreDto.ExploreThemeCardResponse toResponse(ExploreThemeSearchView.Item item) {
 		return new ExploreDto.ExploreThemeCardResponse(
 			item.themeId(),
 			item.themeName(),
@@ -103,7 +95,7 @@ final class ExploreDtoMapper {
 	}
 
 	private static ExploreDto.ExploreThemeDetailRelatedThemeResponse toResponse(
-		GetExploreThemeDetailUseCase.RelatedTheme item
+		ExploreThemeDetailView.RelatedTheme item
 	) {
 		return new ExploreDto.ExploreThemeDetailRelatedThemeResponse(
 			item.themeId(),

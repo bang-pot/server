@@ -17,8 +17,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
-import com.bangpot.explore.application.port.FavoriteThemeTargetRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
+import com.bangpot.explore.application.port.ThemeRepository;
 import com.bangpot.explore.application.service.AddThemeFavoriteService;
 import com.bangpot.explore.application.service.RemoveThemeFavoriteService;
 import com.bangpot.explore.application.usecase.AddThemeFavoriteUseCase;
@@ -64,7 +64,7 @@ class ThemeFavoriteMutationServiceTest {
 		assertThat(result.themeId()).isEqualTo(5L);
 		assertThat(result.isFavorite()).isTrue();
 		assertThat(result.favoriteCount()).isEqualTo(1);
-		assertThat(themeFavoriteRepository.exists(7L, 5L)).isTrue();
+		assertThat(themeFavoriteRepository.findFavoritedThemeIds(7L, List.of(5L))).containsExactly(5L);
 		assertThat(theme.getFavoriteCount()).isEqualTo(1);
 	}
 
@@ -73,7 +73,7 @@ class ThemeFavoriteMutationServiceTest {
 		userRepository.save(User.create(7L, "alpha"));
 		Theme theme = themeRepository.save(activeTheme(5L));
 		themeFavoriteRepository.create(7L, 5L, Instant.now());
-		theme.increaseFavoriteCount();
+		setFavoriteCount(theme, 1);
 
 		AddThemeFavoriteUseCase.Result result = addThemeFavoriteUseCase.handle(AddThemeFavoriteUseCase.Command.of(7L, 5L));
 
@@ -86,7 +86,7 @@ class ThemeFavoriteMutationServiceTest {
 		userRepository.save(User.create(7L, "alpha"));
 		Theme theme = themeRepository.save(activeTheme(5L));
 		themeFavoriteRepository.create(7L, 5L, Instant.now());
-		theme.increaseFavoriteCount();
+		setFavoriteCount(theme, 1);
 
 		RemoveThemeFavoriteUseCase.Result result = removeThemeFavoriteUseCase.handle(
 			RemoveThemeFavoriteUseCase.Command.of(7L, 5L)
@@ -95,7 +95,7 @@ class ThemeFavoriteMutationServiceTest {
 		assertThat(result.themeId()).isEqualTo(5L);
 		assertThat(result.isFavorite()).isFalse();
 		assertThat(result.favoriteCount()).isEqualTo(0);
-		assertThat(themeFavoriteRepository.exists(7L, 5L)).isFalse();
+		assertThat(themeFavoriteRepository.findFavoritedThemeIds(7L, List.of(5L))).isEmpty();
 		assertThat(theme.getFavoriteCount()).isZero();
 	}
 
@@ -134,23 +134,46 @@ class ThemeFavoriteMutationServiceTest {
 		return theme;
 	}
 
-	private static final class InMemoryThemeRepository implements FavoriteThemeTargetRepository {
+	private void setFavoriteCount(Theme theme, int favoriteCount) {
+		ReflectionTestUtils.setField(theme, "favoriteCount", favoriteCount);
+	}
+
+	private static final class InMemoryThemeRepository implements ThemeRepository {
 
 		private final Map<Long, Theme> themes = new HashMap<>();
 
+		public Theme save(Theme theme) {
+			themes.put(theme.getId(), theme);
+			return theme;
+		}
+
 		@Override
-		public Optional<Theme> findActiveById(Long themeId) {
+		public boolean increaseFavoriteCount(Long themeId) {
+			Theme theme = themes.get(themeId);
+			if (theme == null || !theme.isActive()) {
+				return false;
+			}
+			ReflectionTestUtils.setField(theme, "favoriteCount", theme.getFavoriteCount() + 1);
+			return true;
+		}
+
+		@Override
+		public boolean decreaseFavoriteCount(Long themeId) {
+			Theme theme = themes.get(themeId);
+			if (theme == null || !theme.isActive() || theme.getFavoriteCount() <= 0) {
+				return false;
+			}
+			ReflectionTestUtils.setField(theme, "favoriteCount", theme.getFavoriteCount() - 1);
+			return true;
+		}
+
+		@Override
+		public Optional<Integer> findActiveFavoriteCountById(Long themeId) {
 			Theme theme = themes.get(themeId);
 			if (theme == null || !theme.isActive()) {
 				return Optional.empty();
 			}
-			return Optional.of(theme);
-		}
-
-		@Override
-		public Theme save(Theme theme) {
-			themes.put(theme.getId(), theme);
-			return theme;
+			return Optional.of(theme.getFavoriteCount());
 		}
 	}
 
@@ -170,11 +193,6 @@ class ThemeFavoriteMutationServiceTest {
 				return false;
 			}
 			return favoriteThemeIds.remove(themeId);
-		}
-
-		@Override
-		public boolean exists(Long userId, Long themeId) {
-			return favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).contains(themeId);
 		}
 
 		@Override

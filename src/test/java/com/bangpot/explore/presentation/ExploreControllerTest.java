@@ -22,12 +22,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
+import com.bangpot.explore.application.usecase.AddThemeFavoriteUseCase;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
-import com.bangpot.explore.application.usecase.GetExploreMeetingCreateCrewsUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
-import com.bangpot.explore.application.usecase.AddThemeFavoriteUseCase;
 import com.bangpot.explore.application.usecase.RemoveThemeFavoriteUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -48,9 +50,6 @@ class ExploreControllerTest {
 	private GetExploreThemeDetailUseCase getExploreThemeDetailUseCase;
 
 	@MockitoBean
-	private GetExploreMeetingCreateCrewsUseCase getExploreMeetingCreateCrewsUseCase;
-
-	@MockitoBean
 	private AddThemeFavoriteUseCase addThemeFavoriteUseCase;
 
 	@MockitoBean
@@ -66,9 +65,9 @@ class ExploreControllerTest {
 			"Mapo",
 			0,
 			20
-		))).thenReturn(GetExploreThemesUseCase.Result.of(
+		))).thenReturn(ExploreThemeSearchView.of(
 			List.of(
-				GetExploreThemesUseCase.Item.of(
+				ExploreThemeSearchView.Item.of(
 					1L,
 					"Deep Blue",
 					101L,
@@ -84,7 +83,7 @@ class ExploreControllerTest {
 					false
 				)
 			),
-			GetExploreThemesUseCase.PageInfo.of(0, 20, true)
+			ExploreThemeSearchView.PageInfo.of(0, 20, true)
 		));
 
 		mockMvc.perform(
@@ -109,11 +108,11 @@ class ExploreControllerTest {
 
 	@Test
 	void returnsFilterOptionsWithoutAuthentication() throws Exception {
-		when(getExploreFiltersUseCase.handle()).thenReturn(GetExploreFiltersUseCase.Result.of(
+		when(getExploreFiltersUseCase.handle()).thenReturn(ExploreFiltersView.of(
 			List.of("COMEDY", "HORROR"),
 			List.of(
-				GetExploreFiltersUseCase.RegionOption.of("Busan", List.of("Haeundae")),
-				GetExploreFiltersUseCase.RegionOption.of("Seoul", List.of("Gangnam", "Mapo"))
+				ExploreFiltersView.Region.of("Busan", List.of("Haeundae")),
+				ExploreFiltersView.Region.of("Seoul", List.of("Gangnam", "Mapo"))
 			)
 		));
 
@@ -138,7 +137,7 @@ class ExploreControllerTest {
 	@Test
 	void returnsThemeDetailWithoutAuthentication() throws Exception {
 		when(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(null, 5L)))
-			.thenReturn(GetExploreThemeDetailUseCase.Result.of(
+			.thenReturn(ExploreThemeDetailView.of(
 				5L,
 				"Deep Blue",
 				1L,
@@ -152,7 +151,7 @@ class ExploreControllerTest {
 				"https://example.com/deep-blue",
 				false,
 				List.of(
-					GetExploreThemeDetailUseCase.RelatedTheme.of(
+					ExploreThemeDetailView.RelatedTheme.of(
 						1L,
 						"Laugh Track",
 						1L,
@@ -192,9 +191,9 @@ class ExploreControllerTest {
 			null,
 			0,
 			20
-		))).thenReturn(GetExploreThemesUseCase.Result.of(
+		))).thenReturn(ExploreThemeSearchView.of(
 			List.of(
-				GetExploreThemesUseCase.Item.of(
+				ExploreThemeSearchView.Item.of(
 					1L,
 					"Deep Blue",
 					101L,
@@ -210,10 +209,10 @@ class ExploreControllerTest {
 					true
 				)
 			),
-			GetExploreThemesUseCase.PageInfo.of(0, 20, false)
+			ExploreThemeSearchView.PageInfo.of(0, 20, false)
 		));
 		when(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(7L, 5L)))
-			.thenReturn(GetExploreThemeDetailUseCase.Result.of(
+			.thenReturn(ExploreThemeDetailView.of(
 				5L,
 				"Deep Blue",
 				1L,
@@ -252,33 +251,6 @@ class ExploreControllerTest {
 		mockMvc.perform(get("/api/explore/themes/999"))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.code").value("EXPLORE_THEME_NOT_FOUND"));
-	}
-
-	@Test
-	void returnsMyCrewsForMeetingCreateWhenAuthenticated() throws Exception {
-		when(getExploreMeetingCreateCrewsUseCase.handle(GetExploreMeetingCreateCrewsUseCase.Query.of(7L)))
-			.thenReturn(GetExploreMeetingCreateCrewsUseCase.Result.of(
-				List.of(
-					GetExploreMeetingCreateCrewsUseCase.CrewItem.of(101L, "Alpha Crew"),
-					GetExploreMeetingCreateCrewsUseCase.CrewItem.of(202L, "Beta Crew")
-				)
-			));
-
-		mockMvc.perform(
-			get("/api/explore/meeting-create/crews")
-				.principal(new UsernamePasswordAuthenticationToken(7L, null))
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.crews[0].crewId").value(101))
-			.andExpect(jsonPath("$.crews[0].crewName").value("Alpha Crew"))
-			.andExpect(jsonPath("$.crews[1].crewId").value(202));
-	}
-
-	@Test
-	void returnsUnauthorizedWhenMeetingCreateCrewsIsUnauthenticated() throws Exception {
-		mockMvc.perform(get("/api/explore/meeting-create/crews"))
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
 	}
 
 	@Test

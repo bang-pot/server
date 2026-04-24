@@ -23,9 +23,8 @@ import com.bangpot.explore.domain.view.MyFavoriteThemesView;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.application.port.CrewJoinRequestQueryRepository;
 import com.bangpot.crew.application.port.CrewQueryRepository;
-import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
-import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
+import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequest;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
@@ -35,10 +34,10 @@ import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.MyPendingCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
-import com.bangpot.meeting.domain.MeetingResult;
-import com.bangpot.meeting.domain.MeetingStatus;
-import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
+import com.bangpot.meeting.application.port.MeetingLogRepository;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
+import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingLog;
 import com.bangpot.meeting.domain.view.MyCalendarView;
@@ -46,8 +45,6 @@ import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 import com.bangpot.meeting.domain.view.MyMeetingLogsView;
 import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
-import com.bangpot.meeting.application.port.MeetingLogRepository;
-import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.port.UserQueryRepository;
 import com.bangpot.user.application.service.CheckNicknameAvailabilityService;
@@ -444,6 +441,11 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+			return com.bangpot.crew.domain.view.MeetingCreateCrewsView.of(List.of());
+		}
+
+		@Override
 		public List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
 			return crewRepository.findActiveByMemberUserId(userId).stream()
 				.map(crew -> com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew.of(
@@ -778,11 +780,6 @@ abstract class AbstractUserApplicationServiceTest {
 
 		@Override
 		public boolean delete(Long userId, Long themeId) {
-			return false;
-		}
-
-		@Override
-		public boolean exists(Long userId, Long themeId) {
 			return false;
 		}
 

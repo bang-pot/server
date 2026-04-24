@@ -1,6 +1,7 @@
 package com.bangpot.explore.infrastructure;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,8 +12,9 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.explore.application.port.ExploreQueryRepository;
-import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
-import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 
 import lombok.RequiredArgsConstructor;
@@ -28,59 +30,59 @@ class JpaExploreQueryRepository implements ExploreQueryRepository {
 	private final ThemeFavoriteJpaRepository themeFavoriteJpaRepository;
 
 	@Override
-	public SearchResult search(Condition condition) {
-		List<String> genres = normalizedGenres(condition.genres());
-		boolean keywordEmpty = isBlank(condition.keyword());
-		boolean regionEmpty = isBlank(condition.region());
-		boolean districtEmpty = isBlank(condition.district());
+	public ExploreThemeSearchView search(SearchCondition searchCondition) {
+		List<String> genres = normalizedGenres(searchCondition.genres());
+		boolean keywordEmpty = isBlank(searchCondition.keyword());
+		boolean regionEmpty = isBlank(searchCondition.region());
+		boolean districtEmpty = isBlank(searchCondition.district());
 		Slice<ThemeJpaRepository.ThemeCardProjection> slice = themeJpaRepository.search(
 			keywordEmpty,
-			keywordPattern(condition.keyword()),
+			keywordPattern(searchCondition.keyword()),
 			genres,
-			condition.genres() == null || condition.genres().isEmpty(),
+			searchCondition.genres() == null || searchCondition.genres().isEmpty(),
 			regionEmpty,
-			normalizedText(condition.region()),
+			normalizedText(searchCondition.region()),
 			districtEmpty,
-			normalizedText(condition.district()),
-			PageRequest.of(condition.page(), condition.size())
+			normalizedText(searchCondition.district()),
+			PageRequest.of(searchCondition.page(), searchCondition.size())
 		);
 
-		List<GetExploreThemesUseCase.Item> items = slice.getContent().stream()
+		List<ExploreThemeSearchView.Item> items = slice.getContent().stream()
 			.map(this::toItem)
 			.toList();
 
-		return SearchResult.of(
+		return ExploreThemeSearchView.of(
 			items,
-			GetExploreThemesUseCase.PageInfo.of(condition.page(), condition.size(), slice.hasNext())
+			ExploreThemeSearchView.PageInfo.of(searchCondition.page(), searchCondition.size(), slice.hasNext())
 		);
 	}
 
 	@Override
-	public GetExploreFiltersUseCase.Result getFilters() {
+	public ExploreFiltersView getFilters() {
 		List<String> genres = themeJpaRepository.findActiveGenres();
 		List<StoreJpaRepository.RegionDistrictProjection> regionRows = storeJpaRepository.findActiveRegionDistricts();
 
-		java.util.Map<String, java.util.List<String>> grouped = new java.util.LinkedHashMap<>();
+		Map<String, Set<String>> grouped = new LinkedHashMap<>();
 		for (StoreJpaRepository.RegionDistrictProjection row : regionRows) {
 			String region = row.getRegion();
 			String district = row.getDistrict();
-			grouped.computeIfAbsent(region, key -> new java.util.ArrayList<>());
-			if (district != null && !district.isBlank() && !grouped.get(region).contains(district)) {
+			grouped.computeIfAbsent(region, key -> new LinkedHashSet<>());
+			if (district != null && !district.isBlank()) {
 				grouped.get(region).add(district);
 			}
 		}
 
-		List<GetExploreFiltersUseCase.RegionOption> regions = grouped.entrySet().stream()
-			.map(entry -> GetExploreFiltersUseCase.RegionOption.of(entry.getKey(), List.copyOf(entry.getValue())))
+		List<ExploreFiltersView.Region> regions = grouped.entrySet().stream()
+			.map(entry -> ExploreFiltersView.Region.of(entry.getKey(), List.copyOf(entry.getValue())))
 			.toList();
 
-		return GetExploreFiltersUseCase.Result.of(genres, regions);
+		return ExploreFiltersView.of(genres, regions);
 	}
 
 	@Override
-	public Optional<ThemeDetail> getThemeDetail(Long themeId) {
+	public Optional<ExploreThemeDetailView> getThemeDetail(Long themeId) {
 		return themeJpaRepository.findActiveThemeDetailById(themeId)
-			.map(row -> ThemeDetail.of(
+			.map(row -> ExploreThemeDetailView.of(
 				row.getThemeId(),
 				row.getThemeName(),
 				row.getStoreId(),
@@ -114,7 +116,7 @@ class JpaExploreQueryRepository implements ExploreQueryRepository {
 
 	@Override
 	public ThemePreviewView findThemePreviewView(Long userId, int limit) {
-		List<GetExploreThemesUseCase.Item> items = search(Condition.of(null, null, null, null, 0, limit)).items();
+		List<ExploreThemeSearchView.Item> items = search(SearchCondition.of(null, null, null, null, 0, limit)).items();
 		if (userId == null || items.isEmpty()) {
 			return ThemePreviewView.of(items.stream()
 				.map(item -> ThemePreviewView.Item.of(
@@ -130,7 +132,7 @@ class JpaExploreQueryRepository implements ExploreQueryRepository {
 		}
 
 		List<Long> themeIds = items.stream()
-			.map(GetExploreThemesUseCase.Item::themeId)
+			.map(ExploreThemeSearchView.Item::themeId)
 			.toList();
 		Set<Long> favoritedThemeIds = Set.copyOf(themeFavoriteJpaRepository.findThemeIdsByUserIdAndThemeIdIn(userId, themeIds));
 		return ThemePreviewView.of(items.stream()
@@ -171,8 +173,8 @@ class JpaExploreQueryRepository implements ExploreQueryRepository {
 		return "%" + keyword.toLowerCase() + "%";
 	}
 
-	private GetExploreThemesUseCase.Item toItem(ThemeJpaRepository.ThemeCardProjection row) {
-		return GetExploreThemesUseCase.Item.of(
+	private ExploreThemeSearchView.Item toItem(ThemeJpaRepository.ThemeCardProjection row) {
+		return ExploreThemeSearchView.Item.of(
 			row.getThemeId(),
 			row.getThemeName(),
 			row.getStoreId(),
@@ -184,13 +186,12 @@ class JpaExploreQueryRepository implements ExploreQueryRepository {
 			row.getActivityLabel(),
 			row.getRecommendedPlayers(),
 			row.getRunningTimeMinutes(),
-			row.getFavoriteCount(),
-			false
+			row.getFavoriteCount()
 		);
 	}
 
-	private RelatedThemeSummary toRelatedThemeSummary(ThemeJpaRepository.RelatedThemeProjection row) {
-		return RelatedThemeSummary.of(
+	private ExploreThemeDetailView.RelatedTheme toRelatedThemeSummary(ThemeJpaRepository.RelatedThemeProjection row) {
+		return ExploreThemeDetailView.RelatedTheme.of(
 			row.getThemeId(),
 			row.getThemeName(),
 			row.getStoreId(),

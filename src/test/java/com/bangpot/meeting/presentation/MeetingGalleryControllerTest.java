@@ -45,7 +45,7 @@ class MeetingGalleryControllerTest {
 					GetCrewMeetingGalleryUseCase.Item.of(
 						55L,
 						"2026-04-12",
-						"湲덉슂???댁뒪耳?댄봽",
+						"금요일 이스케이프",
 						"https://cdn.example.com/a.jpg",
 						2L
 					)
@@ -62,7 +62,7 @@ class MeetingGalleryControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items[0].meetingId").value(55))
 			.andExpect(jsonPath("$.items[0].meetingDate").value("2026-04-12"))
-			.andExpect(jsonPath("$.items[0].meetingTitle").value("湲덉슂???댁뒪耳?댄봽"))
+			.andExpect(jsonPath("$.items[0].meetingTitle").value("금요일 이스케이프"))
 			.andExpect(jsonPath("$.items[0].coverPhotoUrl").value("https://cdn.example.com/a.jpg"))
 			.andExpect(jsonPath("$.items[0].extraPhotoCount").value(2))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
