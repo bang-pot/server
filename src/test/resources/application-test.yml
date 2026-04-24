@@ -38,3 +38,19 @@ bangpot:
     slack:
       all-log-webhook-url: ""
       error-log-webhook-url: ""
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+      group:
+        liveness:
+          include: ping
+        readiness:
+          include: db
