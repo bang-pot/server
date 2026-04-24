@@ -787,11 +787,6 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
-		public boolean exists(Long userId, Long themeId) {
-			return false;
-		}
-
-		@Override
 		public java.util.Set<Long> findFavoritedThemeIds(Long userId, List<Long> themeIds) {
 			return java.util.Set.of();
 		}

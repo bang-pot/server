@@ -1,13 +1,14 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:bangpot-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:tc:postgresql:17:///bangpot-test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+  test:
+    database:
+      replace: none
   security:
     oauth2:
       client:

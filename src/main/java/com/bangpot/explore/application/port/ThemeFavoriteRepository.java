@@ -10,7 +10,5 @@ public interface ThemeFavoriteRepository {
 
 	boolean delete(Long userId, Long themeId);
 
-	boolean exists(Long userId, Long themeId);
-
 	Set<Long> findFavoritedThemeIds(Long userId, List<Long> themeIds);
 }

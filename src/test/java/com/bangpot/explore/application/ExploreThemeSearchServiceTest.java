@@ -327,11 +327,6 @@ class ExploreThemeSearchServiceTest {
 		}
 
 		@Override
-		public boolean exists(Long userId, Long themeId) {
-			return favoriteThemeIdsByUserId.getOrDefault(userId, Set.of()).contains(themeId);
-		}
-
-		@Override
 		public Set<Long> findFavoritedThemeIds(Long userId, List<Long> themeIds) {
 			findFavoritedThemeIdsCallCount++;
 			Set<Long> favorites = favoriteThemeIdsByUserId.getOrDefault(userId, Set.of());

@@ -26,14 +26,14 @@ class JpaThemeFavoriteRepositoryTest {
 
 		assertThat(created).isTrue();
 		assertThat(duplicateCreated).isFalse();
-		assertThat(themeFavoriteRepository.exists(7L, 5L)).isTrue();
+		assertThat(themeFavoriteRepository.findFavoritedThemeIds(7L, List.of(5L))).containsExactly(5L);
 
 		boolean deleted = themeFavoriteRepository.delete(7L, 5L);
 		boolean deletedAgain = themeFavoriteRepository.delete(7L, 5L);
 
 		assertThat(deleted).isTrue();
 		assertThat(deletedAgain).isFalse();
-		assertThat(themeFavoriteRepository.exists(7L, 5L)).isFalse();
+		assertThat(themeFavoriteRepository.findFavoritedThemeIds(7L, List.of(5L))).isEmpty();
 	}
 
 	@Test
