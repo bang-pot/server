@@ -224,7 +224,7 @@ class UserControllerTest {
 						901L,
 						"Deep Blue",
 						"Seoul Escape",
-						"?쒖슱",
+						"서울",
 						"https://cdn.example.com/theme-901.jpg",
 						12,
 						true
@@ -242,7 +242,7 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[0].themeId").value(901))
 			.andExpect(jsonPath("$.items[0].themeName").value("Deep Blue"))
 			.andExpect(jsonPath("$.items[0].storeName").value("Seoul Escape"))
-			.andExpect(jsonPath("$.items[0].regionName").value("?쒖슱"))
+			.andExpect(jsonPath("$.items[0].regionName").value("서울"))
 			.andExpect(jsonPath("$.items[0].thumbnailUrl").value("https://cdn.example.com/theme-901.jpg"))
 			.andExpect(jsonPath("$.items[0].favoriteCount").value(12))
 			.andExpect(jsonPath("$.items[0].isFavorite").value(true))
@@ -259,7 +259,7 @@ class UserControllerTest {
 						901L,
 						"Deep Blue",
 						"Seoul Escape",
-						"?쒖슱",
+						"서울",
 						"https://cdn.example.com/theme-901.jpg",
 						12,
 						true
@@ -278,7 +278,7 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[0].themeId").value(901))
 			.andExpect(jsonPath("$.items[0].themeName").value("Deep Blue"))
 			.andExpect(jsonPath("$.items[0].storeName").value("Seoul Escape"))
-			.andExpect(jsonPath("$.items[0].regionName").value("?쒖슱"))
+			.andExpect(jsonPath("$.items[0].regionName").value("서울"))
 			.andExpect(jsonPath("$.items[0].thumbnailUrl").value("https://cdn.example.com/theme-901.jpg"))
 			.andExpect(jsonPath("$.items[0].favoriteCount").value(12))
 			.andExpect(jsonPath("$.items[0].isFavorite").value(true))

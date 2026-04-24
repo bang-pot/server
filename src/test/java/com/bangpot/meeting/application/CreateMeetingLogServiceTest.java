@@ -6,11 +6,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.application.exception.MeetingLogAlreadyExistsException;
 import com.bangpot.meeting.application.exception.MeetingLogRequestValidationException;
 import com.bangpot.meeting.application.exception.MeetingLogWriteNotAllowedException;
 import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
+import com.bangpot.meeting.domain.MeetingParticipationStatus;
 
 class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
@@ -22,7 +22,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var result = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"?�말 ?��??�었??방탈출이?�어??",
+			"정말 재미있었던 방탈출이었어요.",
 			java.util.List.of(
 				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.jpg", 1024L)
 			)
@@ -42,7 +42,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var result = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			11L,
-			"같이 참여?�던 멤버??기록???�길 ???�어???�니??",
+			"같이 참여했던 멤버와 기록을 남기고 싶었습니다.",
 			java.util.List.of()
 		));
 
@@ -59,7 +59,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			11L,
-			"LEFT ?�력?� ?�성 권한???�습?�다.",
+			"LEFT 이력은 작성 권한이 없습니다.",
 			java.util.List.of()
 		))).isInstanceOf(AccessDeniedException.class);
 	}
@@ -72,7 +72,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"?�료 ?�에 ?�성???�는 ?�습?�다.",
+			"완료 전에 작성할 수 없습니다.",
 			java.util.List.of()
 		))).isInstanceOf(MeetingLogWriteNotAllowedException.class);
 	}
@@ -86,7 +86,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			99L,
-			"무�????�용?�는 ?�성?????�습?�다.",
+			"무관한 사용자는 작성할 수 없습니다.",
 			java.util.List.of()
 		))).isInstanceOf(AccessDeniedException.class);
 	}
@@ -98,14 +98,14 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"�?기록",
+			"첫 기록",
 			java.util.List.of()
 		));
 
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"??번째 기록",
+			"두 번째 기록",
 			java.util.List.of()
 		))).isInstanceOf(MeetingLogAlreadyExistsException.class);
 	}
@@ -118,7 +118,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"?�진 검�??�패",
+			"사진 검증 실패",
 			java.util.List.of(
 				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.gif", 1024L),
 				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/b.jpg", 6L * 1024 * 1024),
@@ -130,4 +130,3 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		))).isInstanceOf(MeetingLogRequestValidationException.class);
 	}
 }
-

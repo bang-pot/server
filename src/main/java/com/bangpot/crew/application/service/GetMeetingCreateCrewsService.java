@@ -16,8 +16,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class GetMeetingCreateCrewsService implements GetMeetingCreateCrewsUseCase {
-
-	private static final String ACCESS_DENIED_MESSAGE = "모임 생성용 크루 목록을 조회할 수 없습니다.";
+	private static final String ACCESS_DENIED_MESSAGE = "모임 생성용 크루 목록을 조회할 권한이 없습니다.";
 
 	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewQueryRepository crewQueryRepository;

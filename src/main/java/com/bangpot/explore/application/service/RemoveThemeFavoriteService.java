@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class RemoveThemeFavoriteService implements RemoveThemeFavoriteUseCase {
-
 	private static final String ACCESS_DENIED_MESSAGE = "테마 찜을 해제할 권한이 없습니다.";
 
 	private final CompletedUserAccessService completedUserAccessService;
