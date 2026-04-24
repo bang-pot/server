@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 
@@ -17,19 +17,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetExploreThemeDetailService implements GetExploreThemeDetailUseCase {
 
-	private final ExploreThemeReadRepository exploreThemeReadRepository;
+	private final ExploreQueryRepository exploreQueryRepository;
 	private final ThemeFavoriteRepository themeFavoriteRepository;
 
 	@Override
 	@Transactional(readOnly = true)
 	public Result handle(Query query) {
-		ExploreThemeReadRepository.ThemeDetail detail = exploreThemeReadRepository.getThemeDetail(query.themeId())
+		ExploreQueryRepository.ThemeDetail detail = exploreQueryRepository.getThemeDetail(query.themeId())
 			.orElseThrow(() -> new ExploreThemeNotFoundException(query.themeId()));
 		List<Long> favoriteTargetThemeIds = query.userId() == null
 			? List.of()
 			: java.util.stream.Stream.concat(
 				java.util.stream.Stream.of(detail.themeId()),
-				detail.relatedThemes().stream().map(ExploreThemeReadRepository.RelatedThemeSummary::themeId)
+				detail.relatedThemes().stream().map(ExploreQueryRepository.RelatedThemeSummary::themeId)
 			).toList();
 		Set<Long> favoritedThemeIds = query.userId() == null
 			? Set.of()

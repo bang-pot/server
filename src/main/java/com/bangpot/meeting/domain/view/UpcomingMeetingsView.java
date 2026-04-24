@@ -1,21 +1,16 @@
-package com.bangpot.home.application.port;
+package com.bangpot.meeting.domain.view;
 
 import java.util.List;
 
-public interface HomeUpcomingMeetingReadRepository {
-
-	Result findUpcomingMeetings(Long userId, int limit, String currentDate, String currentTime);
-
-	record Result(
-		List<Item> items,
-		Long totalCount
-	) {
-		public static Result of(List<Item> items, Long totalCount) {
-			return new Result(items, totalCount);
-		}
+public record UpcomingMeetingsView(
+	List<UpcomingMeetingsView.Item> items,
+	Long totalCount
+) {
+	public static UpcomingMeetingsView of(List<UpcomingMeetingsView.Item> items, Long totalCount) {
+		return new UpcomingMeetingsView(items, totalCount);
 	}
 
-	record Item(
+	public record Item(
 		Long meetingId,
 		String title,
 		Long crewId,

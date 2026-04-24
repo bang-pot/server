@@ -16,6 +16,7 @@ import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -98,6 +99,33 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			PageRequest.of(page, size)
 			);
 		return MyJoinedMeetingsView.of(slice.getContent(), MyJoinedMeetingsView.Page.of(page, size, slice.hasNext()));
+	}
+
+	@Override
+	public UpcomingMeetingsView findUpcomingMeetingsViewByUserId(
+		Long userId,
+		int limit,
+		String currentDate,
+		String currentTime
+	) {
+		List<UpcomingMeetingsView.Item> items = meetingJpaRepository.findUpcomingMeetingsViewByUserId(
+			userId,
+			CrewStatus.ACTIVE,
+			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED),
+			JOINED_STATUSES,
+			currentDate,
+			currentTime,
+			PageRequest.of(0, limit)
+		);
+		long totalCount = meetingJpaRepository.countUpcomingMeetingsByUserId(
+			userId,
+			CrewStatus.ACTIVE,
+			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED),
+			JOINED_STATUSES,
+			currentDate,
+			currentTime
+		);
+		return UpcomingMeetingsView.of(items, totalCount);
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package com.bangpot.home.infrastructure;
+package com.bangpot.crew.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,20 +8,20 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
-import com.bangpot.home.application.port.HomePublicCrewPreviewReadRepository;
 
 @DataJpaTest
-@Import(JpaHomePublicCrewPreviewReadRepositoryAdapter.class)
-class JpaHomePublicCrewPreviewReadRepositoryTest {
+@Import(JpaCrewQueryRepository.class)
+class JpaCrewQueryRepositoryTest {
 
 	@Autowired
 	private TestEntityManager entityManager;
 
 	@Autowired
-	private HomePublicCrewPreviewReadRepository repository;
+	private CrewQueryRepository repository;
 
 	@Test
 	void returnsOnlyActivePublicCrewsWithActiveMemberCountOrderedByNewestFirst() {
@@ -50,17 +50,16 @@ class JpaHomePublicCrewPreviewReadRepositoryTest {
 
 		entityManager.clear();
 
-		var result = repository.findPreviewItems(8);
+		var result = repository.findPublicCrewPreviewView(8);
 
-		assertThat(result).extracting(HomePublicCrewPreviewReadRepository.Item::crewId)
+		assertThat(result.items()).extracting(com.bangpot.crew.domain.view.PublicCrewPreviewView.Item::crewId)
 			.containsExactly(newerPublic.getId(), olderPublic.getId());
-		assertThat(result).extracting(HomePublicCrewPreviewReadRepository.Item::crewName)
+		assertThat(result.items()).extracting(com.bangpot.crew.domain.view.PublicCrewPreviewView.Item::crewName)
 			.containsExactly("Beta Crew", "Alpha Crew");
-		assertThat(result).extracting(HomePublicCrewPreviewReadRepository.Item::memberCount)
+		assertThat(result.items()).extracting(com.bangpot.crew.domain.view.PublicCrewPreviewView.Item::memberCount)
 			.containsExactly(2L, 2L);
-		assertThat(result).extracting(HomePublicCrewPreviewReadRepository.Item::coverImageUrl)
+		assertThat(result.items()).extracting(com.bangpot.crew.domain.view.PublicCrewPreviewView.Item::coverImageUrl)
 			.containsExactly("https://cdn.example.com/beta.jpg", null);
-		assertThat(result).allMatch(HomePublicCrewPreviewReadRepository.Item::isPublic);
 	}
 
 	@Test
@@ -74,10 +73,10 @@ class JpaHomePublicCrewPreviewReadRepositoryTest {
 
 		entityManager.clear();
 
-		var result = repository.findPreviewItems(1);
+		var result = repository.findPublicCrewPreviewView(1);
 
-		assertThat(result).hasSize(1);
-		assertThat(result.get(0).crewId()).isEqualTo(second.getId());
+		assertThat(result.items()).hasSize(1);
+		assertThat(result.items().get(0).crewId()).isEqualTo(second.getId());
 	}
 
 	private void insertUser(Long userId, String nickname) {

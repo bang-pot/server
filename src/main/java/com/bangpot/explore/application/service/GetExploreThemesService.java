@@ -6,7 +6,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 
@@ -16,14 +16,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetExploreThemesService implements GetExploreThemesUseCase {
 
-	private final ExploreThemeReadRepository exploreThemeReadRepository;
+	private final ExploreQueryRepository exploreQueryRepository;
 	private final ThemeFavoriteRepository themeFavoriteRepository;
 
 	@Override
 	@Transactional(readOnly = true)
 	public Result handle(Query query) {
-		ExploreThemeReadRepository.SearchResult result = exploreThemeReadRepository.search(
-			ExploreThemeReadRepository.Condition.of(
+		ExploreQueryRepository.SearchResult result = exploreQueryRepository.search(
+			ExploreQueryRepository.Condition.of(
 				query.keyword(),
 				query.genres(),
 				query.region(),

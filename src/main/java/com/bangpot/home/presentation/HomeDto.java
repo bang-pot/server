@@ -6,17 +6,10 @@ final class HomeDto {
 
 	record HomeResponse(
 		boolean isLoggedIn,
-		CtaResponse cta,
 		MyCrewsSectionResponse myCrews,
 		UpcomingMeetingsSectionResponse upcomingMeetings,
 		PublicCrewPreviewSectionResponse publicCrewPreview,
 		ThemeExplorePreviewSectionResponse themeExplorePreview
-	) {
-	}
-
-	record CtaResponse(
-		boolean canCreateCrew,
-		boolean canExplorePublicCrews
 	) {
 	}
 
@@ -58,8 +51,7 @@ final class HomeDto {
 		Long crewId,
 		String crewName,
 		String coverImageUrl,
-		Long memberCount,
-		boolean isPublic
+		Long memberCount
 	) {
 	}
 

@@ -12,6 +12,7 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,26 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 			PageRequest.of(page, size)
 		);
 		return MyCrewsView.of(slice.getContent(), MyCrewsView.Page.of(page, size, slice.hasNext()));
+	}
+
+	@Override
+	public long countMyCrewsViewByMemberUserId(Long userId) {
+		return crewJpaRepository.countMyCrewsViewByMemberUserId(
+			userId,
+			CrewMemberStatus.ACTIVE,
+			CrewStatus.ACTIVE,
+			CrewRole.LEADER
+		);
+	}
+
+	@Override
+	public PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+		return PublicCrewPreviewView.of(crewJpaRepository.findPublicCrewPreviewItems(
+			CrewStatus.ACTIVE,
+			CrewVisibility.PUBLIC,
+			CrewMemberStatus.ACTIVE,
+			PageRequest.of(0, limit)
+		));
 	}
 
 	@Override

@@ -14,23 +14,24 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.service.GetExploreFiltersService;
 import com.bangpot.explore.application.service.GetExploreThemesService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ThemePreviewView;
 
 class ExploreThemeSearchServiceTest {
 
-	private InMemoryExploreThemeReadRepository repository;
+	private InMemoryExploreQueryRepository repository;
 	private InMemoryThemeFavoriteRepository themeFavoriteRepository;
 	private GetExploreThemesUseCase getExploreThemesUseCase;
 	private GetExploreFiltersUseCase getExploreFiltersUseCase;
 
 	@BeforeEach
 	void setUp() {
-		repository = new InMemoryExploreThemeReadRepository();
+		repository = new InMemoryExploreQueryRepository();
 		themeFavoriteRepository = new InMemoryThemeFavoriteRepository();
 		getExploreThemesUseCase = new GetExploreThemesService(repository, themeFavoriteRepository);
 		getExploreFiltersUseCase = new GetExploreFiltersService(repository);
@@ -136,7 +137,7 @@ class ExploreThemeSearchServiceTest {
 		assertThat(result.regions().get(1).districts()).containsExactly("Gangnam", "Mapo");
 	}
 
-	private static final class InMemoryExploreThemeReadRepository implements ExploreThemeReadRepository {
+	private static final class InMemoryExploreQueryRepository implements ExploreQueryRepository {
 
 		private final List<Row> rows = new ArrayList<>();
 
@@ -243,6 +244,11 @@ class ExploreThemeSearchServiceTest {
 		@Override
 		public Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames) {
 			return new HashMap<>();
+		}
+
+		@Override
+		public ThemePreviewView findThemePreviewView(Long userId, int limit) {
+			throw new UnsupportedOperationException();
 		}
 
 		private boolean matchesKeyword(Row row, String keyword) {

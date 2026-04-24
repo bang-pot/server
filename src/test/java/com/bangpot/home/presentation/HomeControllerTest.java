@@ -20,6 +20,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.home.application.usecase.GetHomeUseCase;
+import com.bangpot.home.domain.view.HomeMyCrewsView;
+import com.bangpot.home.domain.view.HomePublicCrewPreviewView;
+import com.bangpot.home.domain.view.HomeThemePreviewView;
+import com.bangpot.home.domain.view.HomeUpcomingMeetingsView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -38,14 +42,13 @@ class HomeControllerTest {
 		when(getHomeUseCase.handle(GetHomeUseCase.Query.of(null)))
 			.thenReturn(GetHomeUseCase.Result.of(
 				false,
-				GetHomeUseCase.Cta.of(false, true),
-				GetHomeUseCase.MyCrewsSection.of(List.of(), 0L),
-				GetHomeUseCase.UpcomingMeetingsSection.of(List.of(), 0L),
-				GetHomeUseCase.PublicCrewPreviewSection.of(
-					List.of(GetHomeUseCase.PublicCrewPreviewItem.of(31L, "Alpha Crew", null, 12L, true))
+				HomeMyCrewsView.of(List.of(), 0L),
+				HomeUpcomingMeetingsView.of(List.of(), 0L),
+				HomePublicCrewPreviewView.of(
+					List.of(HomePublicCrewPreviewView.Item.of(31L, "Alpha Crew", null, 12L))
 				),
-				GetHomeUseCase.ThemeExplorePreviewSection.of(
-					List.of(GetHomeUseCase.ThemeExplorePreviewItem.of(
+				HomeThemePreviewView.of(
+					List.of(HomeThemePreviewView.Item.of(
 						101L,
 						"Deep Blue",
 						"Room Escape",
@@ -60,8 +63,6 @@ class HomeControllerTest {
 		mockMvc.perform(get("/api/home"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isLoggedIn").value(false))
-			.andExpect(jsonPath("$.cta.canCreateCrew").value(false))
-			.andExpect(jsonPath("$.cta.canExplorePublicCrews").value(true))
 			.andExpect(jsonPath("$.myCrews.items").isArray())
 			.andExpect(jsonPath("$.myCrews.items").isEmpty())
 			.andExpect(jsonPath("$.myCrews.totalCount").value(0))
@@ -79,19 +80,18 @@ class HomeControllerTest {
 		when(getHomeUseCase.handle(GetHomeUseCase.Query.of(7L)))
 			.thenReturn(GetHomeUseCase.Result.of(
 				true,
-				GetHomeUseCase.Cta.of(true, true),
-				GetHomeUseCase.MyCrewsSection.of(
-					List.of(GetHomeUseCase.MyCrewItem.of(11L, "Alpha Crew")),
+				HomeMyCrewsView.of(
+					List.of(HomeMyCrewsView.Item.of(11L, "Alpha Crew")),
 					3L
 				),
-				GetHomeUseCase.UpcomingMeetingsSection.of(
-					List.of(GetHomeUseCase.UpcomingMeetingItem.of(
+				HomeUpcomingMeetingsView.of(
+					List.of(HomeUpcomingMeetingsView.Item.of(
 						101L, "Friday Escape", 11L, "Alpha Crew", "2026-04-20", "19:00", "RECRUITING"
 					)),
 					4L
 				),
-				GetHomeUseCase.PublicCrewPreviewSection.of(List.of()),
-				GetHomeUseCase.ThemeExplorePreviewSection.of(List.of())
+				HomePublicCrewPreviewView.of(List.of()),
+				HomeThemePreviewView.of(List.of())
 			));
 
 		mockMvc.perform(
@@ -100,7 +100,6 @@ class HomeControllerTest {
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.isLoggedIn").value(true))
-			.andExpect(jsonPath("$.cta.canCreateCrew").value(true))
 			.andExpect(jsonPath("$.myCrews.items[0].crewId").value(11))
 			.andExpect(jsonPath("$.myCrews.items[0].crewName").value("Alpha Crew"))
 			.andExpect(jsonPath("$.myCrews.totalCount").value(3))

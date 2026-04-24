@@ -13,28 +13,29 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.service.GetExploreThemeDetailService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
+import com.bangpot.explore.domain.view.ThemePreviewView;
 
 class GetExploreThemeDetailServiceTest {
 
-	private InMemoryExploreThemeReadRepository repository;
+	private InMemoryExploreQueryRepository repository;
 	private InMemoryThemeFavoriteRepository themeFavoriteRepository;
 	private GetExploreThemeDetailUseCase useCase;
 
 	@BeforeEach
 	void setUp() {
-		repository = new InMemoryExploreThemeReadRepository();
+		repository = new InMemoryExploreQueryRepository();
 		themeFavoriteRepository = new InMemoryThemeFavoriteRepository();
 		useCase = new GetExploreThemeDetailService(repository, themeFavoriteRepository);
 	}
 
 	@Test
 	void returnsThemeDetailWithRelatedThemes() {
-		repository.detail = ExploreThemeReadRepository.ThemeDetail.of(
+		repository.detail = ExploreQueryRepository.ThemeDetail.of(
 			5L,
 			"Deep Blue",
 			1L,
@@ -47,7 +48,7 @@ class GetExploreThemeDetailServiceTest {
 			"Deep sea mystery theme",
 			"https://example.com/deep-blue",
 			List.of(
-				ExploreThemeReadRepository.RelatedThemeSummary.of(
+				ExploreQueryRepository.RelatedThemeSummary.of(
 					1L,
 					"Laugh Track",
 					1L,
@@ -59,7 +60,7 @@ class GetExploreThemeDetailServiceTest {
 					50,
 					4
 				),
-				ExploreThemeReadRepository.RelatedThemeSummary.of(
+				ExploreQueryRepository.RelatedThemeSummary.of(
 					3L,
 					"Time Attack",
 					1L,
@@ -100,7 +101,7 @@ class GetExploreThemeDetailServiceTest {
 			.isInstanceOf(ExploreThemeNotFoundException.class);
 	}
 
-	private static final class InMemoryExploreThemeReadRepository implements ExploreThemeReadRepository {
+	private static final class InMemoryExploreQueryRepository implements ExploreQueryRepository {
 
 		private ThemeDetail detail;
 
@@ -125,6 +126,11 @@ class GetExploreThemeDetailServiceTest {
 		@Override
 		public Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames) {
 			return new HashMap<>();
+		}
+
+		@Override
+		public ThemePreviewView findThemePreviewView(Long userId, int limit) {
+			throw new UnsupportedOperationException();
 		}
 	}
 

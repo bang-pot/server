@@ -4,25 +4,28 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ThemePreviewView;
 
 import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
-class JpaExploreThemeReadRepository implements ExploreThemeReadRepository {
+class JpaExploreQueryRepository implements ExploreQueryRepository {
 
 	private static final String UNUSED_GENRE = "__UNUSED__";
 
 	private final ThemeJpaRepository themeJpaRepository;
 	private final StoreJpaRepository storeJpaRepository;
+	private final ThemeFavoriteJpaRepository themeFavoriteJpaRepository;
 
 	@Override
 	public SearchResult search(Condition condition) {
@@ -107,6 +110,40 @@ class JpaExploreThemeReadRepository implements ExploreThemeReadRepository {
 			posters.putIfAbsent(projection.getThemeName(), projection.getPosterImageUrl());
 		}
 		return posters;
+	}
+
+	@Override
+	public ThemePreviewView findThemePreviewView(Long userId, int limit) {
+		List<GetExploreThemesUseCase.Item> items = search(Condition.of(null, null, null, null, 0, limit)).items();
+		if (userId == null || items.isEmpty()) {
+			return ThemePreviewView.of(items.stream()
+				.map(item -> ThemePreviewView.Item.of(
+					item.themeId(),
+					item.themeName(),
+					item.storeName(),
+					item.regionLabel(),
+					item.posterImageUrl(),
+					item.favoriteCount(),
+					false
+				))
+				.toList());
+		}
+
+		List<Long> themeIds = items.stream()
+			.map(GetExploreThemesUseCase.Item::themeId)
+			.toList();
+		Set<Long> favoritedThemeIds = Set.copyOf(themeFavoriteJpaRepository.findThemeIdsByUserIdAndThemeIdIn(userId, themeIds));
+		return ThemePreviewView.of(items.stream()
+			.map(item -> ThemePreviewView.Item.of(
+				item.themeId(),
+				item.themeName(),
+				item.storeName(),
+				item.regionLabel(),
+				item.posterImageUrl(),
+				item.favoriteCount(),
+				favoritedThemeIds.contains(item.themeId())
+			))
+			.toList());
 	}
 
 	private List<String> normalizedGenres(List<String> genres) {
