@@ -1,7 +1,9 @@
 spring:
   datasource:
-    url: jdbc:tc:postgresql:17:///bangpot-test
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: ${BANGPOT_TEST_DB_URL:jdbc:tc:postgresql:17:///bangpot-test}
+    driver-class-name: ${BANGPOT_TEST_DB_DRIVER:org.testcontainers.jdbc.ContainerDatabaseDriver}
+    username: ${BANGPOT_TEST_DB_USERNAME:}
+    password: ${BANGPOT_TEST_DB_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: create-drop
