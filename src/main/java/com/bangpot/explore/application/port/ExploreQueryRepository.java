@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
 import com.bangpot.explore.domain.view.ExploreThemeDetailView;
 import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
@@ -13,7 +13,7 @@ public interface ExploreQueryRepository {
 
 	ExploreThemeSearchView search(SearchCondition searchCondition);
 
-	GetExploreFiltersUseCase.Result getFilters();
+	ExploreFiltersView getFilters();
 
 	Optional<ExploreThemeDetailView> getThemeDetail(Long themeId);
 

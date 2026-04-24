@@ -20,6 +20,7 @@ import com.bangpot.explore.application.service.GetExploreFiltersService;
 import com.bangpot.explore.application.service.GetExploreThemesService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
 import com.bangpot.explore.domain.view.ExploreThemeDetailView;
 import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
@@ -50,21 +51,21 @@ class ExploreThemeSearchServiceTest {
 			"THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0
 		);
 
-		GetExploreThemesUseCase.Result result = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView result = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of("Hongdae", List.of(), null, null, 0, 20)
 		);
 
 		assertThat(result.items()).hasSize(1);
 		assertThat(result.items().getFirst().themeName()).isEqualTo("Deep Blue");
 
-		GetExploreThemesUseCase.Result byThemeName = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView byThemeName = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of("Time", List.of(), null, null, 0, 20)
 		);
 
 		assertThat(byThemeName.items()).hasSize(1);
 		assertThat(byThemeName.items().getFirst().storeName()).isEqualTo("Busan Escape Haeundae");
 
-		GetExploreThemesUseCase.Result byRegion = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView byRegion = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of("Busan", List.of(), null, null, 0, 20)
 		);
 
@@ -78,7 +79,7 @@ class ExploreThemeSearchServiceTest {
 		repository.append(2L, 101L, "Lost Temple", "Store A", "Seoul", "Gangnam", "HORROR", null, 3, "MEDIUM", "3-5 players", 75, 0);
 		repository.append(3L, 102L, "Comedy Room", "Store B", "Seoul", "Mapo", "COMEDY", null, 2, "LOW", "2-3 players", 50, 0);
 
-		GetExploreThemesUseCase.Result firstPage = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView firstPage = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "Seoul", "Gangnam", 0, 1)
 		);
 
@@ -87,14 +88,14 @@ class ExploreThemeSearchServiceTest {
 		assertThat(firstPage.pageInfo().size()).isEqualTo(1);
 		assertThat(firstPage.pageInfo().hasNext()).isTrue();
 
-		GetExploreThemesUseCase.Result secondPage = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView secondPage = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "Seoul", "Gangnam", 1, 1)
 		);
 
 		assertThat(secondPage.items()).hasSize(1);
 		assertThat(secondPage.pageInfo().hasNext()).isFalse();
 		assertThat(secondPage.items())
-			.extracting(GetExploreThemesUseCase.Item::genre)
+			.extracting(ExploreThemeSearchView.Item::genre)
 			.containsOnly("HORROR");
 	}
 
@@ -110,16 +111,16 @@ class ExploreThemeSearchServiceTest {
 		);
 		themeFavoriteRepository.favorite(7L, 1L);
 
-		GetExploreThemesUseCase.Result guestResult = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView guestResult = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(null, null, List.of(), null, null, 0, 20)
 		);
-		GetExploreThemesUseCase.Result userResult = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView userResult = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(7L, null, List.of(), null, null, 0, 20)
 		);
 
-		assertThat(guestResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorite)
+		assertThat(guestResult.items()).extracting(ExploreThemeSearchView.Item::isFavorite)
 			.containsExactly(false, false);
-		assertThat(userResult.items()).extracting(GetExploreThemesUseCase.Item::isFavorite)
+		assertThat(userResult.items()).extracting(ExploreThemeSearchView.Item::isFavorite)
 			.containsExactly(false, true);
 	}
 
@@ -130,7 +131,7 @@ class ExploreThemeSearchServiceTest {
 			"HORROR", null, 4, "HIGH", "2-4 players", 60, 3
 		);
 
-		GetExploreThemesUseCase.Result result = getExploreThemesUseCase.handle(
+		ExploreThemeSearchView result = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(7L, "No Match", List.of(), null, null, 0, 20)
 		);
 
@@ -144,7 +145,7 @@ class ExploreThemeSearchServiceTest {
 		repository.append(2L, 102L, "Lost Temple", "Store B", "Seoul", "Mapo", "THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0);
 		repository.append(3L, 103L, "Comedy Room", "Store C", "Busan", "Haeundae", "COMEDY", null, 2, "LOW", "2-3 players", 50, 0);
 
-		GetExploreFiltersUseCase.Result result = getExploreFiltersUseCase.handle();
+		ExploreFiltersView result = getExploreFiltersUseCase.handle();
 
 		assertThat(result.genres()).containsExactly("COMEDY", "HORROR", "THRILLER");
 		assertThat(result.regions()).hasSize(2);
@@ -227,18 +228,18 @@ class ExploreThemeSearchServiceTest {
 		}
 
 		@Override
-		public GetExploreFiltersUseCase.Result getFilters() {
+		public ExploreFiltersView getFilters() {
 			List<String> genres = rows.stream()
 				.map(Row::genre)
 				.distinct()
 				.sorted()
 				.toList();
 
-			List<GetExploreFiltersUseCase.RegionOption> regions = rows.stream()
+			List<ExploreFiltersView.Region> regions = rows.stream()
 				.collect(java.util.stream.Collectors.groupingBy(Row::region))
 				.entrySet()
 				.stream()
-				.map(entry -> GetExploreFiltersUseCase.RegionOption.of(
+				.map(entry -> ExploreFiltersView.Region.of(
 					entry.getKey(),
 					entry.getValue().stream()
 						.map(Row::district)
@@ -246,10 +247,10 @@ class ExploreThemeSearchServiceTest {
 						.sorted()
 						.toList()
 				))
-				.sorted(Comparator.comparing(GetExploreFiltersUseCase.RegionOption::name))
+				.sorted(Comparator.comparing(ExploreFiltersView.Region::name))
 				.toList();
 
-			return GetExploreFiltersUseCase.Result.of(genres, regions);
+			return ExploreFiltersView.of(genres, regions);
 		}
 
 		@Override

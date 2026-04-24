@@ -2,9 +2,11 @@ package com.bangpot.explore.application.usecase;
 
 import java.util.List;
 
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
+
 public interface GetExploreThemesUseCase {
 
-	Result handle(Query query);
+	ExploreThemeSearchView handle(Query query);
 
 	record Query(
 		Long userId,
@@ -36,73 +38,6 @@ public interface GetExploreThemesUseCase {
 			int size
 		) {
 			return of(null, keyword, genres, region, district, page, size);
-		}
-	}
-
-	record Item(
-		Long themeId,
-		String themeName,
-		Long storeId,
-		String storeName,
-		String regionLabel,
-		String genre,
-		String posterImageUrl,
-		Integer difficulty,
-		String activityLabel,
-		String recommendedPlayers,
-		Integer runningTimeMinutes,
-		Integer favoriteCount,
-		boolean isFavorite
-	) {
-		public static Item of(
-			Long themeId,
-			String themeName,
-			Long storeId,
-			String storeName,
-			String regionLabel,
-			String genre,
-			String posterImageUrl,
-			Integer difficulty,
-			String activityLabel,
-			String recommendedPlayers,
-			Integer runningTimeMinutes,
-			Integer favoriteCount,
-			boolean isFavorite
-		) {
-			return new Item(
-				themeId,
-				themeName,
-				storeId,
-				storeName,
-				regionLabel,
-				genre,
-				posterImageUrl,
-				difficulty,
-				activityLabel,
-				recommendedPlayers,
-				runningTimeMinutes,
-				favoriteCount,
-				isFavorite
-			);
-		}
-	}
-
-	record PageInfo(
-		int page,
-		int size,
-		boolean hasNext
-	) {
-		public static PageInfo of(int page, int size, boolean hasNext) {
-			return new PageInfo(page, size, hasNext);
-		}
-	}
-
-	record Result(
-		List<Item> items,
-		PageInfo pageInfo
-	) {
-		public static Result of(List<Item> items, PageInfo pageInfo) {
-			return new Result(items, pageInfo);
 		}
 	}
 }

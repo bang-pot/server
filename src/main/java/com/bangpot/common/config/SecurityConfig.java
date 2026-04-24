@@ -130,7 +130,6 @@ public class SecurityConfig {
 					"/actuator/health",
 					"/actuator/health/**"
 				).permitAll()
-				.requestMatchers(HttpMethod.GET, "/api/explore/meeting-create/crews").authenticated()
 				.requestMatchers(HttpMethod.GET, "/api/explore/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/crews/public").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/crews/*/join").permitAll()

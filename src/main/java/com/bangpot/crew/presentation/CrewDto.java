@@ -57,6 +57,17 @@ final class CrewDto {
 	) {
 	}
 
+	record MeetingCreateCrewResponse(
+		Long crewId,
+		String crewName
+	) {
+	}
+
+	record MeetingCreateCrewsResponse(
+		java.util.List<MeetingCreateCrewResponse> crews
+	) {
+	}
+
 	record CrewPolicyResponse(
 		Long policyId,
 		String title,

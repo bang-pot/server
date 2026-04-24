@@ -1,8 +1,8 @@
-package com.bangpot.explore.application.usecase;
+package com.bangpot.crew.application.usecase;
 
 import java.util.List;
 
-public interface GetExploreMeetingCreateCrewsUseCase {
+public interface GetMeetingCreateCrewsUseCase {
 
 	Result handle(Query query);
 

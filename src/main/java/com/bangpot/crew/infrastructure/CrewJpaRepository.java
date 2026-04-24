@@ -2,7 +2,6 @@ package com.bangpot.crew.infrastructure;
 
 import java.util.List;
 
-import com.bangpot.crew.domain.view.MyCrewsView;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +13,10 @@ import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
-import com.bangpot.user.domain.view.MyWithdrawalCheckView;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
+import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
+import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
 interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 
@@ -138,6 +139,24 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		@Param("requestStatus") CrewJoinRequestStatus requestStatus,
 		@Param("crewStatus") CrewStatus crewStatus,
 		@Param("visibility") CrewVisibility visibility
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.MeetingCreateCrewsView$Item(
+			c.id,
+			c.name
+		)
+		from CrewMember cm, Crew c
+		where cm.crewId = c.id
+		  and cm.userId = :userId
+		  and cm.status = :memberStatus
+		  and c.status = :crewStatus
+		order by c.name asc, c.id asc
+		""")
+	List<MeetingCreateCrewsView.Item> findMeetingCreateCrewItemsByMemberUserId(
+		@Param("userId") Long userId,
+		@Param("memberStatus") CrewMemberStatus memberStatus,
+		@Param("crewStatus") CrewStatus crewStatus
 	);
 
 	@Query("""

@@ -506,6 +506,10 @@ class AuthUseCaseServicesTest {
 			return PublicCrewPreviewView.of(List.of());
 		}
 
+		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+			return com.bangpot.crew.domain.view.MeetingCreateCrewsView.of(List.of());
+		}
 
 		private final InMemoryCrewRepository crewRepository;
 

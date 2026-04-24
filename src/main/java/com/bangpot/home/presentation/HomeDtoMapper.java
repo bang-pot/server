@@ -1,17 +1,17 @@
 package com.bangpot.home.presentation;
 
-import com.bangpot.home.application.usecase.GetHomeUseCase;
 import com.bangpot.home.domain.view.HomeMyCrewsView;
 import com.bangpot.home.domain.view.HomePublicCrewPreviewView;
 import com.bangpot.home.domain.view.HomeThemePreviewView;
 import com.bangpot.home.domain.view.HomeUpcomingMeetingsView;
+import com.bangpot.home.domain.view.HomeView;
 
 final class HomeDtoMapper {
 
 	private HomeDtoMapper() {
 	}
 
-	static HomeDto.HomeResponse toResponse(GetHomeUseCase.Result result) {
+	static HomeDto.HomeResponse toResponse(HomeView result) {
 		return new HomeDto.HomeResponse(
 			result.isLoggedIn(),
 			new HomeDto.MyCrewsSectionResponse(

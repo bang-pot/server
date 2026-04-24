@@ -444,6 +444,11 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+			return com.bangpot.crew.domain.view.MeetingCreateCrewsView.of(List.of());
+		}
+
+		@Override
 		public List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
 			return crewRepository.findActiveByMemberUserId(userId).stream()
 				.map(crew -> com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew.of(

@@ -22,7 +22,7 @@ public class GetExploreThemesService implements GetExploreThemesUseCase {
 
 	@Override
 	@Transactional(readOnly = true)
-	public Result handle(Query query) {
+	public ExploreThemeSearchView handle(Query query) {
 		ExploreThemeSearchView result = exploreQueryRepository.search(
 			ExploreQueryRepository.SearchCondition.of(
 				query.keyword(),
@@ -35,39 +35,40 @@ public class GetExploreThemesService implements GetExploreThemesUseCase {
 		);
 
 		if (query.userId() == null || result.items().isEmpty()) {
-			return Result.of(toItems(result.items(), Set.of()), toPageInfo(result.pageInfo()));
+			return withFavoriteFlags(result, Set.of());
 		}
 
 		List<Long> themeIds = result.items().stream()
 			.map(ExploreThemeSearchView.Item::themeId)
 			.toList();
 		Set<Long> favoritedThemeIds = themeFavoriteRepository.findFavoritedThemeIds(query.userId(), themeIds);
-		List<Item> items = toItems(result.items(), favoritedThemeIds);
 
-		return Result.of(items, toPageInfo(result.pageInfo()));
+		return withFavoriteFlags(result, favoritedThemeIds);
 	}
 
-	private List<Item> toItems(List<ExploreThemeSearchView.Item> items, Set<Long> favoritedThemeIds) {
-		return items.stream()
-			.map(item -> Item.of(
-				item.themeId(),
-				item.themeName(),
-				item.storeId(),
-				item.storeName(),
-				item.regionLabel(),
-				item.genre(),
-				item.posterImageUrl(),
-				item.difficulty(),
-				item.activityLabel(),
-				item.recommendedPlayers(),
-				item.runningTimeMinutes(),
-				item.favoriteCount(),
-				favoritedThemeIds.contains(item.themeId())
-			))
-			.toList();
-	}
-
-	private PageInfo toPageInfo(ExploreThemeSearchView.PageInfo pageInfo) {
-		return PageInfo.of(pageInfo.page(), pageInfo.size(), pageInfo.hasNext());
+	private ExploreThemeSearchView withFavoriteFlags(
+		ExploreThemeSearchView result,
+		Set<Long> favoritedThemeIds
+	) {
+		return ExploreThemeSearchView.of(
+			result.items().stream()
+				.map(item -> ExploreThemeSearchView.Item.of(
+					item.themeId(),
+					item.themeName(),
+					item.storeId(),
+					item.storeName(),
+					item.regionLabel(),
+					item.genre(),
+					item.posterImageUrl(),
+					item.difficulty(),
+					item.activityLabel(),
+					item.recommendedPlayers(),
+					item.runningTimeMinutes(),
+					item.favoriteCount(),
+					favoritedThemeIds.contains(item.themeId())
+				))
+				.toList(),
+			result.pageInfo()
+		);
 	}
 }

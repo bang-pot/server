@@ -16,6 +16,7 @@ import com.bangpot.home.domain.view.HomeMyCrewsView;
 import com.bangpot.home.domain.view.HomePublicCrewPreviewView;
 import com.bangpot.home.domain.view.HomeThemePreviewView;
 import com.bangpot.home.domain.view.HomeUpcomingMeetingsView;
+import com.bangpot.home.domain.view.HomeView;
 import com.bangpot.home.application.usecase.GetHomeUseCase;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
@@ -40,10 +41,10 @@ public class GetHomeService implements GetHomeUseCase {
 
 	@Override
 	@Transactional(readOnly = true)
-	public Result handle(Query query) {
+	public HomeView handle(Query query) {
 		boolean isLoggedIn = isCompletedLoggedInUser(query.userId());
 
-		return Result.of(
+		return HomeView.of(
 			isLoggedIn,
 			loadMyCrewsSection(query.userId(), isLoggedIn),
 			loadUpcomingMeetingsSection(query.userId(), isLoggedIn),

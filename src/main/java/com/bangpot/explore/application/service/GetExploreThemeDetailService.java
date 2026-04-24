@@ -24,13 +24,13 @@ public class GetExploreThemeDetailService implements GetExploreThemeDetailUseCas
 
 	@Override
 	@Transactional(readOnly = true)
-	public Result handle(Query query) {
+	public ExploreThemeDetailView handle(Query query) {
 		ExploreThemeDetailView detail = exploreQueryRepository.getThemeDetail(query.themeId())
 			.orElseThrow(() -> new ExploreThemeNotFoundException(query.themeId()));
 		Set<Long> favoritedThemeIds = loadFavoritedThemeIds(query.userId(), detail);
 		boolean isFavorite = favoritedThemeIds.contains(query.themeId());
 
-		return Result.of(
+		return ExploreThemeDetailView.of(
 			detail.themeId(),
 			detail.themeName(),
 			detail.storeId(),
@@ -58,12 +58,12 @@ public class GetExploreThemeDetailService implements GetExploreThemeDetailUseCas
 		return themeFavoriteRepository.findFavoritedThemeIds(userId, themeIds);
 	}
 
-	private List<RelatedTheme> toRelatedThemes(
+	private List<ExploreThemeDetailView.RelatedTheme> toRelatedThemes(
 		List<ExploreThemeDetailView.RelatedTheme> relatedThemes,
 		Set<Long> favoritedThemeIds
 	) {
 		return relatedThemes.stream()
-			.map(relatedTheme -> RelatedTheme.of(
+			.map(relatedTheme -> ExploreThemeDetailView.RelatedTheme.of(
 				relatedTheme.themeId(),
 				relatedTheme.themeName(),
 				relatedTheme.storeId(),

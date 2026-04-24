@@ -18,7 +18,7 @@ import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.explore.application.port.ExploreQueryRepository;
-import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
 import com.bangpot.explore.domain.view.ExploreThemeDetailView;
 import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
@@ -133,7 +133,7 @@ class GetArchivedMeetingsServiceTest {
 		}
 
 		@Override
-		public GetExploreFiltersUseCase.Result getFilters() {
+		public ExploreFiltersView getFilters() {
 			throw new UnsupportedOperationException();
 		}
 

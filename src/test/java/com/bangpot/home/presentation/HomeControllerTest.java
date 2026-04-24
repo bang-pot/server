@@ -24,6 +24,7 @@ import com.bangpot.home.domain.view.HomeMyCrewsView;
 import com.bangpot.home.domain.view.HomePublicCrewPreviewView;
 import com.bangpot.home.domain.view.HomeThemePreviewView;
 import com.bangpot.home.domain.view.HomeUpcomingMeetingsView;
+import com.bangpot.home.domain.view.HomeView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -40,7 +41,7 @@ class HomeControllerTest {
 	@Test
 	void returnsGuestHomeWithoutAuthentication() throws Exception {
 		when(getHomeUseCase.handle(GetHomeUseCase.Query.of(null)))
-			.thenReturn(GetHomeUseCase.Result.of(
+			.thenReturn(HomeView.of(
 				false,
 				HomeMyCrewsView.of(List.of(), 0L),
 				HomeUpcomingMeetingsView.of(List.of(), 0L),
@@ -78,7 +79,7 @@ class HomeControllerTest {
 	@Test
 	void returnsLoggedInHomeWithPersonalizedSections() throws Exception {
 		when(getHomeUseCase.handle(GetHomeUseCase.Query.of(7L)))
-			.thenReturn(GetHomeUseCase.Result.of(
+			.thenReturn(HomeView.of(
 				true,
 				HomeMyCrewsView.of(
 					List.of(HomeMyCrewsView.Item.of(11L, "Alpha Crew")),

@@ -1,6 +1,7 @@
 package com.bangpot.explore.infrastructure;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,7 +12,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.explore.application.port.ExploreQueryRepository;
-import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
 import com.bangpot.explore.domain.view.ExploreThemeDetailView;
 import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
@@ -57,25 +58,25 @@ class JpaExploreQueryRepository implements ExploreQueryRepository {
 	}
 
 	@Override
-	public GetExploreFiltersUseCase.Result getFilters() {
+	public ExploreFiltersView getFilters() {
 		List<String> genres = themeJpaRepository.findActiveGenres();
 		List<StoreJpaRepository.RegionDistrictProjection> regionRows = storeJpaRepository.findActiveRegionDistricts();
 
-		java.util.Map<String, java.util.List<String>> grouped = new java.util.LinkedHashMap<>();
+		Map<String, Set<String>> grouped = new LinkedHashMap<>();
 		for (StoreJpaRepository.RegionDistrictProjection row : regionRows) {
 			String region = row.getRegion();
 			String district = row.getDistrict();
-			grouped.computeIfAbsent(region, key -> new java.util.ArrayList<>());
-			if (district != null && !district.isBlank() && !grouped.get(region).contains(district)) {
+			grouped.computeIfAbsent(region, key -> new LinkedHashSet<>());
+			if (district != null && !district.isBlank()) {
 				grouped.get(region).add(district);
 			}
 		}
 
-		List<GetExploreFiltersUseCase.RegionOption> regions = grouped.entrySet().stream()
-			.map(entry -> GetExploreFiltersUseCase.RegionOption.of(entry.getKey(), List.copyOf(entry.getValue())))
+		List<ExploreFiltersView.Region> regions = grouped.entrySet().stream()
+			.map(entry -> ExploreFiltersView.Region.of(entry.getKey(), List.copyOf(entry.getValue())))
 			.toList();
 
-		return GetExploreFiltersUseCase.Result.of(genres, regions);
+		return ExploreFiltersView.of(genres, regions);
 	}
 
 	@Override

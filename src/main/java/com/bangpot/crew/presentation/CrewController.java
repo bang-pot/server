@@ -24,6 +24,7 @@ import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
+import com.bangpot.crew.application.usecase.GetMeetingCreateCrewsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
@@ -51,6 +52,7 @@ class CrewController {
 	private final GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 	private final GetCrewHubUseCase getCrewHubUseCase;
 	private final GetCrewMembersUseCase getCrewMembersUseCase;
+	private final GetMeetingCreateCrewsUseCase getMeetingCreateCrewsUseCase;
 	private final GetCrewPoliciesUseCase getCrewPoliciesUseCase;
 	private final GetCrewScheduleUseCase getCrewScheduleUseCase;
 	private final UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
@@ -103,6 +105,14 @@ class CrewController {
 				CrewDtoMapper.toMembersQuery(crewId, requireAuthenticatedUserId(authentication))
 			)
 		));
+	}
+
+	@GetMapping("/me/meeting-create")
+	ResponseEntity<CrewDto.MeetingCreateCrewsResponse> getMeetingCreateCrews(Authentication authentication) {
+		GetMeetingCreateCrewsUseCase.Result result = getMeetingCreateCrewsUseCase.handle(
+			GetMeetingCreateCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication))
+		);
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
 	}
 
 	@GetMapping("/{crewId}/policies")

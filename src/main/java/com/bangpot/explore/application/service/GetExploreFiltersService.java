@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.domain.view.ExploreFiltersView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,7 +17,7 @@ public class GetExploreFiltersService implements GetExploreFiltersUseCase {
 
 	@Override
 	@Transactional(readOnly = true)
-	public Result handle() {
+	public ExploreFiltersView handle() {
 		return exploreQueryRepository.getFilters();
 	}
 }

@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
-import com.bangpot.explore.application.usecase.GetExploreMeetingCreateCrewsUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
 
@@ -31,7 +30,6 @@ class ExploreController {
 	private final GetExploreThemesUseCase getExploreThemesUseCase;
 	private final GetExploreFiltersUseCase getExploreFiltersUseCase;
 	private final GetExploreThemeDetailUseCase getExploreThemeDetailUseCase;
-	private final GetExploreMeetingCreateCrewsUseCase getExploreMeetingCreateCrewsUseCase;
 
 	@GetMapping("/themes")
 	ResponseEntity<ExploreDto.ExploreThemeListResponse> getThemes(
@@ -61,17 +59,6 @@ class ExploreController {
 			ExploreDtoMapper.toResponse(
 				getExploreThemeDetailUseCase.handle(
 					GetExploreThemeDetailUseCase.Query.of(authenticatedUserIdOrNull(authentication), themeId)
-				)
-			)
-		);
-	}
-
-	@GetMapping("/meeting-create/crews")
-	ResponseEntity<ExploreDto.ExploreMeetingCreateCrewsResponse> getMeetingCreateCrews(Authentication authentication) {
-		return ResponseEntity.ok(
-			ExploreDtoMapper.toResponse(
-				getExploreMeetingCreateCrewsUseCase.handle(
-					GetExploreMeetingCreateCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication))
 				)
 			)
 		);
