@@ -13,14 +13,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
-import com.bangpot.meeting.application.service.GetArchivedMeetingsService;
-import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
 import com.bangpot.auth.domain.AuthProvider;
 import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
+import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.domain.view.ThemePreviewView;
+import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
+import com.bangpot.meeting.application.service.GetArchivedMeetingsService;
+import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -32,7 +34,7 @@ class GetArchivedMeetingsServiceTest {
 	private InMemoryUserRepository userRepository;
 	private CompletedUserAccessService completedUserAccessService;
 	private InMemoryArchivedMeetingReadRepository archiveMeetingReadRepository;
-	private InMemoryExploreThemeReadRepository exploreThemeReadRepository;
+	private InMemoryExploreQueryRepository exploreQueryRepository;
 	private GetArchivedMeetingsUseCase getArchivedMeetingsUseCase;
 
 	@BeforeEach
@@ -40,11 +42,11 @@ class GetArchivedMeetingsServiceTest {
 		userRepository = new InMemoryUserRepository();
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
 		archiveMeetingReadRepository = new InMemoryArchivedMeetingReadRepository();
-		exploreThemeReadRepository = new InMemoryExploreThemeReadRepository();
+		exploreQueryRepository = new InMemoryExploreQueryRepository();
 		getArchivedMeetingsUseCase = new GetArchivedMeetingsService(
 			completedUserAccessService,
 			archiveMeetingReadRepository,
-			exploreThemeReadRepository
+			exploreQueryRepository
 		);
 	}
 
@@ -58,7 +60,7 @@ class GetArchivedMeetingsServiceTest {
 			),
 			ArchivedMeetingReadRepository.PageInfo.of(0, 20, false)
 		);
-		exploreThemeReadRepository.posters.put("Deep Blue", "https://image.example/deep-blue.jpg");
+		exploreQueryRepository.posters.put("Deep Blue", "https://image.example/deep-blue.jpg");
 
 		GetArchivedMeetingsUseCase.Result result = getArchivedMeetingsUseCase.handle(
 			GetArchivedMeetingsUseCase.Query.of(7L, 0, 20)
@@ -120,7 +122,7 @@ class GetArchivedMeetingsServiceTest {
 		}
 	}
 
-	private static final class InMemoryExploreThemeReadRepository implements ExploreThemeReadRepository {
+	private static final class InMemoryExploreQueryRepository implements ExploreQueryRepository {
 		private final Map<String, String> posters = new HashMap<>();
 
 		@Override
@@ -129,7 +131,7 @@ class GetArchivedMeetingsServiceTest {
 		}
 
 		@Override
-		public com.bangpot.explore.application.usecase.GetExploreFiltersUseCase.Result getFilters() {
+		public GetExploreFiltersUseCase.Result getFilters() {
 			throw new UnsupportedOperationException();
 		}
 
@@ -148,18 +150,14 @@ class GetArchivedMeetingsServiceTest {
 			}
 			return result;
 		}
+
+		@Override
+		public ThemePreviewView findThemePreviewView(Long userId, int limit) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-		@Override
-		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
-		}
-
-		@Override
-		public boolean updateNickname(Long userId, String nickname) {
-			return false;
-		}
-
 		private final Map<Long, AuthUser> authUsers = new HashMap<>();
 
 		@Override
@@ -180,8 +178,8 @@ class GetArchivedMeetingsServiceTest {
 		}
 
 		@Override
-		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
-			return findCompletedUsersByNicknameContaining(null);
+		public java.util.List<User> findAllCompletedUsers() {
+			return List.of();
 		}
 
 		@Override
@@ -189,9 +187,17 @@ class GetArchivedMeetingsServiceTest {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
+		public boolean updateNickname(Long userId, String nickname) {
+			return false;
+		}
+
+		@Override
+		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		}
+
 		void save(AuthUser authUser) {
 			authUsers.put(authUser.getId(), authUser);
 		}
 	}
 }
-

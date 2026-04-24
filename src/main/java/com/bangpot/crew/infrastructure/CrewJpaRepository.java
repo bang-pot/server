@@ -15,6 +15,7 @@ import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
+import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 
 interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 
@@ -63,6 +64,49 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
 		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
 		@Param("leaderRole") com.bangpot.crew.domain.CrewRole leaderRole,
+		Pageable pageable
+	);
+
+	@Query("""
+		select count(c)
+		from CrewMember member, Crew c, CrewMember leaderMember, UserJpaEntity leaderUser
+		where member.crewId = c.id
+		  and leaderMember.crewId = c.id
+		  and leaderUser.id = leaderMember.userId
+		  and member.userId = :userId
+		  and member.status = :activeMemberStatus
+		  and c.status = :activeCrewStatus
+		  and leaderMember.role = :leaderRole
+		  and leaderMember.status = :activeMemberStatus
+		""")
+	long countMyCrewsViewByMemberUserId(
+		@Param("userId") Long userId,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("leaderRole") com.bangpot.crew.domain.CrewRole leaderRole
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.PublicCrewPreviewView$Item(
+			c.id,
+			c.name,
+			c.imageUrl,
+			(
+				select count(cm.id)
+				from CrewMember cm
+				where cm.crewId = c.id
+				  and cm.status = :activeMemberStatus
+			)
+		)
+		from Crew c
+		where c.status = :activeCrewStatus
+		  and c.visibility = :publicVisibility
+		order by c.id desc
+		""")
+	List<PublicCrewPreviewView.Item> findPublicCrewPreviewItems(
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("publicVisibility") CrewVisibility publicVisibility,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
 		Pageable pageable
 	);
 

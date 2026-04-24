@@ -38,6 +38,8 @@ import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
+import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.application.exception.DuplicateNicknameException;
 import com.bangpot.user.application.exception.InvalidNicknameException;
 import com.bangpot.user.application.port.UserQueryRepository;
@@ -460,6 +462,11 @@ class AuthUseCaseServicesTest {
 		}
 
 		@Override
+		public UpcomingMeetingsView findUpcomingMeetingsViewByUserId(Long userId, int limit, String currentDate, String currentTime) {
+			return UpcomingMeetingsView.of(List.of(), 0L);
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return meetingRepository.countCreatedByHostUserId(userId);
 		}
@@ -487,6 +494,16 @@ class AuthUseCaseServicesTest {
 				java.util.List.of(),
 				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
 			);
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			return crewRepository.countActiveByMemberUserId(userId);
+		}
+
+		@Override
+		public PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			return PublicCrewPreviewView.of(List.of());
 		}
 
 

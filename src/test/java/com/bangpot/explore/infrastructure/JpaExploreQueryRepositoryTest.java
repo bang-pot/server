@@ -10,19 +10,19 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.domain.Store;
 import com.bangpot.explore.domain.Theme;
 
 @DataJpaTest
-@Import(JpaExploreThemeReadRepository.class)
-class JpaExploreThemeReadRepositoryTest {
+@Import(JpaExploreQueryRepository.class)
+class JpaExploreQueryRepositoryTest {
 
 	@Autowired
 	private TestEntityManager entityManager;
 
 	@Autowired
-	private ExploreThemeReadRepository repository;
+	private ExploreQueryRepository repository;
 
 	@Test
 	void searchesActiveThemesWithoutFilters() {
@@ -31,8 +31,8 @@ class JpaExploreThemeReadRepositoryTest {
 		entityManager.persist(Theme.create(hongdae.getId(), "Laugh Track", "COMEDY", null, 2, "LOW", "2-4 players", 50));
 		entityManager.flush();
 
-		ExploreThemeReadRepository.SearchResult result = repository.search(
-			ExploreThemeReadRepository.Condition.of(null, List.of(), null, null, 0, 20)
+		ExploreQueryRepository.SearchResult result = repository.search(
+			ExploreQueryRepository.Condition.of(null, List.of(), null, null, 0, 20)
 		);
 
 		assertThat(result.items()).hasSize(2);
@@ -73,7 +73,7 @@ class JpaExploreThemeReadRepositoryTest {
 			.executeUpdate();
 		entityManager.clear();
 
-		ExploreThemeReadRepository.ThemeDetail result = repository.getThemeDetail(target.getId()).orElseThrow();
+		ExploreQueryRepository.ThemeDetail result = repository.getThemeDetail(target.getId()).orElseThrow();
 
 		assertThat(result.themeName()).isEqualTo("Deep Blue");
 		assertThat(result.storeName()).isEqualTo("Seoul Escape Hongdae");
@@ -81,7 +81,7 @@ class JpaExploreThemeReadRepositoryTest {
 		assertThat(result.externalLink()).isEqualTo("https://example.com/deep-blue");
 		assertThat(result.relatedThemes()).hasSize(4);
 		assertThat(result.relatedThemes())
-			.extracting(ExploreThemeReadRepository.RelatedThemeSummary::themeName)
+			.extracting(ExploreQueryRepository.RelatedThemeSummary::themeName)
 			.doesNotContain("Deep Blue", "Another Store Theme", "Hidden Track");
 	}
 }

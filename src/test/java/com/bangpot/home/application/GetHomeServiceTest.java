@@ -8,80 +8,78 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.bangpot.auth.application.port.AuthUserRepository;
-import com.bangpot.auth.domain.AuthProvider;
-import com.bangpot.auth.domain.AuthUser;
-import com.bangpot.auth.domain.AuthUserStatus;
-import com.bangpot.auth.domain.RequiredTermsAgreement;
-import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
-import com.bangpot.home.application.port.HomePublicCrewPreviewReadRepository;
-import com.bangpot.home.application.port.HomeUpcomingMeetingReadRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
+import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.PublicCrewPreviewView;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
+import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.domain.view.ThemePreviewView;
 import com.bangpot.home.application.service.GetHomeService;
 import com.bangpot.home.application.usecase.GetHomeUseCase;
-import com.bangpot.user.application.port.MyCrewReadRepository;
-import com.bangpot.user.application.port.ProfileHubReadRepository;
-import com.bangpot.user.application.port.UserRepository;
-import com.bangpot.user.domain.User;
+import com.bangpot.home.domain.view.HomeMyCrewsView;
+import com.bangpot.home.domain.view.HomePublicCrewPreviewView;
+import com.bangpot.home.domain.view.HomeThemePreviewView;
+import com.bangpot.home.domain.view.HomeUpcomingMeetingsView;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
+import com.bangpot.user.application.port.UserQueryRepository;
+import com.bangpot.user.domain.view.MyWithdrawalCheckView;
+import com.bangpot.user.domain.view.UserProfileView;
+import com.bangpot.user.domain.view.UserSearchView;
 
 class GetHomeServiceTest {
 
 	private static final Instant BASE_TIME = Instant.parse("2026-04-19T00:00:00Z");
 
-	private InMemoryAuthUserRepository authUserRepository;
-	private InMemoryUserRepository userRepository;
-	private InMemoryProfileHubReadRepository profileHubReadRepository;
-	private InMemoryMyCrewReadRepository myCrewReadRepository;
-	private InMemoryHomeUpcomingMeetingReadRepository homeUpcomingMeetingReadRepository;
-	private InMemoryHomePublicCrewPreviewReadRepository homePublicCrewPreviewReadRepository;
-	private StubExploreThemesUseCase exploreThemesUseCase;
+	private InMemoryUserQueryRepository userQueryRepository;
+	private InMemoryCrewQueryRepository crewQueryRepository;
+	private InMemoryMeetingQueryRepository meetingQueryRepository;
+	private InMemoryExploreQueryRepository exploreQueryRepository;
 	private GetHomeUseCase getHomeUseCase;
 
 	@BeforeEach
 	void setUp() {
-		authUserRepository = new InMemoryAuthUserRepository();
-		userRepository = new InMemoryUserRepository();
-		profileHubReadRepository = new InMemoryProfileHubReadRepository();
-		myCrewReadRepository = new InMemoryMyCrewReadRepository();
-		homeUpcomingMeetingReadRepository = new InMemoryHomeUpcomingMeetingReadRepository();
-		homePublicCrewPreviewReadRepository = new InMemoryHomePublicCrewPreviewReadRepository();
-		exploreThemesUseCase = new StubExploreThemesUseCase();
+		userQueryRepository = new InMemoryUserQueryRepository();
+		crewQueryRepository = new InMemoryCrewQueryRepository();
+		meetingQueryRepository = new InMemoryMeetingQueryRepository();
+		exploreQueryRepository = new InMemoryExploreQueryRepository();
 		getHomeUseCase = new GetHomeService(
-			authUserRepository,
-			userRepository,
-			profileHubReadRepository,
-			myCrewReadRepository,
-			homeUpcomingMeetingReadRepository,
-			homePublicCrewPreviewReadRepository,
-			exploreThemesUseCase,
+			userQueryRepository,
+			crewQueryRepository,
+			meetingQueryRepository,
+			exploreQueryRepository,
 			Clock.fixed(BASE_TIME, ZoneOffset.UTC)
 		);
 	}
 
 	@Test
 	void returnsGuestHomeWithEmptyPersonalizedSections() {
-		homePublicCrewPreviewReadRepository.setItems(List.of(
-			HomePublicCrewPreviewReadRepository.Item.of(31L, "Alpha Crew", null, 12L, true)
+		crewQueryRepository.publicCrewPreviewView = PublicCrewPreviewView.of(List.of(
+			PublicCrewPreviewView.Item.of(31L, "Alpha Crew", null, 12L)
 		));
-		exploreThemesUseCase.result = GetExploreThemesUseCase.Result.of(
-			List.of(
-				GetExploreThemesUseCase.Item.of(
-					101L, "Deep Blue", 501L, "Room Escape", "Seoul Mapo", "Mystery",
-					"https://cdn.example.com/theme.jpg", null, null, null, null, 7, false
-				)
-			),
-			GetExploreThemesUseCase.PageInfo.of(0, 8, false)
-		);
+		exploreQueryRepository.themePreviewView = ThemePreviewView.of(List.of(
+			ThemePreviewView.Item.of(
+				101L,
+				"Deep Blue",
+				"Room Escape",
+				"Seoul Mapo",
+				"https://cdn.example.com/theme.jpg",
+				7,
+				false
+			)
+		));
 
 		GetHomeUseCase.Result result = getHomeUseCase.handle(GetHomeUseCase.Query.of(null));
 
 		assertThat(result.isLoggedIn()).isFalse();
-		assertThat(result.cta().canExplorePublicCrews()).isTrue();
-		assertThat(result.cta().canCreateCrew()).isFalse();
 		assertThat(result.myCrews().items()).isEmpty();
 		assertThat(result.myCrews().totalCount()).isZero();
 		assertThat(result.upcomingMeetings().items()).isEmpty();
@@ -94,52 +92,52 @@ class GetHomeServiceTest {
 
 	@Test
 	void returnsLoggedInHomeWithPersonalizedSummaries() {
-		authUserRepository.save(fullUser(7L, "bangpot"));
-		userRepository.save(User.create(7L, "bangpot"));
-		profileHubReadRepository.putCounts(7L, 0L, 0L, 3L, 0L);
-		myCrewReadRepository.resultByUserId.put(
+		userQueryRepository.completedUserIds.add(7L);
+		crewQueryRepository.myCrewsViewByUserId.put(
 			7L,
-			MyCrewReadRepository.SearchResult.of(
+			MyCrewsView.of(
 				List.of(
-					MyCrewReadRepository.Item.of(11L, "Alpha Crew", "PUBLIC", "leader-a", null),
-					MyCrewReadRepository.Item.of(12L, "Beta Crew", "PRIVATE", "leader-b", null)
+					MyCrewsView.Item.of(11L, "Alpha Crew", CrewVisibility.PUBLIC, "leader-a", null),
+					MyCrewsView.Item.of(12L, "Beta Crew", CrewVisibility.PRIVATE, "leader-b", null)
 				),
-				MyCrewReadRepository.PageInfo.of(0, 5, false)
+				MyCrewsView.Page.of(0, 5, false)
 			)
 		);
-		homeUpcomingMeetingReadRepository.resultByUserId.put(
+		crewQueryRepository.myCrewsViewCountByUserId.put(7L, 3L);
+		crewQueryRepository.publicCrewPreviewView = PublicCrewPreviewView.of(List.of(
+			PublicCrewPreviewView.Item.of(31L, "Alpha Crew", null, 12L)
+		));
+		meetingQueryRepository.upcomingMeetingsViewByUserId.put(
 			7L,
-			HomeUpcomingMeetingReadRepository.Result.of(
+			UpcomingMeetingsView.of(
 				List.of(
-					HomeUpcomingMeetingReadRepository.Item.of(
+					UpcomingMeetingsView.Item.of(
 						101L, "Friday Escape", 11L, "Alpha Crew", "2026-04-20", "19:00", "RECRUITING"
 					)
 				),
 				4L
 			)
 		);
-		homePublicCrewPreviewReadRepository.setItems(List.of(
-			HomePublicCrewPreviewReadRepository.Item.of(31L, "Alpha Crew", null, 12L, true)
+		exploreQueryRepository.themePreviewView = ThemePreviewView.of(List.of(
+			ThemePreviewView.Item.of(
+				101L,
+				"Deep Blue",
+				"Room Escape",
+				"Seoul Mapo",
+				"https://cdn.example.com/theme.jpg",
+				7,
+				true
+			)
 		));
-		exploreThemesUseCase.result = GetExploreThemesUseCase.Result.of(
-			List.of(
-				GetExploreThemesUseCase.Item.of(
-					101L, "Deep Blue", 501L, "Room Escape", "Seoul Mapo", "Mystery",
-					"https://cdn.example.com/theme.jpg", null, null, null, null, 7, true
-				)
-			),
-			GetExploreThemesUseCase.PageInfo.of(0, 8, false)
-		);
 
 		GetHomeUseCase.Result result = getHomeUseCase.handle(GetHomeUseCase.Query.of(7L));
 
 		assertThat(result.isLoggedIn()).isTrue();
-		assertThat(result.cta().canCreateCrew()).isTrue();
 		assertThat(result.myCrews().totalCount()).isEqualTo(3L);
-		assertThat(result.myCrews().items()).extracting(GetHomeUseCase.MyCrewItem::crewId)
+		assertThat(result.myCrews().items()).extracting(HomeMyCrewsView.Item::crewId)
 			.containsExactly(11L, 12L);
 		assertThat(result.upcomingMeetings().totalCount()).isEqualTo(4L);
-		assertThat(result.upcomingMeetings().items()).extracting(GetHomeUseCase.UpcomingMeetingItem::meetingId)
+		assertThat(result.upcomingMeetings().items()).extracting(HomeUpcomingMeetingsView.Item::meetingId)
 			.containsExactly(101L);
 		assertThat(result.publicCrewPreview().items()).hasSize(1);
 		assertThat(result.themeExplorePreview().items()).hasSize(1);
@@ -147,133 +145,127 @@ class GetHomeServiceTest {
 		assertThat(result.themeExplorePreview().items().getFirst().isFavorite()).isTrue();
 	}
 
-	private AuthUser fullUser(Long id, String nickname) {
-		return AuthUser.rehydrate(
-			id,
-			AuthProvider.KAKAO,
-			"provider-" + id,
-			AuthUserStatus.FULL,
-			nickname,
-			RequiredTermsAgreement.of("2026-04-14", BASE_TIME),
-			null,
-			BASE_TIME,
-			BASE_TIME
-		);
-	}
-
-	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
-		@Override
-		public void deleteById(Long userId) {
-		}
-
-		private final Map<Long, AuthUser> users = new HashMap<>();
+	private static final class InMemoryUserQueryRepository implements UserQueryRepository {
+		private final java.util.Set<Long> completedUserIds = new java.util.HashSet<>();
 
 		@Override
-		public Optional<AuthUser> findById(Long userId) {
-			return Optional.ofNullable(users.get(userId));
+		public UserProfileView findMyProfileUserViewByUserId(Long userId) {
+			return null;
 		}
 
 		@Override
-		public Optional<AuthUser> findByProviderAndProviderId(AuthProvider provider, String providerId) {
-			return Optional.empty();
+		public boolean existsCompletedUser(Long userId) {
+			return completedUserIds.contains(userId);
 		}
 
 		@Override
-		public AuthUser save(AuthUser user) {
-			users.put(user.getId(), user);
-			return user;
+		public UserSearchView searchUsersByNickname(String nickname, int page, int size) {
+			throw new UnsupportedOperationException();
 		}
 	}
 
-	private static final class InMemoryUserRepository implements UserRepository {
+	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+		private final Map<Long, MyCrewsView> myCrewsViewByUserId = new HashMap<>();
+		private final Map<Long, Long> myCrewsViewCountByUserId = new HashMap<>();
+		private final Map<Long, Long> activeCrewCountByUserId = new HashMap<>();
+		private PublicCrewPreviewView publicCrewPreviewView = PublicCrewPreviewView.of(List.of());
+
 		@Override
-		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
+		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			return myCrewsViewByUserId.getOrDefault(userId, MyCrewsView.of(List.of(), MyCrewsView.Page.of(page, size, false)));
 		}
 
 		@Override
-		public boolean updateNickname(Long userId, String nickname) {
-			return false;
-		}
-
-		private final Map<Long, User> users = new HashMap<>();
-
-		@Override
-		public Optional<User> findById(Long userId) {
-			return Optional.ofNullable(users.get(userId));
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			return myCrewsViewCountByUserId.getOrDefault(userId, 0L);
 		}
 
 		@Override
-		public boolean existsByNickname(String nickname) {
-			return false;
+		public PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			return publicCrewPreviewView;
 		}
 
 		@Override
-		public List<User> findCompletedUsersByNicknameContaining(String nickname) {
+		public long countActiveByMemberUserId(Long userId) {
+			return activeCrewCountByUserId.getOrDefault(userId, 0L);
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public List<MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
 			return List.of();
 		}
+	}
+
+	private static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+		private final Map<Long, UpcomingMeetingsView> upcomingMeetingsViewByUserId = new HashMap<>();
 
 		@Override
-		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
-			return findCompletedUsersByNicknameContaining(null);
+		public MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public User save(User user) {
-			users.put(user.getId(), user);
-			return user;
+		public MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public UpcomingMeetingsView findUpcomingMeetingsViewByUserId(Long userId, int limit, String currentDate, String currentTime) {
+			return upcomingMeetingsViewByUserId.getOrDefault(userId, UpcomingMeetingsView.of(List.of(), 0L));
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public Map<Long, Integer> countCompletedByUserIds(java.util.Collection<Long> userIds) {
+			return Map.of();
 		}
 	}
 
-	private static final class InMemoryProfileHubReadRepository implements ProfileHubReadRepository {
-		private final Map<Long, Counts> countsByUserId = new HashMap<>();
+	private static final class InMemoryExploreQueryRepository implements ExploreQueryRepository {
+		private ThemePreviewView themePreviewView = ThemePreviewView.of(List.of());
 
 		@Override
-		public Counts loadCounts(Long userId) {
-			return countsByUserId.getOrDefault(userId, Counts.of(0L, 0L, 0L, 0L));
+		public SearchResult search(Condition condition) {
+			throw new UnsupportedOperationException();
 		}
-
-		void putCounts(Long userId, long createdMeetingsCount, long joinedMeetingsCount, long myCrewsCount, long pendingCrewsCount) {
-			countsByUserId.put(userId, Counts.of(createdMeetingsCount, joinedMeetingsCount, myCrewsCount, pendingCrewsCount));
-		}
-	}
-
-	private static final class InMemoryMyCrewReadRepository implements MyCrewReadRepository {
-		private final Map<Long, SearchResult> resultByUserId = new HashMap<>();
 
 		@Override
-		public SearchResult search(Long userId, int page, int size) {
-			return resultByUserId.getOrDefault(userId, SearchResult.of(List.of(), PageInfo.of(page, size, false)));
+		public GetExploreFiltersUseCase.Result getFilters() {
+			throw new UnsupportedOperationException();
 		}
-	}
-
-	private static final class InMemoryHomeUpcomingMeetingReadRepository implements HomeUpcomingMeetingReadRepository {
-		private final Map<Long, Result> resultByUserId = new HashMap<>();
 
 		@Override
-		public Result findUpcomingMeetings(Long userId, int limit, String currentDate, String currentTime) {
-			return resultByUserId.getOrDefault(userId, Result.of(List.of(), 0L));
+		public java.util.Optional<ThemeDetail> getThemeDetail(Long themeId) {
+			throw new UnsupportedOperationException();
 		}
-	}
-
-	private static final class InMemoryHomePublicCrewPreviewReadRepository implements HomePublicCrewPreviewReadRepository {
-		private List<Item> items = List.of();
 
 		@Override
-		public List<Item> findPreviewItems(int limit) {
-			return items;
+		public Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames) {
+			return Map.of();
 		}
-
-		void setItems(List<Item> items) {
-			this.items = items;
-		}
-	}
-
-	private static final class StubExploreThemesUseCase implements GetExploreThemesUseCase {
-		private Result result = Result.of(List.of(), PageInfo.of(0, 8, false));
 
 		@Override
-		public Result handle(Query query) {
-			return result;
+		public ThemePreviewView findThemePreviewView(Long userId, int limit) {
+			return themePreviewView;
 		}
 	}
 }

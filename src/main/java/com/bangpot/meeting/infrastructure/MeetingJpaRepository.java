@@ -17,6 +17,7 @@ import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
 
 interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 
@@ -157,6 +158,76 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 		@Param("includedMeetingStatuses") List<MeetingStatus> includedMeetingStatuses,
 		@Param("completedStatus") MeetingStatus completedStatus,
 		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.UpcomingMeetingsView$Item(
+			m.id,
+			m.title,
+			c.id,
+			c.name,
+			m.meetingDate,
+			m.meetingTime,
+			concat('', m.status)
+		)
+		from Meeting m, Crew c
+		where m.crewId = c.id
+		  and c.status = :activeCrewStatus
+		  and m.status in :upcomingStatuses
+		  and (
+			m.meetingDate > :currentDate
+			or (m.meetingDate = :currentDate and m.meetingTime >= :currentTime)
+		  )
+		  and (
+			m.hostUserId = :userId
+			or exists (
+				select 1
+				from MeetingParticipant mp
+				where mp.meetingId = m.id
+				  and mp.userId = :userId
+				  and mp.status in :includedParticipationStatuses
+			)
+		  )
+		order by m.meetingDate asc, m.meetingTime asc, m.id asc
+		""")
+	List<UpcomingMeetingsView.Item> findUpcomingMeetingsViewByUserId(
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("upcomingStatuses") List<MeetingStatus> upcomingStatuses,
+		@Param("includedParticipationStatuses") List<MeetingParticipationStatus> includedParticipationStatuses,
+		@Param("currentDate") String currentDate,
+		@Param("currentTime") String currentTime,
+		Pageable pageable
+	);
+
+	@Query("""
+		select count(m.id)
+		from Meeting m, Crew c
+		where m.crewId = c.id
+		  and c.status = :activeCrewStatus
+		  and m.status in :upcomingStatuses
+		  and (
+			m.meetingDate > :currentDate
+			or (m.meetingDate = :currentDate and m.meetingTime >= :currentTime)
+		  )
+		  and (
+			m.hostUserId = :userId
+			or exists (
+				select 1
+				from MeetingParticipant mp
+				where mp.meetingId = m.id
+				  and mp.userId = :userId
+				  and mp.status in :includedParticipationStatuses
+			)
+		  )
+		""")
+	long countUpcomingMeetingsByUserId(
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("upcomingStatuses") List<MeetingStatus> upcomingStatuses,
+		@Param("includedParticipationStatuses") List<MeetingParticipationStatus> includedParticipationStatuses,
+		@Param("currentDate") String currentDate,
+		@Param("currentTime") String currentTime
 	);
 
 	@Query("""

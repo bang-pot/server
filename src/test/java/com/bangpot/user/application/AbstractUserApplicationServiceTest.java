@@ -34,6 +34,7 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.MyPendingCrewsView;
+import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.meeting.domain.MeetingResult;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.application.port.MeetingRepository;
@@ -44,6 +45,7 @@ import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 import com.bangpot.meeting.domain.view.MyMeetingLogsView;
+import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
 import com.bangpot.meeting.application.port.MeetingLogRepository;
 import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
 import com.bangpot.user.application.port.UserRepository;
@@ -377,6 +379,11 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public UpcomingMeetingsView findUpcomingMeetingsViewByUserId(Long userId, int limit, String currentDate, String currentTime) {
+			return UpcomingMeetingsView.of(List.of(), 0L);
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return meetingRepository.countCreatedByHostUserId(userId);
 		}
@@ -414,6 +421,16 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
 			return crewRepository.findMyCrewsViewByMemberUserId(userId, page, size);
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			return crewRepository.countActiveByMemberUserId(userId);
+		}
+
+		@Override
+		public PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			return PublicCrewPreviewView.of(List.of());
 		}
 
 		@Override

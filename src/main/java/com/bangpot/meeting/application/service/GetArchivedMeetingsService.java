@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.bangpot.meeting.application.port.ArchivedMeetingReadRepository;
 import com.bangpot.meeting.application.usecase.GetArchivedMeetingsUseCase;
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public class GetArchivedMeetingsService implements GetArchivedMeetingsUseCase {
 
 	private final CompletedUserAccessService completedUserAccessService;
 	private final ArchivedMeetingReadRepository archiveMeetingReadRepository;
-	private final ExploreThemeReadRepository exploreThemeReadRepository;
+	private final ExploreQueryRepository exploreQueryRepository;
 
 	@Override
 	public Result handle(Query query) {
@@ -29,7 +29,7 @@ public class GetArchivedMeetingsService implements GetArchivedMeetingsUseCase {
 			query.page(),
 			query.size()
 		);
-		Map<String, String> postersByThemeName = exploreThemeReadRepository.getPosterImageUrlsByThemeNames(
+		Map<String, String> postersByThemeName = exploreQueryRepository.getPosterImageUrlsByThemeNames(
 			searchResult.items().stream()
 				.map(ArchivedMeetingReadRepository.Item::themeName)
 				.distinct()
@@ -59,4 +59,3 @@ public class GetArchivedMeetingsService implements GetArchivedMeetingsUseCase {
 		);
 	}
 }
-

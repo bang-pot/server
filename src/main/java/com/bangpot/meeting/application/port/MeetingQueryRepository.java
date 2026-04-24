@@ -6,6 +6,7 @@ import java.util.Map;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
 
 public interface MeetingQueryRepository {
 
@@ -14,6 +15,13 @@ public interface MeetingQueryRepository {
 	MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size);
 
 	MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size);
+
+	UpcomingMeetingsView findUpcomingMeetingsViewByUserId(
+		Long userId,
+		int limit,
+		String currentDate,
+		String currentTime
+	);
 
 	long countCreatedByHostUserId(Long userId);
 

@@ -6,8 +6,9 @@ import java.util.Optional;
 
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ThemePreviewView;
 
-public interface ExploreThemeReadRepository {
+public interface ExploreQueryRepository {
 
 	SearchResult search(Condition condition);
 
@@ -16,6 +17,8 @@ public interface ExploreThemeReadRepository {
 	Optional<ThemeDetail> getThemeDetail(Long themeId);
 
 	Map<String, String> getPosterImageUrlsByThemeNames(List<String> themeNames);
+
+	ThemePreviewView findThemePreviewView(Long userId, int limit);
 
 	record Condition(
 		String keyword,

@@ -3,7 +3,7 @@ package com.bangpot.explore.application.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.explore.application.port.ExploreThemeReadRepository;
+import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 
 import lombok.RequiredArgsConstructor;
@@ -12,11 +12,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetExploreFiltersService implements GetExploreFiltersUseCase {
 
-	private final ExploreThemeReadRepository exploreThemeReadRepository;
+	private final ExploreQueryRepository exploreQueryRepository;
 
 	@Override
 	@Transactional(readOnly = true)
 	public Result handle() {
-		return exploreThemeReadRepository.getFilters();
+		return exploreQueryRepository.getFilters();
 	}
 }
