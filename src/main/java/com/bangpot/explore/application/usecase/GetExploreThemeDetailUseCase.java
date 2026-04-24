@@ -104,36 +104,5 @@ public interface GetExploreThemeDetailUseCase {
 				relatedThemes
 			);
 		}
-
-		public static Result of(
-			Long themeId,
-			String themeName,
-			Long storeId,
-			String storeName,
-			String regionLabel,
-			String genre,
-			String posterImageUrl,
-			Integer difficulty,
-			Integer runningTimeMinutes,
-			String description,
-			String externalLink,
-			List<RelatedTheme> relatedThemes
-		) {
-			return of(
-				themeId,
-				themeName,
-				storeId,
-				storeName,
-				regionLabel,
-				genre,
-				posterImageUrl,
-				difficulty,
-				runningTimeMinutes,
-				description,
-				externalLink,
-				false,
-				relatedThemes
-			);
-		}
 	}
 }

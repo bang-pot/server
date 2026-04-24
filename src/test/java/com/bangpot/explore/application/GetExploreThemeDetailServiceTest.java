@@ -18,6 +18,8 @@ import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.service.GetExploreThemeDetailService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 
 class GetExploreThemeDetailServiceTest {
@@ -35,7 +37,7 @@ class GetExploreThemeDetailServiceTest {
 
 	@Test
 	void returnsThemeDetailWithRelatedThemes() {
-		repository.detail = ExploreQueryRepository.ThemeDetail.of(
+		repository.detail = ExploreThemeDetailView.of(
 			5L,
 			"Deep Blue",
 			1L,
@@ -48,7 +50,7 @@ class GetExploreThemeDetailServiceTest {
 			"Deep sea mystery theme",
 			"https://example.com/deep-blue",
 			List.of(
-				ExploreQueryRepository.RelatedThemeSummary.of(
+				ExploreThemeDetailView.RelatedTheme.of(
 					1L,
 					"Laugh Track",
 					1L,
@@ -60,7 +62,7 @@ class GetExploreThemeDetailServiceTest {
 					50,
 					4
 				),
-				ExploreQueryRepository.RelatedThemeSummary.of(
+				ExploreThemeDetailView.RelatedTheme.of(
 					3L,
 					"Time Attack",
 					1L,
@@ -103,10 +105,10 @@ class GetExploreThemeDetailServiceTest {
 
 	private static final class InMemoryExploreQueryRepository implements ExploreQueryRepository {
 
-		private ThemeDetail detail;
+		private ExploreThemeDetailView detail;
 
 		@Override
-		public SearchResult search(Condition condition) {
+		public ExploreThemeSearchView search(SearchCondition searchCondition) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -116,7 +118,7 @@ class GetExploreThemeDetailServiceTest {
 		}
 
 		@Override
-		public Optional<ThemeDetail> getThemeDetail(Long themeId) {
+		public Optional<ExploreThemeDetailView> getThemeDetail(Long themeId) {
 			if (detail == null || !detail.themeId().equals(themeId)) {
 				return Optional.empty();
 			}

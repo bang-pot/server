@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,8 +23,8 @@ public class GetExploreThemesService implements GetExploreThemesUseCase {
 	@Override
 	@Transactional(readOnly = true)
 	public Result handle(Query query) {
-		ExploreQueryRepository.SearchResult result = exploreQueryRepository.search(
-			ExploreQueryRepository.Condition.of(
+		ExploreThemeSearchView result = exploreQueryRepository.search(
+			ExploreQueryRepository.SearchCondition.of(
 				query.keyword(),
 				query.genres(),
 				query.region(),
@@ -33,15 +34,21 @@ public class GetExploreThemesService implements GetExploreThemesUseCase {
 			)
 		);
 
-		if (query.userId() == null) {
-			return Result.of(result.items(), result.pageInfo());
+		if (query.userId() == null || result.items().isEmpty()) {
+			return Result.of(toItems(result.items(), Set.of()), toPageInfo(result.pageInfo()));
 		}
 
 		List<Long> themeIds = result.items().stream()
-			.map(Item::themeId)
+			.map(ExploreThemeSearchView.Item::themeId)
 			.toList();
 		Set<Long> favoritedThemeIds = themeFavoriteRepository.findFavoritedThemeIds(query.userId(), themeIds);
-		List<Item> items = result.items().stream()
+		List<Item> items = toItems(result.items(), favoritedThemeIds);
+
+		return Result.of(items, toPageInfo(result.pageInfo()));
+	}
+
+	private List<Item> toItems(List<ExploreThemeSearchView.Item> items, Set<Long> favoritedThemeIds) {
+		return items.stream()
 			.map(item -> Item.of(
 				item.themeId(),
 				item.themeName(),
@@ -58,7 +65,9 @@ public class GetExploreThemesService implements GetExploreThemesUseCase {
 				favoritedThemeIds.contains(item.themeId())
 			))
 			.toList();
+	}
 
-		return Result.of(items, result.pageInfo());
+	private PageInfo toPageInfo(ExploreThemeSearchView.PageInfo pageInfo) {
+		return PageInfo.of(pageInfo.page(), pageInfo.size(), pageInfo.hasNext());
 	}
 }

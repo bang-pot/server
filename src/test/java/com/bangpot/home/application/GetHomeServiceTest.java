@@ -18,12 +18,12 @@ import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 import com.bangpot.home.application.service.GetHomeService;
 import com.bangpot.home.application.usecase.GetHomeUseCase;
 import com.bangpot.home.domain.view.HomeMyCrewsView;
-import com.bangpot.home.domain.view.HomePublicCrewPreviewView;
-import com.bangpot.home.domain.view.HomeThemePreviewView;
 import com.bangpot.home.domain.view.HomeUpcomingMeetingsView;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.view.MyCalendarView;
@@ -244,7 +244,7 @@ class GetHomeServiceTest {
 		private ThemePreviewView themePreviewView = ThemePreviewView.of(List.of());
 
 		@Override
-		public SearchResult search(Condition condition) {
+		public ExploreThemeSearchView search(SearchCondition searchCondition) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -254,7 +254,7 @@ class GetHomeServiceTest {
 		}
 
 		@Override
-		public java.util.Optional<ThemeDetail> getThemeDetail(Long themeId) {
+		public java.util.Optional<ExploreThemeDetailView> getThemeDetail(Long themeId) {
 			throw new UnsupportedOperationException();
 		}
 

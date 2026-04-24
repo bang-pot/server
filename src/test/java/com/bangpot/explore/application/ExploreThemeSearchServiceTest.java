@@ -20,6 +20,8 @@ import com.bangpot.explore.application.service.GetExploreFiltersService;
 import com.bangpot.explore.application.service.GetExploreThemesService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
+import com.bangpot.explore.domain.view.ExploreThemeDetailView;
+import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 
 class ExploreThemeSearchServiceTest {
@@ -122,6 +124,21 @@ class ExploreThemeSearchServiceTest {
 	}
 
 	@Test
+	void skipsFavoriteLookupWhenAuthenticatedSearchResultIsEmpty() {
+		repository.append(
+			1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam",
+			"HORROR", null, 4, "HIGH", "2-4 players", 60, 3
+		);
+
+		GetExploreThemesUseCase.Result result = getExploreThemesUseCase.handle(
+			GetExploreThemesUseCase.Query.of(7L, "No Match", List.of(), null, null, 0, 20)
+		);
+
+		assertThat(result.items()).isEmpty();
+		assertThat(themeFavoriteRepository.findFavoritedThemeIdsCallCount).isZero();
+	}
+
+	@Test
 	void returnsFilterOptionsGroupedByRegion() {
 		repository.append(1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam", "HORROR", null, 4, "HIGH", "2-4 players", 60, 0);
 		repository.append(2L, 102L, "Lost Temple", "Store B", "Seoul", "Mapo", "THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0);
@@ -174,19 +191,19 @@ class ExploreThemeSearchServiceTest {
 		}
 
 		@Override
-		public SearchResult search(Condition condition) {
+		public ExploreThemeSearchView search(SearchCondition searchCondition) {
 			List<Row> filtered = rows.stream()
-				.filter(row -> matchesKeyword(row, condition.keyword()))
-				.filter(row -> matchesGenres(row, condition.genres()))
-				.filter(row -> matchesRegion(row, condition.region()))
-				.filter(row -> matchesDistrict(row, condition.district()))
+				.filter(row -> matchesKeyword(row, searchCondition.keyword()))
+				.filter(row -> matchesGenres(row, searchCondition.genres()))
+				.filter(row -> matchesRegion(row, searchCondition.region()))
+				.filter(row -> matchesDistrict(row, searchCondition.district()))
 				.sorted(Comparator.comparing(Row::themeId).reversed())
 				.toList();
 
-			int fromIndex = Math.min(condition.page() * condition.size(), filtered.size());
-			int toIndex = Math.min(fromIndex + condition.size(), filtered.size());
-			List<GetExploreThemesUseCase.Item> items = filtered.subList(fromIndex, toIndex).stream()
-				.map(row -> GetExploreThemesUseCase.Item.of(
+			int fromIndex = Math.min(searchCondition.page() * searchCondition.size(), filtered.size());
+			int toIndex = Math.min(fromIndex + searchCondition.size(), filtered.size());
+			List<ExploreThemeSearchView.Item> items = filtered.subList(fromIndex, toIndex).stream()
+				.map(row -> ExploreThemeSearchView.Item.of(
 					row.themeId(),
 					row.themeName(),
 					row.storeId(),
@@ -198,15 +215,14 @@ class ExploreThemeSearchServiceTest {
 					row.activityLabel(),
 					row.recommendedPlayers(),
 					row.runningTimeMinutes(),
-					row.favoriteCount(),
-					false
+					row.favoriteCount()
 				))
 				.toList();
 
 			boolean hasNext = toIndex < filtered.size();
-			return SearchResult.of(
+			return ExploreThemeSearchView.of(
 				items,
-				GetExploreThemesUseCase.PageInfo.of(condition.page(), condition.size(), hasNext)
+				ExploreThemeSearchView.PageInfo.of(searchCondition.page(), searchCondition.size(), hasNext)
 			);
 		}
 
@@ -237,7 +253,7 @@ class ExploreThemeSearchServiceTest {
 		}
 
 		@Override
-		public Optional<ThemeDetail> getThemeDetail(Long themeId) {
+		public Optional<ExploreThemeDetailView> getThemeDetail(Long themeId) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -297,6 +313,7 @@ class ExploreThemeSearchServiceTest {
 
 	private static final class InMemoryThemeFavoriteRepository implements ThemeFavoriteRepository {
 		private final Map<Long, Set<Long>> favoriteThemeIdsByUserId = new HashMap<>();
+		private int findFavoritedThemeIdsCallCount;
 
 		@Override
 		public boolean create(Long userId, Long themeId, java.time.Instant createdAt) {
@@ -315,6 +332,7 @@ class ExploreThemeSearchServiceTest {
 
 		@Override
 		public Set<Long> findFavoritedThemeIds(Long userId, List<Long> themeIds) {
+			findFavoritedThemeIdsCallCount++;
 			Set<Long> favorites = favoriteThemeIdsByUserId.getOrDefault(userId, Set.of());
 			return themeIds.stream()
 				.filter(favorites::contains)
