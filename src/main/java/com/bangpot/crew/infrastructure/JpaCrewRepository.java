@@ -3,10 +3,13 @@ package com.bangpot.crew.infrastructure;
 import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
+import com.bangpot.crew.application.exception.DuplicateCrewNameException;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
@@ -31,7 +34,14 @@ class JpaCrewRepository implements CrewRepository {
 
 	@Override
 	public Crew save(Crew crew) {
-		return crewJpaRepository.save(crew);
+		try {
+			return crewJpaRepository.save(crew);
+		} catch (DataIntegrityViolationException exception) {
+			if (isDuplicateCrewName(exception)) {
+				throw new DuplicateCrewNameException(crew.getName());
+			}
+			throw exception;
+		}
 	}
 
 	@Override
@@ -79,5 +89,22 @@ class JpaCrewRepository implements CrewRepository {
 	@Override
 	public List<Crew> findPublicCrews() {
 		return crewJpaRepository.findAllByStatusAndVisibilityOrderByIdAsc(CrewStatus.ACTIVE, CrewVisibility.PUBLIC);
+	}
+
+	private boolean isDuplicateCrewName(DataIntegrityViolationException exception) {
+		ConstraintViolationException constraintViolationException = findConstraintViolationException(exception);
+		return constraintViolationException != null
+			&& Crew.NAME_UNIQUE_CONSTRAINT.equalsIgnoreCase(constraintViolationException.getConstraintName());
+	}
+
+	private ConstraintViolationException findConstraintViolationException(Throwable throwable) {
+		Throwable current = throwable;
+		while (current != null) {
+			if (current instanceof ConstraintViolationException constraintViolationException) {
+				return constraintViolationException;
+			}
+			current = current.getCause();
+		}
+		return null;
 	}
 }
