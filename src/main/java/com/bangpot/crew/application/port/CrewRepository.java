@@ -14,6 +14,10 @@ public interface CrewRepository {
 
 	Optional<Crew> findById(Long crewId);
 
+	Optional<Crew> findByIdForUpdate(Long crewId);
+
+	Optional<Crew> findByIdForShare(Long crewId);
+
 	List<Crew> findActiveByMemberUserId(Long userId);
 
 	MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size);

@@ -5,8 +5,11 @@ import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
@@ -23,6 +26,30 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	boolean existsByName(String name);
 
 	java.util.Optional<Crew> findByIdAndStatus(Long id, CrewStatus status);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		select c
+		from Crew c
+		where c.id = :id
+		  and c.status = :status
+		""")
+	java.util.Optional<Crew> findByIdAndStatusForUpdate(
+		@Param("id") Long id,
+		@Param("status") CrewStatus status
+	);
+
+	@Lock(LockModeType.PESSIMISTIC_READ)
+	@Query("""
+		select c
+		from Crew c
+		where c.id = :id
+		  and c.status = :status
+		""")
+	java.util.Optional<Crew> findByIdAndStatusForShare(
+		@Param("id") Long id,
+		@Param("status") CrewStatus status
+	);
 
 	List<Crew> findAllByStatusAndVisibilityOrderByIdAsc(CrewStatus status, CrewVisibility visibility);
 

@@ -589,6 +589,16 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
 		public List<Crew> findActiveByMemberUserId(Long userId) {
 			return crewsById.values().stream()
 				.filter(crew -> crewMemberRepository.findAllByUserId(userId).stream()
@@ -683,6 +693,13 @@ abstract class AbstractUserApplicationServiceTest {
 		public Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
 			return Optional.ofNullable(crewMembersByCrewAndUser.get(key(crewId, userId)));
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {

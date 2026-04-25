@@ -94,6 +94,7 @@ class CrewDeleteUseCaseServicesTest {
 		);
 
 		assertThat(result.crewId()).isEqualTo(crew.getId());
+		assertThat(crewRepository.findByIdForUpdateCallCount).isEqualTo(1);
 		assertThat(crewRepository.findById(crew.getId())).isEmpty();
 		assertThat(crewRepository.findAnyById(crew.getId())).get()
 			.extracting(Crew::getStatus)
@@ -131,6 +132,7 @@ class CrewDeleteUseCaseServicesTest {
 		assertThatThrownBy(() -> deleteCrewUseCase.handle(
 			DeleteCrewUseCase.Command.of(crew.getId(), leader.getId(), "Crew Alpha")
 		)).isInstanceOf(CrewDeleteNotAllowedWithActiveMembersException.class);
+		assertThat(crewMemberRepository.findAllByCrewIdCallCount).isZero();
 	}
 
 	@Test
@@ -309,6 +311,7 @@ class CrewDeleteUseCaseServicesTest {
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findByIdForUpdateCallCount;
 
 		@Override
 		public boolean existsByName(String name) {
@@ -328,6 +331,18 @@ class CrewDeleteUseCaseServicesTest {
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId))
 				.filter(Crew::isActive);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			findByIdForUpdateCallCount++;
+			return Optional.ofNullable(crewsById.get(crewId))
+				.filter(Crew::isActive);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
 		}
 
 		@Override
@@ -367,6 +382,7 @@ class CrewDeleteUseCaseServicesTest {
 
 		private final Map<Long, CrewMember> membersById = new HashMap<>();
 		private long sequence = 1L;
+		private int findAllByCrewIdCallCount;
 
 		@Override
 		public CrewMember save(CrewMember crewMember) {
@@ -405,9 +421,18 @@ class CrewDeleteUseCaseServicesTest {
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return membersById.values().stream()
+				.filter(member -> crewId.equals(member.getCrewId()))
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
+			findAllByCrewIdCallCount++;
 			return membersById.values().stream()
 				.filter(member -> crewId.equals(member.getCrewId()))
 				.filter(CrewMember::isActive)

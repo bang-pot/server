@@ -13,6 +13,8 @@ public interface CrewMemberRepository {
 
 	boolean existsLeaderByCrewIdAndUserId(Long crewId, Long userId);
 
+	boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId);
+
 	Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId);
 
 	Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId);

@@ -39,6 +39,15 @@ class JpaCrewMemberRepository implements CrewMemberRepository {
 	}
 
 	@Override
+	public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+		return crewMemberJpaRepository.existsByCrewIdAndUserIdNotAndStatus(
+			crewId,
+			userId,
+			CrewMemberStatus.ACTIVE
+		);
+	}
+
+	@Override
 	public Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId) {
 		return crewMemberJpaRepository.findByCrewIdAndUserIdAndStatus(crewId, userId, CrewMemberStatus.ACTIVE);
 	}

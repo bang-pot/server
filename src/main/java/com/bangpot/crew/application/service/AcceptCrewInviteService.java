@@ -1,7 +1,7 @@
 package com.bangpot.crew.application.service;
 
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.crew.application.exception.CrewInviteNotFoundException;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
@@ -20,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AcceptCrewInviteService implements AcceptCrewInviteUseCase {
 
+	private static final String ACCEPT_DENIED_MESSAGE = "초대를 수락할 권한이 없습니다.";
+
 	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
@@ -28,12 +30,12 @@ public class AcceptCrewInviteService implements AcceptCrewInviteUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		completedUserAccessService.validateCompletedUser(command.userId(), "초대를 수락할 권한이 없습니다.");
+		completedUserAccessService.validateCompletedUser(command.userId(), ACCEPT_DENIED_MESSAGE);
 
 		CrewInvite invite = crewInviteRepository.findPendingByIdAndTargetUserId(command.inviteId(), command.userId())
 			.orElseThrow(() -> new CrewInviteNotFoundException(command.inviteId()));
 
-		crewRepository.findById(invite.getCrewId())
+		crewRepository.findByIdForShare(invite.getCrewId())
 			.orElseThrow(() -> new CrewNotFoundException(invite.getCrewId()));
 
 		if (!crewMemberRepository.existsByCrewIdAndUserId(invite.getCrewId(), command.userId())) {

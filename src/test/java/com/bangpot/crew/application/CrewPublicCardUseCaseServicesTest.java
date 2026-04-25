@@ -92,6 +92,16 @@ class CrewPublicCardUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.Optional<Crew> findByIdForUpdate(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public java.util.Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
 		public java.util.Optional<Crew> findAnyById(Long crewId) {
 			return crews.stream().filter(crew -> crewId.equals(crew.getId())).findFirst();
 		}

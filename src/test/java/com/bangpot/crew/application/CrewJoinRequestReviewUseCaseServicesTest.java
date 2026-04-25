@@ -181,6 +181,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 		assertThat(result.requestId()).isEqualTo(joinRequest.getId());
 		assertThat(result.userId()).isEqualTo(requester.getId());
 		assertThat(result.role()).isEqualTo(CrewRole.MEMBER);
+		assertThat(crewRepository.findByIdForShareCallCount).isEqualTo(1);
 		assertThat(crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), requester.getId())).isTrue();
 		assertThat(crewJoinRequestRepository.findPendingByIdAndCrewId(joinRequest.getId(), crew.getId())).isEmpty();
 		assertThat(crewJoinRequestRepository.findById(joinRequest.getId())).get()
@@ -374,6 +375,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findByIdForShareCallCount;
 
 		@Override
 		public boolean existsByName(String name) {
@@ -392,6 +394,17 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 		@Override
 		public Optional<Crew> findById(Long crewId) {
 			return Optional.ofNullable(crewsById.get(crewId));
+		}
+
+		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			findByIdForShareCallCount++;
+			return findById(crewId);
 		}
 
 		@Override
@@ -462,6 +475,13 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {

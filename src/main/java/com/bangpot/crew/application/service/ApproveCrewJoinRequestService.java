@@ -27,7 +27,7 @@ public class ApproveCrewJoinRequestService implements ApproveCrewJoinRequestUseC
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		crewRepository.findById(command.crewId())
+		crewRepository.findByIdForShare(command.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 		requireLeader(command.crewId(), command.leaderUserId());
 

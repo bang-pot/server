@@ -30,6 +30,7 @@ class ReopenMeetingRecruitmentServiceTest extends AbstractMeetingUseCaseServices
 		);
 
 		assertThat(result.status()).isEqualTo("RECRUITING");
+		assertThat(crewRepository.findByIdForShareCallCount).isEqualTo(1);
 		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
 			.isEqualTo(MeetingStatus.RECRUITING);
 	}
