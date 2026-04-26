@@ -14,6 +14,28 @@ public record CrewHubView(
 	Integer pendingJoinRequestCount
 ) {
 
+	public CrewHubView(
+		Long crewId,
+		String name,
+		String description,
+		CrewVisibility visibility,
+		String imageUrl,
+		CrewRole myRole,
+		Boolean hasNotice,
+		Long pendingJoinRequestCount
+	) {
+		this(
+			crewId,
+			name,
+			description,
+			visibility,
+			imageUrl,
+			myRole,
+			Boolean.TRUE.equals(hasNotice),
+			pendingJoinRequestCount == null ? null : Math.toIntExact(pendingJoinRequestCount)
+		);
+	}
+
 	public static CrewHubView of(
 		Long crewId,
 		String name,

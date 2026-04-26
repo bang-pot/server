@@ -411,7 +411,7 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	);
 
 	@Query("""
-		select new com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew(
+		select new com.bangpot.user.domain.view.MyWithdrawalCheckView$BlockingActiveCrew(
 			c.id,
 			c.name
 		)
