@@ -62,9 +62,12 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		);
 		getCrewHubUseCase = new GetCrewHubService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			new InMemoryCrewJoinRequestRepository()
+			new InMemoryCrewQueryRepository(
+				crewRepository,
+				crewMemberRepository,
+				userRepository,
+				new InMemoryCrewJoinRequestRepository()
+			)
 		);
 		getCrewMembersUseCase = new GetCrewMembersService(
 			completedUserAccessService,
@@ -378,6 +381,86 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		}
 	}
 
+	private static final class InMemoryCrewQueryRepository implements com.bangpot.crew.application.port.CrewQueryRepository {
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryUserRepository userRepository;
+		private final InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
+
+		private InMemoryCrewQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryUserRepository userRepository,
+			InMemoryCrewJoinRequestRepository crewJoinRequestRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.userRepository = userRepository;
+			this.crewJoinRequestRepository = crewJoinRequestRepository;
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			return crewRepository.findById(crewId)
+				.map(crew -> {
+					CrewRole myRole = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+						.map(CrewMember::getRole)
+						.orElse(null);
+					Integer pendingCount = myRole == CrewRole.LEADER
+						? crewJoinRequestRepository.findPendingByCrewId(crewId).size()
+						: null;
+					return com.bangpot.crew.domain.view.CrewHubView.of(
+						crew.getId(),
+						crew.getName(),
+						crew.getDescription(),
+						crew.getVisibility(),
+						crew.getImageUrl(),
+						myRole,
+						false,
+						pendingCount
+					);
+				});
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+	}
 	private static final class InMemoryCrewJoinRequestRepository implements com.bangpot.crew.application.port.CrewJoinRequestRepository {
 		@Override
 		public Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {

@@ -27,6 +27,7 @@ import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
+import com.bangpot.crew.domain.view.CrewHubView;
 
 final class CrewDtoMapper {
 
@@ -63,12 +64,12 @@ final class CrewDtoMapper {
 		return GetCrewHubUseCase.Query.of(crewId, userId);
 	}
 
-	static CrewDto.CrewHubResponse toResponse(GetCrewHubUseCase.Result result) {
+	static CrewDto.CrewHubResponse toResponse(CrewHubView result) {
 		return new CrewDto.CrewHubResponse(
 			result.crewId(),
 			result.name(),
 			result.description(),
-			result.visibility(),
+			result.visibility().name(),
 			result.imageUrl(),
 			result.myRole(),
 			result.hasNotice(),

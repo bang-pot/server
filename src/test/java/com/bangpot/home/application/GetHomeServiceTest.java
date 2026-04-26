@@ -166,10 +166,14 @@ class GetHomeServiceTest {
 	}
 
 	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
-		private final Map<Long, MyCrewsView> myCrewsViewByUserId = new HashMap<>();
-		private final Map<Long, Long> myCrewsViewCountByUserId = new HashMap<>();
-		private final Map<Long, Long> activeCrewCountByUserId = new HashMap<>();
-		private PublicCrewPreviewView publicCrewPreviewView = PublicCrewPreviewView.of(List.of());
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
 
 		@Override
 		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {

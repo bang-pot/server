@@ -1,6 +1,7 @@
 package com.bangpot.crew.infrastructure;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
@@ -11,6 +12,7 @@ import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
@@ -23,6 +25,18 @@ import lombok.RequiredArgsConstructor;
 public class JpaCrewQueryRepository implements CrewQueryRepository {
 
 	private final CrewJpaRepository crewJpaRepository;
+
+	@Override
+	public Optional<CrewHubView> findCrewHubViewByCrewIdAndUserId(Long crewId, Long userId) {
+		return crewJpaRepository.findCrewHubViewByCrewIdAndUserId(
+			crewId,
+			userId,
+			CrewStatus.ACTIVE,
+			CrewMemberStatus.ACTIVE,
+			CrewRole.LEADER,
+			CrewJoinRequestStatus.PENDING
+		);
+	}
 
 	@Override
 	public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {

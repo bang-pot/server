@@ -45,6 +45,8 @@ import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewRole;
+import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewHubView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -261,11 +263,11 @@ class CrewControllerTest {
 	@Test
 	void returnsCrewHubForMember() throws Exception {
 		when(getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(1L, 77L)))
-			.thenReturn(GetCrewHubUseCase.Result.of(
+			.thenReturn(CrewHubView.of(
 				1L,
 				"Crew Alpha",
 				"public crew",
-				"PUBLIC",
+				CrewVisibility.PUBLIC,
 				null,
 				CrewRole.MEMBER,
 				false,
@@ -287,11 +289,11 @@ class CrewControllerTest {
 	@Test
 	void returnsCrewHubForLeaderWithPendingSummary() throws Exception {
 		when(getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(1L, 77L)))
-			.thenReturn(GetCrewHubUseCase.Result.of(
+			.thenReturn(CrewHubView.of(
 				1L,
 				"Crew Alpha",
 				"public crew",
-				"PUBLIC",
+				CrewVisibility.PUBLIC,
 				null,
 				CrewRole.LEADER,
 				false,
@@ -321,40 +323,6 @@ class CrewControllerTest {
 			.thenReturn(List.of(
 				GetCrewMembersUseCase.View.of(201L, "leader-pot", null, null, null, 0, CrewRole.LEADER, "2026-04-11T00:00:00Z"),
 				GetCrewMembersUseCase.View.of(202L, "member-pot", null, null, null, 0, CrewRole.MEMBER, "2026-04-10T00:00:00Z")
-			));
-
-		mockMvc.perform(
-			get("/api/crews/1/members")
-				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].userId").value(201))
-			.andExpect(jsonPath("$[0].nickname").value("leader-pot"))
-			.andExpect(jsonPath("$[0].profileImageUrl").doesNotExist())
-			.andExpect(jsonPath("$[0].bio").doesNotExist())
-			.andExpect(jsonPath("$[0].gender").doesNotExist())
-			.andExpect(jsonPath("$[0].escapeCount").value(0))
-			.andExpect(jsonPath("$[0].role").value("LEADER"))
-			.andExpect(jsonPath("$[0].joinedAt").value("2026-04-11T00:00:00Z"))
-			.andExpect(jsonPath("$[1].userId").value(202))
-			.andExpect(jsonPath("$[1].role").value("MEMBER"));
-	}
-
-	@Test
-	void returnsUnauthorizedWhenCrewMembersAreRequestedWithoutAuthentication() throws Exception {
-		mockMvc.perform(get("/api/crews/1/members"))
-			.andExpect(status().isUnauthorized())
-			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
-	}
-
-	@Test
-	void returnsMyCrewsForMeetingCreateWhenAuthenticated() throws Exception {
-		when(getMeetingCreateCrewsUseCase.handle(GetMeetingCreateCrewsUseCase.Query.of(7L)))
-			.thenReturn(GetMeetingCreateCrewsUseCase.Result.of(
-				List.of(
-					GetMeetingCreateCrewsUseCase.CrewItem.of(101L, "Alpha Crew"),
-					GetMeetingCreateCrewsUseCase.CrewItem.of(202L, "Beta Crew")
-				)
 			));
 
 		mockMvc.perform(

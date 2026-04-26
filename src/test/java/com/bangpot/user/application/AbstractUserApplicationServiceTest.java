@@ -409,10 +409,13 @@ abstract class AbstractUserApplicationServiceTest {
 	}
 
 	protected static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
-		private final InMemoryCrewRepository crewRepository;
 
-		private InMemoryCrewQueryRepository(InMemoryCrewRepository crewRepository) {
-			this.crewRepository = crewRepository;
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override

@@ -70,11 +70,12 @@ class GetMeetingCreateCrewsServiceTest {
 
 	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
 
-		private final java.util.Map<Long, MeetingCreateCrewsView> meetingCreateCrewsByUserId =
-			new java.util.HashMap<>();
-
-		void saveMeetingCreateCrews(Long userId, MeetingCreateCrewsView view) {
-			meetingCreateCrewsByUserId.put(userId, view);
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override

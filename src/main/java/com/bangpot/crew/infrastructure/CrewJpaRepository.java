@@ -1,6 +1,7 @@
 package com.bangpot.crew.infrastructure;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -14,8 +15,10 @@ import jakarta.persistence.LockModeType;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewMemberStatus;
+import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
@@ -26,6 +29,42 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	boolean existsByName(String name);
 
 	java.util.Optional<Crew> findByIdAndStatus(Long id, CrewStatus status);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.CrewHubView(
+			c.id,
+			c.name,
+			c.description,
+			c.visibility,
+			c.imageUrl,
+			member.role,
+			false,
+			case
+				when member.role = :leaderRole then (
+					select count(joinRequest.id)
+					from CrewJoinRequest joinRequest
+					where joinRequest.crewId = c.id
+					  and joinRequest.status = :pendingJoinRequestStatus
+				)
+				else null
+			end
+		)
+		from Crew c
+		left join CrewMember member
+		  on member.crewId = c.id
+		 and member.userId = :userId
+		 and member.status = :activeMemberStatus
+		where c.id = :crewId
+		  and c.status = :activeCrewStatus
+		""")
+	Optional<CrewHubView> findCrewHubViewByCrewIdAndUserId(
+		@Param("crewId") Long crewId,
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		@Param("leaderRole") CrewRole leaderRole,
+		@Param("pendingJoinRequestStatus") CrewJoinRequestStatus pendingJoinRequestStatus
+	);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("""
