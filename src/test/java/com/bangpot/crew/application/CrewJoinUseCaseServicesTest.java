@@ -170,6 +170,7 @@ class CrewJoinUseCaseServicesTest {
 
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.myStatus()).isEqualTo(CrewJoinViewStatus.PENDING);
+		assertThat(crewRepository.findByIdForUpdateCallCount).isEqualTo(1);
 		assertThat(crewJoinRequestRepository.findByCrewIdAndUserId(crew.getId(), fullUser.getId())).get()
 			.extracting(CrewJoinRequest::getMessage, CrewJoinRequest::getStatus)
 			.containsExactly("?? ??? ???", CrewJoinRequestStatus.PENDING);
@@ -502,6 +503,7 @@ class CrewJoinUseCaseServicesTest {
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findByIdForUpdateCallCount;
 
 		@Override
 		public boolean existsByName(String name) {
@@ -524,6 +526,7 @@ class CrewJoinUseCaseServicesTest {
 
 		@Override
 		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			findByIdForUpdateCallCount++;
 			return findById(crewId);
 		}
 

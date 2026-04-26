@@ -35,7 +35,7 @@ public class AcceptCrewInviteService implements AcceptCrewInviteUseCase {
 		CrewInvite invite = crewInviteRepository.findPendingByIdAndTargetUserId(command.inviteId(), command.userId())
 			.orElseThrow(() -> new CrewInviteNotFoundException(command.inviteId()));
 
-		crewRepository.findByIdForShare(invite.getCrewId())
+		crewRepository.findByIdForUpdate(invite.getCrewId())
 			.orElseThrow(() -> new CrewNotFoundException(invite.getCrewId()));
 
 		if (!crewMemberRepository.existsByCrewIdAndUserId(invite.getCrewId(), command.userId())) {

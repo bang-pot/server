@@ -20,6 +20,7 @@ import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.crew.application.exception.CrewInviteAlreadyPendingException;
 import com.bangpot.crew.application.exception.CrewInviteNotAllowedException;
+import com.bangpot.crew.application.exception.CrewSelfInviteNotAllowedException;
 import com.bangpot.crew.application.port.CrewInviteRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewQueryRepository;
@@ -170,6 +171,7 @@ class CrewInviteUseCaseServicesTest {
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.targetUserId()).isEqualTo(target.getId());
 		assertThat(result.status()).isEqualTo("PENDING");
+		assertThat(crewRepository.findByIdForUpdateCallCount).isEqualTo(1);
 		assertThat(crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), target.getId())).isFalse();
 		assertThat(crewInviteRepository.findPendingByCrewIdAndTargetUserId(crew.getId(), target.getId())).isPresent()
 			.get()
@@ -191,6 +193,19 @@ class CrewInviteUseCaseServicesTest {
 			CreateCrewInviteUseCase.Command.of(crew.getId(), leader.getId(), target.getId())
 		))
 			.isInstanceOf(com.bangpot.crew.application.exception.CrewAlreadyJoinedException.class);
+	}
+
+	@Test
+	void rejectsInviteCreationWhenInvitingSelf() {
+		Crew crew = crewRepository.save(Crew.create("?? ??? ??", "crew", CrewVisibility.PRIVATE, null));
+		AuthUser leader = fullUser(1L, "leader-provider", "leader");
+		authUserRepository.save(leader);
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
+
+		assertThatThrownBy(() -> createCrewInviteUseCase.handle(
+			CreateCrewInviteUseCase.Command.of(crew.getId(), leader.getId(), leader.getId())
+		))
+			.isInstanceOf(CrewSelfInviteNotAllowedException.class);
 	}
 
 	@Test
@@ -507,6 +522,7 @@ class CrewInviteUseCaseServicesTest {
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findByIdForUpdateCallCount;
 
 		@Override
 		public boolean existsByName(String name) {
@@ -529,6 +545,7 @@ class CrewInviteUseCaseServicesTest {
 
 		@Override
 		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			findByIdForUpdateCallCount++;
 			return findById(crewId);
 		}
 
