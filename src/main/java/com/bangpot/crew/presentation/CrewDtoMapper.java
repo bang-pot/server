@@ -29,6 +29,7 @@ import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
 
 final class CrewDtoMapper {
 
@@ -109,12 +110,12 @@ final class CrewDtoMapper {
 		return GetCrewPoliciesUseCase.Query.of(crewId, userId);
 	}
 
-	static List<CrewDto.CrewPolicyResponse> toPolicyResponses(List<GetCrewPoliciesUseCase.View> views) {
-		return views.stream()
-			.map(view -> new CrewDto.CrewPolicyResponse(
-				view.policyId(),
-				view.title(),
-				view.content()
+	static List<CrewDto.CrewPolicyResponse> toPolicyResponses(CrewPoliciesView view) {
+		return view.items().stream()
+			.map(item -> new CrewDto.CrewPolicyResponse(
+				item.policyId(),
+				item.title(),
+				item.content()
 			))
 			.toList();
 	}

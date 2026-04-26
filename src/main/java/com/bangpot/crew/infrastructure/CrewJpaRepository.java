@@ -21,6 +21,7 @@ import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
@@ -112,6 +113,18 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
 		@Param("leaderRole") CrewRole leaderRole
 	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.CrewPoliciesView$Item(
+			policy.id,
+			policy.title,
+			policy.content
+		)
+		from CrewPolicy policy
+		where policy.crewId = :crewId
+		order by policy.createdAt asc, policy.id asc
+		""")
+	List<CrewPoliciesView.Item> findCrewPolicyItemsByCrewId(@Param("crewId") Long crewId);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("""

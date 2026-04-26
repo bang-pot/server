@@ -432,7 +432,14 @@ abstract class AbstractUserApplicationServiceTest {
 			this.crewRepository = crewRepository;
 		}
 
+
 		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}		@Override
 		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
 			return crewRepository.findMyCrewsViewByMemberUserId(userId, page, size);
 		}

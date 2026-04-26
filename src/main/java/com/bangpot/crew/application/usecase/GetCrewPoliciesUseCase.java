@@ -1,10 +1,10 @@
 package com.bangpot.crew.application.usecase;
 
-import java.util.List;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
 
 public interface GetCrewPoliciesUseCase {
 
-	List<View> handle(Query query);
+	CrewPoliciesView handle(Query query);
 
 	record Query(Long crewId, Long userId) {
 
@@ -13,10 +13,4 @@ public interface GetCrewPoliciesUseCase {
 		}
 	}
 
-	record View(Long policyId, String title, String content) {
-
-		public static View of(Long policyId, String title, String content) {
-			return new View(policyId, title, content);
-		}
-	}
 }

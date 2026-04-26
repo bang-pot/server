@@ -23,6 +23,7 @@ import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewPolicyRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.GetCrewPoliciesService;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
@@ -31,6 +32,7 @@ import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewPolicy;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -45,6 +47,7 @@ class CrewPoliciesUseCaseServicesTest {
 	private InMemoryCrewRepository crewRepository;
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryCrewPolicyRepository crewPolicyRepository;
+	private InMemoryCrewQueryRepository crewQueryRepository;
 	private GetCrewPoliciesUseCase getCrewPoliciesUseCase;
 
 	@BeforeEach
@@ -55,11 +58,14 @@ class CrewPoliciesUseCaseServicesTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewPolicyRepository = new InMemoryCrewPolicyRepository();
-		getCrewPoliciesUseCase = new GetCrewPoliciesService(
-			completedUserAccessService,
+		crewQueryRepository = new InMemoryCrewQueryRepository(
 			crewRepository,
 			crewMemberRepository,
 			crewPolicyRepository
+		);
+		getCrewPoliciesUseCase = new GetCrewPoliciesService(
+			completedUserAccessService,
+			crewQueryRepository
 		);
 	}
 
@@ -73,14 +79,14 @@ class CrewPoliciesUseCaseServicesTest {
 		crewPolicyRepository.save(policy(100L, crew.getId(), "?? ??", "?? ??? ?????."));
 		crewPolicyRepository.save(policy(101L, crew.getId(), "?? ??", "??? ?????.\n?? ? ?? ?????."));
 
-		List<GetCrewPoliciesUseCase.View> result = getCrewPoliciesUseCase.handle(
+		CrewPoliciesView result = getCrewPoliciesUseCase.handle(
 			GetCrewPoliciesUseCase.Query.of(crew.getId(), requester.getId())
 		);
 
-		assertThat(result).extracting(GetCrewPoliciesUseCase.View::policyId)
+		assertThat(result.items()).extracting(CrewPoliciesView.Item::policyId)
 			.containsExactly(100L, 101L);
-		assertThat(result.get(0).title()).isEqualTo("?? ??");
-		assertThat(result.get(1).content()).isEqualTo("??? ?????.\n?? ? ?? ?????.");
+		assertThat(result.items().get(0).title()).isEqualTo("?? ??");
+		assertThat(result.items().get(1).content()).isEqualTo("??? ?????.\n?? ? ?? ?????.");
 	}
 
 	@Test
@@ -91,11 +97,11 @@ class CrewPoliciesUseCaseServicesTest {
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "private crew", CrewVisibility.PRIVATE, null));
 		crewMemberRepository.save(crewMember(10L, crew.getId(), requester.getId(), CrewRole.MEMBER, NOW.minusSeconds(120)));
 
-		List<GetCrewPoliciesUseCase.View> result = getCrewPoliciesUseCase.handle(
+		CrewPoliciesView result = getCrewPoliciesUseCase.handle(
 			GetCrewPoliciesUseCase.Query.of(crew.getId(), requester.getId())
 		);
 
-		assertThat(result).isEmpty();
+		assertThat(result.items()).isEmpty();
 	}
 
 	@Test
@@ -176,6 +182,95 @@ class CrewPoliciesUseCaseServicesTest {
 		CrewPolicy policy = CrewPolicy.create(crewId, title, content);
 		policy.assignId(id);
 		return policy;
+	}
+
+	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryCrewPolicyRepository crewPolicyRepository;
+
+		private InMemoryCrewQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryCrewPolicyRepository crewPolicyRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.crewPolicyRepository = crewPolicyRepository;
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(Long crewId, Long userId) {
+			if (crewRepository.findById(crewId).isEmpty()) {
+				return Optional.empty();
+			}
+			CrewRole myRole = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+				.map(CrewMember::getRole)
+				.orElse(null);
+			List<CrewPoliciesView.Item> items = myRole == null
+				? List.of()
+				: crewPolicyRepository.findAllByCrewId(crewId).stream()
+					.map(policy -> CrewPoliciesView.Item.of(policy.getId(), policy.getTitle(), policy.getContent()))
+					.toList();
+			return Optional.of(CrewPoliciesView.of(myRole, items));
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew>
+		findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {

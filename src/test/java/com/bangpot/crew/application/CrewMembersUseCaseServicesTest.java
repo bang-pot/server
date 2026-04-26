@@ -446,7 +446,14 @@ class CrewMembersUseCaseServicesTest {
 				.orElse(null);
 		}
 
+
 		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}		@Override
 		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(
 			Long userId,
 			int page,

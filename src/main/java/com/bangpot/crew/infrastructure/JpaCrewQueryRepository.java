@@ -15,6 +15,7 @@ import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
@@ -62,6 +63,26 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 			CrewMemberStatus.ACTIVE,
 			CrewRole.LEADER
 		);
+	}
+
+	@Override
+	public Optional<CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(Long crewId, Long userId) {
+		return crewJpaRepository.findCrewMemberAccessByCrewIdAndUserId(
+			crewId,
+			userId,
+			CrewStatus.ACTIVE,
+			CrewMemberStatus.ACTIVE
+		).map(access -> CrewPoliciesView.of(
+			access.myRole(),
+			findCrewPolicyItemsIfMember(crewId, access)
+		));
+	}
+
+	private List<CrewPoliciesView.Item> findCrewPolicyItemsIfMember(Long crewId, CrewMemberAccessView access) {
+		if (access.myRole() == null) {
+			return List.of();
+		}
+		return crewJpaRepository.findCrewPolicyItemsByCrewId(crewId);
 	}
 
 	@Override

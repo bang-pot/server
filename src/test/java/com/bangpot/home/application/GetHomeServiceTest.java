@@ -189,6 +189,13 @@ class GetHomeServiceTest {
 		private PublicCrewPreviewView publicCrewPreviewView = PublicCrewPreviewView.of(List.of());
 
 		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+		@Override
 		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
 			return myCrewsViewByUserId.getOrDefault(userId, MyCrewsView.of(List.of(), MyCrewsView.Page.of(page, size, false)));
 		}

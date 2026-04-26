@@ -48,6 +48,7 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -398,10 +399,10 @@ class CrewControllerTest {
 	@Test
 	void returnsCrewPoliciesForJoinedMember() throws Exception {
 		when(getCrewPoliciesUseCase.handle(GetCrewPoliciesUseCase.Query.of(1L, 77L)))
-			.thenReturn(List.of(
-				GetCrewPoliciesUseCase.View.of(301L, "모임 규칙", "시간 약속을 지켜주세요."),
-				GetCrewPoliciesUseCase.View.of(302L, "참여 기준", "노쇼는 금지합니다.\n불참 시 미리 알려주세요.")
-			));
+			.thenReturn(CrewPoliciesView.of(CrewRole.MEMBER, List.of(
+				CrewPoliciesView.Item.of(301L, "모임 규칙", "시간 약속을 지켜주세요."),
+				CrewPoliciesView.Item.of(302L, "참여 기준", "노쇼는 금지합니다.\n불참 시 미리 알려주세요.")
+			)));
 
 		mockMvc.perform(
 			get("/api/crews/1/policies")
@@ -487,7 +488,7 @@ class CrewControllerTest {
 	@Test
 	void returnsEmptyCrewPoliciesWhenNoPolicyExists() throws Exception {
 		when(getCrewPoliciesUseCase.handle(GetCrewPoliciesUseCase.Query.of(1L, 77L)))
-			.thenReturn(List.of());
+			.thenReturn(CrewPoliciesView.of(CrewRole.MEMBER, List.of()));
 
 		mockMvc.perform(
 			get("/api/crews/1/policies")
