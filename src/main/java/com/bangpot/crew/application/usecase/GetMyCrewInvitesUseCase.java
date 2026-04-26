@@ -1,20 +1,15 @@
 package com.bangpot.crew.application.usecase;
 
-import java.util.List;
+import com.bangpot.crew.domain.view.MyCrewInvitesView;
 
 public interface GetMyCrewInvitesUseCase {
 
-	List<View> handle(Query query);
+	MyCrewInvitesView handle(Query query);
 
-	record Query(Long userId) {
-		public static Query of(Long userId) {
-			return new Query(userId);
+	record Query(Long userId, int page, int size) {
+		public static Query of(Long userId, int page, int size) {
+			return new Query(userId, page, size);
 		}
 	}
 
-	record View(Long inviteId, Long crewId, String crewName, String inviterNickname, String status) {
-		public static View of(Long inviteId, Long crewId, String crewName, String inviterNickname, String status) {
-			return new View(inviteId, crewId, crewName, inviterNickname, status);
-		}
-	}
 }

@@ -516,7 +516,6 @@ class CrewInviteUseCaseServicesTest {
 			return Optional.ofNullable(invitesById.get(inviteId));
 		}
 
-		@Override
 		public List<CrewInvite> findByTargetUserId(Long targetUserId) {
 			return invitesById.values().stream()
 				.filter(invite -> targetUserId.equals(invite.getTargetUserId()))

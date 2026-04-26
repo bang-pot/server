@@ -1,30 +1,36 @@
 package com.bangpot.crew.presentation;
 
-import java.util.List;
-
 import com.bangpot.crew.application.usecase.AcceptCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.GetMyCrewInvitesUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewInviteUseCase;
+import com.bangpot.crew.domain.view.MyCrewInvitesView;
 
 final class CrewInviteDtoMapper {
 
 	private CrewInviteDtoMapper() {
 	}
 
-	static GetMyCrewInvitesUseCase.Query toQuery(Long userId) {
-		return GetMyCrewInvitesUseCase.Query.of(userId);
+	static GetMyCrewInvitesUseCase.Query toQuery(Long userId, int page, int size) {
+		return GetMyCrewInvitesUseCase.Query.of(userId, page, size);
 	}
 
-	static List<CrewInviteDto.MyCrewInviteResponse> toResponses(List<GetMyCrewInvitesUseCase.View> views) {
-		return views.stream()
-			.map(view -> new CrewInviteDto.MyCrewInviteResponse(
-				view.inviteId(),
-				view.crewId(),
-				view.crewName(),
-				view.inviterNickname(),
-				view.status()
-			))
-			.toList();
+	static CrewInviteDto.MyCrewInvitesResponse toResponse(MyCrewInvitesView view) {
+		return new CrewInviteDto.MyCrewInvitesResponse(
+			view.items().stream()
+				.map(item -> new CrewInviteDto.MyCrewInviteResponse(
+					item.inviteId(),
+					item.crewId(),
+					item.crewName(),
+					item.inviterNickname(),
+					item.status().name()
+				))
+				.toList(),
+			new CrewInviteDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static AcceptCrewInviteUseCase.Command toAcceptCommand(Long inviteId, Long userId) {
