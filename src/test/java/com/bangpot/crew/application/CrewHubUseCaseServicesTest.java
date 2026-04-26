@@ -32,6 +32,7 @@ import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
@@ -467,6 +468,11 @@ class CrewHubUseCaseServicesTest {
 						pendingCount
 					);
 				});
+		}
+
+		@Override
+		public Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override

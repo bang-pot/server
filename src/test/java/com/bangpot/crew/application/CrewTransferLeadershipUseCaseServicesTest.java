@@ -32,6 +32,7 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -71,9 +72,12 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		);
 		getCrewMembersUseCase = new GetCrewMembersService(
 			completedUserAccessService,
-			userRepository,
-			crewRepository,
-			crewMemberRepository
+			new InMemoryCrewQueryRepository(
+				crewRepository,
+				crewMemberRepository,
+				userRepository,
+				new InMemoryCrewJoinRequestRepository()
+			)
 		);
 	}
 
@@ -104,8 +108,8 @@ class CrewTransferLeadershipUseCaseServicesTest {
 			.isEqualTo(CrewRole.MEMBER);
 		assertThat(getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(crew.getId(), member.getId())).myRole())
 			.isEqualTo(CrewRole.LEADER);
-		assertThat(getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), member.getId())))
-			.extracting(GetCrewMembersUseCase.View::role)
+		assertThat(getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), member.getId())).items())
+			.extracting(CrewMembersView.Item::role)
 			.containsExactly(CrewRole.LEADER, CrewRole.MEMBER);
 	}
 
@@ -424,6 +428,39 @@ class CrewTransferLeadershipUseCaseServicesTest {
 						pendingCount
 					);
 				});
+		}
+
+		@Override
+		public java.util.Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
+			if (crewRepository.findById(crewId).isEmpty()) {
+				return Optional.empty();
+			}
+			CrewRole myRole = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+				.map(CrewMember::getRole)
+				.orElse(null);
+			List<CrewMembersView.Item> items = myRole == null
+				? List.of()
+				: crewMemberRepository.findAllByCrewId(crewId).stream()
+					.sorted(java.util.Comparator
+						.comparing((CrewMember member) -> member.getRole() != CrewRole.LEADER)
+						.thenComparing(CrewMember::getCreatedAt, java.util.Comparator.reverseOrder()))
+					.map(this::toMemberItem)
+					.toList();
+			return Optional.of(CrewMembersView.of(myRole, items));
+		}
+
+		private CrewMembersView.Item toMemberItem(CrewMember member) {
+			User user = userRepository.findById(member.getUserId()).orElseThrow();
+			return CrewMembersView.Item.of(
+				user.getId(),
+				user.getNickname(),
+				null,
+				null,
+				null,
+				0,
+				member.getRole(),
+				member.getCreatedAt()
+			);
 		}
 
 		@Override

@@ -19,6 +19,8 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewMemberAccessView;
+import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
@@ -64,6 +66,51 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
 		@Param("leaderRole") CrewRole leaderRole,
 		@Param("pendingJoinRequestStatus") CrewJoinRequestStatus pendingJoinRequestStatus
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.CrewMemberAccessView(
+			member.role
+		)
+		from Crew c
+		left join CrewMember member
+		  on member.crewId = c.id
+		 and member.userId = :userId
+		 and member.status = :activeMemberStatus
+		where c.id = :crewId
+		  and c.status = :activeCrewStatus
+		""")
+	Optional<CrewMemberAccessView> findCrewMemberAccessByCrewIdAndUserId(
+		@Param("crewId") Long crewId,
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.CrewMembersView$Item(
+			user.id,
+			user.nickname,
+			user.profileImageUrl,
+			user.bio,
+			user.gender,
+			0,
+			member.role,
+			member.createdAt
+		)
+		from CrewMember member, UserJpaEntity user
+		where member.userId = user.id
+		  and member.crewId = :crewId
+		  and member.status = :activeMemberStatus
+		  and user.withdrawnAt is null
+		order by
+		  case when member.role = :leaderRole then 0 else 1 end asc,
+		  member.createdAt desc
+		""")
+	List<CrewMembersView.Item> findCrewMemberItemsByCrewId(
+		@Param("crewId") Long crewId,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		@Param("leaderRole") CrewRole leaderRole
 	);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -226,7 +273,7 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	);
 
 	@Query("""
-		select new com.bangpot.user.domain.view.MyWithdrawalCheckView$BlockingActiveCrew(
+		select new com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew(
 			c.id,
 			c.name
 		)

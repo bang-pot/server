@@ -79,6 +79,21 @@ class GetMeetingCreateCrewsServiceTest {
 		}
 
 		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		private final java.util.Map<Long, MeetingCreateCrewsView> meetingCreateCrewsByUserId =
+			new java.util.HashMap<>();
+
+		void saveMeetingCreateCrews(Long userId, MeetingCreateCrewsView view) {
+			meetingCreateCrewsByUserId.put(userId, view);
+		}
+
+		@Override
 		public MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
 			return meetingCreateCrewsByUserId.getOrDefault(userId, MeetingCreateCrewsView.of(List.of()));
 		}

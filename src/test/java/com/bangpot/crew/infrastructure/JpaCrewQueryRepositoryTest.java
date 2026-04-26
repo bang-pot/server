@@ -12,6 +12,7 @@ import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 
 @DataJpaTest
@@ -104,6 +105,26 @@ class JpaCrewQueryRepositoryTest {
 
 		assertThat(result.items()).extracting(MeetingCreateCrewsView.Item::crewName)
 			.containsExactly("Alpha Crew", "Beta Crew");
+	}
+
+	@Test
+	void returnsCrewMembersViewForJoinedMember() {
+		insertUser(1L, "leader");
+		insertUser(2L, "member");
+
+		Crew crew = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		entityManager.persistAndFlush(CrewMember.createLeader(crew.getId(), 1L));
+		entityManager.persistAndFlush(CrewMember.createMember(crew.getId(), 2L));
+
+		entityManager.clear();
+
+		CrewMembersView result = repository.findCrewMembersViewByCrewIdAndUserId(crew.getId(), 2L).orElseThrow();
+
+		assertThat(result.myRole()).isEqualTo(com.bangpot.crew.domain.CrewRole.MEMBER);
+		assertThat(result.items()).extracting(CrewMembersView.Item::userId)
+			.containsExactly(1L, 2L);
+		assertThat(result.items()).extracting(CrewMembersView.Item::nickname)
+			.containsExactly("leader", "member");
 	}
 
 	private void insertUser(Long userId, String nickname) {

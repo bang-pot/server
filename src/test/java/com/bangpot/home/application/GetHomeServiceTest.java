@@ -176,6 +176,19 @@ class GetHomeServiceTest {
 		}
 
 		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		private final Map<Long, MyCrewsView> myCrewsViewByUserId = new HashMap<>();
+		private final Map<Long, Long> myCrewsViewCountByUserId = new HashMap<>();
+		private final Map<Long, Long> activeCrewCountByUserId = new HashMap<>();
+		private PublicCrewPreviewView publicCrewPreviewView = PublicCrewPreviewView.of(List.of());
+
+		@Override
 		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
 			return myCrewsViewByUserId.getOrDefault(userId, MyCrewsView.of(List.of(), MyCrewsView.Page.of(page, size, false)));
 		}
