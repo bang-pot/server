@@ -42,13 +42,18 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 	}
 
 	@Override
-	public Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
+	public Optional<CrewMemberAccessView> findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
 		return crewJpaRepository.findCrewMemberAccessByCrewIdAndUserId(
 			crewId,
 			userId,
 			CrewStatus.ACTIVE,
 			CrewMemberStatus.ACTIVE
-		).map(access -> CrewMembersView.of(
+		);
+	}
+
+	@Override
+	public Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
+		return findCrewMemberAccessByCrewIdAndUserId(crewId, userId).map(access -> CrewMembersView.of(
 			access.myRole(),
 			findCrewMemberItemsIfMember(crewId, access)
 		));
@@ -67,12 +72,7 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 
 	@Override
 	public Optional<CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(Long crewId, Long userId) {
-		return crewJpaRepository.findCrewMemberAccessByCrewIdAndUserId(
-			crewId,
-			userId,
-			CrewStatus.ACTIVE,
-			CrewMemberStatus.ACTIVE
-		).map(access -> CrewPoliciesView.of(
+		return findCrewMemberAccessByCrewIdAndUserId(crewId, userId).map(access -> CrewPoliciesView.of(
 			access.myRole(),
 			findCrewPolicyItemsIfMember(crewId, access)
 		));

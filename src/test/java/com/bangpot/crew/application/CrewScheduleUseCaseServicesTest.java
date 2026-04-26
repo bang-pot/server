@@ -3,9 +3,8 @@ package com.bangpot.crew.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,7 +22,9 @@ import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
+import com.bangpot.crew.application.exception.CrewScheduleRequestValidationException;
 import com.bangpot.crew.application.port.CrewMemberRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.GetCrewScheduleService;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
@@ -31,12 +32,15 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewMemberAccessView;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.application.service.MeetingAutomaticTransitionService;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -52,6 +56,8 @@ class CrewScheduleUseCaseServicesTest {
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryMeetingRepository meetingRepository;
 	private InMemoryMeetingParticipantRepository meetingParticipantRepository;
+	private InMemoryCrewQueryRepository crewQueryRepository;
+	private InMemoryMeetingQueryRepository meetingQueryRepository;
 	private GetCrewScheduleUseCase getCrewScheduleUseCase;
 
 	@BeforeEach
@@ -63,18 +69,15 @@ class CrewScheduleUseCaseServicesTest {
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
-		MeetingAutomaticTransitionService meetingAutomaticTransitionService = new MeetingAutomaticTransitionService(
+		crewQueryRepository = new InMemoryCrewQueryRepository(crewRepository, crewMemberRepository);
+		meetingQueryRepository = new InMemoryMeetingQueryRepository(
 			meetingRepository,
-			meetingParticipantRepository,
-			Clock.fixed(NOW, ZoneOffset.UTC)
+			meetingParticipantRepository
 		);
 		getCrewScheduleUseCase = new GetCrewScheduleService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			meetingRepository,
-			meetingParticipantRepository,
-			meetingAutomaticTransitionService
+			crewQueryRepository,
+			meetingQueryRepository
 		);
 	}
 
@@ -112,23 +115,28 @@ class CrewScheduleUseCaseServicesTest {
 		meetingParticipantRepository.save(MeetingParticipant.join(canceled.getId(), requester.getId()));
 		meetingParticipantRepository.save(MeetingParticipant.join(outsidePeriod.getId(), requester.getId()));
 
-		GetCrewScheduleUseCase.Result result = getCrewScheduleUseCase.handle(
-			GetCrewScheduleUseCase.Query.of(crew.getId(), requester.getId(), "2026-04-20", "2026-04-22")
+		CrewScheduleView result = getCrewScheduleUseCase.handle(
+			GetCrewScheduleUseCase.Query.of(
+				crew.getId(),
+				requester.getId(),
+				LocalDate.parse("2026-04-20"),
+				LocalDate.parse("2026-04-22")
+			)
 		);
 
-		assertThat(result.items()).extracting(GetCrewScheduleUseCase.Item::meetingId)
+		assertThat(result.items()).extracting(CrewScheduleView.Item::meetingId)
 			.containsExactly(recruiting.getId(), completed.getId(), canceled.getId());
-		assertThat(result.items()).extracting(GetCrewScheduleUseCase.Item::themeName)
+		assertThat(result.items()).extracting(CrewScheduleView.Item::themeName)
 			.containsExactly("Theme A", "Theme B", "Theme C");
-		assertThat(result.items()).extracting(GetCrewScheduleUseCase.Item::meetingStatus)
+		assertThat(result.items()).extracting(CrewScheduleView.Item::meetingStatus)
 			.containsExactly("RECRUITING", "COMPLETED", "CANCELED");
-		assertThat(result.items()).extracting(GetCrewScheduleUseCase.Item::recruitmentStatus)
+		assertThat(result.items()).extracting(CrewScheduleView.Item::recruitmentStatus)
 			.containsExactly("OPEN", "CLOSED", "CLOSED");
-		assertThat(result.items()).extracting(GetCrewScheduleUseCase.Item::place)
+		assertThat(result.items()).extracting(CrewScheduleView.Item::place)
 			.containsExactly("Hongdae", "Gangnam", "Seongsu");
-		assertThat(result.items()).extracting(GetCrewScheduleUseCase.Item::participantCount)
+		assertThat(result.items()).extracting(CrewScheduleView.Item::participantCount)
 			.containsExactly(2L, 2L, 2L);
-		assertThat(result.items()).extracting(GetCrewScheduleUseCase.Item::isCanceled)
+		assertThat(result.items()).extracting(CrewScheduleView.Item::isCanceled)
 			.containsExactly(false, false, true);
 	}
 
@@ -155,16 +163,21 @@ class CrewScheduleUseCaseServicesTest {
 		meetingParticipantRepository.save(MeetingParticipant.join(second.getId(), requester.getId()));
 		meetingParticipantRepository.save(MeetingParticipant.join(third.getId(), requester.getId()));
 
-		GetCrewScheduleUseCase.Result result = getCrewScheduleUseCase.handle(
-			GetCrewScheduleUseCase.Query.of(crew.getId(), requester.getId(), "2026-04-20", "2026-04-20")
+		CrewScheduleView result = getCrewScheduleUseCase.handle(
+			GetCrewScheduleUseCase.Query.of(
+				crew.getId(),
+				requester.getId(),
+				LocalDate.parse("2026-04-20"),
+				LocalDate.parse("2026-04-20")
+			)
 		);
 
-		assertThat(result.items()).extracting(GetCrewScheduleUseCase.Item::meetingId)
+		assertThat(result.items()).extracting(CrewScheduleView.Item::meetingId)
 			.containsExactly(first.getId(), second.getId(), third.getId());
 	}
 
 	@Test
-	void appliesAutomaticMeetingTransitionBeforeBuildingSchedule() {
+	void returnsPersistedMeetingStatusWithoutMutatingDuringRead() {
 		AuthUser requester = fullAuthUser(7L, "requester-provider", "requester");
 		authUserRepository.save(requester);
 		userRepository.save(User.create(7L, "requester"));
@@ -177,15 +190,20 @@ class CrewScheduleUseCaseServicesTest {
 		));
 		meetingParticipantRepository.save(MeetingParticipant.join(staleRecruiting.getId(), requester.getId()));
 
-		GetCrewScheduleUseCase.Result result = getCrewScheduleUseCase.handle(
-			GetCrewScheduleUseCase.Query.of(crew.getId(), requester.getId(), "2026-04-20", "2026-04-20")
+		CrewScheduleView result = getCrewScheduleUseCase.handle(
+			GetCrewScheduleUseCase.Query.of(
+				crew.getId(),
+				requester.getId(),
+				LocalDate.parse("2026-04-20"),
+				LocalDate.parse("2026-04-20")
+			)
 		);
 
 		assertThat(result.items()).hasSize(1);
-		assertThat(result.items().get(0).meetingStatus()).isEqualTo("COMPLETED");
+		assertThat(result.items().get(0).meetingStatus()).isEqualTo("RECRUITING");
 		assertThat(meetingRepository.findById(staleRecruiting.getId())).get()
 			.extracting(Meeting::getStatus)
-			.isEqualTo(com.bangpot.meeting.domain.MeetingStatus.COMPLETED);
+			.isEqualTo(MeetingStatus.RECRUITING);
 	}
 
 	@Test
@@ -196,7 +214,12 @@ class CrewScheduleUseCaseServicesTest {
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "desc", CrewVisibility.PUBLIC, null));
 
 		assertThatThrownBy(() -> getCrewScheduleUseCase.handle(
-			GetCrewScheduleUseCase.Query.of(crew.getId(), outsider.getId(), "2026-04-20", "2026-04-22")
+			GetCrewScheduleUseCase.Query.of(
+				crew.getId(),
+				outsider.getId(),
+				LocalDate.parse("2026-04-20"),
+				LocalDate.parse("2026-04-22")
+			)
 		)).isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -208,7 +231,12 @@ class CrewScheduleUseCaseServicesTest {
 		crewMemberRepository.save(crewMember(1L, crew.getId(), tempUser.getId(), CrewRole.MEMBER));
 
 		assertThatThrownBy(() -> getCrewScheduleUseCase.handle(
-			GetCrewScheduleUseCase.Query.of(crew.getId(), tempUser.getId(), "2026-04-20", "2026-04-22")
+			GetCrewScheduleUseCase.Query.of(
+				crew.getId(),
+				tempUser.getId(),
+				LocalDate.parse("2026-04-20"),
+				LocalDate.parse("2026-04-22")
+			)
 		)).isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -219,8 +247,23 @@ class CrewScheduleUseCaseServicesTest {
 		userRepository.save(User.create(7L, "requester"));
 
 		assertThatThrownBy(() -> getCrewScheduleUseCase.handle(
-			GetCrewScheduleUseCase.Query.of(999L, requester.getId(), "2026-04-20", "2026-04-22")
+			GetCrewScheduleUseCase.Query.of(
+				999L,
+				requester.getId(),
+				LocalDate.parse("2026-04-20"),
+				LocalDate.parse("2026-04-22")
+			)
 		)).isInstanceOf(CrewNotFoundException.class);
+	}
+
+	@Test
+	void rejectsCrewScheduleQueryWhenDateRangeIsTooLarge() {
+		assertThatThrownBy(() -> GetCrewScheduleUseCase.Query.of(
+			1L,
+			7L,
+			LocalDate.parse("2026-01-01"),
+			LocalDate.parse("2027-01-02")
+		)).isInstanceOf(CrewScheduleRequestValidationException.class);
 	}
 
 	private AuthUser fullAuthUser(Long id, String providerId, String nickname) {
@@ -257,6 +300,181 @@ class CrewScheduleUseCaseServicesTest {
 			: CrewMember.createMember(crewId, userId);
 		member.assignId(id);
 		return member;
+	}
+
+	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+
+		private InMemoryCrewQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<CrewMemberAccessView> findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			return crewRepository.findById(crewId)
+				.filter(Crew::isActive)
+				.map(crew -> CrewMemberAccessView.of(
+					crewMemberRepository.findByCrewIdAndUserId(crew.getId(), userId)
+						.filter(CrewMember::isActive)
+						.map(CrewMember::getRole)
+						.orElse(null)
+				));
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew>
+			findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+	}
+
+	private static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+
+		private static final List<MeetingStatus> INCLUDED_STATUSES = List.of(
+			MeetingStatus.RECRUITING,
+			MeetingStatus.RECRUITMENT_CLOSED,
+			MeetingStatus.COMPLETED,
+			MeetingStatus.CANCELED
+		);
+
+		private final InMemoryMeetingRepository meetingRepository;
+		private final InMemoryMeetingParticipantRepository meetingParticipantRepository;
+
+		private InMemoryMeetingQueryRepository(
+			InMemoryMeetingRepository meetingRepository,
+			InMemoryMeetingParticipantRepository meetingParticipantRepository
+		) {
+			this.meetingRepository = meetingRepository;
+			this.meetingParticipantRepository = meetingParticipantRepository;
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.UpcomingMeetingsView findUpcomingMeetingsViewByUserId(
+			Long userId,
+			int limit,
+			String currentDate,
+			String currentTime
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public CrewScheduleView findCrewScheduleViewByCrewId(Long crewId, LocalDate from, LocalDate to) {
+			return CrewScheduleView.of(meetingRepository.findAllByCrewId(crewId).stream()
+				.filter(meeting -> INCLUDED_STATUSES.contains(meeting.getStatus()))
+				.filter(meeting -> !LocalDate.parse(meeting.getMeetingDate()).isBefore(from))
+				.filter(meeting -> !LocalDate.parse(meeting.getMeetingDate()).isAfter(to))
+				.map(meeting -> CrewScheduleView.Item.of(
+					meeting.getId(),
+					meeting.getThemeName(),
+					meeting.getMeetingDate(),
+					meeting.getMeetingTime(),
+					meeting.getStatus().name(),
+					meeting.getStatus() == MeetingStatus.RECRUITING ? "OPEN" : "CLOSED",
+					meeting.getPlace(),
+					meetingParticipantRepository.countByMeetingId(meeting.getId()) + 1L,
+					meeting.getStatus() == MeetingStatus.CANCELED
+				))
+				.toList());
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Map<Long, Integer> countCompletedByUserIds(java.util.Collection<Long> userIds) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {

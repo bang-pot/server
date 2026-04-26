@@ -381,6 +381,15 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public com.bangpot.meeting.domain.view.CrewScheduleView findCrewScheduleViewByCrewId(
+			Long crewId,
+			java.time.LocalDate from,
+			java.time.LocalDate to
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return meetingRepository.countCreatedByHostUserId(userId);
 		}
@@ -415,6 +424,12 @@ abstract class AbstractUserApplicationServiceTest {
 			Long crewId,
 			Long userId
 		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMemberAccessView>
+			findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
 			throw new UnsupportedOperationException();
 		}
 

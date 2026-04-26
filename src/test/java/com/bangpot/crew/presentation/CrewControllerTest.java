@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,7 @@ import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -418,10 +420,15 @@ class CrewControllerTest {
 
 	@Test
 	void returnsCrewScheduleForJoinedMember() throws Exception {
-		when(getCrewScheduleUseCase.handle(GetCrewScheduleUseCase.Query.of(1L, 77L, "2026-04-20", "2026-04-30")))
-			.thenReturn(GetCrewScheduleUseCase.Result.of(
+		when(getCrewScheduleUseCase.handle(GetCrewScheduleUseCase.Query.of(
+			1L,
+			77L,
+			LocalDate.parse("2026-04-20"),
+			LocalDate.parse("2026-04-30")
+		)))
+			.thenReturn(CrewScheduleView.of(
 				List.of(
-					GetCrewScheduleUseCase.Item.of(
+					CrewScheduleView.Item.of(
 						501L,
 						"Deep Blue",
 						"2026-04-20",
@@ -432,7 +439,7 @@ class CrewControllerTest {
 						4L,
 						false
 					),
-					GetCrewScheduleUseCase.Item.of(
+					CrewScheduleView.Item.of(
 						502L,
 						"Black Out",
 						"2026-04-21",

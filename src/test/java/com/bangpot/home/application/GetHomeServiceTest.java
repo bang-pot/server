@@ -176,6 +176,12 @@ class GetHomeServiceTest {
 		}
 
 		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMemberAccessView>
+			findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public java.util.Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
 			Long crewId,
 			Long userId
@@ -252,6 +258,15 @@ class GetHomeServiceTest {
 		@Override
 		public UpcomingMeetingsView findUpcomingMeetingsViewByUserId(Long userId, int limit, String currentDate, String currentTime) {
 			return upcomingMeetingsViewByUserId.getOrDefault(userId, UpcomingMeetingsView.of(List.of(), 0L));
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.CrewScheduleView findCrewScheduleViewByCrewId(
+			Long crewId,
+			java.time.LocalDate from,
+			java.time.LocalDate to
+		) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override

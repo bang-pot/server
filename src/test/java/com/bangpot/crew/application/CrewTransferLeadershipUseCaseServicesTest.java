@@ -431,6 +431,12 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		}
 
 		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMemberAccessView>
+			findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public java.util.Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
 			if (crewRepository.findById(crewId).isEmpty()) {
 				return Optional.empty();

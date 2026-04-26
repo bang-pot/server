@@ -30,6 +30,7 @@ import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 final class CrewDtoMapper {
 
@@ -123,15 +124,10 @@ final class CrewDtoMapper {
 	static GetCrewScheduleUseCase.Query toScheduleQuery(Long crewId, Long userId, String from, String to) {
 		LocalDate fromDate = parseDate("from", from);
 		LocalDate toDate = parseDate("to", to);
-		if (fromDate.isAfter(toDate)) {
-			throw new CrewScheduleRequestValidationException(
-				List.of(new ApiErrorField("to", "종료일은 시작일과 같거나 이후 날짜여야 합니다."))
-			);
-		}
-		return GetCrewScheduleUseCase.Query.of(crewId, userId, fromDate.toString(), toDate.toString());
+		return GetCrewScheduleUseCase.Query.of(crewId, userId, fromDate, toDate);
 	}
 
-	static CrewDto.CrewScheduleResponse toResponse(GetCrewScheduleUseCase.Result result) {
+	static CrewDto.CrewScheduleResponse toResponse(CrewScheduleView result) {
 		return new CrewDto.CrewScheduleResponse(
 			result.items().stream()
 				.map(item -> new CrewDto.CrewScheduleItemResponse(
@@ -318,7 +314,7 @@ final class CrewDtoMapper {
 			return LocalDate.parse(value);
 		} catch (DateTimeParseException exception) {
 			throw new CrewScheduleRequestValidationException(
-				List.of(new ApiErrorField(field, field + " must be a valid date in yyyy-MM-dd format."))
+				List.of(new ApiErrorField(field, field + "은(는) yyyy-MM-dd 형식의 올바른 날짜여야 합니다."))
 			);
 		}
 	}
