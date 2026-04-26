@@ -24,6 +24,7 @@ import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
@@ -150,8 +151,6 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		@Param("status") CrewStatus status
 	);
 
-	List<Crew> findAllByStatusAndVisibilityOrderByIdAsc(CrewStatus status, CrewVisibility visibility);
-
 	@Query("""
 		select c
 		from CrewMember cm, Crew c
@@ -234,6 +233,24 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
 		@Param("publicVisibility") CrewVisibility publicVisibility,
 		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.PublicCrewCardsView$Item(
+			c.id,
+			c.name,
+			c.description,
+			c.imageUrl
+		)
+		from Crew c
+		where c.status = :activeCrewStatus
+		  and c.visibility = :publicVisibility
+		order by c.id asc
+		""")
+	Slice<PublicCrewCardsView.Item> findPublicCrewCardItems(
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("publicVisibility") CrewVisibility publicVisibility,
 		Pageable pageable
 	);
 

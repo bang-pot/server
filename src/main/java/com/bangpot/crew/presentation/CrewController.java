@@ -1,5 +1,7 @@
 package com.bangpot.crew.presentation;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
@@ -36,10 +38,10 @@ import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
 
 @Validated
 @RestController
@@ -81,8 +83,14 @@ class CrewController {
 	}
 
 	@GetMapping("/public")
-	ResponseEntity<List<CrewDto.PublicCrewCardResponse>> getPublicCrewCards() {
-		return ResponseEntity.ok(CrewDtoMapper.toPublicCardResponses(getPublicCrewCardsUseCase.handle()));
+	ResponseEntity<CrewDto.PublicCrewCardsResponse> getPublicCrewCards(
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toPublicCardResponse(
+			getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(page, size))
+		));
 	}
 
 	@GetMapping("/{crewId}")

@@ -421,7 +421,6 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 			return 0L;
 		}
 
-		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)

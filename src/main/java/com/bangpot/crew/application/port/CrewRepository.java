@@ -27,6 +27,4 @@ public interface CrewRepository {
 	long countPendingPublicByUserId(Long userId);
 
 	Optional<Crew> findAnyById(Long crewId);
-
-	List<Crew> findPublicCrews();
 }

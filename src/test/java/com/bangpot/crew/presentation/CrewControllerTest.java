@@ -50,6 +50,7 @@ import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 @ActiveProfiles("test")
@@ -248,20 +249,29 @@ class CrewControllerTest {
 
 	@Test
 	void returnsPublicCrewCardsForCardList() throws Exception {
-		when(getPublicCrewCardsUseCase.handle()).thenReturn(List.of(
-			GetPublicCrewCardsUseCase.View.of(1L, "Crew Alpha", "public crew", "PUBLIC", null),
-			GetPublicCrewCardsUseCase.View.of(2L, "Crew Beta", "night runners", "PUBLIC", "https://image.example/beta.png")
-		));
+		when(getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(1, 10)))
+			.thenReturn(PublicCrewCardsView.of(
+				List.of(
+					PublicCrewCardsView.Item.of(1L, "Crew Alpha", "public crew", null),
+					PublicCrewCardsView.Item.of(2L, "Crew Beta", "night runners", "https://image.example/beta.png")
+				),
+				PublicCrewCardsView.Page.of(1, 10, true)
+			));
 
-		mockMvc.perform(get("/api/crews/public"))
+		mockMvc.perform(get("/api/crews/public")
+				.param("page", "1")
+				.param("size", "10"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].crewId").value(1))
-			.andExpect(jsonPath("$[0].name").value("Crew Alpha"))
-			.andExpect(jsonPath("$[0].description").value("public crew"))
-			.andExpect(jsonPath("$[0].visibility").value("PUBLIC"))
-			.andExpect(jsonPath("$[0].imageUrl").doesNotExist())
-			.andExpect(jsonPath("$[1].crewId").value(2))
-			.andExpect(jsonPath("$[1].imageUrl").value("https://image.example/beta.png"));
+			.andExpect(jsonPath("$.items[0].crewId").value(1))
+			.andExpect(jsonPath("$.items[0].name").value("Crew Alpha"))
+			.andExpect(jsonPath("$.items[0].description").value("public crew"))
+			.andExpect(jsonPath("$.items[0].visibility").doesNotExist())
+			.andExpect(jsonPath("$.items[0].imageUrl").doesNotExist())
+			.andExpect(jsonPath("$.items[1].crewId").value(2))
+			.andExpect(jsonPath("$.items[1].imageUrl").value("https://image.example/beta.png"))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(10))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
 
 	@Test

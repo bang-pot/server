@@ -470,6 +470,14 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			return com.bangpot.crew.domain.view.PublicCrewCardsView.of(
+				List.of(),
+				com.bangpot.crew.domain.view.PublicCrewCardsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return crewRepository.countActiveByMemberUserId(userId);
 		}
@@ -674,7 +682,6 @@ abstract class AbstractUserApplicationServiceTest {
 			return pendingCountsByUserId.getOrDefault(userId, 0L);
 		}
 
-		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)

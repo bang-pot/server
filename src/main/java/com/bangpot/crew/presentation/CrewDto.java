@@ -28,8 +28,20 @@ final class CrewDto {
 		Long crewId,
 		String name,
 		String description,
-		String visibility,
 		String imageUrl
+	) {
+	}
+
+	record PageInfoResponse(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
+	record PublicCrewCardsResponse(
+		java.util.List<PublicCrewCardResponse> items,
+		PageInfoResponse pageInfo
 	) {
 	}
 

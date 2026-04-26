@@ -1,26 +1,18 @@
 package com.bangpot.crew.application.usecase;
 
-import java.util.List;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
 
 public interface GetPublicCrewCardsUseCase {
 
-	List<View> handle();
+	PublicCrewCardsView handle(Query query);
 
-	record View(
-		Long crewId,
-		String name,
-		String description,
-		String visibility,
-		String imageUrl
+	record Query(
+		int page,
+		int size
 	) {
-		public static View of(
-			Long crewId,
-			String name,
-			String description,
-			String visibility,
-			String imageUrl
-		) {
-			return new View(crewId, name, description, visibility, imageUrl);
+
+		public static Query of(int page, int size) {
+			return new Query(page, size);
 		}
 	}
 }

@@ -96,11 +96,6 @@ class JpaCrewRepository implements CrewRepository {
 		return crewJpaRepository.findById(crewId);
 	}
 
-	@Override
-	public List<Crew> findPublicCrews() {
-		return crewJpaRepository.findAllByStatusAndVisibilityOrderByIdAsc(CrewStatus.ACTIVE, CrewVisibility.PUBLIC);
-	}
-
 	private boolean isDuplicateCrewName(DataIntegrityViolationException exception) {
 		ConstraintViolationException constraintViolationException = findConstraintViolationException(exception);
 		return constraintViolationException != null

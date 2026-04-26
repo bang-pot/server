@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.crew.application.port.CrewQueryRepository;
@@ -18,6 +19,7 @@ import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
@@ -115,6 +117,19 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 			CrewMemberStatus.ACTIVE,
 			PageRequest.of(0, limit)
 		));
+	}
+
+	@Override
+	public PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+		Slice<PublicCrewCardsView.Item> slice = crewJpaRepository.findPublicCrewCardItems(
+			CrewStatus.ACTIVE,
+			CrewVisibility.PUBLIC,
+			PageRequest.of(page, size)
+		);
+		return PublicCrewCardsView.of(
+			slice.getContent(),
+			PublicCrewCardsView.Page.of(page, size, slice.hasNext())
+		);
 	}
 
 	@Override

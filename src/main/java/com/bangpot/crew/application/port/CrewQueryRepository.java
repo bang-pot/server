@@ -9,6 +9,7 @@ import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
@@ -27,6 +28,8 @@ public interface CrewQueryRepository {
 	long countMyCrewsViewByMemberUserId(Long userId);
 
 	PublicCrewPreviewView findPublicCrewPreviewView(int limit);
+
+	PublicCrewCardsView findPublicCrewCardsView(int page, int size);
 
 	long countActiveByMemberUserId(Long userId);
 

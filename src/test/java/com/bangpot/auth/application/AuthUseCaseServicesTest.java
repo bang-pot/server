@@ -546,6 +546,14 @@ class AuthUseCaseServicesTest {
 		}
 
 		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			return com.bangpot.crew.domain.view.PublicCrewCardsView.of(
+				List.of(),
+				com.bangpot.crew.domain.view.PublicCrewCardsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
 		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
 			return com.bangpot.crew.domain.view.MeetingCreateCrewsView.of(List.of());
 		}
@@ -692,7 +700,6 @@ class AuthUseCaseServicesTest {
 			return 0L;
 		}
 
-		@Override
 		public List<Crew> findPublicCrews() {
 			return List.of();
 		}

@@ -375,7 +375,6 @@ class CrewInviteConsumerUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
-		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getStatus() == CrewStatus.ACTIVE)

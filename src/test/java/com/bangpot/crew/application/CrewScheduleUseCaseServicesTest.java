@@ -367,6 +367,11 @@ class CrewScheduleUseCaseServicesTest {
 		}
 
 		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			throw new UnsupportedOperationException();
 		}
@@ -608,7 +613,7 @@ class CrewScheduleUseCaseServicesTest {
 		@Override
 		public long countPendingPublicByUserId(Long userId) {
 			return 0L;
-		}@Override
+		}
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)

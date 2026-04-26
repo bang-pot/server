@@ -82,6 +82,29 @@ class JpaCrewQueryRepositoryTest {
 	}
 
 	@Test
+	void returnsPublicCrewCardsSliceForPublicCrewExplore() {
+		Crew first = entityManager.persist(Crew.create("First", "first desc", CrewVisibility.PUBLIC, null));
+		Crew second = entityManager.persist(Crew.create("Second", "second desc", CrewVisibility.PUBLIC, "https://cdn.example.com/second.jpg"));
+		entityManager.persist(Crew.create("Private", "private desc", CrewVisibility.PRIVATE, null));
+		Crew deletedCrew = entityManager.persist(Crew.create("Deleted", "deleted desc", CrewVisibility.PUBLIC, null));
+		deletedCrew.delete();
+		entityManager.persistAndFlush(deletedCrew);
+
+		entityManager.clear();
+
+		var firstPage = repository.findPublicCrewCardsView(0, 1);
+		var secondPage = repository.findPublicCrewCardsView(1, 1);
+
+		assertThat(firstPage.items()).extracting(com.bangpot.crew.domain.view.PublicCrewCardsView.Item::crewId)
+			.containsExactly(first.getId());
+		assertThat(firstPage.page().hasNext()).isTrue();
+		assertThat(secondPage.items()).extracting(com.bangpot.crew.domain.view.PublicCrewCardsView.Item::crewId)
+			.containsExactly(second.getId());
+		assertThat(secondPage.items().get(0).imageUrl()).isEqualTo("https://cdn.example.com/second.jpg");
+		assertThat(secondPage.page().hasNext()).isFalse();
+	}
+
+	@Test
 	void returnsMeetingCreateCrewsForActiveMembershipsOnly() {
 		insertUser(1L, "member");
 		insertUser(2L, "left-member");

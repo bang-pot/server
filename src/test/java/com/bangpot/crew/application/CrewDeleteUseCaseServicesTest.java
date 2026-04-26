@@ -81,7 +81,11 @@ class CrewDeleteUseCaseServicesTest {
 				new InMemoryCrewJoinRequestRepository()
 			)
 		);
-		getPublicCrewCardsUseCase = new GetPublicCrewCardsService(crewRepository);
+		getPublicCrewCardsUseCase = new GetPublicCrewCardsService(new InMemoryCrewQueryRepository(
+			crewRepository,
+			crewMemberRepository,
+			new InMemoryCrewJoinRequestRepository()
+		));
 	}
 
 	@Test
@@ -104,7 +108,7 @@ class CrewDeleteUseCaseServicesTest {
 		assertThat(crewMemberRepository.findAnyByCrewIdAndUserId(crew.getId(), leader.getId())).get()
 			.extracting(CrewMember::getStatus)
 			.isEqualTo(CrewMemberStatus.LEFT);
-		assertThat(getPublicCrewCardsUseCase.handle()).isEmpty();
+		assertThat(getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(0, 20)).items()).isEmpty();
 		assertThatThrownBy(() -> getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(crew.getId(), leader.getId())))
 			.isInstanceOf(CrewNotFoundException.class);
 	}
@@ -366,7 +370,6 @@ class CrewDeleteUseCaseServicesTest {
 			return Optional.ofNullable(crewsById.get(crewId));
 		}
 
-		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(Crew::isActive)
@@ -595,6 +598,24 @@ class CrewDeleteUseCaseServicesTest {
 		@Override
 		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
 			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			List<com.bangpot.crew.domain.view.PublicCrewCardsView.Item> items = crewRepository.findPublicCrews().stream()
+				.map(crew -> com.bangpot.crew.domain.view.PublicCrewCardsView.Item.of(
+					crew.getId(),
+					crew.getName(),
+					crew.getDescription(),
+					crew.getImageUrl()
+				))
+				.toList();
+			int fromIndex = Math.min(page * size, items.size());
+			int toIndex = Math.min(fromIndex + size, items.size());
+			return com.bangpot.crew.domain.view.PublicCrewCardsView.of(
+				items.subList(fromIndex, toIndex),
+				com.bangpot.crew.domain.view.PublicCrewCardsView.Page.of(page, size, toIndex < items.size())
+			);
 		}
 
 		@Override

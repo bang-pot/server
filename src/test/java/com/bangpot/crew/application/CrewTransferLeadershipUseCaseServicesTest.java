@@ -304,7 +304,7 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		@Override
 		public long countPendingPublicByUserId(Long userId) {
 			return 0L;
-		}@Override
+		}
 		public List<Crew> findPublicCrews() {
 			return List.of();
 		}
@@ -488,6 +488,11 @@ class CrewTransferLeadershipUseCaseServicesTest {
 
 		@Override
 		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
 			throw new UnsupportedOperationException();
 		}
 

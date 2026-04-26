@@ -19,7 +19,6 @@ import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
 import com.bangpot.crew.application.usecase.GetMeetingCreateCrewsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
-import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.exception.CrewScheduleRequestValidationException;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
@@ -30,6 +29,7 @@ import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 final class CrewDtoMapper {
@@ -51,16 +51,22 @@ final class CrewDtoMapper {
 		return new CrewDto.CreateCrewResponse(result.crewId(), result.name(), result.myRole());
 	}
 
-	static List<CrewDto.PublicCrewCardResponse> toPublicCardResponses(List<GetPublicCrewCardsUseCase.View> views) {
-		return views.stream()
-			.map(view -> new CrewDto.PublicCrewCardResponse(
-				view.crewId(),
-				view.name(),
-				view.description(),
-				view.visibility(),
-				view.imageUrl()
-			))
-			.toList();
+	static CrewDto.PublicCrewCardsResponse toPublicCardResponse(PublicCrewCardsView view) {
+		return new CrewDto.PublicCrewCardsResponse(
+			view.items().stream()
+				.map(item -> new CrewDto.PublicCrewCardResponse(
+					item.crewId(),
+					item.name(),
+					item.description(),
+					item.imageUrl()
+				))
+				.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static GetCrewHubUseCase.Query toHubQuery(Long crewId, Long userId) {

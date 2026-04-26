@@ -217,6 +217,11 @@ class GetHomeServiceTest {
 		}
 
 		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return activeCrewCountByUserId.getOrDefault(userId, 0L);
 		}

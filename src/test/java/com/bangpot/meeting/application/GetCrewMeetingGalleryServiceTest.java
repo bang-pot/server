@@ -198,7 +198,7 @@ class GetCrewMeetingGalleryServiceTest {
 		@Override
 		public long countPendingPublicByUserId(Long userId) {
 			return 0L;
-		}@Override
+		}
 		public List<Crew> findPublicCrews() {
 			return crews.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
