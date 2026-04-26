@@ -171,6 +171,12 @@ final class CrewDto {
 	) {
 	}
 
+	record CrewJoinRequestsResponse(
+		java.util.List<CrewJoinRequestResponse> items,
+		PageInfoResponse pageInfo
+	) {
+	}
+
 	record ApproveCrewJoinRequestResponse(Long crewId, Long requestId, Long userId, CrewRole role) {
 	}
 

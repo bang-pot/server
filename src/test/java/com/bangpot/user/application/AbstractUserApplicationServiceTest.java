@@ -848,6 +848,21 @@ abstract class AbstractUserApplicationServiceTest {
 				MyPendingCrewsView.of(List.of(), MyPendingCrewsView.Page.of(page, size, false))
 			);
 		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewJoinRequestManagementAccessView>
+			findManagementAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewJoinRequestsView findCrewJoinRequestsViewByCrewId(
+			Long crewId,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	protected static final class InMemoryThemeFavoriteRepository implements ThemeFavoriteRepository {

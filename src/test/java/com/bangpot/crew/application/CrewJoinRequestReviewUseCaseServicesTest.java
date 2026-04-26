@@ -19,6 +19,7 @@ import com.bangpot.auth.domain.AuthUser;
 import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
+import com.bangpot.crew.application.port.CrewJoinRequestQueryRepository;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
@@ -36,6 +37,8 @@ import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewJoinRequestManagementAccessView;
+import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.domain.User;
 
@@ -61,10 +64,12 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
 		getCrewJoinRequestsUseCase = new GetCrewJoinRequestsService(
-			userRepository,
-			crewRepository,
-			crewMemberRepository,
-			crewJoinRequestRepository
+			new InMemoryCrewJoinRequestQueryRepository(
+				crewRepository,
+				crewMemberRepository,
+				crewJoinRequestRepository,
+				userRepository
+			)
 		);
 		getPendingCrewJoinRequestsUseCase = new GetPendingCrewJoinRequestsService(
 			userRepository,
@@ -101,29 +106,30 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 		rejectedRequest.reject();
 		crewJoinRequestRepository.save(rejectedRequest);
 
-		List<GetCrewJoinRequestsUseCase.View> result = getCrewJoinRequestsUseCase.handle(
-			GetCrewJoinRequestsUseCase.Query.of(crew.getId(), leader.getId())
+		CrewJoinRequestsView result = getCrewJoinRequestsUseCase.handle(
+			GetCrewJoinRequestsUseCase.Query.of(crew.getId(), leader.getId(), 0, 20)
 		);
 
-		assertThat(result).hasSize(2);
-		assertThat(result.get(0))
+		assertThat(result.items()).hasSize(2);
+		assertThat(result.items().get(0))
 			.extracting(
-				GetCrewJoinRequestsUseCase.View::requestId,
-				GetCrewJoinRequestsUseCase.View::userId,
-				GetCrewJoinRequestsUseCase.View::nickname,
-				GetCrewJoinRequestsUseCase.View::message,
-				GetCrewJoinRequestsUseCase.View::status
+				CrewJoinRequestsView.Item::requestId,
+				CrewJoinRequestsView.Item::userId,
+				CrewJoinRequestsView.Item::nickname,
+				CrewJoinRequestsView.Item::message,
+				CrewJoinRequestsView.Item::status
 			)
 			.containsExactly(1L, 2L, "runner", "?? ?? ???", "PENDING");
-		assertThat(result.get(1))
+		assertThat(result.items().get(1))
 			.extracting(
-				GetCrewJoinRequestsUseCase.View::requestId,
-				GetCrewJoinRequestsUseCase.View::userId,
-				GetCrewJoinRequestsUseCase.View::nickname,
-				GetCrewJoinRequestsUseCase.View::message,
-				GetCrewJoinRequestsUseCase.View::status
+				CrewJoinRequestsView.Item::requestId,
+				CrewJoinRequestsView.Item::userId,
+				CrewJoinRequestsView.Item::nickname,
+				CrewJoinRequestsView.Item::message,
+				CrewJoinRequestsView.Item::status
 			)
 			.containsExactly(2L, 3L, "guest", "???? ???", "REJECTED");
+		assertThat(result.page()).isEqualTo(CrewJoinRequestsView.Page.of(0, 20, false));
 	}
 
 	@Test
@@ -487,6 +493,68 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 			return membersById.values().stream()
 				.filter(member -> crewId.equals(member.getCrewId()))
 				.toList();
+		}
+	}
+
+	private static final class InMemoryCrewJoinRequestQueryRepository implements CrewJoinRequestQueryRepository {
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
+		private final InMemoryUserRepository userRepository;
+
+		private InMemoryCrewJoinRequestQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryCrewJoinRequestRepository crewJoinRequestRepository,
+			InMemoryUserRepository userRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.crewJoinRequestRepository = crewJoinRequestRepository;
+			this.userRepository = userRepository;
+		}
+
+		@Override
+		public Optional<CrewJoinRequestManagementAccessView> findManagementAccessByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			return crewRepository.findById(crewId)
+				.map(crew -> CrewJoinRequestManagementAccessView.of(
+					crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+						.map(CrewMember::getRole)
+						.orElse(null)
+				));
+		}
+
+		@Override
+		public CrewJoinRequestsView findCrewJoinRequestsViewByCrewId(Long crewId, int page, int size) {
+			List<CrewJoinRequestsView.Item> items = crewJoinRequestRepository.findByCrewId(crewId).stream()
+				.flatMap(request -> userRepository.findById(request.getUserId()).stream()
+					.map(user -> CrewJoinRequestsView.Item.of(
+						request.getId(),
+						request.getUserId(),
+						user.getNickname(),
+						request.getMessage(),
+						request.getStatus().name()
+					)))
+				.toList();
+			int fromIndex = Math.min(page * size, items.size());
+			int toIndex = Math.min(fromIndex + size, items.size());
+			return CrewJoinRequestsView.of(
+				items.subList(fromIndex, toIndex),
+				CrewJoinRequestsView.Page.of(page, size, toIndex < items.size())
+			);
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyPendingCrewsView findMyPendingCrewsViewByUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
 		}
 	}
 

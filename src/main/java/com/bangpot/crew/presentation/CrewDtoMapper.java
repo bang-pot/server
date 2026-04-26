@@ -27,6 +27,7 @@ import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
+import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
@@ -231,8 +232,8 @@ final class CrewDtoMapper {
 		return GetPendingCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId);
 	}
 
-	static GetCrewJoinRequestsUseCase.Query toManagementQuery(Long crewId, Long leaderUserId) {
-		return GetCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId);
+	static GetCrewJoinRequestsUseCase.Query toManagementQuery(Long crewId, Long leaderUserId, int page, int size) {
+		return GetCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId, page, size);
 	}
 
 	static List<CrewDto.PendingCrewJoinRequestResponse> toPendingResponses(
@@ -247,16 +248,23 @@ final class CrewDtoMapper {
 			.toList();
 	}
 
-	static List<CrewDto.CrewJoinRequestResponse> toJoinRequestResponses(List<GetCrewJoinRequestsUseCase.View> views) {
-		return views.stream()
-			.map(view -> new CrewDto.CrewJoinRequestResponse(
-				view.requestId(),
-				view.userId(),
-				view.nickname(),
-				view.message(),
-				view.status()
-			))
-			.toList();
+	static CrewDto.CrewJoinRequestsResponse toJoinRequestResponses(CrewJoinRequestsView view) {
+		return new CrewDto.CrewJoinRequestsResponse(
+			view.items().stream()
+				.map(item -> new CrewDto.CrewJoinRequestResponse(
+					item.requestId(),
+					item.userId(),
+					item.nickname(),
+					item.message(),
+					item.status()
+				))
+				.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static ApproveCrewJoinRequestUseCase.Command toApproveCommand(Long crewId, Long requestId, Long leaderUserId) {

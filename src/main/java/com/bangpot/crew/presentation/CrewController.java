@@ -250,13 +250,16 @@ class CrewController {
 	}
 
 	@GetMapping("/{crewId}/join-requests")
-	ResponseEntity<List<CrewDto.CrewJoinRequestResponse>> getJoinRequests(
+	ResponseEntity<CrewDto.CrewJoinRequestsResponse> getJoinRequests(
 		@PathVariable Long crewId,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(CrewDtoMapper.toJoinRequestResponses(
 			getCrewJoinRequestsUseCase.handle(
-				CrewDtoMapper.toManagementQuery(crewId, requireAuthenticatedUserId(authentication))
+				CrewDtoMapper.toManagementQuery(crewId, requireAuthenticatedUserId(authentication), page, size)
 			)
 		));
 	}
