@@ -24,10 +24,11 @@ public class UpdateCrewVisibilityService implements UpdateCrewVisibilityUseCase 
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		Crew crew = crewRepository.findById(command.crewId())
+		completedUserAccessService.validateCompletedUser(command.leaderUserId(), "크루 공개 설정을 변경할 권한이 없습니다.");
+
+		Crew crew = crewRepository.findByIdForUpdate(command.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
-		completedUserAccessService.validateCompletedUser(command.leaderUserId(), "크루 공개 설정을 변경할 권한이 없습니다.");
 		if (!crewMemberRepository.existsLeaderByCrewIdAndUserId(crew.getId(), command.leaderUserId())) {
 			throw new AccessDeniedException("크루 공개 설정을 변경할 권한이 없습니다.");
 		}
