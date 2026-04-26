@@ -28,6 +28,8 @@ import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.GetCrewJoinViewService;
 import com.bangpot.crew.application.service.RequestCrewJoinService;
+import com.bangpot.crew.application.service.CancelCrewJoinRequestService;
+import com.bangpot.crew.application.usecase.CancelCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.domain.Crew;
@@ -52,6 +54,7 @@ class CrewJoinUseCaseServicesTest {
 	private InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
 	private GetCrewJoinViewUseCase getCrewJoinViewUseCase;
 	private RequestCrewJoinUseCase requestCrewJoinUseCase;
+	private CancelCrewJoinRequestUseCase cancelCrewJoinRequestUseCase;
 
 	@BeforeEach
 	void setUp() {
@@ -72,6 +75,10 @@ class CrewJoinUseCaseServicesTest {
 			new CompletedUserAccessService(userRepository),
 			crewRepository,
 			crewMemberRepository,
+			crewJoinRequestRepository
+		);
+		cancelCrewJoinRequestUseCase = new CancelCrewJoinRequestService(
+			new CompletedUserAccessService(userRepository),
 			crewJoinRequestRepository
 		);
 	}
@@ -224,6 +231,27 @@ class CrewJoinUseCaseServicesTest {
 			RequestCrewJoinUseCase.Command.of(crew.getId(), tempUser.getId(), null)
 		))
 			.isInstanceOf(AccessDeniedException.class);
+	}
+
+	@Test
+	void cancelsMyPendingJoinRequestWithRowLock() {
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
+		AuthUser fullUser = fullUser(20L, "full-user");
+		authUserRepository.save(fullUser);
+		CrewJoinRequest joinRequest = crewJoinRequestRepository.save(
+			CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), "?? ??? ???")
+		);
+
+		CancelCrewJoinRequestUseCase.Result result = cancelCrewJoinRequestUseCase.handle(
+			CancelCrewJoinRequestUseCase.Command.of(fullUser.getId(), joinRequest.getId())
+		);
+
+		assertThat(result.requestId()).isEqualTo(joinRequest.getId());
+		assertThat(result.crewId()).isEqualTo(crew.getId());
+		assertThat(crewJoinRequestRepository.findPendingByIdAndUserIdForUpdateCallCount).isEqualTo(1);
+		assertThat(crewJoinRequestRepository.findById(joinRequest.getId())).get()
+			.extracting(CrewJoinRequest::getStatus)
+			.isEqualTo(CrewJoinRequestStatus.CANCELED);
 	}
 
 	@Test
@@ -622,12 +650,17 @@ class CrewJoinUseCaseServicesTest {
 	private static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
 		@Override
 		public java.util.Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
-			return java.util.Optional.empty();
+			CrewJoinRequest request = requestsById.get(requestId);
+			if (request == null || !userId.equals(request.getUserId()) || request.getStatus() != CrewJoinRequestStatus.PENDING) {
+				return Optional.empty();
+			}
+			return Optional.of(request);
 		}
 
 
 		private final Map<Long, CrewJoinRequest> requestsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findPendingByIdAndUserIdForUpdateCallCount;
 
 		@Override
 		public CrewJoinRequest save(CrewJoinRequest crewJoinRequest) {
@@ -676,6 +709,21 @@ class CrewJoinUseCaseServicesTest {
 				return Optional.empty();
 			}
 			return Optional.of(request);
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndUserIdForUpdate(Long requestId, Long userId) {
+			findPendingByIdAndUserIdForUpdateCallCount++;
+			return findPendingByIdAndUserId(requestId, userId);
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(Long requestId, Long crewId) {
+			return findPendingByIdAndCrewId(requestId, crewId);
+		}
+
+		Optional<CrewJoinRequest> findById(Long requestId) {
+			return Optional.ofNullable(requestsById.get(requestId));
 		}
 
 	}

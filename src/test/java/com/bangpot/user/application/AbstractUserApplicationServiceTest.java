@@ -829,12 +829,22 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(Long requestId, Long crewId) {
+			return findPendingByIdAndCrewId(requestId, crewId);
+		}
+
+		@Override
 		public Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
 			return storedJoinRequests.values().stream()
 				.filter(joinRequest -> requestId.equals(joinRequest.getId()))
 				.filter(joinRequest -> userId.equals(joinRequest.getUserId()))
 				.filter(joinRequest -> joinRequest.getStatus() == CrewJoinRequestStatus.PENDING)
 				.findFirst();
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndUserIdForUpdate(Long requestId, Long userId) {
+			return findPendingByIdAndUserId(requestId, userId);
 		}
 
 		void putPendingView(Long userId, MyPendingCrewsView view) {

@@ -548,6 +548,14 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserIdForUpdate(
+			Long requestId,
+			Long userId
+		) {
+			return findPendingByIdAndUserId(requestId, userId);
+		}
+
+		@Override
 		public com.bangpot.crew.domain.CrewJoinRequest save(com.bangpot.crew.domain.CrewJoinRequest crewJoinRequest) {
 			return crewJoinRequest;
 		}
@@ -560,6 +568,14 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		@Override
 		public Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
 			return Optional.empty();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(
+			Long requestId,
+			Long crewId
+		) {
+			return findPendingByIdAndCrewId(requestId, crewId);
 		}
 
 		@Override

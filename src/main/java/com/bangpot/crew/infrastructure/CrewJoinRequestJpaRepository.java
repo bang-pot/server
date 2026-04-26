@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -19,6 +20,8 @@ import com.bangpot.crew.domain.view.CrewJoinRequestManagementAccessView;
 import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
 
+import jakarta.persistence.LockModeType;
+
 interface CrewJoinRequestJpaRepository extends JpaRepository<CrewJoinRequest, Long> {
 
 	boolean existsByCrewIdAndUserIdAndStatus(Long crewId, Long userId, CrewJoinRequestStatus status);
@@ -29,7 +32,21 @@ interface CrewJoinRequestJpaRepository extends JpaRepository<CrewJoinRequest, Lo
 
 	Optional<CrewJoinRequest> findByIdAndCrewIdAndStatus(Long id, Long crewId, CrewJoinRequestStatus status);
 
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	Optional<CrewJoinRequest> findWithLockByIdAndCrewIdAndStatus(
+		Long id,
+		Long crewId,
+		CrewJoinRequestStatus status
+	);
+
 	Optional<CrewJoinRequest> findByIdAndUserIdAndStatus(Long id, Long userId, CrewJoinRequestStatus status);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	Optional<CrewJoinRequest> findWithLockByIdAndUserIdAndStatus(
+		Long id,
+		Long userId,
+		CrewJoinRequestStatus status
+	);
 
 	@Query("""
 		select new com.bangpot.crew.domain.view.CrewJoinRequestManagementAccessView(

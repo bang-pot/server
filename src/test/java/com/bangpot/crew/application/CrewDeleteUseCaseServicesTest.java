@@ -669,6 +669,14 @@ class CrewDeleteUseCaseServicesTest {
 			return java.util.Optional.empty();
 		}
 
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserIdForUpdate(
+			Long requestId,
+			Long userId
+		) {
+			return findPendingByIdAndUserId(requestId, userId);
+		}
+
 
 		private final Map<Long, CrewJoinRequest> requestsById = new HashMap<>();
 
@@ -699,6 +707,11 @@ class CrewDeleteUseCaseServicesTest {
 		@Override
 		public Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
 			return Optional.empty();
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(Long requestId, Long crewId) {
+			return findPendingByIdAndCrewId(requestId, crewId);
 		}
 	}
 }

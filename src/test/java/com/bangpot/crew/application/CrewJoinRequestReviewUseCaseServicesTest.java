@@ -184,6 +184,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 		assertThat(result.userId()).isEqualTo(requester.getId());
 		assertThat(result.role()).isEqualTo(CrewRole.MEMBER);
 		assertThat(crewRepository.findByIdForUpdateCallCount).isEqualTo(1);
+		assertThat(crewJoinRequestRepository.findPendingByIdAndCrewIdForUpdateCallCount).isEqualTo(1);
 		assertThat(crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), requester.getId())).isTrue();
 		assertThat(crewJoinRequestRepository.findPendingByIdAndCrewId(joinRequest.getId(), crew.getId())).isEmpty();
 		assertThat(crewJoinRequestRepository.findById(joinRequest.getId())).get()
@@ -209,6 +210,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.requestId()).isEqualTo(joinRequest.getId());
+		assertThat(crewJoinRequestRepository.findPendingByIdAndCrewIdForUpdateCallCount).isEqualTo(1);
 		assertThat(crewJoinRequestRepository.findPendingByIdAndCrewId(joinRequest.getId(), crew.getId())).isEmpty();
 		assertThat(crewJoinRequestRepository.findById(joinRequest.getId())).get()
 			.extracting(CrewJoinRequest::getStatus)
@@ -581,6 +583,7 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 
 		private final Map<Long, CrewJoinRequest> requestsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findPendingByIdAndCrewIdForUpdateCallCount;
 
 		@Override
 		public CrewJoinRequest save(CrewJoinRequest crewJoinRequest) {
@@ -623,6 +626,17 @@ class CrewJoinRequestReviewUseCaseServicesTest {
 				return Optional.empty();
 			}
 			return Optional.of(request);
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(Long requestId, Long crewId) {
+			findPendingByIdAndCrewIdForUpdateCallCount++;
+			return findPendingByIdAndCrewId(requestId, crewId);
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndUserIdForUpdate(Long requestId, Long userId) {
+			return findPendingByIdAndUserId(requestId, userId);
 		}
 
 		Optional<CrewJoinRequest> findById(Long requestId) {

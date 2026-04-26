@@ -528,6 +528,14 @@ class CrewVisibilityUseCaseServicesTest {
 			return java.util.Optional.empty();
 		}
 
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserIdForUpdate(
+			Long requestId,
+			Long userId
+		) {
+			return findPendingByIdAndUserId(requestId, userId);
+		}
+
 
 		private final Map<Long, CrewJoinRequest> requestsById = new HashMap<>();
 		private long sequence = 1L;
@@ -571,6 +579,11 @@ class CrewVisibilityUseCaseServicesTest {
 					&& crewId.equals(request.getCrewId())
 					&& request.getStatus() == CrewJoinRequestStatus.PENDING)
 				.findFirst();
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(Long requestId, Long crewId) {
+			return findPendingByIdAndCrewId(requestId, crewId);
 		}
 	}
 }
