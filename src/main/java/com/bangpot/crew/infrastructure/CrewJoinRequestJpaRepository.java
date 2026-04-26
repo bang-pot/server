@@ -17,6 +17,7 @@ import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewJoinRequestManagementAccessView;
 import com.bangpot.crew.domain.view.CrewJoinRequestsView;
+import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
 
 interface CrewJoinRequestJpaRepository extends JpaRepository<CrewJoinRequest, Long> {
 
@@ -73,6 +74,25 @@ interface CrewJoinRequestJpaRepository extends JpaRepository<CrewJoinRequest, Lo
 		@Param("pendingStatus") CrewJoinRequestStatus pendingStatus,
 		@Param("approvedStatus") CrewJoinRequestStatus approvedStatus,
 		@Param("rejectedStatus") CrewJoinRequestStatus rejectedStatus,
+		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.PendingCrewJoinRequestsView$Item(
+			request.id,
+			user.id,
+			user.nickname
+		)
+		from CrewJoinRequest request, UserJpaEntity user
+		where request.userId = user.id
+		  and request.crewId = :crewId
+		  and request.status = :pendingStatus
+		  and user.withdrawnAt is null
+		order by request.id asc
+		""")
+	Slice<PendingCrewJoinRequestsView.Item> findPendingCrewJoinRequestItemsByCrewId(
+		@Param("crewId") Long crewId,
+		@Param("pendingStatus") CrewJoinRequestStatus pendingStatus,
 		Pageable pageable
 	);
 

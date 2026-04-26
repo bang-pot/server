@@ -53,6 +53,7 @@ import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
+import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
 import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
@@ -632,21 +633,29 @@ class CrewControllerTest {
 
 	@Test
 	void returnsPendingJoinRequestsForLeader() throws Exception {
-		when(getPendingCrewJoinRequestsUseCase.handle(GetPendingCrewJoinRequestsUseCase.Query.of(1L, 77L)))
-			.thenReturn(List.of(
-				GetPendingCrewJoinRequestsUseCase.View.of(10L, 201L, "bangpot-user"),
-				GetPendingCrewJoinRequestsUseCase.View.of(11L, 202L, "runner")
+		when(getPendingCrewJoinRequestsUseCase.handle(GetPendingCrewJoinRequestsUseCase.Query.of(1L, 77L, 1, 10)))
+			.thenReturn(PendingCrewJoinRequestsView.of(
+				List.of(
+					PendingCrewJoinRequestsView.Item.of(10L, 201L, "bangpot-user"),
+					PendingCrewJoinRequestsView.Item.of(11L, 202L, "runner")
+				),
+				PendingCrewJoinRequestsView.Page.of(1, 10, true)
 			));
 
 		mockMvc.perform(
 			get("/api/crews/1/join-requests/pending")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "1")
+				.param("size", "10")
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].requestId").value(10))
-			.andExpect(jsonPath("$[0].userId").value(201))
-			.andExpect(jsonPath("$[0].nickname").value("bangpot-user"))
-			.andExpect(jsonPath("$[1].requestId").value(11));
+			.andExpect(jsonPath("$.items[0].requestId").value(10))
+			.andExpect(jsonPath("$.items[0].userId").value(201))
+			.andExpect(jsonPath("$.items[0].nickname").value("bangpot-user"))
+			.andExpect(jsonPath("$.items[1].requestId").value(11))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(10))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
 
 	@Test

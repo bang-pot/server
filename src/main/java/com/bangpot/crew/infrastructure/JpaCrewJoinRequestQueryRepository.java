@@ -14,6 +14,7 @@ import com.bangpot.crew.domain.view.CrewJoinRequestManagementAccessView;
 import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.MyPendingCrewsView;
+import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -48,6 +49,20 @@ public class JpaCrewJoinRequestQueryRepository implements CrewJoinRequestQueryRe
 		return CrewJoinRequestsView.of(
 			slice.getContent(),
 			CrewJoinRequestsView.Page.of(page, size, slice.hasNext())
+		);
+	}
+
+	@Override
+	public PendingCrewJoinRequestsView findPendingCrewJoinRequestsViewByCrewId(Long crewId, int page, int size) {
+		Slice<PendingCrewJoinRequestsView.Item> slice =
+			crewJoinRequestJpaRepository.findPendingCrewJoinRequestItemsByCrewId(
+				crewId,
+				CrewJoinRequestStatus.PENDING,
+				PageRequest.of(page, size)
+			);
+		return PendingCrewJoinRequestsView.of(
+			slice.getContent(),
+			PendingCrewJoinRequestsView.Page.of(page, size, slice.hasNext())
 		);
 	}
 

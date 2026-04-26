@@ -31,6 +31,7 @@ import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
+import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
 import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
@@ -228,24 +229,31 @@ final class CrewDtoMapper {
 		return new CrewDto.RequestCrewJoinResponse(result.crewId(), result.myStatus());
 	}
 
-	static GetPendingCrewJoinRequestsUseCase.Query toQuery(Long crewId, Long leaderUserId) {
-		return GetPendingCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId);
+	static GetPendingCrewJoinRequestsUseCase.Query toQuery(Long crewId, Long leaderUserId, int page, int size) {
+		return GetPendingCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId, page, size);
 	}
 
 	static GetCrewJoinRequestsUseCase.Query toManagementQuery(Long crewId, Long leaderUserId, int page, int size) {
 		return GetCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId, page, size);
 	}
 
-	static List<CrewDto.PendingCrewJoinRequestResponse> toPendingResponses(
-		List<GetPendingCrewJoinRequestsUseCase.View> views
+	static CrewDto.PendingCrewJoinRequestsResponse toPendingResponses(
+		PendingCrewJoinRequestsView view
 	) {
-		return views.stream()
-			.map(view -> new CrewDto.PendingCrewJoinRequestResponse(
-				view.requestId(),
-				view.userId(),
-				view.nickname()
-			))
-			.toList();
+		return new CrewDto.PendingCrewJoinRequestsResponse(
+			view.items().stream()
+				.map(item -> new CrewDto.PendingCrewJoinRequestResponse(
+					item.requestId(),
+					item.userId(),
+					item.nickname()
+				))
+				.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static CrewDto.CrewJoinRequestsResponse toJoinRequestResponses(CrewJoinRequestsView view) {

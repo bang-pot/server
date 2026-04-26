@@ -238,13 +238,16 @@ class CrewController {
 	}
 
 	@GetMapping("/{crewId}/join-requests/pending")
-	ResponseEntity<List<CrewDto.PendingCrewJoinRequestResponse>> getPendingJoinRequests(
+	ResponseEntity<CrewDto.PendingCrewJoinRequestsResponse> getPendingJoinRequests(
 		@PathVariable Long crewId,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page??0 ?댁긽?댁뼱???⑸땲??") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size??1 ?댁긽?댁뼱???⑸땲??")
+		@Max(value = 50, message = "size??50 ?댄븯?ъ빞 ?⑸땲??") int size,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(CrewDtoMapper.toPendingResponses(
 			getPendingCrewJoinRequestsUseCase.handle(
-				CrewDtoMapper.toQuery(crewId, requireAuthenticatedUserId(authentication))
+				CrewDtoMapper.toQuery(crewId, requireAuthenticatedUserId(authentication), page, size)
 			)
 		));
 	}

@@ -162,6 +162,12 @@ final class CrewDto {
 	record PendingCrewJoinRequestResponse(Long requestId, Long userId, String nickname) {
 	}
 
+	record PendingCrewJoinRequestsResponse(
+		java.util.List<PendingCrewJoinRequestResponse> items,
+		PageInfoResponse pageInfo
+	) {
+	}
+
 	record CrewJoinRequestResponse(
 		Long requestId,
 		Long userId,

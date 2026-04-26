@@ -863,6 +863,15 @@ abstract class AbstractUserApplicationServiceTest {
 		) {
 			throw new UnsupportedOperationException();
 		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PendingCrewJoinRequestsView findPendingCrewJoinRequestsViewByCrewId(
+			Long crewId,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	protected static final class InMemoryThemeFavoriteRepository implements ThemeFavoriteRepository {
