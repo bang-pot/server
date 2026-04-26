@@ -35,7 +35,7 @@ public interface CrewQueryRepository {
 
 	long countPendingPublicByUserId(Long userId);
 
-	MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId);
+	MeetingCreateCrewsView findActiveCrewsByUserId(Long userId);
 
 	List<MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId);
 }

@@ -17,7 +17,6 @@ import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
-import com.bangpot.crew.application.usecase.GetMeetingCreateCrewsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.exception.CrewScheduleRequestValidationException;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
@@ -29,6 +28,7 @@ import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
@@ -105,10 +105,10 @@ final class CrewDtoMapper {
 			.toList();
 	}
 
-	static CrewDto.MeetingCreateCrewsResponse toResponse(GetMeetingCreateCrewsUseCase.Result result) {
+	static CrewDto.MeetingCreateCrewsResponse toResponse(MeetingCreateCrewsView result) {
 		return new CrewDto.MeetingCreateCrewsResponse(
-			result.crews().stream()
-				.map(crew -> new CrewDto.MeetingCreateCrewResponse(crew.crewId(), crew.crewName()))
+			result.items().stream()
+				.map(item -> new CrewDto.MeetingCreateCrewResponse(item.crewId(), item.crewName()))
 				.toList()
 		);
 	}

@@ -495,7 +495,7 @@ class CrewMembersUseCaseServicesTest {
 		}
 
 		@Override
-		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
 			throw new UnsupportedOperationException();
 		}
 

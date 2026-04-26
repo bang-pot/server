@@ -117,10 +117,11 @@ class CrewController {
 
 	@GetMapping("/me/meeting-create")
 	ResponseEntity<CrewDto.MeetingCreateCrewsResponse> getMeetingCreateCrews(Authentication authentication) {
-		GetMeetingCreateCrewsUseCase.Result result = getMeetingCreateCrewsUseCase.handle(
-			GetMeetingCreateCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication))
-		);
-		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			getMeetingCreateCrewsUseCase.handle(
+				GetMeetingCreateCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication))
+			)
+		));
 	}
 
 	@GetMapping("/{crewId}/policies")

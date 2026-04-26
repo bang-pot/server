@@ -46,10 +46,10 @@ class GetMeetingCreateCrewsServiceTest {
 			))
 		);
 
-		GetMeetingCreateCrewsUseCase.Result result = useCase.handle(GetMeetingCreateCrewsUseCase.Query.of(1L));
+		MeetingCreateCrewsView result = useCase.handle(GetMeetingCreateCrewsUseCase.Query.of(1L));
 
-		assertThat(result.crews())
-			.extracting(GetMeetingCreateCrewsUseCase.CrewItem::crewName)
+		assertThat(result.items())
+			.extracting(MeetingCreateCrewsView.Item::crewName)
 			.containsExactly("Alpha Crew", "Beta Crew");
 	}
 
@@ -57,9 +57,9 @@ class GetMeetingCreateCrewsServiceTest {
 	void returnsEmptyArrayWhenUserHasNoActiveCrews() {
 		userRepository.save(User.create(1L, "alpha"));
 
-		GetMeetingCreateCrewsUseCase.Result result = useCase.handle(GetMeetingCreateCrewsUseCase.Query.of(1L));
+		MeetingCreateCrewsView result = useCase.handle(GetMeetingCreateCrewsUseCase.Query.of(1L));
 
-		assertThat(result.crews()).isEmpty();
+		assertThat(result.items()).isEmpty();
 	}
 
 	@Test
@@ -100,7 +100,7 @@ class GetMeetingCreateCrewsServiceTest {
 		}
 
 		@Override
-		public MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+		public MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
 			return meetingCreateCrewsByUserId.getOrDefault(userId, MeetingCreateCrewsView.of(List.of()));
 		}
 

@@ -520,7 +520,7 @@ class CrewHubUseCaseServicesTest {
 		}
 
 		@Override
-		public MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+		public MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
 			throw new UnsupportedOperationException();
 		}
 

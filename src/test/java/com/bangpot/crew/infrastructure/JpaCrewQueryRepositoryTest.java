@@ -124,7 +124,7 @@ class JpaCrewQueryRepositoryTest {
 
 		entityManager.clear();
 
-		MeetingCreateCrewsView result = repository.findMeetingCreateCrewsByMemberUserId(1L);
+		MeetingCreateCrewsView result = repository.findActiveCrewsByUserId(1L);
 
 		assertThat(result.items()).extracting(MeetingCreateCrewsView.Item::crewName)
 			.containsExactly("Alpha Crew", "Beta Crew");

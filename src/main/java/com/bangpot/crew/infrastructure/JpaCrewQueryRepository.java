@@ -148,7 +148,7 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 	}
 
 	@Override
-	public MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+	public MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
 		return MeetingCreateCrewsView.of(crewJpaRepository.findMeetingCreateCrewItemsByMemberUserId(
 			userId,
 			CrewMemberStatus.ACTIVE,

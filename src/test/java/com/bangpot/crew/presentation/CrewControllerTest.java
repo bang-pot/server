@@ -50,6 +50,7 @@ import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
@@ -384,10 +385,10 @@ class CrewControllerTest {
 	@Test
 	void returnsMyCrewsForMeetingCreateWhenAuthenticated() throws Exception {
 		when(getMeetingCreateCrewsUseCase.handle(GetMeetingCreateCrewsUseCase.Query.of(7L)))
-			.thenReturn(GetMeetingCreateCrewsUseCase.Result.of(
+			.thenReturn(MeetingCreateCrewsView.of(
 				List.of(
-					GetMeetingCreateCrewsUseCase.CrewItem.of(101L, "Alpha Crew"),
-					GetMeetingCreateCrewsUseCase.CrewItem.of(202L, "Beta Crew")
+					MeetingCreateCrewsView.Item.of(101L, "Alpha Crew"),
+					MeetingCreateCrewsView.Item.of(202L, "Beta Crew")
 				)
 			));
 
