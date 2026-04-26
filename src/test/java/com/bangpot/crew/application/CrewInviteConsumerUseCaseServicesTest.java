@@ -174,6 +174,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 		assertThat(result.inviteId()).isEqualTo(invite.getId());
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.status()).isEqualTo("APPROVED");
+		assertThat(crewInviteRepository.findPendingForUpdateCallCount).isEqualTo(1);
 		assertThat(crewRepository.findByIdForUpdateCallCount).isEqualTo(1);
 		assertThat(crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), target.getId())).isTrue();
 		assertThat(crewInviteRepository.findById(invite.getId())).hasValueSatisfying(savedInvite ->
@@ -196,6 +197,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 		assertThat(result.inviteId()).isEqualTo(invite.getId());
 		assertThat(result.status()).isEqualTo("REJECTED");
+		assertThat(crewInviteRepository.findPendingForUpdateCallCount).isEqualTo(1);
 		assertThat(crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), target.getId())).isFalse();
 		assertThat(crewInviteRepository.findById(invite.getId())).hasValueSatisfying(savedInvite ->
 			assertThat(savedInvite.getStatus()).isEqualTo(CrewInviteStatus.REJECTED)
@@ -525,6 +527,7 @@ class CrewInviteConsumerUseCaseServicesTest {
 
 		private final Map<Long, CrewInvite> invitesById = new HashMap<>();
 		private long sequence = 1L;
+		private int findPendingForUpdateCallCount;
 
 		@Override
 		public CrewInvite save(CrewInvite invite) {
@@ -576,6 +579,12 @@ class CrewInviteConsumerUseCaseServicesTest {
 					invite.getStatus() == CrewInviteStatus.PENDING
 				)
 				.findFirst();
+		}
+
+		@Override
+		public Optional<CrewInvite> findPendingByIdAndTargetUserIdForUpdate(Long inviteId, Long targetUserId) {
+			findPendingForUpdateCallCount++;
+			return findPendingByIdAndTargetUserId(inviteId, targetUserId);
 		}
 	}
 }

@@ -24,7 +24,7 @@ public class RejectCrewInviteService implements RejectCrewInviteUseCase {
 	public Result handle(Command command) {
 		completedUserAccessService.validateCompletedUser(command.userId(), "초대를 거절할 권한이 없습니다.");
 
-		CrewInvite invite = crewInviteRepository.findPendingByIdAndTargetUserId(command.inviteId(), command.userId())
+		CrewInvite invite = crewInviteRepository.findPendingByIdAndTargetUserIdForUpdate(command.inviteId(), command.userId())
 			.orElseThrow(() -> new CrewInviteNotFoundException(command.inviteId()));
 
 		invite.reject();

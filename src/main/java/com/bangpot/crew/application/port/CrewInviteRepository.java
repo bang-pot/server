@@ -14,5 +14,7 @@ public interface CrewInviteRepository {
 
 	Optional<CrewInvite> findPendingByIdAndTargetUserId(Long inviteId, Long targetUserId);
 
+	Optional<CrewInvite> findPendingByIdAndTargetUserIdForUpdate(Long inviteId, Long targetUserId);
+
 	Optional<CrewInvite> findById(Long inviteId);
 }

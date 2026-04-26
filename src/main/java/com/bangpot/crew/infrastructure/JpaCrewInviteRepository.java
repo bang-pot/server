@@ -59,6 +59,15 @@ class JpaCrewInviteRepository implements CrewInviteRepository {
 	}
 
 	@Override
+	public Optional<CrewInvite> findPendingByIdAndTargetUserIdForUpdate(Long inviteId, Long targetUserId) {
+		return crewInviteJpaRepository.findWithLockByIdAndTargetUserIdAndStatus(
+			inviteId,
+			targetUserId,
+			CrewInviteStatus.PENDING
+		);
+	}
+
+	@Override
 	public Optional<CrewInvite> findById(Long inviteId) {
 		return crewInviteJpaRepository.findById(inviteId);
 	}

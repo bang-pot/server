@@ -684,6 +684,11 @@ class CrewInviteUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<CrewInvite> findPendingByIdAndTargetUserIdForUpdate(Long inviteId, Long targetUserId) {
+			return findPendingByIdAndTargetUserId(inviteId, targetUserId);
+		}
+
+		@Override
 		public Optional<CrewInvite> findById(Long inviteId) {
 			return Optional.ofNullable(invitesById.get(inviteId));
 		}

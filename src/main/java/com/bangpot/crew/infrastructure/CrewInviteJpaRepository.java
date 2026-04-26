@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -13,6 +14,8 @@ import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.view.MyCrewInvitesView;
 
+import jakarta.persistence.LockModeType;
+
 interface CrewInviteJpaRepository extends JpaRepository<CrewInvite, Long> {
 
 	boolean existsByCrewIdAndTargetUserIdAndStatus(Long crewId, Long targetUserId, CrewInviteStatus status);
@@ -20,6 +23,13 @@ interface CrewInviteJpaRepository extends JpaRepository<CrewInvite, Long> {
 	Optional<CrewInvite> findByCrewIdAndTargetUserIdAndStatus(Long crewId, Long targetUserId, CrewInviteStatus status);
 
 	Optional<CrewInvite> findByIdAndTargetUserIdAndStatus(Long inviteId, Long targetUserId, CrewInviteStatus status);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	Optional<CrewInvite> findWithLockByIdAndTargetUserIdAndStatus(
+		Long inviteId,
+		Long targetUserId,
+		CrewInviteStatus status
+	);
 
 	@Query("""
 		select new com.bangpot.crew.domain.view.MyCrewInvitesView$Item(
