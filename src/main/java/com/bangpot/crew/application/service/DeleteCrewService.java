@@ -36,15 +36,19 @@ public class DeleteCrewService implements DeleteCrewUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
+		completedUserAccessService.validateCompletedUser(command.leaderUserId(), DELETE_DENIED_MESSAGE);
+
 		Crew crew = crewRepository.findByIdForUpdate(command.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
-
-		completedUserAccessService.validateCompletedUser(command.leaderUserId(), DELETE_DENIED_MESSAGE);
 
 		CrewMember currentLeader = crewMemberRepository.findByCrewIdAndUserId(crew.getId(), command.leaderUserId())
 			.orElseThrow(() -> new AccessDeniedException(DELETE_DENIED_MESSAGE));
 		if (currentLeader.getRole() != CrewRole.LEADER) {
 			throw new AccessDeniedException(DELETE_DENIED_MESSAGE);
+		}
+
+		if (!crew.getName().equals(command.crewName())) {
+			throw new CrewDeleteNameMismatchException();
 		}
 
 		boolean hasOtherActiveMembers = crewMemberRepository.existsActiveByCrewIdAndUserIdNot(
@@ -61,10 +65,6 @@ public class DeleteCrewService implements DeleteCrewUseCase {
 		);
 		if (hasUnfinishedMeetings) {
 			throw new CrewDeleteNotAllowedWithActiveMeetingsException();
-		}
-
-		if (!crew.getName().equals(command.crewName())) {
-			throw new CrewDeleteNameMismatchException();
 		}
 
 		currentLeader.leave();
