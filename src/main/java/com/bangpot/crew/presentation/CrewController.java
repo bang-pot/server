@@ -36,6 +36,7 @@ import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
+import com.bangpot.crew.domain.view.CrewJoinView;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -219,7 +220,7 @@ class CrewController {
 		@PathVariable Long crewId,
 		Authentication authentication
 	) {
-		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
+		CrewJoinView result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crewId, optionalAuthenticatedUserId(authentication))
 		);
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));

@@ -370,6 +370,14 @@ class CrewVisibilityUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
 			Long crewId,
 			Long userId

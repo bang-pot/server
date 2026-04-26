@@ -13,7 +13,6 @@ import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
-import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
@@ -27,6 +26,7 @@ import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
+import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
@@ -206,12 +206,12 @@ final class CrewDtoMapper {
 		return new CrewDto.TransferCrewLeadershipResponse(result.crewId(), result.leaderUserId());
 	}
 
-	static CrewDto.CrewJoinViewResponse toResponse(GetCrewJoinViewUseCase.Result result) {
+	static CrewDto.CrewJoinViewResponse toResponse(CrewJoinView result) {
 		return new CrewDto.CrewJoinViewResponse(
 			result.crewId(),
 			result.name(),
 			result.description(),
-			result.visibility(),
+			result.visibility().name(),
 			result.imageUrl(),
 			result.myStatus()
 		);

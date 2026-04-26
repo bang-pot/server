@@ -464,6 +464,14 @@ class CrewHubUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public Optional<CrewHubView> findCrewHubViewByCrewIdAndUserId(Long crewId, Long userId) {
 			return crewRepository.findById(crewId)
 				.map(crew -> {

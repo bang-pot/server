@@ -49,6 +49,7 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
@@ -234,11 +235,11 @@ class CrewControllerTest {
 	@Test
 	void returnsCrewJoinViewForGuestUser() throws Exception {
 		when(getCrewJoinViewUseCase.handle(GetCrewJoinViewUseCase.Query.of(1L, null)))
-			.thenReturn(GetCrewJoinViewUseCase.Result.of(
+			.thenReturn(CrewJoinView.of(
 				1L,
 				"Crew Alpha",
 				"public crew",
-				"PUBLIC",
+				CrewVisibility.PUBLIC,
 				null,
 				CrewJoinViewStatus.GUEST
 			));

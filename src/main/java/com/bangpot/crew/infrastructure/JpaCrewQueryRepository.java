@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
+import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
@@ -17,6 +18,7 @@ import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewInviteCandidateAccessView;
 import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
+import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
@@ -43,6 +45,25 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 			CrewMemberStatus.ACTIVE,
 			CrewRole.LEADER,
 			CrewJoinRequestStatus.PENDING
+		);
+	}
+
+	@Override
+	public Optional<CrewJoinView> findCrewJoinViewByCrewIdAndUserId(Long crewId, Long userId) {
+		return crewJpaRepository.findCrewJoinViewByCrewIdAndUserId(
+			crewId,
+			userId,
+			CrewStatus.ACTIVE,
+			CrewMemberStatus.ACTIVE,
+			CrewJoinRequestStatus.PENDING,
+			CrewVisibility.PUBLIC,
+			CrewVisibility.PRIVATE,
+			CrewJoinViewStatus.GUEST,
+			CrewJoinViewStatus.COMPLETION_REQUIRED,
+			CrewJoinViewStatus.MEMBER,
+			CrewJoinViewStatus.PENDING,
+			CrewJoinViewStatus.CAN_REQUEST,
+			CrewJoinViewStatus.PRIVATE_RESTRICTED
 		);
 	}
 

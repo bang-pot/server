@@ -1,10 +1,10 @@
 package com.bangpot.crew.application.usecase;
 
-import com.bangpot.crew.domain.CrewJoinViewStatus;
+import com.bangpot.crew.domain.view.CrewJoinView;
 
 public interface GetCrewJoinViewUseCase {
 
-	Result handle(Query query);
+	CrewJoinView handle(Query query);
 
 	record Query(Long crewId, Long userId) {
 		public static Query of(Long crewId, Long userId) {
@@ -12,23 +12,4 @@ public interface GetCrewJoinViewUseCase {
 		}
 	}
 
-	record Result(
-		Long crewId,
-		String name,
-		String description,
-		String visibility,
-		String imageUrl,
-		CrewJoinViewStatus myStatus
-	) {
-		public static Result of(
-			Long crewId,
-			String name,
-			String description,
-			String visibility,
-			String imageUrl,
-			CrewJoinViewStatus myStatus
-		) {
-			return new Result(crewId, name, description, visibility, imageUrl, myStatus);
-		}
-	}
 }
