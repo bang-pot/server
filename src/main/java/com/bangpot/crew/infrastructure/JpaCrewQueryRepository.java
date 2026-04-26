@@ -8,12 +8,15 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.crew.application.port.CrewQueryRepository;
+import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewInviteCandidateAccessView;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
@@ -50,6 +53,41 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 			userId,
 			CrewStatus.ACTIVE,
 			CrewMemberStatus.ACTIVE
+		);
+	}
+
+	@Override
+	public Optional<CrewInviteCandidateAccessView> findCrewInviteCandidateAccessByCrewIdAndUserId(
+		Long crewId,
+		Long userId
+	) {
+		return crewJpaRepository.findCrewInviteCandidateAccessByCrewIdAndUserId(
+			crewId,
+			userId,
+			CrewStatus.ACTIVE,
+			CrewMemberStatus.ACTIVE
+		);
+	}
+
+	@Override
+	public CrewInviteCandidatesView findCrewInviteCandidatesView(
+		Long crewId,
+		Long leaderUserId,
+		String nickname,
+		int page,
+		int size
+	) {
+		Slice<CrewInviteCandidatesView.Item> slice = crewJpaRepository.findCrewInviteCandidateItems(
+			crewId,
+			leaderUserId,
+			nickname,
+			CrewMemberStatus.ACTIVE,
+			CrewInviteStatus.PENDING,
+			PageRequest.of(page, size)
+		);
+		return CrewInviteCandidatesView.of(
+			slice.getContent(),
+			CrewInviteCandidatesView.Page.of(page, size, slice.hasNext())
 		);
 	}
 

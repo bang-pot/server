@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewInviteCandidateAccessView;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
@@ -18,6 +20,16 @@ public interface CrewQueryRepository {
 	Optional<CrewHubView> findCrewHubViewByCrewIdAndUserId(Long crewId, Long userId);
 
 	Optional<CrewMemberAccessView> findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId);
+
+	Optional<CrewInviteCandidateAccessView> findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId);
+
+	CrewInviteCandidatesView findCrewInviteCandidatesView(
+		Long crewId,
+		Long leaderUserId,
+		String nickname,
+		int page,
+		int size
+	);
 
 	Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId);
 

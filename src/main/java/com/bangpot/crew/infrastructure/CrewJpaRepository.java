@@ -13,12 +13,15 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewInviteCandidateAccessView;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
@@ -87,6 +90,60 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		@Param("userId") Long userId,
 		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
 		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.CrewInviteCandidateAccessView(
+			c.visibility,
+			member.role
+		)
+		from Crew c
+		left join CrewMember member
+		  on member.crewId = c.id
+		 and member.userId = :userId
+		 and member.status = :activeMemberStatus
+		where c.id = :crewId
+		  and c.status = :activeCrewStatus
+		""")
+	Optional<CrewInviteCandidateAccessView> findCrewInviteCandidateAccessByCrewIdAndUserId(
+		@Param("crewId") Long crewId,
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.CrewInviteCandidatesView$Item(
+			user.id,
+			user.nickname
+		)
+		from UserJpaEntity user
+		where user.withdrawnAt is null
+		  and user.id <> :leaderUserId
+		  and lower(user.nickname) like lower(concat('%', :nickname, '%')) escape '\\'
+		  and not exists (
+			select 1
+			from CrewMember member
+			where member.crewId = :crewId
+			  and member.userId = user.id
+			  and member.status = :activeMemberStatus
+		  )
+		  and not exists (
+			select 1
+			from CrewInvite invite
+			where invite.crewId = :crewId
+			  and invite.targetUserId = user.id
+			  and invite.status = :pendingInviteStatus
+		  )
+		order by lower(user.nickname) asc, user.id asc
+		""")
+	Slice<CrewInviteCandidatesView.Item> findCrewInviteCandidateItems(
+		@Param("crewId") Long crewId,
+		@Param("leaderUserId") Long leaderUserId,
+		@Param("nickname") String nickname,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		@Param("pendingInviteStatus") CrewInviteStatus pendingInviteStatus,
+		Pageable pageable
 	);
 
 	@Query("""

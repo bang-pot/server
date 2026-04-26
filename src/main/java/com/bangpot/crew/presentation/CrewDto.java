@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 final class CrewDto {
 
 	private CrewDto() {
@@ -179,6 +181,12 @@ final class CrewDto {
 	}
 
 	record CrewInviteCandidateResponse(Long userId, String nickname) {
+	}
+
+	record CrewInviteCandidatesResponse(
+		List<CrewInviteCandidateResponse> items,
+		PageInfoResponse pageInfo
+	) {
 	}
 
 	record CreateCrewInviteRequest(@NotNull(message = "초대할 크루원을 선택해야 합니다.") Long targetUserId) {

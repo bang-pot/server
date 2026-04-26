@@ -262,14 +262,23 @@ class CrewController {
 	}
 
 	@GetMapping("/{crewId}/invite-candidates")
-	ResponseEntity<List<CrewDto.CrewInviteCandidateResponse>> getInviteCandidates(
+	ResponseEntity<CrewDto.CrewInviteCandidatesResponse> getInviteCandidates(
 		@PathVariable Long crewId,
 		@RequestParam(required = false) String nickname,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(CrewDtoMapper.toInviteCandidateResponses(
 			getCrewInviteCandidatesUseCase.handle(
-				CrewDtoMapper.toInviteCandidatesQuery(crewId, requireAuthenticatedUserId(authentication), nickname)
+				CrewDtoMapper.toInviteCandidatesQuery(
+					crewId,
+					requireAuthenticatedUserId(authentication),
+					nickname,
+					page,
+					size
+				)
 			)
 		));
 	}

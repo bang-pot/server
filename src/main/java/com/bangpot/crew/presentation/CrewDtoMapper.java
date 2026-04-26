@@ -26,6 +26,7 @@ import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
@@ -290,17 +291,26 @@ final class CrewDtoMapper {
 	static GetCrewInviteCandidatesUseCase.Query toInviteCandidatesQuery(
 		Long crewId,
 		Long leaderUserId,
-		String nickname
+		String nickname,
+		int page,
+		int size
 	) {
-		return GetCrewInviteCandidatesUseCase.Query.of(crewId, leaderUserId, nickname);
+		return GetCrewInviteCandidatesUseCase.Query.of(crewId, leaderUserId, nickname, page, size);
 	}
 
-	static List<CrewDto.CrewInviteCandidateResponse> toInviteCandidateResponses(
-		List<GetCrewInviteCandidatesUseCase.View> views
+	static CrewDto.CrewInviteCandidatesResponse toInviteCandidateResponses(
+		CrewInviteCandidatesView view
 	) {
-		return views.stream()
-			.map(view -> new CrewDto.CrewInviteCandidateResponse(view.userId(), view.nickname()))
-			.toList();
+		return new CrewDto.CrewInviteCandidatesResponse(
+			view.items().stream()
+				.map(item -> new CrewDto.CrewInviteCandidateResponse(item.userId(), item.nickname()))
+				.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static CreateCrewInviteUseCase.Command toCreateInviteCommand(

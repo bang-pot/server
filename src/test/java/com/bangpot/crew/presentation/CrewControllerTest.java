@@ -46,6 +46,7 @@ import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewRole;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewMembersView;
@@ -735,19 +736,25 @@ class CrewControllerTest {
 
 	@Test
 	void returnsInviteCandidatesForPrivateCrewLeader() throws Exception {
-		when(getCrewInviteCandidatesUseCase.handle(GetCrewInviteCandidatesUseCase.Query.of(1L, 77L, "bang")))
-			.thenReturn(List.of(
-				GetCrewInviteCandidatesUseCase.View.of(201L, "bangpot-user")
+		when(getCrewInviteCandidatesUseCase.handle(GetCrewInviteCandidatesUseCase.Query.of(1L, 77L, "bang", 1, 10)))
+			.thenReturn(CrewInviteCandidatesView.of(
+				List.of(CrewInviteCandidatesView.Item.of(201L, "bangpot-user")),
+				CrewInviteCandidatesView.Page.of(1, 10, true)
 			));
 
 		mockMvc.perform(
 			get("/api/crews/1/invite-candidates")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 				.param("nickname", "bang")
+				.param("page", "1")
+				.param("size", "10")
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].userId").value(201))
-			.andExpect(jsonPath("$[0].nickname").value("bangpot-user"));
+			.andExpect(jsonPath("$.items[0].userId").value(201))
+			.andExpect(jsonPath("$.items[0].nickname").value("bangpot-user"))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(10))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
 
 	@Test

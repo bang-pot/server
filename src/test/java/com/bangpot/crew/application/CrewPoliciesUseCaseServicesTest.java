@@ -186,6 +186,23 @@ class CrewPoliciesUseCaseServicesTest {
 
 	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
 
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
+			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
 		private final InMemoryCrewRepository crewRepository;
 		private final InMemoryCrewMemberRepository crewMemberRepository;
 		private final InMemoryCrewPolicyRepository crewPolicyRepository;
