@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.meeting.application.port.MeetingLogFeedReadRepository;
+import com.bangpot.meeting.domain.view.CrewMeetingLogFeedView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,24 +17,26 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 class JpaMeetingLogFeedReadRepository implements MeetingLogFeedReadRepository {
 
+	private static final int EXCERPT_LIMIT = 120;
+
 	private final MeetingLogFeedJpaRepository meetingLogFeedJpaRepository;
 
 	@Override
-	public SearchResult search(Long crewId, int page, int size) {
-		List<Item> items = meetingLogFeedJpaRepository.findByCrewIdOrderByCreatedAtDesc(
+	public CrewMeetingLogFeedView search(Long crewId, int page, int size) {
+		List<CrewMeetingLogFeedView.Item> items = meetingLogFeedJpaRepository.findByCrewIdOrderByCreatedAtDesc(
 				crewId,
 				PageRequest.of(page, size + 1)
 			).stream()
-			.map(row -> Item.of(
-				toLong(row[0]),
-				toLong(row[1]),
-				(String) row[2],
-				(String) row[3],
-				(String) row[4],
-				toInstant(row[5]),
-				(String) row[6],
-				(String) row[7],
-				toLong(row[8])
+			.map(row -> CrewMeetingLogFeedView.Item.of(
+				toLong(row.getLogId()),
+				toLong(row.getMeetingId()),
+				row.getAuthorNickname(),
+				row.getMeetingTitle(),
+				row.getMeetingDate(),
+				toInstant(row.getCreatedAt()),
+				toExcerpt(row.getBody()),
+				row.getCoverPhotoUrl(),
+				toExtraPhotoCount(toLong(row.getTotalPhotoCount()))
 			))
 			.toList();
 
@@ -42,7 +45,7 @@ class JpaMeetingLogFeedReadRepository implements MeetingLogFeedReadRepository {
 			items = items.subList(0, size);
 		}
 
-		return SearchResult.of(items, PageInfo.of(page, size, hasNext));
+		return CrewMeetingLogFeedView.of(items, CrewMeetingLogFeedView.Page.of(page, size, hasNext));
 	}
 
 	private Long toLong(Object value) {
@@ -66,5 +69,19 @@ class JpaMeetingLogFeedReadRepository implements MeetingLogFeedReadRepository {
 			return timestamp.toInstant();
 		}
 		throw new IllegalArgumentException("Unsupported createdAt type: " + value.getClass().getName());
+	}
+
+	private String toExcerpt(String body) {
+		if (body == null || body.length() <= EXCERPT_LIMIT) {
+			return body;
+		}
+		return body.substring(0, EXCERPT_LIMIT);
+	}
+
+	private long toExtraPhotoCount(Long totalPhotoCount) {
+		if (totalPhotoCount == null || totalPhotoCount <= 1L) {
+			return 0L;
+		}
+		return totalPhotoCount - 1L;
 	}
 }

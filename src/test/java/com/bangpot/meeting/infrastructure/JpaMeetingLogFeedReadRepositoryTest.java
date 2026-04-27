@@ -12,6 +12,7 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingLogFeedReadRepository;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.view.CrewMeetingLogFeedView;
 
 @DataJpaTest
 @Import(JpaMeetingLogFeedReadRepository.class)
@@ -84,15 +85,15 @@ class JpaMeetingLogFeedReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		MeetingLogFeedReadRepository.SearchResult result = repository.search(crew.getId(), 0, 10);
+		CrewMeetingLogFeedView result = repository.search(crew.getId(), 0, 10);
 
-		assertThat(result.items()).extracting(MeetingLogFeedReadRepository.Item::meetingId)
+		assertThat(result.items()).extracting(CrewMeetingLogFeedView.Item::meetingId)
 			.containsExactly(meeting2.getId(), meeting1.getId());
 		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/c.jpg");
-		assertThat(result.items().get(0).totalPhotoCount()).isEqualTo(1);
+		assertThat(result.items().get(0).extraPhotoCount()).isZero();
 		assertThat(result.items().get(1).coverPhotoUrl()).isEqualTo("https://cdn.example.com/a.jpg");
-		assertThat(result.items().get(1).totalPhotoCount()).isEqualTo(2);
-		assertThat(result.pageInfo().hasNext()).isFalse();
+		assertThat(result.items().get(1).extraPhotoCount()).isEqualTo(1);
+		assertThat(result.page().hasNext()).isFalse();
 	}
 
 	@Test
@@ -119,11 +120,11 @@ class JpaMeetingLogFeedReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		MeetingLogFeedReadRepository.SearchResult result = repository.search(crew.getId(), 0, 10);
+		CrewMeetingLogFeedView result = repository.search(crew.getId(), 0, 10);
 
 		assertThat(result.items()).hasSize(1);
 		assertThat(result.items().get(0).coverPhotoUrl()).isNull();
-		assertThat(result.items().get(0).totalPhotoCount()).isZero();
+		assertThat(result.items().get(0).extraPhotoCount()).isZero();
 	}
 
 	@Test
@@ -153,7 +154,7 @@ class JpaMeetingLogFeedReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		MeetingLogFeedReadRepository.SearchResult result = repository.search(crew.getId(), 0, 10);
+		CrewMeetingLogFeedView result = repository.search(crew.getId(), 0, 10);
 
 		assertThat(result.items()).isEmpty();
 	}
@@ -192,9 +193,9 @@ class JpaMeetingLogFeedReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		MeetingLogFeedReadRepository.SearchResult result = repository.search(crew.getId(), 0, 1);
+		CrewMeetingLogFeedView result = repository.search(crew.getId(), 0, 1);
 
 		assertThat(result.items()).hasSize(1);
-		assertThat(result.pageInfo().hasNext()).isTrue();
+		assertThat(result.page().hasNext()).isTrue();
 	}
 }

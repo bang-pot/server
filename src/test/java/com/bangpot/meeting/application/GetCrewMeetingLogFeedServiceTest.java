@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,14 +15,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
 import com.bangpot.crew.application.exception.CrewNotFoundException;
-import com.bangpot.crew.application.port.CrewMemberRepository;
-import com.bangpot.crew.application.port.CrewRepository;
-import com.bangpot.crew.domain.Crew;
-import com.bangpot.crew.domain.CrewMember;
-import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.meeting.application.port.MeetingLogFeedReadRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.service.GetCrewMeetingLogFeedService;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingLogFeedUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingLogFeedView;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
+import com.bangpot.meeting.domain.view.MeetingsView;
+import com.bangpot.meeting.domain.view.MyCalendarView;
+import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
+import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
+import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -27,21 +36,18 @@ import com.bangpot.user.domain.User;
 class GetCrewMeetingLogFeedServiceTest {
 
 	private InMemoryUserRepository userRepository;
-	private InMemoryCrewRepository crewRepository;
-	private InMemoryCrewMemberRepository crewMemberRepository;
+	private InMemoryMeetingQueryRepository meetingQueryRepository;
 	private InMemoryMeetingLogFeedReadRepository meetingLogFeedReadRepository;
 	private GetCrewMeetingLogFeedUseCase getCrewMeetingLogFeedUseCase;
 
 	@BeforeEach
 	void setUp() {
 		userRepository = new InMemoryUserRepository();
-		crewRepository = new InMemoryCrewRepository();
-		crewMemberRepository = new InMemoryCrewMemberRepository();
+		meetingQueryRepository = new InMemoryMeetingQueryRepository();
 		meetingLogFeedReadRepository = new InMemoryMeetingLogFeedReadRepository();
 		getCrewMeetingLogFeedUseCase = new GetCrewMeetingLogFeedService(
 			new CompletedUserAccessService(userRepository),
-			crewRepository,
-			crewMemberRepository,
+			meetingQueryRepository,
 			meetingLogFeedReadRepository
 		);
 	}
@@ -49,11 +55,10 @@ class GetCrewMeetingLogFeedServiceTest {
 	@Test
 	void returnsMeetingLogFeedForActiveCrewMember() {
 		userRepository.save(User.create(7L, "member"));
-		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
-		crewMemberRepository.save(CrewMember.createMember(crew.getId(), 7L));
-		meetingLogFeedReadRepository.result = MeetingLogFeedReadRepository.SearchResult.of(
+		meetingQueryRepository.accessView = Optional.of(MeetingsAccessView.of(1L, CrewRole.MEMBER));
+		meetingLogFeedReadRepository.view = CrewMeetingLogFeedView.of(
 			List.of(
-				MeetingLogFeedReadRepository.Item.of(
+				CrewMeetingLogFeedView.Item.of(
 					11L,
 					31L,
 					"writer",
@@ -62,14 +67,14 @@ class GetCrewMeetingLogFeedServiceTest {
 					Instant.parse("2026-04-15T01:00:00Z"),
 					"Quite a fun log body for card rendering.",
 					"https://cdn.example.com/a.jpg",
-					2L
+					1L
 				)
 			),
-			MeetingLogFeedReadRepository.PageInfo.of(0, 20, false)
+			CrewMeetingLogFeedView.Page.of(0, 20, false)
 		);
 
-		GetCrewMeetingLogFeedUseCase.Result result = getCrewMeetingLogFeedUseCase.handle(
-			GetCrewMeetingLogFeedUseCase.Query.of(crew.getId(), 7L, 0, 20)
+		CrewMeetingLogFeedView result = getCrewMeetingLogFeedUseCase.handle(
+			GetCrewMeetingLogFeedUseCase.Query.of(1L, 7L, 0, 20)
 		);
 
 		assertThat(result.items()).hasSize(1);
@@ -77,12 +82,13 @@ class GetCrewMeetingLogFeedServiceTest {
 		assertThat(result.items().get(0).excerpt()).isEqualTo("Quite a fun log body for card rendering.");
 		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/a.jpg");
 		assertThat(result.items().get(0).extraPhotoCount()).isEqualTo(1L);
-		assertThat(result.pageInfo().hasNext()).isFalse();
+		assertThat(result.page().hasNext()).isFalse();
 	}
 
 	@Test
 	void throwsCrewNotFoundWhenCrewDoesNotExist() {
 		userRepository.save(User.create(7L, "member"));
+		meetingQueryRepository.accessView = Optional.empty();
 
 		assertThatThrownBy(() -> getCrewMeetingLogFeedUseCase.handle(
 			GetCrewMeetingLogFeedUseCase.Query.of(999L, 7L, 0, 20)
@@ -93,23 +99,15 @@ class GetCrewMeetingLogFeedServiceTest {
 	@Test
 	void throwsAccessDeniedWhenUserIsNotActiveCrewMember() {
 		userRepository.save(User.create(7L, "member"));
-		Crew crew = crewRepository.save(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		meetingQueryRepository.accessView = Optional.of(MeetingsAccessView.of(1L, null));
 
 		assertThatThrownBy(() -> getCrewMeetingLogFeedUseCase.handle(
-			GetCrewMeetingLogFeedUseCase.Query.of(crew.getId(), 7L, 0, 20)
+			GetCrewMeetingLogFeedUseCase.Query.of(1L, 7L, 0, 20)
 		))
 			.isInstanceOf(AccessDeniedException.class);
 	}
 
 	private static final class InMemoryUserRepository implements UserRepository {
-		@Override
-		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
-		}
-
-		@Override
-		public boolean updateNickname(Long userId, String nickname) {
-			return false;
-		}
 
 		private final java.util.Map<Long, User> users = new java.util.HashMap<>();
 
@@ -131,8 +129,8 @@ class GetCrewMeetingLogFeedServiceTest {
 		}
 
 		@Override
-		public java.util.List<com.bangpot.user.domain.User> findAllCompletedUsers() {
-			return findCompletedUsersByNicknameContaining(null);
+		public List<User> findAllCompletedUsers() {
+			return users.values().stream().toList();
 		}
 
 		@Override
@@ -140,146 +138,92 @@ class GetCrewMeetingLogFeedServiceTest {
 			users.put(user.getId(), user);
 			return user;
 		}
-	}
-
-	private static final class InMemoryCrewRepository implements CrewRepository {
-		@Override
-		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
-			return com.bangpot.crew.domain.view.MyCrewsView.of(
-				java.util.List.of(),
-				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
-			);
-		}
-
-		private final java.util.Map<Long, Crew> crews = new java.util.HashMap<>();
-		private long sequence = 1L;
 
 		@Override
-		public boolean existsByName(String name) {
-			return crews.values().stream().anyMatch(crew -> crew.getName().equals(name));
-		}
-
-		@Override
-		public Crew save(Crew crew) {
-			if (crew.getId() == null) {
-				crew.assignId(sequence++);
-			}
-			crews.put(crew.getId(), crew);
-			return crew;
-		}
-
-		@Override
-		public Optional<Crew> findById(Long crewId) {
-			return Optional.ofNullable(crews.get(crewId))
-				.filter(crew -> crew.getStatus() == com.bangpot.crew.domain.CrewStatus.ACTIVE);
-		}
-
-		@Override
-		public Optional<Crew> findByIdForUpdate(Long crewId) {
-			return findById(crewId);
-		}
-
-		@Override
-		public Optional<Crew> findByIdForShare(Long crewId) {
-			return findById(crewId);
-		}
-
-		@Override
-		public Optional<Crew> findAnyById(Long crewId) {
-			return Optional.ofNullable(crews.get(crewId));
-		}
-
-		@Override
-		public List<Crew> findActiveByMemberUserId(Long userId) {
-			return List.of();
-		}
-
-
-
-				@Override
-		public long countActiveByMemberUserId(Long userId) {
-			return 0L;
-		}
-		@Override
-		public long countPendingPublicByUserId(Long userId) {
-			return 0L;
-		}
-		public List<Crew> findPublicCrews() {
-			return crews.values().stream()
-				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
-				.toList();
-		}
-	}
-
-	private static final class InMemoryCrewMemberRepository implements CrewMemberRepository {
-		@Override
-		public java.util.List<com.bangpot.crew.domain.CrewMember> findAllByUserId(Long userId) {
-			return java.util.List.of();
-		}
-
-		@Override
-		public java.util.Optional<com.bangpot.crew.domain.CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
-			return findByCrewIdAndUserId(crewId, userId);
-		}
-
-		private final java.util.Map<Long, CrewMember> members = new java.util.HashMap<>();
-		private long sequence = 1L;
-
-		@Override
-		public CrewMember save(CrewMember crewMember) {
-			if (crewMember.getId() == null) {
-				crewMember.assignId(sequence++);
-			}
-			members.put(crewMember.getId(), crewMember);
-			return crewMember;
-		}
-
-		@Override
-		public boolean existsByCrewIdAndUserId(Long crewId, Long userId) {
-			return members.values().stream().anyMatch(member ->
-				member.getCrewId().equals(crewId)
-					&& member.getUserId().equals(userId)
-					&& member.getStatus() == com.bangpot.crew.domain.CrewMemberStatus.ACTIVE
-			);
-		}
-
-		@Override
-		public boolean existsLeaderByCrewIdAndUserId(Long crewId, Long userId) {
+		public boolean updateNickname(Long userId, String nickname) {
 			return false;
 		}
 
 		@Override
-		public Optional<CrewMember> findByCrewIdAndUserId(Long crewId, Long userId) {
-			return members.values().stream()
-				.filter(member -> member.getCrewId().equals(crewId)
-					&& member.getUserId().equals(userId)
-					&& member.getStatus() == com.bangpot.crew.domain.CrewMemberStatus.ACTIVE)
-				.findFirst();
+		public void withdrawById(Long userId, String anonymizedNickname, Instant withdrawnAt) {
 		}
-		@Override
-		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
-			return findAllByCrewId(crewId).stream()
-				.filter(CrewMember::isActive)
-				.anyMatch(member -> !userId.equals(member.getUserId()));
-		}
+	}
 
+	private static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+
+		private Optional<MeetingsAccessView> accessView = Optional.empty();
 
 		@Override
-		public List<CrewMember> findAllByCrewId(Long crewId) {
-			return members.values().stream()
-				.filter(member -> member.getCrewId().equals(crewId))
-				.toList();
+		public Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId) {
+			return accessView;
+		}
+
+		@Override
+		public MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return MyCalendarView.of(List.of(), 0);
+		}
+
+		@Override
+		public MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
+			return MyCreatedMeetingsView.of(List.of(), MyCreatedMeetingsView.Page.of(page, size, false));
+		}
+
+		@Override
+		public MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(Long userId, int page, int size) {
+			return MyJoinedMeetingsView.of(List.of(), MyJoinedMeetingsView.Page.of(page, size, false));
+		}
+
+		@Override
+		public UpcomingMeetingsView findUpcomingMeetingsViewByUserId(
+			Long userId,
+			int limit,
+			String currentDate,
+			String currentTime
+		) {
+			return UpcomingMeetingsView.of(List.of(), 0L);
+		}
+
+		@Override
+		public CrewScheduleView findCrewScheduleViewByCrewId(Long crewId, LocalDate from, LocalDate to) {
+			return CrewScheduleView.of(List.of());
+		}
+
+		@Override
+		public MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
+			return MeetingsView.of(List.of(), MeetingsView.Page.of(page, size, false));
+		}
+
+		@Override
+		public Optional<MeetingDetailView> findMeetingDetailView(Long crewId, Long meetingId, Long userId) {
+			return Optional.empty();
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public Map<Long, Integer> countCompletedByUserIds(Collection<Long> userIds) {
+			return Map.of();
 		}
 	}
 
 	private static final class InMemoryMeetingLogFeedReadRepository implements MeetingLogFeedReadRepository {
-		private SearchResult result = SearchResult.of(List.of(), PageInfo.of(0, 20, false));
+
+		private CrewMeetingLogFeedView view = CrewMeetingLogFeedView.of(
+			List.of(),
+			CrewMeetingLogFeedView.Page.of(0, 20, false)
+		);
 
 		@Override
-		public SearchResult search(Long crewId, int page, int size) {
-			return result;
+		public CrewMeetingLogFeedView search(Long crewId, int page, int size) {
+			return view;
 		}
 	}
 }
-
-

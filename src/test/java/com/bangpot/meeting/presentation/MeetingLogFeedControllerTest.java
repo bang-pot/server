@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingLogFeedUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingLogFeedView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -37,9 +38,9 @@ class MeetingLogFeedControllerTest {
 	@Test
 	void returnsCrewMeetingLogFeedForAuthenticatedUser() throws Exception {
 		when(getCrewMeetingLogFeedUseCase.handle(GetCrewMeetingLogFeedUseCase.Query.of(5L, 7L, 0, 20)))
-			.thenReturn(GetCrewMeetingLogFeedUseCase.Result.of(
+			.thenReturn(CrewMeetingLogFeedView.of(
 				List.of(
-					GetCrewMeetingLogFeedUseCase.Item.of(
+					CrewMeetingLogFeedView.Item.of(
 						101L,
 						55L,
 						"writer",
@@ -51,7 +52,7 @@ class MeetingLogFeedControllerTest {
 						1L
 					)
 				),
-				GetCrewMeetingLogFeedUseCase.PageInfo.of(0, 20, false)
+				CrewMeetingLogFeedView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(

@@ -38,5 +38,26 @@ interface MeetingLogFeedJpaRepository extends JpaRepository<MeetingLog, Long> {
 		  and ml.deleted_at is null
 		order by ml.created_at desc, ml.id desc
 		""", nativeQuery = true)
-	List<Object[]> findByCrewIdOrderByCreatedAtDesc(Long crewId, Pageable pageable);
+	List<FeedRow> findByCrewIdOrderByCreatedAtDesc(Long crewId, Pageable pageable);
+
+	interface FeedRow {
+
+		Number getLogId();
+
+		Number getMeetingId();
+
+		String getAuthorNickname();
+
+		String getMeetingTitle();
+
+		String getMeetingDate();
+
+		Object getCreatedAt();
+
+		String getBody();
+
+		String getCoverPhotoUrl();
+
+		Number getTotalPhotoCount();
+	}
 }
