@@ -20,6 +20,7 @@ import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
@@ -49,6 +50,7 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 		.toList();
 
 	private final MeetingJpaRepository meetingJpaRepository;
+	private final MeetingGalleryJpaRepository meetingGalleryJpaRepository;
 
 	@Override
 	public MyCalendarView findMyCalendarViewByUserId(Long userId) {
@@ -153,6 +155,28 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 	}
 
 	@Override
+	public CrewMeetingGalleryView findCrewMeetingGalleryView(Long crewId, int page, int size) {
+		List<CrewMeetingGalleryView.Item> items = meetingGalleryJpaRepository.findGalleryCards(
+				crewId,
+				PageRequest.of(page, size + 1)
+			).stream()
+			.map(row -> CrewMeetingGalleryView.Item.of(
+				toLong(row.getMeetingId()),
+				row.getMeetingDate(),
+				row.getMeetingTitle(),
+				row.getCoverPhotoUrl(),
+				toLong(row.getExtraPhotoCount())
+			))
+			.toList();
+
+		boolean hasNext = items.size() > size;
+		if (hasNext) {
+			items = items.subList(0, size);
+		}
+		return CrewMeetingGalleryView.of(items, CrewMeetingGalleryView.Page.of(page, size, hasNext));
+	}
+
+	@Override
 	public Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId) {
 		return meetingJpaRepository.findMeetingsAccessViewByCrewIdAndUserId(
 			crewId,
@@ -214,5 +238,12 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			MeetingStatus.COMPLETED
 		).forEach(row -> countsByUserId.merge(row.getUserId(), Math.toIntExact(row.getMeetingCount()), Integer::sum));
 		return countsByUserId;
+	}
+
+	private Long toLong(Number value) {
+		if (value == null) {
+			return null;
+		}
+		return value.longValue();
 	}
 }

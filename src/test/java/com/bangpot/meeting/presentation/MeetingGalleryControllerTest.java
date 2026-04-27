@@ -21,6 +21,7 @@ import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -40,9 +41,9 @@ class MeetingGalleryControllerTest {
 	@Test
 	void returnsCrewMeetingGalleryForAuthenticatedUser() throws Exception {
 		when(getCrewMeetingGalleryUseCase.handle(GetCrewMeetingGalleryUseCase.Query.of(5L, 7L, 0, 20)))
-			.thenReturn(GetCrewMeetingGalleryUseCase.Result.of(
+			.thenReturn(CrewMeetingGalleryView.of(
 				List.of(
-					GetCrewMeetingGalleryUseCase.Item.of(
+					CrewMeetingGalleryView.Item.of(
 						55L,
 						"2026-04-12",
 						"금요일 이스케이프",
@@ -50,7 +51,7 @@ class MeetingGalleryControllerTest {
 						2L
 					)
 				),
-				GetCrewMeetingGalleryUseCase.PageInfo.of(0, 20, false)
+				CrewMeetingGalleryView.Page.of(0, 20, false)
 			));
 
 		mockMvc.perform(

@@ -56,7 +56,20 @@ interface MeetingGalleryJpaRepository extends JpaRepository<MeetingLog, Long> {
 			) desc,
 			m.id desc
 		""", nativeQuery = true)
-	List<Object[]> findGalleryCards(Long crewId, Pageable pageable);
+	List<GalleryCardRow> findGalleryCards(Long crewId, Pageable pageable);
+
+	interface GalleryCardRow {
+
+		Number getMeetingId();
+
+		String getMeetingDate();
+
+		String getMeetingTitle();
+
+		String getCoverPhotoUrl();
+
+		Number getExtraPhotoCount();
+	}
 
 	@Query(value = """
 		select

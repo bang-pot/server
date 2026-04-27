@@ -11,14 +11,19 @@ import org.springframework.context.annotation.Import;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingGalleryReadRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 
 @DataJpaTest
-@Import(JpaMeetingGalleryReadRepository.class)
+@Import({JpaMeetingGalleryReadRepository.class, JpaMeetingQueryRepository.class})
 class JpaMeetingGalleryReadRepositoryTest {
 
 	@Autowired
 	private TestEntityManager entityManager;
+
+	@Autowired
+	private MeetingQueryRepository meetingQueryRepository;
 
 	@Autowired
 	private MeetingGalleryReadRepository repository;
@@ -55,15 +60,15 @@ class JpaMeetingGalleryReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		MeetingGalleryReadRepository.SearchResult result = repository.search(crew.getId(), 0, 10);
+		CrewMeetingGalleryView result = meetingQueryRepository.findCrewMeetingGalleryView(crew.getId(), 0, 10);
 
-		assertThat(result.items()).extracting(MeetingGalleryReadRepository.Item::meetingId)
+		assertThat(result.items()).extracting(CrewMeetingGalleryView.Item::meetingId)
 			.containsExactly(newerMeeting.getId(), olderMeeting.getId());
 		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/newer-host-1.jpg");
 		assertThat(result.items().get(0).extraPhotoCount()).isEqualTo(2L);
 		assertThat(result.items().get(1).coverPhotoUrl()).isEqualTo("https://cdn.example.com/older-host-1.jpg");
 		assertThat(result.items().get(1).extraPhotoCount()).isEqualTo(0L);
-		assertThat(result.pageInfo().hasNext()).isFalse();
+		assertThat(result.page().hasNext()).isFalse();
 
 		assertThat(result.items()).noneMatch(item -> item.meetingId().equals(noHostPhotoMeeting.getId()));
 		assertThat(result.items()).noneMatch(item -> item.meetingId().equals(noPhotoMeeting.getId()));
@@ -90,7 +95,7 @@ class JpaMeetingGalleryReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		MeetingGalleryReadRepository.SearchResult result = repository.search(crew.getId(), 0, 10);
+		CrewMeetingGalleryView result = meetingQueryRepository.findCrewMeetingGalleryView(crew.getId(), 0, 10);
 
 		assertThat(result.items()).isEmpty();
 	}
@@ -113,10 +118,10 @@ class JpaMeetingGalleryReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		MeetingGalleryReadRepository.SearchResult result = repository.search(crew.getId(), 0, 1);
+		CrewMeetingGalleryView result = meetingQueryRepository.findCrewMeetingGalleryView(crew.getId(), 0, 1);
 
 		assertThat(result.items()).hasSize(1);
-		assertThat(result.pageInfo().hasNext()).isTrue();
+		assertThat(result.page().hasNext()).isTrue();
 	}
 
 	@Test

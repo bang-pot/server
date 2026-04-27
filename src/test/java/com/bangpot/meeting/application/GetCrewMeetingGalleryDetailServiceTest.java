@@ -283,13 +283,7 @@ class GetCrewMeetingGalleryDetailServiceTest {
 	}
 
 	private static final class InMemoryMeetingGalleryReadRepository implements MeetingGalleryReadRepository {
-		private SearchResult result = SearchResult.of(List.of(), PageInfo.of(0, 20, false));
 		private Optional<Detail> detail = Optional.empty();
-
-		@Override
-		public SearchResult search(Long crewId, int page, int size) {
-			return result;
-		}
 
 		@Override
 		public Optional<Detail> findDetail(Long crewId, Long meetingId) {

@@ -20,6 +20,7 @@ import com.bangpot.meeting.application.port.MeetingLogFeedReadRepository;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.service.GetCrewMeetingLogFeedService;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingLogFeedUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.CrewMeetingLogFeedView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 import com.bangpot.meeting.domain.view.MeetingDetailView;
@@ -186,6 +187,11 @@ class GetCrewMeetingLogFeedServiceTest {
 		@Override
 		public CrewScheduleView findCrewScheduleViewByCrewId(Long crewId, LocalDate from, LocalDate to) {
 			return CrewScheduleView.of(List.of());
+		}
+
+		@Override
+		public CrewMeetingGalleryView findCrewMeetingGalleryView(Long crewId, int page, int size) {
+			return CrewMeetingGalleryView.of(List.of(), CrewMeetingGalleryView.Page.of(page, size, false));
 		}
 
 		@Override

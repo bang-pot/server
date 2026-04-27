@@ -1,15 +1,14 @@
 package com.bangpot.meeting.application.service;
 
-import java.util.List;
-
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.crew.application.exception.CrewNotFoundException;
-import com.bangpot.crew.application.port.CrewMemberRepository;
-import com.bangpot.crew.application.port.CrewRepository;
-import com.bangpot.meeting.application.port.MeetingGalleryReadRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -18,40 +17,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetCrewMeetingGalleryService implements GetCrewMeetingGalleryUseCase {
 
+	private static final String ACCESS_DENIED_MESSAGE = "활성 크루 멤버만 모임 사진첩을 조회할 수 있습니다.";
+
 	private final CompletedUserAccessService completedUserAccessService;
-	private final CrewRepository crewRepository;
-	private final CrewMemberRepository crewMemberRepository;
-	private final MeetingGalleryReadRepository meetingGalleryReadRepository;
+	private final MeetingQueryRepository meetingQueryRepository;
 
 	@Override
-	public Result handle(Query query) {
-		completedUserAccessService.validateCompletedUser(query.userId(), "모임 갤러리 조회는 가입 완료 사용자만 가능합니다.");
-		crewRepository.findById(query.crewId()).orElseThrow(() -> new CrewNotFoundException(query.crewId()));
+	@Transactional(readOnly = true)
+	public CrewMeetingGalleryView handle(Query query) {
+		completedUserAccessService.validateCompletedUser(query.userId(), ACCESS_DENIED_MESSAGE);
 
-		if (!crewMemberRepository.existsByCrewIdAndUserId(query.crewId(), query.userId())) {
-			throw new AccessDeniedException("meeting gallery access requires an active crew membership");
+		MeetingsAccessView access = meetingQueryRepository.findMeetingsAccessViewByCrewIdAndUserId(
+			query.crewId(),
+			query.userId()
+		).orElseThrow(() -> new CrewNotFoundException(query.crewId()));
+		if (access.myRole() == null) {
+			throw new AccessDeniedException(ACCESS_DENIED_MESSAGE);
 		}
 
-		MeetingGalleryReadRepository.SearchResult searchResult = meetingGalleryReadRepository.search(
-			query.crewId(),
-			query.page(),
-			query.size()
-		);
-
-		List<Item> items = searchResult.items().stream()
-			.map(item -> Item.of(
-				item.meetingId(),
-				item.meetingDate(),
-				item.meetingTitle(),
-				item.coverPhotoUrl(),
-				item.extraPhotoCount()
-			))
-			.toList();
-
-		return Result.of(items, PageInfo.of(
-			searchResult.pageInfo().page(),
-			searchResult.pageInfo().size(),
-			searchResult.pageInfo().hasNext()
-		));
+		return meetingQueryRepository.findCrewMeetingGalleryView(query.crewId(), query.page(), query.size());
 	}
 }
