@@ -14,6 +14,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.auth.domain.AuthUser;
 
@@ -68,7 +69,7 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 			"Please arrive on time"
 		));
 
-		GetMeetingDetailUseCase.Result result = getMeetingDetailUseCase.handle(
+		MeetingDetailView result = getMeetingDetailUseCase.handle(
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), member.getId())
 		);
 
@@ -105,7 +106,7 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 			null
 		));
 
-		GetMeetingDetailUseCase.Result result = getMeetingDetailUseCase.handle(
+		MeetingDetailView result = getMeetingDetailUseCase.handle(
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), member.getId())
 		);
 
@@ -137,7 +138,7 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 		));
 		meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), member.getId()));
 
-		GetMeetingDetailUseCase.Result result = getMeetingDetailUseCase.handle(
+		MeetingDetailView result = getMeetingDetailUseCase.handle(
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), member.getId())
 		);
 

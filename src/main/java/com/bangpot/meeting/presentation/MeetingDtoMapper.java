@@ -11,6 +11,7 @@ import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsView;
 
 final class MeetingDtoMapper {
@@ -120,7 +121,7 @@ final class MeetingDtoMapper {
 		return GetMeetingDetailUseCase.Query.of(crewId, meetingId, userId);
 	}
 
-	static MeetingDto.MeetingDetailResponse toResponse(GetMeetingDetailUseCase.Result result) {
+	static MeetingDto.MeetingDetailResponse toResponse(MeetingDetailView result) {
 		return new MeetingDto.MeetingDetailResponse(
 			result.meetingId(),
 			result.crewId(),

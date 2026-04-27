@@ -33,6 +33,7 @@ import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsView;
 
 @ActiveProfiles("test")
@@ -455,7 +456,7 @@ class MeetingControllerTest {
 	@Test
 	void returnsMeetingDetailForJoinedCrewMember() throws Exception {
 		when(getMeetingDetailUseCase.handle(GetMeetingDetailUseCase.Query.of(1L, 10L, 77L)))
-			.thenReturn(GetMeetingDetailUseCase.Result.of(
+			.thenReturn(MeetingDetailView.of(
 				10L,
 				1L,
 				77L,

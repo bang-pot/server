@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
@@ -33,6 +34,12 @@ public interface MeetingQueryRepository {
 	Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId);
 
 	MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size);
+
+	Optional<MeetingDetailView> findMeetingDetailView(
+		Long crewId,
+		Long meetingId,
+		Long userId
+	);
 
 	long countCreatedByHostUserId(Long userId);
 

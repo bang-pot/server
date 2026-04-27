@@ -12,6 +12,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
 
 class MeetingAutomaticTransitionUseCaseServicesTest extends AbstractMeetingUseCaseServicesTest {
 
@@ -35,7 +36,7 @@ class MeetingAutomaticTransitionUseCaseServicesTest extends AbstractMeetingUseCa
 	}
 
 	@Test
-	void closesRecruitmentAutomaticallyWhenMeetingStartTimeHasPassedOnDetailRead() {
+	void doesNotCloseRecruitmentAutomaticallyOnDetailRead() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		authUserRepository.save(host);
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
@@ -44,13 +45,13 @@ class MeetingAutomaticTransitionUseCaseServicesTest extends AbstractMeetingUseCa
 			crew.getId(), host.getId(), "Time Theme", "Gangnam", "2026-04-12", "17:00", 4, null, null, null, null
 		));
 
-		GetMeetingDetailUseCase.Result result = getMeetingDetailUseCase.handle(
+		MeetingDetailView result = getMeetingDetailUseCase.handle(
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), host.getId())
 		);
 
-		assertThat(result.status()).isEqualTo("RECRUITMENT_CLOSED");
+		assertThat(result.status()).isEqualTo("RECRUITING");
 		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
-			.isEqualTo(MeetingStatus.RECRUITMENT_CLOSED);
+			.isEqualTo(MeetingStatus.RECRUITING);
 	}
 
 	@Test

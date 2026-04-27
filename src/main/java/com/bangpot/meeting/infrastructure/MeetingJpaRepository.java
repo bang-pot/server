@@ -18,6 +18,7 @@ import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
@@ -75,6 +76,42 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 		@Param("crewId") Long crewId,
 		@Param("includedStatuses") List<MeetingStatus> includedStatuses,
 		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.MeetingDetailView(
+			m.id,
+			m.crewId,
+			m.hostUserId,
+			m.title,
+			m.themeName,
+			m.place,
+			m.meetingDate,
+			m.meetingTime,
+			m.capacity,
+			m.totalCost,
+			m.contactLink,
+			m.description,
+			concat('', m.status),
+			concat('', m.result),
+			case
+				when m.hostUserId = :userId then 'JOINED'
+				when participant.status in :joinedStatuses then 'JOINED'
+				else 'NOT_JOINED'
+			end
+		)
+		from Meeting m
+		left join MeetingParticipant participant
+		  on participant.meetingId = m.id
+		 and participant.userId = :userId
+		where m.crewId = :crewId
+		  and m.id = :meetingId
+		""")
+	Optional<MeetingDetailView> findMeetingDetailView(
+		@Param("crewId") Long crewId,
+		@Param("meetingId") Long meetingId,
+		@Param("userId") Long userId,
+		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses
 	);
 
 	@Modifying(flushAutomatically = true)

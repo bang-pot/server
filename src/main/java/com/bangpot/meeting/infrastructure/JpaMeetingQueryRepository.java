@@ -2,7 +2,10 @@ package com.bangpot.meeting.infrastructure;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +21,7 @@ import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
@@ -38,7 +42,7 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 		MeetingStatus.CANCELED
 	);
 
-	private static final List<MeetingParticipationStatus> JOINED_STATUSES = java.util.Arrays.stream(
+	private static final List<MeetingParticipationStatus> JOINED_STATUSES = Arrays.stream(
 		MeetingParticipationStatus.values()
 	)
 		.filter(MeetingParticipationStatus::representsJoined)
@@ -75,7 +79,7 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 		}
 
 		List<MyCalendarView.Item> items = new ArrayList<>(uniqueItemsByMeetingId.values());
-		items.sort(java.util.Comparator
+		items.sort(Comparator
 			.comparing(MyCalendarView.Item::date)
 			.thenComparing(MyCalendarView.Item::time)
 			.thenComparing(MyCalendarView.Item::meetingId));
@@ -172,6 +176,20 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 	}
 
 	@Override
+	public Optional<MeetingDetailView> findMeetingDetailView(
+		Long crewId,
+		Long meetingId,
+		Long userId
+	) {
+		return meetingJpaRepository.findMeetingDetailView(
+			crewId,
+			meetingId,
+			userId,
+			JOINED_STATUSES
+		);
+	}
+
+	@Override
 	public long countCreatedByHostUserId(Long userId) {
 		return meetingJpaRepository.countByHostUserId(userId);
 	}
@@ -187,7 +205,7 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			return Map.of();
 		}
 
-		Map<Long, Integer> countsByUserId = new java.util.HashMap<>();
+		Map<Long, Integer> countsByUserId = new HashMap<>();
 		meetingJpaRepository.countCompletedHostedMeetingsByUserIds(userIds, MeetingStatus.COMPLETED)
 			.forEach(row -> countsByUserId.put(row.getUserId(), Math.toIntExact(row.getMeetingCount())));
 		meetingJpaRepository.countCompletedJoinedMeetingsByUserIds(

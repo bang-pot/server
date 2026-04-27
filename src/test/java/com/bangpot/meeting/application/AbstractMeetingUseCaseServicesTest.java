@@ -51,6 +51,7 @@ import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.user.application.port.UserRepository;
@@ -91,12 +92,13 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
+		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		meetingQueryRepository = new InMemoryMeetingQueryRepository(
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository
+			meetingRepository,
+			meetingParticipantRepository
 		);
-		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		clock = new MutableClock(NOW);
 		meetingAutomaticTransitionService = new MeetingAutomaticTransitionService(
 			meetingRepository,
@@ -110,11 +112,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		);
 		getMeetingDetailUseCase = new GetMeetingDetailService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			meetingRepository,
-			meetingParticipantRepository,
-			meetingAutomaticTransitionService
+			meetingQueryRepository
 		);
 		joinMeetingUseCase = new JoinMeetingService(
 			completedUserAccessService,
@@ -499,15 +497,18 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		private final InMemoryCrewRepository crewRepository;
 		private final InMemoryCrewMemberRepository crewMemberRepository;
 		private final InMemoryMeetingRepository meetingRepository;
+		private final InMemoryMeetingParticipantRepository meetingParticipantRepository;
 
 		private InMemoryMeetingQueryRepository(
 			InMemoryCrewRepository crewRepository,
 			InMemoryCrewMemberRepository crewMemberRepository,
-			InMemoryMeetingRepository meetingRepository
+			InMemoryMeetingRepository meetingRepository,
+			InMemoryMeetingParticipantRepository meetingParticipantRepository
 		) {
 			this.crewRepository = crewRepository;
 			this.crewMemberRepository = crewMemberRepository;
 			this.meetingRepository = meetingRepository;
+			this.meetingParticipantRepository = meetingParticipantRepository;
 		}
 
 		@Override
@@ -542,6 +543,40 @@ abstract class AbstractMeetingUseCaseServicesTest {
 				allItems.subList(fromIndex, toIndex),
 				MeetingsView.Page.of(page, size, toIndex < allItems.size())
 			);
+		}
+
+		@Override
+		public Optional<MeetingDetailView> findMeetingDetailView(
+			Long crewId,
+			Long meetingId,
+			Long userId
+		) {
+			return meetingRepository.findByIdAndCrewId(meetingId, crewId)
+				.map(meeting -> MeetingDetailView.of(
+					meeting.getId(),
+					meeting.getCrewId(),
+					meeting.getHostUserId(),
+					meeting.getTitle(),
+					meeting.getThemeName(),
+					meeting.getPlace(),
+					meeting.getMeetingDate(),
+					meeting.getMeetingTime(),
+					meeting.getCapacity(),
+					meeting.getTotalCost(),
+					meeting.getContactLink(),
+					meeting.getDescription(),
+					meeting.getStatus().name(),
+					meeting.getResult().name(),
+					meeting.getHostUserId().equals(userId) || hasJoined(meeting.getId(), userId)
+						? "JOINED"
+						: "NOT_JOINED"
+				));
+		}
+
+		private boolean hasJoined(Long meetingId, Long userId) {
+			return meetingParticipantRepository.findByMeetingIdAndUserId(meetingId, userId)
+				.map(participant -> participant.getStatus().representsJoined())
+				.orElse(false);
 		}
 
 		@Override
