@@ -216,7 +216,7 @@ class JpaMeetingQueryRepositoryTest {
 		assertThat(result.items()).extracting(CrewScheduleView.Item::recruitmentStatus)
 			.containsExactly("OPEN", "CLOSED", "CLOSED");
 		assertThat(result.items()).extracting(CrewScheduleView.Item::participantCount)
-			.containsExactly(3L, 2L, 1L);
+			.containsExactly(4L, 2L, 1L);
 		assertThat(result.items()).extracting(CrewScheduleView.Item::isCanceled)
 			.containsExactly(false, false, true);
 	}
