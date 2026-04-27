@@ -33,6 +33,7 @@ import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
+import com.bangpot.meeting.domain.view.MeetingsView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -428,22 +429,27 @@ class MeetingControllerTest {
 
 	@Test
 	void returnsMeetingsForJoinedCrewMember() throws Exception {
-		when(getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(1L, 77L))).thenReturn(List.of(
-			GetMeetingsUseCase.View.of(10L, "Friday Escape", "Time Attack", "Gangnam", "2026-04-20", "19:30", "RECRUITING", "NOT_RECORDED", 4),
-			GetMeetingsUseCase.View.of(11L, "Saturday Escape", "Deep Blue", "Hongdae", "2026-04-21", "20:00", "RECRUITING", "NOT_RECORDED", 6)
-		));
+		when(getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(1L, 77L, 1, 2))).thenReturn(MeetingsView.of(List.of(
+			MeetingsView.Item.of(10L, "Friday Escape", "Time Attack", "Gangnam", "2026-04-20", "19:30", "RECRUITING", "NOT_RECORDED", 4),
+			MeetingsView.Item.of(11L, "Saturday Escape", "Deep Blue", "Hongdae", "2026-04-21", "20:00", "RECRUITING", "NOT_RECORDED", 6)
+		), MeetingsView.Page.of(1, 2, true)));
 
 		mockMvc.perform(
 			get("/api/crews/1/meetings")
+				.param("page", "1")
+				.param("size", "2")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].meetingId").value(10))
-			.andExpect(jsonPath("$[0].title").value("Friday Escape"))
-			.andExpect(jsonPath("$[0].themeName").value("Time Attack"))
-			.andExpect(jsonPath("$[0].status").value("RECRUITING"))
-			.andExpect(jsonPath("$[0].result").value("NOT_RECORDED"))
-			.andExpect(jsonPath("$[1].meetingId").value(11));
+			.andExpect(jsonPath("$.items[0].meetingId").value(10))
+			.andExpect(jsonPath("$.items[0].title").value("Friday Escape"))
+			.andExpect(jsonPath("$.items[0].themeName").value("Time Attack"))
+			.andExpect(jsonPath("$.items[0].status").value("RECRUITING"))
+			.andExpect(jsonPath("$.items[0].result").value("NOT_RECORDED"))
+			.andExpect(jsonPath("$.items[1].meetingId").value(11))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(2))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
 
 	@Test

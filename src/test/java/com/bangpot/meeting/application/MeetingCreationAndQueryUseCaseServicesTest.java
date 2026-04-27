@@ -3,8 +3,6 @@ package com.bangpot.meeting.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -16,6 +14,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.auth.domain.AuthUser;
 
 class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseServicesTest {
@@ -27,20 +26,26 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
 		meetingRepository.save(Meeting.create(
+			crew.getId(), member.getId(), "Sunday Escape", "Hidden Room", "Jamsil", "2026-04-22", "18:00", 5, null, null, null
+		));
+		meetingRepository.save(Meeting.create(
 			crew.getId(), member.getId(), "Saturday Escape", "Deep Blue", "Hongdae", "2026-04-21", "20:00", 6, null, null, null
 		));
 		meetingRepository.save(Meeting.create(
 			crew.getId(), member.getId(), "Friday Escape", "Time Attack", "Gangnam", "2026-04-20", "19:30", 4, null, null, null
 		));
 
-		List<GetMeetingsUseCase.View> result = getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(crew.getId(), member.getId()));
+		MeetingsView result = getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(crew.getId(), member.getId(), 0, 2));
 
-		assertThat(result).hasSize(2);
-		assertThat(result.get(0).title()).isEqualTo("Friday Escape");
-		assertThat(result.get(0).themeName()).isEqualTo("Time Attack");
-		assertThat(result.get(0).status()).isEqualTo("RECRUITING");
-		assertThat(result.get(1).title()).isEqualTo("Saturday Escape");
-		assertThat(result.get(1).themeName()).isEqualTo("Deep Blue");
+		assertThat(result.items()).hasSize(2);
+		assertThat(result.items().get(0).title()).isEqualTo("Friday Escape");
+		assertThat(result.items().get(0).themeName()).isEqualTo("Time Attack");
+		assertThat(result.items().get(0).status()).isEqualTo("RECRUITING");
+		assertThat(result.items().get(1).title()).isEqualTo("Saturday Escape");
+		assertThat(result.items().get(1).themeName()).isEqualTo("Deep Blue");
+		assertThat(result.page().page()).isZero();
+		assertThat(result.page().size()).isEqualTo(2);
+		assertThat(result.page().hasNext()).isTrue();
 	}
 
 	@Test

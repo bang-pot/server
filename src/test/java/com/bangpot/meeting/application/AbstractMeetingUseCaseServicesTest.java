@@ -3,6 +3,7 @@ package com.bangpot.meeting.application;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +24,7 @@ import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.application.service.CancelMeetingService;
 import com.bangpot.meeting.application.service.CancelMeetingParticipationService;
@@ -49,6 +51,8 @@ import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
+import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -63,6 +67,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 	protected InMemoryCrewRepository crewRepository;
 	protected InMemoryCrewMemberRepository crewMemberRepository;
 	protected InMemoryMeetingRepository meetingRepository;
+	protected InMemoryMeetingQueryRepository meetingQueryRepository;
 	protected InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	protected MutableClock clock;
 	protected MeetingAutomaticTransitionService meetingAutomaticTransitionService;
@@ -86,6 +91,11 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
+		meetingQueryRepository = new InMemoryMeetingQueryRepository(
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository
+		);
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		clock = new MutableClock(NOW);
 		meetingAutomaticTransitionService = new MeetingAutomaticTransitionService(
@@ -96,10 +106,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		createMeetingUseCase = new CreateMeetingService(completedUserAccessService, crewRepository, crewMemberRepository, meetingRepository);
 		getMeetingsUseCase = new GetMeetingsService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingQueryRepository
 		);
 		getMeetingDetailUseCase = new GetMeetingDetailService(
 			completedUserAccessService,
@@ -484,6 +491,120 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		@Override
 		public long countJoinedByUserId(Long userId) {
 			return 0L;
+		}
+	}
+
+	protected static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryMeetingRepository meetingRepository;
+
+		private InMemoryMeetingQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryMeetingRepository meetingRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.meetingRepository = meetingRepository;
+		}
+
+		@Override
+		public Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId) {
+			return crewRepository.findById(crewId)
+				.map(crew -> MeetingsAccessView.of(
+					crew.getId(),
+					crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+						.map(CrewMember::getRole)
+						.orElse(null)
+				));
+		}
+
+		@Override
+		public MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
+			List<MeetingsView.Item> allItems = meetingRepository.findAllByCrewId(crewId).stream()
+				.map(meeting -> MeetingsView.Item.of(
+					meeting.getId(),
+					meeting.getTitle(),
+					meeting.getThemeName(),
+					meeting.getPlace(),
+					meeting.getMeetingDate(),
+					meeting.getMeetingTime(),
+					meeting.getStatus().name(),
+					meeting.getResult().name(),
+					meeting.getCapacity()
+				))
+				.toList();
+			int fromIndex = Math.min(page * size, allItems.size());
+			int toIndex = Math.min(fromIndex + size, allItems.size());
+			return MeetingsView.of(
+				allItems.subList(fromIndex, toIndex),
+				MeetingsView.Page.of(page, size, toIndex < allItems.size())
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MyCalendarView.of(List.of(), 0);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.MyCreatedMeetingsView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.MyCreatedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.MyJoinedMeetingsView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.MyJoinedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.UpcomingMeetingsView findUpcomingMeetingsViewByUserId(
+			Long userId,
+			int limit,
+			String currentDate,
+			String currentTime
+		) {
+			return com.bangpot.meeting.domain.view.UpcomingMeetingsView.of(List.of(), 0L);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.CrewScheduleView findCrewScheduleViewByCrewId(
+			Long crewId,
+			java.time.LocalDate from,
+			java.time.LocalDate to
+		) {
+			return com.bangpot.meeting.domain.view.CrewScheduleView.of(List.of());
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public Map<Long, Integer> countCompletedByUserIds(Collection<Long> userIds) {
+			return Map.of();
 		}
 	}
 

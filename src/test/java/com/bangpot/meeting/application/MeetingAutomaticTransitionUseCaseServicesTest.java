@@ -2,8 +2,6 @@ package com.bangpot.meeting.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 import com.bangpot.auth.domain.AuthUser;
@@ -11,7 +9,6 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.usecase.GetMeetingDetailUseCase;
-import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingStatus;
@@ -57,7 +54,7 @@ class MeetingAutomaticTransitionUseCaseServicesTest extends AbstractMeetingUseCa
 	}
 
 	@Test
-	void completesMeetingAutomaticallyWhenSixHoursHavePassedOnListRead() {
+	void doesNotCompleteMeetingAutomaticallyOnListRead() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		authUserRepository.save(host);
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
@@ -66,10 +63,14 @@ class MeetingAutomaticTransitionUseCaseServicesTest extends AbstractMeetingUseCa
 			crew.getId(), host.getId(), "Complete Theme", "Gangnam", "2026-04-12", "10:00", 4, null, null, null, null
 		));
 
-		List<GetMeetingsUseCase.View> result = getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(crew.getId(), host.getId()));
+		var result = getMeetingsUseCase.handle(
+			com.bangpot.meeting.application.usecase.GetMeetingsUseCase.Query.of(crew.getId(), host.getId())
+		);
 
-		assertThat(result).singleElement().extracting(GetMeetingsUseCase.View::status).isEqualTo("COMPLETED");
+		assertThat(result.items()).singleElement()
+			.extracting(com.bangpot.meeting.domain.view.MeetingsView.Item::status)
+			.isEqualTo("RECRUITING");
 		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
-			.isEqualTo(MeetingStatus.COMPLETED);
+			.isEqualTo(MeetingStatus.RECRUITING);
 	}
 }

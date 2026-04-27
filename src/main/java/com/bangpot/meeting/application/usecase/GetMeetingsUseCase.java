@@ -1,40 +1,18 @@
 package com.bangpot.meeting.application.usecase;
 
-import java.util.List;
+import com.bangpot.meeting.domain.view.MeetingsView;
 
 public interface GetMeetingsUseCase {
 
-	List<View> handle(Query query);
+	MeetingsView handle(Query query);
 
-	record Query(Long crewId, Long userId) {
+	record Query(Long crewId, Long userId, int page, int size) {
 		public static Query of(Long crewId, Long userId) {
-			return new Query(crewId, userId);
+			return new Query(crewId, userId, 0, 20);
 		}
-	}
 
-	record View(
-		Long meetingId,
-		String title,
-		String themeName,
-		String place,
-		String date,
-		String time,
-		String status,
-		String result,
-		Integer capacity
-	) {
-		public static View of(
-			Long meetingId,
-			String title,
-			String themeName,
-			String place,
-			String date,
-			String time,
-			String status,
-			String result,
-			Integer capacity
-		) {
-			return new View(meetingId, title, themeName, place, date, time, status, result, capacity);
+		public static Query of(Long crewId, Long userId, int page, int size) {
+			return new Query(crewId, userId, page, size);
 		}
 	}
 }

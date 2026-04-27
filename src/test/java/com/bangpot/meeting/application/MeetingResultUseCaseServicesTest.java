@@ -44,8 +44,7 @@ class MeetingResultUseCaseServicesTest extends AbstractMeetingUseCaseServicesTes
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), host.getId())
 		).result()).isEqualTo("SUCCESS");
 		assertThat(getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(crew.getId(), host.getId())))
-			.singleElement()
-			.extracting(GetMeetingsUseCase.View::result)
+			.extracting(view -> view.items().get(0).result())
 			.isEqualTo("SUCCESS");
 	}
 

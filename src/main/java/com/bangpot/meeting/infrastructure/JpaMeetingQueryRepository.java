@@ -6,15 +6,20 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
+import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
+import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -141,6 +146,29 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			from.toString(),
 			to.toString()
 		));
+	}
+
+	@Override
+	public Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId) {
+		return meetingJpaRepository.findMeetingsAccessViewByCrewIdAndUserId(
+			crewId,
+			userId,
+			CrewStatus.ACTIVE,
+			CrewMemberStatus.ACTIVE
+		);
+	}
+
+	@Override
+	public MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
+		Slice<MeetingsView.Item> slice = meetingJpaRepository.findMeetingItemsByCrewId(
+			crewId,
+			INCLUDED_CREATED_MEETING_STATUSES,
+			PageRequest.of(page, size)
+		);
+		return MeetingsView.of(
+			slice.getContent(),
+			MeetingsView.Page.of(page, size, slice.hasNext())
+		);
 	}
 
 	@Override

@@ -12,11 +12,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
+import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -30,6 +33,49 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	}
 
 	List<Meeting> findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(Long crewId);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.MeetingsAccessView(
+			c.id,
+			member.role
+		)
+		from Crew c
+		left join CrewMember member
+		  on member.crewId = c.id
+		 and member.userId = :userId
+		 and member.status = :activeMemberStatus
+		where c.id = :crewId
+		  and c.status = :activeCrewStatus
+		""")
+	Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(
+		@Param("crewId") Long crewId,
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.MeetingsView$Item(
+			m.id,
+			m.title,
+			m.themeName,
+			m.place,
+			m.meetingDate,
+			m.meetingTime,
+			concat('', m.status),
+			concat('', m.result),
+			m.capacity
+		)
+		from Meeting m
+		where m.crewId = :crewId
+		  and m.status in :includedStatuses
+		order by m.meetingDate asc, m.meetingTime asc, m.id asc
+		""")
+	Slice<MeetingsView.Item> findMeetingItemsByCrewId(
+		@Param("crewId") Long crewId,
+		@Param("includedStatuses") List<MeetingStatus> includedStatuses,
+		Pageable pageable
+	);
 
 	@Modifying(flushAutomatically = true)
 	@Query("""
