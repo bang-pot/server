@@ -1,5 +1,6 @@
 package com.bangpot.meeting.infrastructure;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,6 +43,11 @@ class JpaMeetingRepository implements MeetingRepository {
 		MeetingParticipationStatus.APPROVED
 	);
 
+	private static final List<MeetingStatus> UNFINISHED_STATUSES = List.of(
+		MeetingStatus.RECRUITING,
+		MeetingStatus.RECRUITMENT_CLOSED
+	);
+
 	private final MeetingJpaRepository meetingJpaRepository;
 
 	@Override
@@ -52,6 +58,17 @@ class JpaMeetingRepository implements MeetingRepository {
 	@Override
 	public List<Meeting> findAllByCrewId(Long crewId) {
 		return meetingJpaRepository.findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(crewId);
+	}
+
+	@Override
+	public int cancelUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId, Instant updatedAt) {
+		return meetingJpaRepository.cancelUnfinishedByCrewIdAndHostUserId(
+			crewId,
+			hostUserId,
+			UNFINISHED_STATUSES,
+			MeetingStatus.CANCELED,
+			updatedAt
+		);
 	}
 
 	@Override
@@ -142,12 +159,16 @@ class JpaMeetingRepository implements MeetingRepository {
 	}
 
 	@Override
-	public boolean existsByCrewIdAndHostUserIdAndStatusIn(Long crewId, Long hostUserId, List<MeetingStatus> statuses) {
-		return meetingJpaRepository.existsByCrewIdAndHostUserIdAndStatusIn(crewId, hostUserId, statuses);
+	public boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId) {
+		return meetingJpaRepository.existsByCrewIdAndHostUserIdAndStatusIn(
+			crewId,
+			hostUserId,
+			UNFINISHED_STATUSES
+		);
 	}
 
 	@Override
-	public boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses) {
-		return meetingJpaRepository.existsByCrewIdAndStatusIn(crewId, statuses);
+	public boolean existsUnfinishedByCrewId(Long crewId) {
+		return meetingJpaRepository.existsByCrewIdAndStatusIn(crewId, UNFINISHED_STATUSES);
 	}
 }

@@ -1,5 +1,7 @@
 package com.bangpot.crew.presentation;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
@@ -34,12 +36,13 @@ import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
+import com.bangpot.crew.domain.view.CrewJoinView;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
 
 @Validated
 @RestController
@@ -81,8 +84,14 @@ class CrewController {
 	}
 
 	@GetMapping("/public")
-	ResponseEntity<List<CrewDto.PublicCrewCardResponse>> getPublicCrewCards() {
-		return ResponseEntity.ok(CrewDtoMapper.toPublicCardResponses(getPublicCrewCardsUseCase.handle()));
+	ResponseEntity<CrewDto.PublicCrewCardsResponse> getPublicCrewCards(
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toPublicCardResponse(
+			getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(page, size))
+		));
 	}
 
 	@GetMapping("/{crewId}")
@@ -109,10 +118,11 @@ class CrewController {
 
 	@GetMapping("/me/meeting-create")
 	ResponseEntity<CrewDto.MeetingCreateCrewsResponse> getMeetingCreateCrews(Authentication authentication) {
-		GetMeetingCreateCrewsUseCase.Result result = getMeetingCreateCrewsUseCase.handle(
-			GetMeetingCreateCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication))
-		);
-		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			getMeetingCreateCrewsUseCase.handle(
+				GetMeetingCreateCrewsUseCase.Query.of(requireAuthenticatedUserId(authentication))
+			)
+		));
 	}
 
 	@GetMapping("/{crewId}/policies")
@@ -210,7 +220,7 @@ class CrewController {
 		@PathVariable Long crewId,
 		Authentication authentication
 	) {
-		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
+		CrewJoinView result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crewId, optionalAuthenticatedUserId(authentication))
 		);
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
@@ -229,38 +239,53 @@ class CrewController {
 	}
 
 	@GetMapping("/{crewId}/join-requests/pending")
-	ResponseEntity<List<CrewDto.PendingCrewJoinRequestResponse>> getPendingJoinRequests(
+	ResponseEntity<CrewDto.PendingCrewJoinRequestsResponse> getPendingJoinRequests(
 		@PathVariable Long crewId,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page??0 ?댁긽?댁뼱???⑸땲??") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size??1 ?댁긽?댁뼱???⑸땲??")
+		@Max(value = 50, message = "size??50 ?댄븯?ъ빞 ?⑸땲??") int size,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(CrewDtoMapper.toPendingResponses(
 			getPendingCrewJoinRequestsUseCase.handle(
-				CrewDtoMapper.toQuery(crewId, requireAuthenticatedUserId(authentication))
+				CrewDtoMapper.toQuery(crewId, requireAuthenticatedUserId(authentication), page, size)
 			)
 		));
 	}
 
 	@GetMapping("/{crewId}/join-requests")
-	ResponseEntity<List<CrewDto.CrewJoinRequestResponse>> getJoinRequests(
+	ResponseEntity<CrewDto.CrewJoinRequestsResponse> getJoinRequests(
 		@PathVariable Long crewId,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(CrewDtoMapper.toJoinRequestResponses(
 			getCrewJoinRequestsUseCase.handle(
-				CrewDtoMapper.toManagementQuery(crewId, requireAuthenticatedUserId(authentication))
+				CrewDtoMapper.toManagementQuery(crewId, requireAuthenticatedUserId(authentication), page, size)
 			)
 		));
 	}
 
 	@GetMapping("/{crewId}/invite-candidates")
-	ResponseEntity<List<CrewDto.CrewInviteCandidateResponse>> getInviteCandidates(
+	ResponseEntity<CrewDto.CrewInviteCandidatesResponse> getInviteCandidates(
 		@PathVariable Long crewId,
 		@RequestParam(required = false) String nickname,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size,
 		Authentication authentication
 	) {
 		return ResponseEntity.ok(CrewDtoMapper.toInviteCandidateResponses(
 			getCrewInviteCandidatesUseCase.handle(
-				CrewDtoMapper.toInviteCandidatesQuery(crewId, requireAuthenticatedUserId(authentication), nickname)
+				CrewDtoMapper.toInviteCandidatesQuery(
+					crewId,
+					requireAuthenticatedUserId(authentication),
+					nickname,
+					page,
+					size
+				)
 			)
 		));
 	}

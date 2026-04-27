@@ -24,9 +24,12 @@ import com.bangpot.crew.application.exception.CrewJoinRequestNotAllowedException
 import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.GetCrewJoinViewService;
 import com.bangpot.crew.application.service.RequestCrewJoinService;
+import com.bangpot.crew.application.service.CancelCrewJoinRequestService;
+import com.bangpot.crew.application.usecase.CancelCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.domain.Crew;
@@ -35,6 +38,7 @@ import com.bangpot.crew.domain.CrewJoinRequestStatus;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -50,6 +54,7 @@ class CrewJoinUseCaseServicesTest {
 	private InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
 	private GetCrewJoinViewUseCase getCrewJoinViewUseCase;
 	private RequestCrewJoinUseCase requestCrewJoinUseCase;
+	private CancelCrewJoinRequestUseCase cancelCrewJoinRequestUseCase;
 
 	@BeforeEach
 	void setUp() {
@@ -59,15 +64,21 @@ class CrewJoinUseCaseServicesTest {
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
 		getCrewJoinViewUseCase = new GetCrewJoinViewService(
-			new CompletedUserAccessService(userRepository),
-			crewRepository,
-			crewMemberRepository,
-			crewJoinRequestRepository
+			new InMemoryCrewQueryRepository(
+				crewRepository,
+				crewMemberRepository,
+				crewJoinRequestRepository,
+				userRepository
+			)
 		);
 		requestCrewJoinUseCase = new RequestCrewJoinService(
 			new CompletedUserAccessService(userRepository),
 			crewRepository,
 			crewMemberRepository,
+			crewJoinRequestRepository
+		);
+		cancelCrewJoinRequestUseCase = new CancelCrewJoinRequestService(
+			new CompletedUserAccessService(userRepository),
 			crewJoinRequestRepository
 		);
 	}
@@ -76,7 +87,7 @@ class CrewJoinUseCaseServicesTest {
 	void returnsGuestStatusForUnauthenticatedUserOnPublicCrew() {
 		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
 
-		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
+		CrewJoinView result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), null)
 		);
 
@@ -90,7 +101,7 @@ class CrewJoinUseCaseServicesTest {
 		AuthUser tempUser = tempUser(10L, "temp-user");
 		authUserRepository.save(tempUser);
 
-		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
+		CrewJoinView result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), tempUser.getId())
 		);
 
@@ -103,7 +114,7 @@ class CrewJoinUseCaseServicesTest {
 		AuthUser fullUser = fullUser(11L, "full-user");
 		authUserRepository.save(fullUser);
 
-		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
+		CrewJoinView result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), fullUser.getId())
 		);
 
@@ -117,7 +128,7 @@ class CrewJoinUseCaseServicesTest {
 		authUserRepository.save(fullUser);
 		crewJoinRequestRepository.save(CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), "?? ??? ???"));
 
-		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
+		CrewJoinView result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), fullUser.getId())
 		);
 
@@ -131,7 +142,7 @@ class CrewJoinUseCaseServicesTest {
 		authUserRepository.save(fullUser);
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), fullUser.getId()));
 
-		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
+		CrewJoinView result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), fullUser.getId())
 		);
 
@@ -144,11 +155,14 @@ class CrewJoinUseCaseServicesTest {
 		AuthUser fullUser = fullUser(14L, "full-user");
 		authUserRepository.save(fullUser);
 
-		GetCrewJoinViewUseCase.Result result = getCrewJoinViewUseCase.handle(
+		CrewJoinView result = getCrewJoinViewUseCase.handle(
 			GetCrewJoinViewUseCase.Query.of(crew.getId(), fullUser.getId())
 		);
 
 		assertThat(result.myStatus()).isEqualTo(CrewJoinViewStatus.PRIVATE_RESTRICTED);
+		assertThat(result.name()).isNull();
+		assertThat(result.description()).isNull();
+		assertThat(result.imageUrl()).isNull();
 	}
 
 	@Test
@@ -163,6 +177,7 @@ class CrewJoinUseCaseServicesTest {
 
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.myStatus()).isEqualTo(CrewJoinViewStatus.PENDING);
+		assertThat(crewRepository.findByIdForUpdateCallCount).isEqualTo(1);
 		assertThat(crewJoinRequestRepository.findByCrewIdAndUserId(crew.getId(), fullUser.getId())).get()
 			.extracting(CrewJoinRequest::getMessage, CrewJoinRequest::getStatus)
 			.containsExactly("?? ??? ???", CrewJoinRequestStatus.PENDING);
@@ -219,6 +234,27 @@ class CrewJoinUseCaseServicesTest {
 	}
 
 	@Test
+	void cancelsMyPendingJoinRequestWithRowLock() {
+		Crew crew = crewRepository.save(Crew.create("?? ?? ??", "??? ??", CrewVisibility.PUBLIC, null));
+		AuthUser fullUser = fullUser(20L, "full-user");
+		authUserRepository.save(fullUser);
+		CrewJoinRequest joinRequest = crewJoinRequestRepository.save(
+			CrewJoinRequest.createPending(crew.getId(), fullUser.getId(), "?? ??? ???")
+		);
+
+		CancelCrewJoinRequestUseCase.Result result = cancelCrewJoinRequestUseCase.handle(
+			CancelCrewJoinRequestUseCase.Command.of(fullUser.getId(), joinRequest.getId())
+		);
+
+		assertThat(result.requestId()).isEqualTo(joinRequest.getId());
+		assertThat(result.crewId()).isEqualTo(crew.getId());
+		assertThat(crewJoinRequestRepository.findPendingByIdAndUserIdForUpdateCallCount).isEqualTo(1);
+		assertThat(crewJoinRequestRepository.findById(joinRequest.getId())).get()
+			.extracting(CrewJoinRequest::getStatus)
+			.isEqualTo(CrewJoinRequestStatus.CANCELED);
+	}
+
+	@Test
 	void rejectsUnknownCrewWhenQuerying() {
 		assertThatThrownBy(() -> getCrewJoinViewUseCase.handle(GetCrewJoinViewUseCase.Query.of(999L, null)))
 			.isInstanceOf(CrewNotFoundException.class);
@@ -250,6 +286,152 @@ class CrewJoinUseCaseServicesTest {
 			NOW.minusSeconds(3600),
 			NOW.minusSeconds(60)
 		);
+	}
+
+	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
+		private final InMemoryUserRepository userRepository;
+
+		private InMemoryCrewQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryCrewJoinRequestRepository crewJoinRequestRepository,
+			InMemoryUserRepository userRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.crewJoinRequestRepository = crewJoinRequestRepository;
+			this.userRepository = userRepository;
+		}
+
+		@Override
+		public Optional<CrewJoinView> findCrewJoinViewByCrewIdAndUserId(Long crewId, Long userId) {
+			return crewRepository.findById(crewId)
+				.map(crew -> {
+					CrewJoinViewStatus myStatus = resolveMyStatus(crew, userId);
+					boolean hidePrivateDetails = crew.getVisibility() == CrewVisibility.PRIVATE
+						&& (userId == null || !crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), userId));
+					return CrewJoinView.of(
+						crew.getId(),
+						hidePrivateDetails ? null : crew.getName(),
+						hidePrivateDetails ? null : crew.getDescription(),
+						crew.getVisibility(),
+						hidePrivateDetails ? null : crew.getImageUrl(),
+						myStatus
+					);
+				});
+		}
+
+		private CrewJoinViewStatus resolveMyStatus(Crew crew, Long userId) {
+			if (userId == null) {
+				return CrewJoinViewStatus.GUEST;
+			}
+			if (userRepository.findById(userId).isEmpty()) {
+				return CrewJoinViewStatus.COMPLETION_REQUIRED;
+			}
+			if (crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), userId)) {
+				return CrewJoinViewStatus.MEMBER;
+			}
+			if (crewJoinRequestRepository.existsPendingByCrewIdAndUserId(crew.getId(), userId)) {
+				return CrewJoinViewStatus.PENDING;
+			}
+			if (crew.allowsDirectJoinRequest()) {
+				return CrewJoinViewStatus.CAN_REQUEST;
+			}
+			return CrewJoinViewStatus.PRIVATE_RESTRICTED;
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewMemberAccessView> findCrewMemberAccessByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
+			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew>
+			findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	private static final class InMemoryAuthUserRepository implements AuthUserRepository {
@@ -349,6 +531,7 @@ class CrewJoinUseCaseServicesTest {
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findByIdForUpdateCallCount;
 
 		@Override
 		public boolean existsByName(String name) {
@@ -370,6 +553,17 @@ class CrewJoinUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			findByIdForUpdateCallCount++;
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
 		public List<Crew> findActiveByMemberUserId(Long userId) {
 			return List.of();
 		}
@@ -383,7 +577,6 @@ class CrewJoinUseCaseServicesTest {
 			return 0L;
 		}
 
-		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -438,6 +631,13 @@ class CrewJoinUseCaseServicesTest {
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
@@ -450,12 +650,17 @@ class CrewJoinUseCaseServicesTest {
 	private static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
 		@Override
 		public java.util.Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
-			return java.util.Optional.empty();
+			CrewJoinRequest request = requestsById.get(requestId);
+			if (request == null || !userId.equals(request.getUserId()) || request.getStatus() != CrewJoinRequestStatus.PENDING) {
+				return Optional.empty();
+			}
+			return Optional.of(request);
 		}
 
 
 		private final Map<Long, CrewJoinRequest> requestsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findPendingByIdAndUserIdForUpdateCallCount;
 
 		@Override
 		public CrewJoinRequest save(CrewJoinRequest crewJoinRequest) {
@@ -504,6 +709,21 @@ class CrewJoinUseCaseServicesTest {
 				return Optional.empty();
 			}
 			return Optional.of(request);
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndUserIdForUpdate(Long requestId, Long userId) {
+			findPendingByIdAndUserIdForUpdateCallCount++;
+			return findPendingByIdAndUserId(requestId, userId);
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(Long requestId, Long crewId) {
+			return findPendingByIdAndCrewId(requestId, crewId);
+		}
+
+		Optional<CrewJoinRequest> findById(Long requestId) {
+			return Optional.ofNullable(requestsById.get(requestId));
 		}
 
 	}

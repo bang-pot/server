@@ -1,12 +1,11 @@
 package com.bangpot.crew.application.service;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -14,19 +13,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetPublicCrewCardsService implements GetPublicCrewCardsUseCase {
 
-	private final CrewRepository crewRepository;
+	private final CrewQueryRepository crewQueryRepository;
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<View> handle() {
-		return crewRepository.findPublicCrews().stream()
-			.map(crew -> View.of(
-				crew.getId(),
-				crew.getName(),
-				crew.getDescription(),
-				crew.getVisibility().name(),
-				crew.getImageUrl()
-			))
-			.toList();
+	public PublicCrewCardsView handle(Query query) {
+		return crewQueryRepository.findPublicCrewCardsView(query.page(), query.size());
 	}
 }

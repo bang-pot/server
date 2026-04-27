@@ -35,6 +35,8 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.service.CleanupMeetingsForInactiveCrewMemberService;
+import com.bangpot.meeting.application.usecase.CleanupMeetingsForInactiveCrewMemberUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
@@ -63,20 +65,23 @@ class CrewRemoveMemberUseCaseServicesTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
-		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
+		meetingParticipantRepository = new InMemoryMeetingParticipantRepository(meetingRepository);
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
+		CleanupMeetingsForInactiveCrewMemberUseCase cleanupMeetingsForInactiveCrewMemberUseCase =
+			new CleanupMeetingsForInactiveCrewMemberService(meetingRepository, meetingParticipantRepository);
 		removeCrewMemberUseCase = new RemoveCrewMemberService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository,
-			meetingParticipantRepository
+			cleanupMeetingsForInactiveCrewMemberUseCase
 		);
 		getCrewHubUseCase = new GetCrewHubService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			new InMemoryCrewJoinRequestRepository()
+			new InMemoryCrewQueryRepository(
+				crewRepository,
+				crewMemberRepository,
+				new InMemoryCrewJoinRequestRepository()
+			)
 		);
 	}
 
@@ -139,6 +144,7 @@ class CrewRemoveMemberUseCaseServicesTest {
 		assertThat(meetingRepository.findById(hostedClosed.getId())).get()
 			.extracting(Meeting::getStatus)
 			.isEqualTo(MeetingStatus.CANCELED);
+		assertThat(meetingParticipantRepository.findByMeetingIdAndUserIdCallCount()).isZero();
 		assertThat(meetingParticipantRepository.findByMeetingIdAndUserId(joinedMeeting.getId(), target.getId())).get()
 			.extracting(MeetingParticipant::getStatus)
 			.isEqualTo(MeetingParticipationStatus.LEFT);
@@ -297,6 +303,16 @@ class CrewRemoveMemberUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
 		public List<Crew> findActiveByMemberUserId(Long userId) {
 			return List.of();
 		}
@@ -310,7 +326,7 @@ class CrewRemoveMemberUseCaseServicesTest {
 		@Override
 		public long countPendingPublicByUserId(Long userId) {
 			return 0L;
-		}@Override
+		}
 		public List<Crew> findPublicCrews() {
 			return List.of();
 		}
@@ -363,6 +379,13 @@ class CrewRemoveMemberUseCaseServicesTest {
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
@@ -374,16 +397,12 @@ class CrewRemoveMemberUseCaseServicesTest {
 
 	private static final class InMemoryMeetingRepository implements MeetingRepository {
 		@Override
-		public boolean existsByCrewIdAndStatusIn(Long crewId, java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+		public boolean existsUnfinishedByCrewId(Long crewId) {
 			return false;
 		}
 
 		@Override
-		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
-			Long crewId,
-			Long hostUserId,
-			java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses
-		) {
+		public boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId) {
 			return false;
 		}
 
@@ -430,6 +449,25 @@ class CrewRemoveMemberUseCaseServicesTest {
 		}
 
 		@Override
+		public int cancelUnfinishedByCrewIdAndHostUserId(
+			Long crewId,
+			Long hostUserId,
+			java.time.Instant updatedAt
+		) {
+			List<Meeting> targetMeetings = meetingsById.values().stream()
+				.filter(meeting -> crewId.equals(meeting.getCrewId()))
+				.filter(meeting -> hostUserId.equals(meeting.getHostUserId()))
+				.filter(meeting -> List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
+					.contains(meeting.getStatus()))
+				.toList();
+			targetMeetings.forEach(meeting -> {
+				meeting.cancel();
+				setField(meeting, "updatedAt", updatedAt);
+			});
+			return targetMeetings.size();
+		}
+
+		@Override
 		public Optional<Meeting> findById(Long meetingId) {
 			return Optional.ofNullable(meetingsById.get(meetingId));
 		}
@@ -453,8 +491,14 @@ class CrewRemoveMemberUseCaseServicesTest {
 
 	private static final class InMemoryMeetingParticipantRepository implements MeetingParticipantRepository {
 
+		private final InMemoryMeetingRepository meetingRepository;
 		private final Map<Long, MeetingParticipant> participantsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findByMeetingIdAndUserIdCallCount;
+
+		private InMemoryMeetingParticipantRepository(InMemoryMeetingRepository meetingRepository) {
+			this.meetingRepository = meetingRepository;
+		}
 
 		@Override
 		public MeetingParticipant save(MeetingParticipant participant) {
@@ -471,9 +515,33 @@ class CrewRemoveMemberUseCaseServicesTest {
 
 		@Override
 		public Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId) {
+			findByMeetingIdAndUserIdCallCount++;
 			return participantsById.values().stream()
 				.filter(participant -> meetingId.equals(participant.getMeetingId()) && userId.equals(participant.getUserId()))
 				.findFirst();
+		}
+
+		@Override
+		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+			Long crewId,
+			Long userId,
+			java.time.Instant updatedAt
+		) {
+			List<MeetingParticipant> targetParticipants = participantsById.values().stream()
+				.filter(participant -> userId.equals(participant.getUserId()))
+				.filter(participant -> participant.getStatus().representsJoined())
+				.filter(participant -> meetingRepository.findById(participant.getMeetingId())
+					.filter(meeting -> crewId.equals(meeting.getCrewId()))
+					.filter(meeting -> !userId.equals(meeting.getHostUserId()))
+					.filter(meeting -> List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
+						.contains(meeting.getStatus()))
+					.isPresent())
+				.toList();
+			targetParticipants.forEach(participant -> {
+				participant.leave();
+				setField(participant, "updatedAt", updatedAt);
+			});
+			return targetParticipants.size();
 		}
 
 		@Override
@@ -490,12 +558,152 @@ class CrewRemoveMemberUseCaseServicesTest {
 		public void delete(MeetingParticipant participant) {
 			participantsById.remove(participant.getId());
 		}
+
+		private int findByMeetingIdAndUserIdCallCount() {
+			return findByMeetingIdAndUserIdCallCount;
+		}
 	}
 
+	private static final class InMemoryCrewQueryRepository implements com.bangpot.crew.application.port.CrewQueryRepository {
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
+			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
+
+		private InMemoryCrewQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryCrewJoinRequestRepository crewJoinRequestRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.crewJoinRequestRepository = crewJoinRequestRepository;
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			return crewRepository.findById(crewId)
+				.map(crew -> {
+					CrewRole myRole = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+						.map(CrewMember::getRole)
+						.orElse(null);
+					Integer pendingCount = myRole == CrewRole.LEADER
+						? crewJoinRequestRepository.findPendingByCrewId(crewId).size()
+						: null;
+					return com.bangpot.crew.domain.view.CrewHubView.of(
+						crew.getId(),
+						crew.getName(),
+						crew.getDescription(),
+						crew.getVisibility(),
+						crew.getImageUrl(),
+						myRole,
+						false,
+						pendingCount
+					);
+				});
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMemberAccessView>
+			findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+	}
 	private static final class InMemoryCrewJoinRequestRepository implements CrewJoinRequestRepository {
 		@Override
 		public java.util.Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
 			return java.util.Optional.empty();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserIdForUpdate(
+			Long requestId,
+			Long userId
+		) {
+			return findPendingByIdAndUserId(requestId, userId);
 		}
 
 
@@ -522,6 +730,11 @@ class CrewRemoveMemberUseCaseServicesTest {
 		@Override
 		public Optional<CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
 			return Optional.empty();
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(Long requestId, Long crewId) {
+			return findPendingByIdAndCrewId(requestId, crewId);
 		}
 	}
 

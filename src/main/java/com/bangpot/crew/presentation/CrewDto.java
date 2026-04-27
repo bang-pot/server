@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 final class CrewDto {
 
 	private CrewDto() {
@@ -28,8 +30,20 @@ final class CrewDto {
 		Long crewId,
 		String name,
 		String description,
-		String visibility,
 		String imageUrl
+	) {
+	}
+
+	record PageInfoResponse(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
+	record PublicCrewCardsResponse(
+		java.util.List<PublicCrewCardResponse> items,
+		PageInfoResponse pageInfo
 	) {
 	}
 
@@ -148,12 +162,24 @@ final class CrewDto {
 	record PendingCrewJoinRequestResponse(Long requestId, Long userId, String nickname) {
 	}
 
+	record PendingCrewJoinRequestsResponse(
+		java.util.List<PendingCrewJoinRequestResponse> items,
+		PageInfoResponse pageInfo
+	) {
+	}
+
 	record CrewJoinRequestResponse(
 		Long requestId,
 		Long userId,
 		String nickname,
 		String message,
 		String status
+	) {
+	}
+
+	record CrewJoinRequestsResponse(
+		java.util.List<CrewJoinRequestResponse> items,
+		PageInfoResponse pageInfo
 	) {
 	}
 
@@ -167,6 +193,12 @@ final class CrewDto {
 	}
 
 	record CrewInviteCandidateResponse(Long userId, String nickname) {
+	}
+
+	record CrewInviteCandidatesResponse(
+		List<CrewInviteCandidateResponse> items,
+		PageInfoResponse pageInfo
+	) {
 	}
 
 	record CreateCrewInviteRequest(@NotNull(message = "초대할 크루원을 선택해야 합니다.") Long targetUserId) {

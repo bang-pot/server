@@ -1,63 +1,41 @@
 package com.bangpot.crew.application.usecase;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
+
+import com.bangpot.common.error.ApiErrorField;
+import com.bangpot.crew.application.exception.CrewScheduleRequestValidationException;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 public interface GetCrewScheduleUseCase {
 
-	Result handle(Query query);
+	long MAX_DATE_RANGE_INCLUSIVE_DAYS = 366;
+
+	CrewScheduleView handle(Query query);
 
 	record Query(
 		Long crewId,
 		Long userId,
-		String from,
-		String to
+		LocalDate from,
+		LocalDate to
 	) {
-		public static Query of(Long crewId, Long userId, String from, String to) {
+		public static Query of(Long crewId, Long userId, LocalDate from, LocalDate to) {
+			Objects.requireNonNull(from, "from");
+			Objects.requireNonNull(to, "to");
+			if (from.isAfter(to)) {
+				throw new CrewScheduleRequestValidationException(
+					List.of(new ApiErrorField("to", "종료일은 시작일과 같거나 이후 날짜여야 합니다."))
+				);
+			}
+			if (ChronoUnit.DAYS.between(from, to) >= MAX_DATE_RANGE_INCLUSIVE_DAYS) {
+				throw new CrewScheduleRequestValidationException(
+					List.of(new ApiErrorField("to", "조회 기간은 최대 1년까지 가능합니다."))
+				);
+			}
 			return new Query(crewId, userId, from, to);
 		}
 	}
 
-	record Result(
-		List<Item> items
-	) {
-		public static Result of(List<Item> items) {
-			return new Result(items);
-		}
-	}
-
-	record Item(
-		Long meetingId,
-		String themeName,
-		String date,
-		String time,
-		String meetingStatus,
-		String recruitmentStatus,
-		String place,
-		Long participantCount,
-		boolean isCanceled
-	) {
-		public static Item of(
-			Long meetingId,
-			String themeName,
-			String date,
-			String time,
-			String meetingStatus,
-			String recruitmentStatus,
-			String place,
-			Long participantCount,
-			boolean isCanceled
-		) {
-			return new Item(
-				meetingId,
-				themeName,
-				date,
-				time,
-				meetingStatus,
-				recruitmentStatus,
-				place,
-				participantCount,
-				isCanceled
-			);
-		}
-	}
 }

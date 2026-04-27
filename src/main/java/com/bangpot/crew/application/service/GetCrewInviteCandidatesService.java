@@ -8,14 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.crew.application.exception.CrewInviteNotAllowedException;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
-import com.bangpot.crew.application.port.CrewInviteRepository;
-import com.bangpot.crew.application.port.CrewMemberRepository;
-import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
-import com.bangpot.crew.domain.Crew;
-import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.crew.domain.CrewRole;
+import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewInviteCandidateAccessView;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.user.application.service.CompletedUserAccessService;
-import com.bangpot.user.domain.User;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,36 +23,40 @@ import lombok.RequiredArgsConstructor;
 public class GetCrewInviteCandidatesService implements GetCrewInviteCandidatesUseCase {
 
 	private final CompletedUserAccessService completedUserAccessService;
-	private final UserRepository userRepository;
-	private final CrewRepository crewRepository;
-	private final CrewMemberRepository crewMemberRepository;
-	private final CrewInviteRepository crewInviteRepository;
+	private final CrewQueryRepository crewQueryRepository;
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<View> handle(Query query) {
-		Crew crew = crewRepository.findById(query.crewId())
+	public CrewInviteCandidatesView handle(Query query) {
+		CrewInviteCandidateAccessView access = crewQueryRepository
+			.findCrewInviteCandidateAccessByCrewIdAndUserId(query.crewId(), query.leaderUserId())
 			.orElseThrow(() -> new CrewNotFoundException(query.crewId()));
-		completedUserAccessService.validateCompletedUser(query.leaderUserId(), "가입 완료 사용자만 크루 초대 대상을 조회할 수 있습니다.");
+		completedUserAccessService.validateCompletedUser(
+			query.leaderUserId(),
+			"완료된 사용자만 크루 초대 대상을 조회할 수 있습니다."
+		);
 
-		if (!crewMemberRepository.existsLeaderByCrewIdAndUserId(crew.getId(), query.leaderUserId())) {
-			throw new AccessDeniedException("크루 초대 대상을 조회할 권한이 없습니다.");
+		if (access.myRole() != CrewRole.LEADER) {
+			throw new AccessDeniedException("크루장만 초대 대상을 조회할 수 있습니다.");
 		}
-		if (!crew.allowsDirectInvite()) {
-			throw new CrewInviteNotAllowedException(crew.getId());
+		if (access.visibility() != CrewVisibility.PRIVATE) {
+			throw new CrewInviteNotAllowedException(query.crewId());
 		}
 
 		String normalizedNickname = normalizeNickname(query.nickname());
-		List<User> candidates = normalizedNickname == null
-			? userRepository.findAllCompletedUsers()
-			: userRepository.findCompletedUsersByNicknameContaining(normalizedNickname);
-
-		return candidates.stream()
-			.filter(user -> !user.getId().equals(query.leaderUserId()))
-			.filter(user -> !crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), user.getId()))
-			.filter(user -> !crewInviteRepository.existsPendingByCrewIdAndTargetUserId(crew.getId(), user.getId()))
-			.map(user -> View.of(user.getId(), user.getNickname()))
-			.toList();
+		if (normalizedNickname == null) {
+			return CrewInviteCandidatesView.of(
+				List.of(),
+				CrewInviteCandidatesView.Page.of(query.page(), query.size(), false)
+			);
+		}
+		return crewQueryRepository.findCrewInviteCandidatesView(
+			query.crewId(),
+			query.leaderUserId(),
+			normalizedNickname,
+			query.page(),
+			query.size()
+		);
 	}
 
 	private String normalizeNickname(String nickname) {

@@ -381,6 +381,15 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public com.bangpot.meeting.domain.view.CrewScheduleView findCrewScheduleViewByCrewId(
+			Long crewId,
+			java.time.LocalDate from,
+			java.time.LocalDate to
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return meetingRepository.countCreatedByHostUserId(userId);
 		}
@@ -409,13 +418,68 @@ abstract class AbstractUserApplicationServiceTest {
 	}
 
 	protected static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
+			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMemberAccessView>
+			findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
 		private final InMemoryCrewRepository crewRepository;
 
 		private InMemoryCrewQueryRepository(InMemoryCrewRepository crewRepository) {
 			this.crewRepository = crewRepository;
 		}
 
+
 		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}		@Override
 		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
 			return crewRepository.findMyCrewsViewByMemberUserId(userId, page, size);
 		}
@@ -431,6 +495,14 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			return com.bangpot.crew.domain.view.PublicCrewCardsView.of(
+				List.of(),
+				com.bangpot.crew.domain.view.PublicCrewCardsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return crewRepository.countActiveByMemberUserId(userId);
 		}
@@ -441,7 +513,7 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
-		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
 			return com.bangpot.crew.domain.view.MeetingCreateCrewsView.of(List.of());
 		}
 
@@ -458,16 +530,12 @@ abstract class AbstractUserApplicationServiceTest {
 
 	protected static final class InMemoryMeetingRepository implements MeetingRepository {
 		@Override
-		public boolean existsByCrewIdAndStatusIn(Long crewId, java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+		public boolean existsUnfinishedByCrewId(Long crewId) {
 			return false;
 		}
 
 		@Override
-		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
-			Long crewId,
-			Long hostUserId,
-			java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses
-		) {
+		public boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId) {
 			return false;
 		}
 
@@ -487,6 +555,15 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public List<Meeting> findAllByCrewId(Long crewId) {
 			return List.of();
+		}
+
+		@Override
+		public int cancelUnfinishedByCrewIdAndHostUserId(
+			Long crewId,
+			Long hostUserId,
+			java.time.Instant updatedAt
+		) {
+			return 0;
 		}
 
 		@Override
@@ -589,6 +666,16 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
 		public List<Crew> findActiveByMemberUserId(Long userId) {
 			return crewsById.values().stream()
 				.filter(crew -> crewMemberRepository.findAllByUserId(userId).stream()
@@ -625,7 +712,6 @@ abstract class AbstractUserApplicationServiceTest {
 			return pendingCountsByUserId.getOrDefault(userId, 0L);
 		}
 
-		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -683,6 +769,13 @@ abstract class AbstractUserApplicationServiceTest {
 		public Optional<CrewMember> findAnyByCrewIdAndUserId(Long crewId, Long userId) {
 			return Optional.ofNullable(crewMembersByCrewAndUser.get(key(crewId, userId)));
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
@@ -741,12 +834,22 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(Long requestId, Long crewId) {
+			return findPendingByIdAndCrewId(requestId, crewId);
+		}
+
+		@Override
 		public Optional<CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
 			return storedJoinRequests.values().stream()
 				.filter(joinRequest -> requestId.equals(joinRequest.getId()))
 				.filter(joinRequest -> userId.equals(joinRequest.getUserId()))
 				.filter(joinRequest -> joinRequest.getStatus() == CrewJoinRequestStatus.PENDING)
 				.findFirst();
+		}
+
+		@Override
+		public Optional<CrewJoinRequest> findPendingByIdAndUserIdForUpdate(Long requestId, Long userId) {
+			return findPendingByIdAndUserId(requestId, userId);
 		}
 
 		void putPendingView(Long userId, MyPendingCrewsView view) {
@@ -767,6 +870,30 @@ abstract class AbstractUserApplicationServiceTest {
 				userId,
 				MyPendingCrewsView.of(List.of(), MyPendingCrewsView.Page.of(page, size, false))
 			);
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewJoinRequestManagementAccessView>
+			findManagementAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewJoinRequestsView findCrewJoinRequestsViewByCrewId(
+			Long crewId,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PendingCrewJoinRequestsView findPendingCrewJoinRequestsViewByCrewId(
+			Long crewId,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
 		}
 	}
 

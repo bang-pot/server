@@ -1,7 +1,7 @@
 package com.bangpot.crew.application.service;
 
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.crew.application.exception.CrewInviteNotFoundException;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
@@ -16,9 +16,13 @@ import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class AcceptCrewInviteService implements AcceptCrewInviteUseCase {
+
+	private static final String ACCEPT_DENIED_MESSAGE = "초대를 수락할 권한이 없습니다.";
 
 	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
@@ -28,24 +32,29 @@ public class AcceptCrewInviteService implements AcceptCrewInviteUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		completedUserAccessService.validateCompletedUser(command.userId(), "초대를 수락할 권한이 없습니다.");
+		completedUserAccessService.validateCompletedUser(command.userId(), ACCEPT_DENIED_MESSAGE);
 
-		CrewInvite invite = crewInviteRepository.findPendingByIdAndTargetUserId(command.inviteId(), command.userId())
+		CrewInvite invite = crewInviteRepository.findPendingByIdAndTargetUserIdForUpdate(command.inviteId(), command.userId())
 			.orElseThrow(() -> new CrewInviteNotFoundException(command.inviteId()));
 
-		crewRepository.findById(invite.getCrewId())
+		crewRepository.findByIdForUpdate(invite.getCrewId())
 			.orElseThrow(() -> new CrewNotFoundException(invite.getCrewId()));
 
-		if (!crewMemberRepository.existsByCrewIdAndUserId(invite.getCrewId(), command.userId())) {
-			var existingMembership = crewMemberRepository.findAnyByCrewIdAndUserId(invite.getCrewId(), command.userId());
-			if (existingMembership.isPresent()) {
-				CrewMember crewMember = existingMembership.get();
+		Optional<CrewMember> existingMembership = crewMemberRepository.findAnyByCrewIdAndUserId(
+				invite.getCrewId(),
+				command.userId()
+		);
+
+		if (existingMembership.isPresent()) {
+			CrewMember crewMember = existingMembership.get();
+			if (!crewMember.isActive()) {
 				crewMember.reactivateAsMember();
 				crewMemberRepository.save(crewMember);
-			} else {
-				crewMemberRepository.save(CrewMember.createMember(invite.getCrewId(), command.userId()));
 			}
+		} else {
+			crewMemberRepository.save(CrewMember.createMember(invite.getCrewId(), command.userId()));
 		}
+
 		invite.approve();
 		crewInviteRepository.save(invite);
 

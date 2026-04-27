@@ -49,6 +49,7 @@ class CreateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 		assertThat(saved.getHostUserId()).isEqualTo(member.getId());
 		assertThat(saved.getTitle()).isEqualTo("Friday Escape");
 		assertThat(saved.getContactLink()).isEqualTo("https://open.kakao.com/o/abc123");
+		assertThat(crewRepository.findByIdForShareCallCount).isEqualTo(1);
 	}
 
 	@Test

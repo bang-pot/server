@@ -29,7 +29,7 @@ public class RejectCrewJoinRequestService implements RejectCrewJoinRequestUseCas
 			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 		requireLeader(command.crewId(), command.leaderUserId());
 
-		CrewJoinRequest joinRequest = crewJoinRequestRepository.findPendingByIdAndCrewId(
+		CrewJoinRequest joinRequest = crewJoinRequestRepository.findPendingByIdAndCrewIdForUpdate(
 			command.requestId(),
 			command.crewId()
 		).orElseThrow(() -> new CrewJoinRequestNotFoundException(command.crewId(), command.requestId()));

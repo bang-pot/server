@@ -12,6 +12,7 @@ import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 
 @DataJpaTest
@@ -81,6 +82,29 @@ class JpaCrewQueryRepositoryTest {
 	}
 
 	@Test
+	void returnsPublicCrewCardsSliceForPublicCrewExplore() {
+		Crew first = entityManager.persist(Crew.create("First", "first desc", CrewVisibility.PUBLIC, null));
+		Crew second = entityManager.persist(Crew.create("Second", "second desc", CrewVisibility.PUBLIC, "https://cdn.example.com/second.jpg"));
+		entityManager.persist(Crew.create("Private", "private desc", CrewVisibility.PRIVATE, null));
+		Crew deletedCrew = entityManager.persist(Crew.create("Deleted", "deleted desc", CrewVisibility.PUBLIC, null));
+		deletedCrew.delete();
+		entityManager.persistAndFlush(deletedCrew);
+
+		entityManager.clear();
+
+		var firstPage = repository.findPublicCrewCardsView(0, 1);
+		var secondPage = repository.findPublicCrewCardsView(1, 1);
+
+		assertThat(firstPage.items()).extracting(com.bangpot.crew.domain.view.PublicCrewCardsView.Item::crewId)
+			.containsExactly(first.getId());
+		assertThat(firstPage.page().hasNext()).isTrue();
+		assertThat(secondPage.items()).extracting(com.bangpot.crew.domain.view.PublicCrewCardsView.Item::crewId)
+			.containsExactly(second.getId());
+		assertThat(secondPage.items().get(0).imageUrl()).isEqualTo("https://cdn.example.com/second.jpg");
+		assertThat(secondPage.page().hasNext()).isFalse();
+	}
+
+	@Test
 	void returnsMeetingCreateCrewsForActiveMembershipsOnly() {
 		insertUser(1L, "member");
 		insertUser(2L, "left-member");
@@ -100,10 +124,30 @@ class JpaCrewQueryRepositoryTest {
 
 		entityManager.clear();
 
-		MeetingCreateCrewsView result = repository.findMeetingCreateCrewsByMemberUserId(1L);
+		MeetingCreateCrewsView result = repository.findActiveCrewsByUserId(1L);
 
 		assertThat(result.items()).extracting(MeetingCreateCrewsView.Item::crewName)
 			.containsExactly("Alpha Crew", "Beta Crew");
+	}
+
+	@Test
+	void returnsCrewMembersViewForJoinedMember() {
+		insertUser(1L, "leader");
+		insertUser(2L, "member");
+
+		Crew crew = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		entityManager.persistAndFlush(CrewMember.createLeader(crew.getId(), 1L));
+		entityManager.persistAndFlush(CrewMember.createMember(crew.getId(), 2L));
+
+		entityManager.clear();
+
+		CrewMembersView result = repository.findCrewMembersViewByCrewIdAndUserId(crew.getId(), 2L).orElseThrow();
+
+		assertThat(result.myRole()).isEqualTo(com.bangpot.crew.domain.CrewRole.MEMBER);
+		assertThat(result.items()).extracting(CrewMembersView.Item::userId)
+			.containsExactly(1L, 2L);
+		assertThat(result.items()).extracting(CrewMembersView.Item::nickname)
+			.containsExactly("leader", "member");
 	}
 
 	private void insertUser(Long userId, String nickname) {

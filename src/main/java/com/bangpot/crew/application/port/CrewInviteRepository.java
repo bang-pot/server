@@ -1,6 +1,5 @@
 package com.bangpot.crew.application.port;
 
-import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.crew.domain.CrewInvite;
@@ -15,7 +14,7 @@ public interface CrewInviteRepository {
 
 	Optional<CrewInvite> findPendingByIdAndTargetUserId(Long inviteId, Long targetUserId);
 
-	Optional<CrewInvite> findById(Long inviteId);
+	Optional<CrewInvite> findPendingByIdAndTargetUserIdForUpdate(Long inviteId, Long targetUserId);
 
-	List<CrewInvite> findByTargetUserId(Long targetUserId);
+	Optional<CrewInvite> findById(Long inviteId);
 }

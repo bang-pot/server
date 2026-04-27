@@ -1,10 +1,10 @@
 package com.bangpot.crew.application.usecase;
 
-import java.util.List;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 
 public interface GetMeetingCreateCrewsUseCase {
 
-	Result handle(Query query);
+	MeetingCreateCrewsView handle(Query query);
 
 	record Query(Long userId) {
 
@@ -13,17 +13,4 @@ public interface GetMeetingCreateCrewsUseCase {
 		}
 	}
 
-	record CrewItem(Long crewId, String crewName) {
-
-		public static CrewItem of(Long crewId, String crewName) {
-			return new CrewItem(crewId, crewName);
-		}
-	}
-
-	record Result(List<CrewItem> crews) {
-
-		public static Result of(List<CrewItem> crews) {
-			return new Result(crews);
-		}
-	}
 }

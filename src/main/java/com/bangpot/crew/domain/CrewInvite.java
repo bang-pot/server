@@ -12,19 +12,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 
 @Entity
 @Getter
-@Table(
-	name = "crew_invites",
-	uniqueConstraints = @UniqueConstraint(
-		name = "uk_crew_invites_crew_target_user",
-		columnNames = {"crew_id", "target_user_id"}
-	)
-)
+@Table(name = "crew_invites")
 public class CrewInvite {
+
+	public static final String PENDING_CREW_TARGET_UNIQUE_CONSTRAINT = "uk_crew_invites_pending_crew_target_user";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

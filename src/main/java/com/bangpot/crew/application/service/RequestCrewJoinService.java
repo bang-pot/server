@@ -30,10 +30,11 @@ public class RequestCrewJoinService implements RequestCrewJoinUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		Crew crew = crewRepository.findById(command.crewId())
+		completedUserAccessService.validateCompletedUser(command.userId(), "크루 가입 신청 권한이 없습니다.");
+
+		Crew crew = crewRepository.findByIdForUpdate(command.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
-		completedUserAccessService.validateCompletedUser(command.userId(), "크루 가입 신청 권한이 없습니다.");
 		if (crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), command.userId())) {
 			throw new CrewAlreadyJoinedException(crew.getId(), command.userId());
 		}

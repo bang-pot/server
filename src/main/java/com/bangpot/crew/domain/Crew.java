@@ -19,9 +19,11 @@ import lombok.Getter;
 @Getter
 @Table(
 	name = "crews",
-	uniqueConstraints = @UniqueConstraint(name = "uk_crews_name", columnNames = "name")
+	uniqueConstraints = @UniqueConstraint(name = Crew.NAME_UNIQUE_CONSTRAINT, columnNames = "name")
 )
 public class Crew {
+
+	public static final String NAME_UNIQUE_CONSTRAINT = "uk_crews_name";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,5 +1,6 @@
 package com.bangpot.meeting.infrastructure;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -13,6 +14,7 @@ import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -126,6 +128,19 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			currentTime
 		);
 		return UpcomingMeetingsView.of(items, totalCount);
+	}
+
+	@Override
+	public CrewScheduleView findCrewScheduleViewByCrewId(Long crewId, LocalDate from, LocalDate to) {
+		return CrewScheduleView.of(meetingJpaRepository.findCrewScheduleItemsByCrewId(
+			crewId,
+			INCLUDED_CREATED_MEETING_STATUSES,
+			MeetingStatus.RECRUITING,
+			MeetingStatus.CANCELED,
+			JOINED_STATUSES,
+			from.toString(),
+			to.toString()
+		));
 	}
 
 	@Override

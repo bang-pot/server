@@ -26,7 +26,7 @@ public class CreateMeetingService implements CreateMeetingUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		crewRepository.findById(command.crewId()).orElseThrow(() -> new CrewNotFoundException(command.crewId()));
+		crewRepository.findByIdForShare(command.crewId()).orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
 		completedUserAccessService.validateCompletedUser(command.userId(), "가입한 크루원만 모임을 생성할 수 있습니다.");
 		if (crewMemberRepository.findByCrewIdAndUserId(command.crewId(), command.userId()).isEmpty()) {

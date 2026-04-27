@@ -20,8 +20,10 @@ import com.bangpot.auth.domain.AuthUserStatus;
 import com.bangpot.auth.domain.RequiredTermsAgreement;
 import com.bangpot.crew.application.exception.CrewInviteAlreadyPendingException;
 import com.bangpot.crew.application.exception.CrewInviteNotAllowedException;
+import com.bangpot.crew.application.exception.CrewSelfInviteNotAllowedException;
 import com.bangpot.crew.application.port.CrewInviteRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.CreateCrewInviteService;
 import com.bangpot.crew.application.service.GetCrewInviteCandidatesService;
@@ -33,6 +35,8 @@ import com.bangpot.crew.domain.CrewInviteStatus;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewInviteCandidateAccessView;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -60,10 +64,7 @@ class CrewInviteUseCaseServicesTest {
 		crewInviteRepository = new InMemoryCrewInviteRepository();
 		getCrewInviteCandidatesUseCase = new GetCrewInviteCandidatesService(
 			completedUserAccessService,
-			userRepository,
-			crewRepository,
-			crewMemberRepository,
-			crewInviteRepository
+			new InMemoryCrewQueryRepository(userRepository, crewRepository, crewMemberRepository, crewInviteRepository)
 		);
 		createCrewInviteUseCase = new CreateCrewInviteService(
 			completedUserAccessService,
@@ -91,16 +92,17 @@ class CrewInviteUseCaseServicesTest {
 		crewMemberRepository.save(CrewMember.createMember(crew.getId(), alreadyMember.getId()));
 		crewInviteRepository.save(CrewInvite.createPending(crew.getId(), leader.getId(), alreadyPending.getId()));
 
-		List<GetCrewInviteCandidatesUseCase.View> result = getCrewInviteCandidatesUseCase.handle(
-			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), leader.getId(), null)
+		CrewInviteCandidatesView result = getCrewInviteCandidatesUseCase.handle(
+			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), leader.getId(), "a", 0, 20)
 		);
 
-		assertThat(result).singleElement()
+		assertThat(result.items()).singleElement()
 			.extracting(
-				GetCrewInviteCandidatesUseCase.View::userId,
-				GetCrewInviteCandidatesUseCase.View::nickname
+				CrewInviteCandidatesView.Item::userId,
+				CrewInviteCandidatesView.Item::nickname
 			)
 			.containsExactly(invited.getId(), "alpha");
+		assertThat(result.page()).isEqualTo(CrewInviteCandidatesView.Page.of(0, 20, false));
 	}
 
 	@Test
@@ -112,16 +114,32 @@ class CrewInviteUseCaseServicesTest {
 		authUserRepository.save(fullUser(3L, "beta-provider", "beta-night"));
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
 
-		List<GetCrewInviteCandidatesUseCase.View> result = getCrewInviteCandidatesUseCase.handle(
-			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), leader.getId(), "alpha")
+		CrewInviteCandidatesView result = getCrewInviteCandidatesUseCase.handle(
+			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), leader.getId(), "alpha", 0, 20)
 		);
 
-		assertThat(result).singleElement()
+		assertThat(result.items()).singleElement()
 			.extracting(
-				GetCrewInviteCandidatesUseCase.View::userId,
-				GetCrewInviteCandidatesUseCase.View::nickname
+				CrewInviteCandidatesView.Item::userId,
+				CrewInviteCandidatesView.Item::nickname
 			)
 			.containsExactly(2L, "alpha-runner");
+	}
+
+	@Test
+	void returnsEmptyInviteCandidatesForBlankNickname() {
+		Crew crew = crewRepository.save(Crew.create("?? ??? ??", "crew", CrewVisibility.PRIVATE, null));
+		AuthUser leader = fullUser(1L, "leader-provider", "leader");
+		authUserRepository.save(leader);
+		authUserRepository.save(fullUser(2L, "alpha-provider", "alpha-runner"));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
+
+		CrewInviteCandidatesView result = getCrewInviteCandidatesUseCase.handle(
+			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), leader.getId(), "   ", 0, 20)
+		);
+
+		assertThat(result.items()).isEmpty();
+		assertThat(result.page()).isEqualTo(CrewInviteCandidatesView.Page.of(0, 20, false));
 	}
 
 	@Test
@@ -132,7 +150,7 @@ class CrewInviteUseCaseServicesTest {
 		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
 
 		assertThatThrownBy(() -> getCrewInviteCandidatesUseCase.handle(
-			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), leader.getId(), null)
+			GetCrewInviteCandidatesUseCase.Query.of(crew.getId(), leader.getId(), "leader", 0, 20)
 		))
 			.isInstanceOf(CrewInviteNotAllowedException.class);
 	}
@@ -153,6 +171,7 @@ class CrewInviteUseCaseServicesTest {
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.targetUserId()).isEqualTo(target.getId());
 		assertThat(result.status()).isEqualTo("PENDING");
+		assertThat(crewRepository.findByIdForUpdateCallCount).isEqualTo(1);
 		assertThat(crewMemberRepository.existsByCrewIdAndUserId(crew.getId(), target.getId())).isFalse();
 		assertThat(crewInviteRepository.findPendingByCrewIdAndTargetUserId(crew.getId(), target.getId())).isPresent()
 			.get()
@@ -174,6 +193,19 @@ class CrewInviteUseCaseServicesTest {
 			CreateCrewInviteUseCase.Command.of(crew.getId(), leader.getId(), target.getId())
 		))
 			.isInstanceOf(com.bangpot.crew.application.exception.CrewAlreadyJoinedException.class);
+	}
+
+	@Test
+	void rejectsInviteCreationWhenInvitingSelf() {
+		Crew crew = crewRepository.save(Crew.create("?? ??? ??", "crew", CrewVisibility.PRIVATE, null));
+		AuthUser leader = fullUser(1L, "leader-provider", "leader");
+		authUserRepository.save(leader);
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), leader.getId()));
+
+		assertThatThrownBy(() -> createCrewInviteUseCase.handle(
+			CreateCrewInviteUseCase.Command.of(crew.getId(), leader.getId(), leader.getId())
+		))
+			.isInstanceOf(CrewSelfInviteNotAllowedException.class);
 	}
 
 	@Test
@@ -335,6 +367,144 @@ class CrewInviteUseCaseServicesTest {
 		}
 	}
 
+	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+
+		private final InMemoryUserRepository userRepository;
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryCrewInviteRepository crewInviteRepository;
+
+		private InMemoryCrewQueryRepository(
+			InMemoryUserRepository userRepository,
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryCrewInviteRepository crewInviteRepository
+		) {
+			this.userRepository = userRepository;
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.crewInviteRepository = crewInviteRepository;
+		}
+
+		@Override
+		public Optional<CrewInviteCandidateAccessView> findCrewInviteCandidateAccessByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			return crewRepository.findById(crewId)
+				.map(crew -> CrewInviteCandidateAccessView.of(
+					crew.getVisibility(),
+					crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+						.map(CrewMember::getRole)
+						.orElse(null)
+				));
+		}
+
+		@Override
+		public CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			List<CrewInviteCandidatesView.Item> items = userRepository.findCompletedUsersByNicknameContaining(nickname)
+				.stream()
+				.filter(user -> !user.getId().equals(leaderUserId))
+				.filter(user -> !crewMemberRepository.existsByCrewIdAndUserId(crewId, user.getId()))
+				.filter(user -> !crewInviteRepository.existsPendingByCrewIdAndTargetUserId(crewId, user.getId()))
+				.map(user -> CrewInviteCandidatesView.Item.of(user.getId(), user.getNickname()))
+				.toList();
+			int fromIndex = Math.min(page * size, items.size());
+			int toIndex = Math.min(fromIndex + size, items.size());
+			return CrewInviteCandidatesView.of(
+				items.subList(fromIndex, toIndex),
+				CrewInviteCandidatesView.Page.of(page, size, toIndex < items.size())
+			);
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewMemberAccessView> findCrewMemberAccessByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew>
+			findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+	}
+
 	private static final class InMemoryCrewRepository implements CrewRepository {
 		@Override
 		public java.util.Optional<com.bangpot.crew.domain.Crew> findAnyById(Long crewId) {
@@ -352,6 +522,7 @@ class CrewInviteUseCaseServicesTest {
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findByIdForUpdateCallCount;
 
 		@Override
 		public boolean existsByName(String name) {
@@ -373,6 +544,17 @@ class CrewInviteUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			findByIdForUpdateCallCount++;
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
 		public List<Crew> findActiveByMemberUserId(Long userId) {
 			return List.of();
 		}
@@ -386,7 +568,6 @@ class CrewInviteUseCaseServicesTest {
 			return 0L;
 		}
 
-		@Override
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -440,6 +621,13 @@ class CrewInviteUseCaseServicesTest {
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
@@ -496,11 +684,15 @@ class CrewInviteUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<CrewInvite> findPendingByIdAndTargetUserIdForUpdate(Long inviteId, Long targetUserId) {
+			return findPendingByIdAndTargetUserId(inviteId, targetUserId);
+		}
+
+		@Override
 		public Optional<CrewInvite> findById(Long inviteId) {
 			return Optional.ofNullable(invitesById.get(inviteId));
 		}
 
-		@Override
 		public List<CrewInvite> findByTargetUserId(Long targetUserId) {
 			return invitesById.values().stream()
 				.filter(invite -> targetUserId.equals(invite.getTargetUserId()))

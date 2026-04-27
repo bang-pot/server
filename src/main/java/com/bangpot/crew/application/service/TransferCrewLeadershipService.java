@@ -29,10 +29,10 @@ public class TransferCrewLeadershipService implements TransferCrewLeadershipUseC
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		Crew crew = crewRepository.findById(command.crewId())
-			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
-
 		completedUserAccessService.validateCompletedUser(command.leaderUserId(), TRANSFER_DENIED_MESSAGE);
+
+		Crew crew = crewRepository.findByIdForUpdate(command.crewId())
+			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
 		CrewMember currentLeader = crewMemberRepository.findByCrewIdAndUserId(crew.getId(), command.leaderUserId())
 			.orElseThrow(() -> new AccessDeniedException(TRANSFER_DENIED_MESSAGE));

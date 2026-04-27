@@ -19,6 +19,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReopenMeetingRecruitmentService implements ReopenMeetingRecruitmentUseCase {
 
+	private static final String MEMBER_ONLY_MESSAGE = "가입한 크루원만 모집을 재개할 수 있습니다.";
+	private static final String HOST_ONLY_MESSAGE = "모임 개설자만 모집을 재개할 수 있습니다.";
+
 	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
@@ -28,18 +31,19 @@ public class ReopenMeetingRecruitmentService implements ReopenMeetingRecruitment
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		crewRepository.findById(command.crewId()).orElseThrow(() -> new CrewNotFoundException(command.crewId()));
+		crewRepository.findByIdForShare(command.crewId())
+			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
-		completedUserAccessService.validateCompletedUser(command.userId(), "가입한 크루원만 수동 오픈을 실행할 수 있습니다.");
+		completedUserAccessService.validateCompletedUser(command.userId(), MEMBER_ONLY_MESSAGE);
 		if (crewMemberRepository.findByCrewIdAndUserId(command.crewId(), command.userId()).isEmpty()) {
-			throw new AccessDeniedException("가입한 크루원만 수동 오픈을 실행할 수 있습니다.");
+			throw new AccessDeniedException(MEMBER_ONLY_MESSAGE);
 		}
 
 		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
 		meetingAutomaticTransitionService.apply(meeting);
 		if (!meeting.getHostUserId().equals(command.userId())) {
-			throw new AccessDeniedException("모임 개설자만 수동 오픈을 실행할 수 있습니다.");
+			throw new AccessDeniedException(HOST_ONLY_MESSAGE);
 		}
 
 		meeting.reopenRecruitment();

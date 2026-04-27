@@ -8,6 +8,7 @@ import com.bangpot.crew.application.exception.CrewAlreadyJoinedException;
 import com.bangpot.crew.application.exception.CrewInviteAlreadyPendingException;
 import com.bangpot.crew.application.exception.CrewInviteNotAllowedException;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
+import com.bangpot.crew.application.exception.CrewSelfInviteNotAllowedException;
 import com.bangpot.crew.application.port.CrewInviteRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
@@ -35,7 +36,7 @@ public class CreateCrewInviteService implements CreateCrewInviteUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		Crew crew = crewRepository.findById(command.crewId())
+		Crew crew = crewRepository.findByIdForUpdate(command.crewId())
 			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 		completedUserAccessService.validateCompletedUser(command.inviterUserId(), "크루 초대를 보낼 권한이 없습니다.");
 		User target = userRepository.findById(command.targetUserId())
@@ -43,6 +44,9 @@ public class CreateCrewInviteService implements CreateCrewInviteUseCase {
 
 		if (!crewMemberRepository.existsLeaderByCrewIdAndUserId(crew.getId(), command.inviterUserId())) {
 			throw new AccessDeniedException("크루 초대를 보낼 권한이 없습니다.");
+		}
+		if (command.inviterUserId().equals(command.targetUserId())) {
+			throw new CrewSelfInviteNotAllowedException(crew.getId(), command.inviterUserId());
 		}
 		if (!crew.allowsDirectInvite()) {
 			throw new CrewInviteNotAllowedException(crew.getId());

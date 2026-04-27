@@ -185,6 +185,16 @@ class GetCrewMeetingGalleryDetailServiceTest {
 		}
 
 		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
 		public Optional<Crew> findAnyById(Long crewId) {
 			return Optional.ofNullable(crews.get(crewId));
 		}
@@ -203,7 +213,7 @@ class GetCrewMeetingGalleryDetailServiceTest {
 		@Override
 		public long countPendingPublicByUserId(Long userId) {
 			return 0L;
-		}@Override
+		}
 		public List<Crew> findPublicCrews() {
 			return crews.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -256,6 +266,13 @@ class GetCrewMeetingGalleryDetailServiceTest {
 					&& member.getStatus() == com.bangpot.crew.domain.CrewMemberStatus.ACTIVE)
 				.findFirst();
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {

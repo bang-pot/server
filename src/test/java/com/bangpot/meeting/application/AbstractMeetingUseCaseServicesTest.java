@@ -238,6 +238,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 
 		private final Map<Long, Crew> crewsById = new HashMap<>();
 		private long sequence = 1L;
+		protected int findByIdForShareCallCount;
 
 		@Override
 		public boolean existsByName(String name) {
@@ -259,6 +260,17 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			findByIdForShareCallCount++;
+			return findById(crewId);
+		}
+
+		@Override
 		public List<Crew> findActiveByMemberUserId(Long userId) {
 			return List.of();
 		}
@@ -272,7 +284,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		@Override
 		public long countPendingPublicByUserId(Long userId) {
 			return 0L;
-		}@Override
+		}
 		public List<Crew> findPublicCrews() {
 			return crewsById.values().stream()
 				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
@@ -372,6 +384,13 @@ abstract class AbstractMeetingUseCaseServicesTest {
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
@@ -383,16 +402,12 @@ abstract class AbstractMeetingUseCaseServicesTest {
 
 	protected static final class InMemoryMeetingRepository implements MeetingRepository {
 		@Override
-		public boolean existsByCrewIdAndStatusIn(Long crewId, java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+		public boolean existsUnfinishedByCrewId(Long crewId) {
 			return false;
 		}
 
 		@Override
-		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
-			Long crewId,
-			Long hostUserId,
-			java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses
-		) {
+		public boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId) {
 			return false;
 		}
 
@@ -441,6 +456,15 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		@Override
+		public int cancelUnfinishedByCrewIdAndHostUserId(
+			Long crewId,
+			Long hostUserId,
+			java.time.Instant updatedAt
+		) {
+			return 0;
+		}
+
+		@Override
 		public Optional<Meeting> findById(Long meetingId) {
 			return Optional.ofNullable(meetingsById.get(meetingId));
 		}
@@ -481,6 +505,15 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			return participantsById.values().stream()
 				.filter(participant -> meetingId.equals(participant.getMeetingId()) && userId.equals(participant.getUserId()))
 				.findFirst();
+		}
+
+		@Override
+		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+			Long crewId,
+			Long userId,
+			java.time.Instant updatedAt
+		) {
+			return 0;
 		}
 
 		@Override

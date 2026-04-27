@@ -23,6 +23,8 @@ import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.crew.application.usecase.AcceptCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.GetMyCrewInvitesUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewInviteUseCase;
+import com.bangpot.crew.domain.CrewInviteStatus;
+import com.bangpot.crew.domain.view.MyCrewInvitesView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -44,23 +46,26 @@ class CrewInviteControllerTest {
 
 	@Test
 	void returnsMyCrewInvites() throws Exception {
-		when(getMyCrewInvitesUseCase.handle(GetMyCrewInvitesUseCase.Query.of(77L)))
-			.thenReturn(List.of(
-				GetMyCrewInvitesUseCase.View.of(10L, 3L, "비공개 크루", "leader-pot", "PENDING"),
-				GetMyCrewInvitesUseCase.View.of(11L, 4L, "심야 회의방", "crew-master", "REJECTED")
-			));
+		when(getMyCrewInvitesUseCase.handle(GetMyCrewInvitesUseCase.Query.of(77L, 1, 10)))
+			.thenReturn(MyCrewInvitesView.of(List.of(
+				MyCrewInvitesView.Item.of(10L, 3L, "Crew Alpha", "leader-pot", CrewInviteStatus.PENDING),
+				MyCrewInvitesView.Item.of(11L, 4L, "Crew Beta", "crew-master", CrewInviteStatus.REJECTED)
+			), MyCrewInvitesView.Page.of(1, 10, true)));
 
 		mockMvc.perform(
-			get("/api/crew-invites/me")
+			get("/api/crew-invites/me?page=1&size=10")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].inviteId").value(10))
-			.andExpect(jsonPath("$[0].crewId").value(3))
-			.andExpect(jsonPath("$[0].crewName").value("비공개 크루"))
-			.andExpect(jsonPath("$[0].inviterNickname").value("leader-pot"))
-			.andExpect(jsonPath("$[0].status").value("PENDING"))
-			.andExpect(jsonPath("$[1].status").value("REJECTED"));
+			.andExpect(jsonPath("$.items[0].inviteId").value(10))
+			.andExpect(jsonPath("$.items[0].crewId").value(3))
+			.andExpect(jsonPath("$.items[0].crewName").value("Crew Alpha"))
+			.andExpect(jsonPath("$.items[0].inviterNickname").value("leader-pot"))
+			.andExpect(jsonPath("$.items[0].status").value("PENDING"))
+			.andExpect(jsonPath("$.items[1].status").value("REJECTED"))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(10))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
 
 	@Test

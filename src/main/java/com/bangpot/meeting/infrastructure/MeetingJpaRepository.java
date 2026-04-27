@@ -1,5 +1,6 @@
 package com.bangpot.meeting.infrastructure;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -7,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -14,6 +16,7 @@ import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -27,6 +30,23 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	}
 
 	List<Meeting> findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(Long crewId);
+
+	@Modifying(flushAutomatically = true)
+	@Query("""
+		update Meeting m
+		set m.status = :canceledStatus,
+		    m.updatedAt = :updatedAt
+		where m.crewId = :crewId
+		  and m.hostUserId = :hostUserId
+		  and m.status in :unfinishedStatuses
+		""")
+	int cancelUnfinishedByCrewIdAndHostUserId(
+		@Param("crewId") Long crewId,
+		@Param("hostUserId") Long hostUserId,
+		@Param("unfinishedStatuses") List<MeetingStatus> unfinishedStatuses,
+		@Param("canceledStatus") MeetingStatus canceledStatus,
+		@Param("updatedAt") Instant updatedAt
+	);
 
 	Optional<Meeting> findByIdAndCrewId(Long id, Long crewId);
 
@@ -228,6 +248,44 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 		@Param("includedParticipationStatuses") List<MeetingParticipationStatus> includedParticipationStatuses,
 		@Param("currentDate") String currentDate,
 		@Param("currentTime") String currentTime
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.CrewScheduleView$Item(
+			m.id,
+			m.themeName,
+			m.meetingDate,
+			m.meetingTime,
+			concat('', m.status),
+			case when m.status = :recruitingStatus then 'OPEN' else 'CLOSED' end,
+			m.place,
+			(count(mp.id) + 1),
+			case when m.status = :canceledStatus then true else false end
+		)
+		from Meeting m
+		left join MeetingParticipant mp
+		  on mp.meetingId = m.id
+		 and mp.status in :joinedStatuses
+		where m.crewId = :crewId
+		  and m.status in :includedStatuses
+		  and m.meetingDate between :from and :to
+		group by
+		  m.id,
+		  m.themeName,
+		  m.meetingDate,
+		  m.meetingTime,
+		  m.status,
+		  m.place
+		order by m.meetingDate asc, m.meetingTime asc, m.id asc
+		""")
+	List<CrewScheduleView.Item> findCrewScheduleItemsByCrewId(
+		@Param("crewId") Long crewId,
+		@Param("includedStatuses") List<MeetingStatus> includedStatuses,
+		@Param("recruitingStatus") MeetingStatus recruitingStatus,
+		@Param("canceledStatus") MeetingStatus canceledStatus,
+		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses,
+		@Param("from") String from,
+		@Param("to") String to
 	);
 
 	@Query("""

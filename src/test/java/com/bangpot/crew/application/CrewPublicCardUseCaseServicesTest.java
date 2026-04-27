@@ -4,119 +4,171 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.service.GetPublicCrewCardsService;
 import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
-import com.bangpot.crew.domain.Crew;
-import com.bangpot.crew.domain.CrewStatus;
-import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewMemberAccessView;
+import com.bangpot.crew.domain.view.CrewMembersView;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
+import com.bangpot.crew.domain.view.MyCrewsView;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
+import com.bangpot.crew.domain.view.PublicCrewPreviewView;
+import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
 class CrewPublicCardUseCaseServicesTest {
 
-	private InMemoryCrewRepository crewRepository;
+	private InMemoryCrewQueryRepository crewQueryRepository;
 	private GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 
 	@BeforeEach
 	void setUp() {
-		crewRepository = new InMemoryCrewRepository();
-		getPublicCrewCardsUseCase = new GetPublicCrewCardsService(crewRepository);
+		crewQueryRepository = new InMemoryCrewQueryRepository();
+		getPublicCrewCardsUseCase = new GetPublicCrewCardsService(crewQueryRepository);
 	}
 
 	@Test
-	void returnsOnlyPublicCrewsForCardList() {
-		crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
-		crewRepository.save(Crew.create("Crew Private", "private crew", CrewVisibility.PRIVATE, null));
-		crewRepository.save(Crew.create("Crew Beta", "night runners", CrewVisibility.PUBLIC, "https://image.example/beta.png"));
+	void returnsPublicCrewCardsView() {
+		crewQueryRepository.save(PublicCrewCardsView.Item.of(1L, "Crew Alpha", "public crew", null));
+		crewQueryRepository.save(PublicCrewCardsView.Item.of(
+			2L,
+			"Crew Beta",
+			"night runners",
+			"https://image.example/beta.png"
+		));
 
-		List<GetPublicCrewCardsUseCase.View> result = getPublicCrewCardsUseCase.handle();
+		PublicCrewCardsView result = getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(0, 20));
 
-		assertThat(result)
-			.extracting(GetPublicCrewCardsUseCase.View::name)
+		assertThat(result.items())
+			.extracting(PublicCrewCardsView.Item::name)
 			.containsExactly("Crew Alpha", "Crew Beta");
-		assertThat(result)
-			.extracting(GetPublicCrewCardsUseCase.View::visibility)
-			.containsOnly("PUBLIC");
-		assertThat(result.get(1).imageUrl()).isEqualTo("https://image.example/beta.png");
+		assertThat(result.items().get(1).imageUrl()).isEqualTo("https://image.example/beta.png");
+		assertThat(result.page().page()).isZero();
+		assertThat(result.page().size()).isEqualTo(20);
+		assertThat(result.page().hasNext()).isFalse();
 	}
 
 	@Test
-	void excludesDeletedPublicCrewFromCardList() {
-		Crew deletedCrew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
-		deletedCrew.delete();
-		crewRepository.save(deletedCrew);
-		crewRepository.save(Crew.create("Crew Beta", "night runners", CrewVisibility.PUBLIC, null));
+	void returnsPublicCrewCardsSlice() {
+		for (long index = 1L; index <= 25L; index++) {
+			crewQueryRepository.save(PublicCrewCardsView.Item.of(index, "Crew " + index, "desc", null));
+		}
 
-		List<GetPublicCrewCardsUseCase.View> result = getPublicCrewCardsUseCase.handle();
+		PublicCrewCardsView result = getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(1, 10));
 
-		assertThat(result)
-			.extracting(GetPublicCrewCardsUseCase.View::name)
-			.containsExactly("Crew Beta");
+		assertThat(result.items()).hasSize(10);
+		assertThat(result.items())
+			.extracting(PublicCrewCardsView.Item::crewId)
+			.containsExactlyElementsOf(java.util.stream.LongStream.rangeClosed(11L, 20L).boxed().toList());
+		assertThat(result.page().page()).isEqualTo(1);
+		assertThat(result.page().size()).isEqualTo(10);
+		assertThat(result.page().hasNext()).isTrue();
 	}
 
-	private static final class InMemoryCrewRepository implements CrewRepository {
+	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+
 		@Override
-		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
-			return com.bangpot.crew.domain.view.MyCrewsView.of(
-				java.util.List.of(),
-				com.bangpot.crew.domain.view.MyCrewsView.Page.of(page, size, false)
+		public Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
+			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		private final List<PublicCrewCardsView.Item> items = new ArrayList<>();
+
+		private void save(PublicCrewCardsView.Item item) {
+			items.add(item);
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<CrewHubView> findCrewHubViewByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<CrewMemberAccessView> findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Optional<CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			int fromIndex = Math.min(page * size, items.size());
+			int toIndex = Math.min(fromIndex + size, items.size());
+			return PublicCrewCardsView.of(
+				items.subList(fromIndex, toIndex),
+				PublicCrewCardsView.Page.of(page, size, toIndex < items.size())
 			);
-		}
-
-
-		private final List<Crew> crews = new ArrayList<>();
-		private long sequence = 1L;
-
-		@Override
-		public boolean existsByName(String name) {
-			return crews.stream().anyMatch(crew -> name.equals(crew.getName()));
-		}
-
-		@Override
-		public Crew save(Crew crew) {
-			if (crew.getId() == null) {
-				crew.assignId(sequence++);
-			}
-			crews.add(crew);
-			return crew;
-		}
-
-		@Override
-		public java.util.Optional<Crew> findById(Long crewId) {
-			return crews.stream()
-				.filter(crew -> crewId.equals(crew.getId()) && crew.getStatus() == CrewStatus.ACTIVE)
-				.findFirst();
-		}
-
-		@Override
-		public java.util.Optional<Crew> findAnyById(Long crewId) {
-			return crews.stream().filter(crew -> crewId.equals(crew.getId())).findFirst();
-		}
-
-		@Override
-		public List<Crew> findActiveByMemberUserId(Long userId) {
-			return List.of();
 		}
 
 		@Override
 		public long countActiveByMemberUserId(Long userId) {
-			return 0L;
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
 		public long countPendingPublicByUserId(Long userId) {
-			return 0L;
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public List<Crew> findPublicCrews() {
-			return crews.stream()
-				.filter(crew -> crew.getStatus() == CrewStatus.ACTIVE)
-				.filter(crew -> crew.getVisibility() == CrewVisibility.PUBLIC)
-				.toList();
+		public MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public List<MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
 		}
 	}
 }

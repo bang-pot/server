@@ -1,7 +1,5 @@
 package com.bangpot.crew.application.service;
 
-import java.util.List;
-
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +15,6 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -36,10 +33,10 @@ public class DeleteCrewService implements DeleteCrewUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		Crew crew = crewRepository.findById(command.crewId())
-			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
-
 		completedUserAccessService.validateCompletedUser(command.leaderUserId(), DELETE_DENIED_MESSAGE);
+
+		Crew crew = crewRepository.findByIdForUpdate(command.crewId())
+			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
 		CrewMember currentLeader = crewMemberRepository.findByCrewIdAndUserId(crew.getId(), command.leaderUserId())
 			.orElseThrow(() -> new AccessDeniedException(DELETE_DENIED_MESSAGE));
@@ -47,22 +44,21 @@ public class DeleteCrewService implements DeleteCrewUseCase {
 			throw new AccessDeniedException(DELETE_DENIED_MESSAGE);
 		}
 
-		boolean hasOtherActiveMembers = crewMemberRepository.findAllByCrewId(crew.getId()).stream()
-			.anyMatch(member -> !member.getUserId().equals(command.leaderUserId()));
+		if (!crew.getName().equals(command.crewName())) {
+			throw new CrewDeleteNameMismatchException();
+		}
+
+		boolean hasOtherActiveMembers = crewMemberRepository.existsActiveByCrewIdAndUserIdNot(
+			crew.getId(),
+			command.leaderUserId()
+		);
 		if (hasOtherActiveMembers) {
 			throw new CrewDeleteNotAllowedWithActiveMembersException();
 		}
 
-		boolean hasUnfinishedMeetings = meetingRepository.existsByCrewIdAndStatusIn(
-			crew.getId(),
-			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
-		);
+		boolean hasUnfinishedMeetings = meetingRepository.existsUnfinishedByCrewId(crew.getId());
 		if (hasUnfinishedMeetings) {
 			throw new CrewDeleteNotAllowedWithActiveMeetingsException();
-		}
-
-		if (!crew.getName().equals(command.crewName())) {
-			throw new CrewDeleteNameMismatchException();
 		}
 
 		currentLeader.leave();

@@ -32,6 +32,7 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -62,15 +63,21 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		);
 		getCrewHubUseCase = new GetCrewHubService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			new InMemoryCrewJoinRequestRepository()
+			new InMemoryCrewQueryRepository(
+				crewRepository,
+				crewMemberRepository,
+				userRepository,
+				new InMemoryCrewJoinRequestRepository()
+			)
 		);
 		getCrewMembersUseCase = new GetCrewMembersService(
 			completedUserAccessService,
-			userRepository,
-			crewRepository,
-			crewMemberRepository
+			new InMemoryCrewQueryRepository(
+				crewRepository,
+				crewMemberRepository,
+				userRepository,
+				new InMemoryCrewJoinRequestRepository()
+			)
 		);
 	}
 
@@ -101,8 +108,8 @@ class CrewTransferLeadershipUseCaseServicesTest {
 			.isEqualTo(CrewRole.MEMBER);
 		assertThat(getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(crew.getId(), member.getId())).myRole())
 			.isEqualTo(CrewRole.LEADER);
-		assertThat(getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), member.getId())))
-			.extracting(GetCrewMembersUseCase.View::role)
+		assertThat(getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), member.getId())).items())
+			.extracting(CrewMembersView.Item::role)
 			.containsExactly(CrewRole.LEADER, CrewRole.MEMBER);
 	}
 
@@ -274,6 +281,16 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<Crew> findByIdForUpdate(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
+		public Optional<Crew> findByIdForShare(Long crewId) {
+			return findById(crewId);
+		}
+
+		@Override
 		public List<Crew> findActiveByMemberUserId(Long userId) {
 			return List.of();
 		}
@@ -287,7 +304,7 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		@Override
 		public long countPendingPublicByUserId(Long userId) {
 			return 0L;
-		}@Override
+		}
 		public List<Crew> findPublicCrews() {
 			return List.of();
 		}
@@ -342,6 +359,13 @@ class CrewTransferLeadershipUseCaseServicesTest {
 				.filter(member -> crewId.equals(member.getCrewId()) && userId.equals(member.getUserId()))
 				.findFirst();
 		}
+		@Override
+		public boolean existsActiveByCrewIdAndUserIdNot(Long crewId, Long userId) {
+			return findAllByCrewId(crewId).stream()
+				.filter(CrewMember::isActive)
+				.anyMatch(member -> !userId.equals(member.getUserId()));
+		}
+
 
 		@Override
 		public List<CrewMember> findAllByCrewId(Long crewId) {
@@ -361,10 +385,174 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		}
 	}
 
+	private static final class InMemoryCrewQueryRepository implements com.bangpot.crew.application.port.CrewQueryRepository {
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
+			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryUserRepository userRepository;
+		private final InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
+
+		private InMemoryCrewQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryUserRepository userRepository,
+			InMemoryCrewJoinRequestRepository crewJoinRequestRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.userRepository = userRepository;
+			this.crewJoinRequestRepository = crewJoinRequestRepository;
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			return crewRepository.findById(crewId)
+				.map(crew -> {
+					CrewRole myRole = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+						.map(CrewMember::getRole)
+						.orElse(null);
+					Integer pendingCount = myRole == CrewRole.LEADER
+						? crewJoinRequestRepository.findPendingByCrewId(crewId).size()
+						: null;
+					return com.bangpot.crew.domain.view.CrewHubView.of(
+						crew.getId(),
+						crew.getName(),
+						crew.getDescription(),
+						crew.getVisibility(),
+						crew.getImageUrl(),
+						myRole,
+						false,
+						pendingCount
+					);
+				});
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMemberAccessView>
+			findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
+			if (crewRepository.findById(crewId).isEmpty()) {
+				return Optional.empty();
+			}
+			CrewRole myRole = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+				.map(CrewMember::getRole)
+				.orElse(null);
+			List<CrewMembersView.Item> items = myRole == null
+				? List.of()
+				: crewMemberRepository.findAllByCrewId(crewId).stream()
+					.sorted(java.util.Comparator
+						.comparing((CrewMember member) -> member.getRole() != CrewRole.LEADER)
+						.thenComparing(CrewMember::getCreatedAt, java.util.Comparator.reverseOrder()))
+					.map(this::toMemberItem)
+					.toList();
+			return Optional.of(CrewMembersView.of(myRole, items));
+		}
+
+		private CrewMembersView.Item toMemberItem(CrewMember member) {
+			User user = userRepository.findById(member.getUserId()).orElseThrow();
+			return CrewMembersView.Item.of(
+				user.getId(),
+				user.getNickname(),
+				null,
+				null,
+				null,
+				0,
+				member.getRole(),
+				member.getCreatedAt()
+			);
+		}
+
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}		@Override
+		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countMyCrewsViewByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countActiveByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public long countPendingPublicByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.List<com.bangpot.user.domain.view.MyWithdrawalCheckView.BlockingActiveCrew> findWithdrawalBlockingActiveCrewsByMemberUserId(Long userId) {
+			throw new UnsupportedOperationException();
+		}
+	}
 	private static final class InMemoryCrewJoinRequestRepository implements com.bangpot.crew.application.port.CrewJoinRequestRepository {
 		@Override
 		public Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserId(Long requestId, Long userId) {
 			return Optional.empty();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndUserIdForUpdate(
+			Long requestId,
+			Long userId
+		) {
+			return findPendingByIdAndUserId(requestId, userId);
 		}
 
 		@Override
@@ -380,6 +568,14 @@ class CrewTransferLeadershipUseCaseServicesTest {
 		@Override
 		public Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndCrewId(Long requestId, Long crewId) {
 			return Optional.empty();
+		}
+
+		@Override
+		public Optional<com.bangpot.crew.domain.CrewJoinRequest> findPendingByIdAndCrewIdForUpdate(
+			Long requestId,
+			Long crewId
+		) {
+			return findPendingByIdAndCrewId(requestId, crewId);
 		}
 
 		@Override

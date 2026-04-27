@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,17 @@ import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.CrewJoinViewStatus;
 import com.bangpot.crew.domain.CrewRole;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
+import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewJoinView;
+import com.bangpot.crew.domain.view.CrewJoinRequestsView;
+import com.bangpot.crew.domain.view.CrewMembersView;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
+import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -223,11 +235,11 @@ class CrewControllerTest {
 	@Test
 	void returnsCrewJoinViewForGuestUser() throws Exception {
 		when(getCrewJoinViewUseCase.handle(GetCrewJoinViewUseCase.Query.of(1L, null)))
-			.thenReturn(GetCrewJoinViewUseCase.Result.of(
+			.thenReturn(CrewJoinView.of(
 				1L,
 				"Crew Alpha",
 				"public crew",
-				"PUBLIC",
+				CrewVisibility.PUBLIC,
 				null,
 				CrewJoinViewStatus.GUEST
 			));
@@ -242,30 +254,39 @@ class CrewControllerTest {
 
 	@Test
 	void returnsPublicCrewCardsForCardList() throws Exception {
-		when(getPublicCrewCardsUseCase.handle()).thenReturn(List.of(
-			GetPublicCrewCardsUseCase.View.of(1L, "Crew Alpha", "public crew", "PUBLIC", null),
-			GetPublicCrewCardsUseCase.View.of(2L, "Crew Beta", "night runners", "PUBLIC", "https://image.example/beta.png")
-		));
+		when(getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(1, 10)))
+			.thenReturn(PublicCrewCardsView.of(
+				List.of(
+					PublicCrewCardsView.Item.of(1L, "Crew Alpha", "public crew", null),
+					PublicCrewCardsView.Item.of(2L, "Crew Beta", "night runners", "https://image.example/beta.png")
+				),
+				PublicCrewCardsView.Page.of(1, 10, true)
+			));
 
-		mockMvc.perform(get("/api/crews/public"))
+		mockMvc.perform(get("/api/crews/public")
+				.param("page", "1")
+				.param("size", "10"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].crewId").value(1))
-			.andExpect(jsonPath("$[0].name").value("Crew Alpha"))
-			.andExpect(jsonPath("$[0].description").value("public crew"))
-			.andExpect(jsonPath("$[0].visibility").value("PUBLIC"))
-			.andExpect(jsonPath("$[0].imageUrl").doesNotExist())
-			.andExpect(jsonPath("$[1].crewId").value(2))
-			.andExpect(jsonPath("$[1].imageUrl").value("https://image.example/beta.png"));
+			.andExpect(jsonPath("$.items[0].crewId").value(1))
+			.andExpect(jsonPath("$.items[0].name").value("Crew Alpha"))
+			.andExpect(jsonPath("$.items[0].description").value("public crew"))
+			.andExpect(jsonPath("$.items[0].visibility").doesNotExist())
+			.andExpect(jsonPath("$.items[0].imageUrl").doesNotExist())
+			.andExpect(jsonPath("$.items[1].crewId").value(2))
+			.andExpect(jsonPath("$.items[1].imageUrl").value("https://image.example/beta.png"))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(10))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
 
 	@Test
 	void returnsCrewHubForMember() throws Exception {
 		when(getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(1L, 77L)))
-			.thenReturn(GetCrewHubUseCase.Result.of(
+			.thenReturn(CrewHubView.of(
 				1L,
 				"Crew Alpha",
 				"public crew",
-				"PUBLIC",
+				CrewVisibility.PUBLIC,
 				null,
 				CrewRole.MEMBER,
 				false,
@@ -287,11 +308,11 @@ class CrewControllerTest {
 	@Test
 	void returnsCrewHubForLeaderWithPendingSummary() throws Exception {
 		when(getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(1L, 77L)))
-			.thenReturn(GetCrewHubUseCase.Result.of(
+			.thenReturn(CrewHubView.of(
 				1L,
 				"Crew Alpha",
 				"public crew",
-				"PUBLIC",
+				CrewVisibility.PUBLIC,
 				null,
 				CrewRole.LEADER,
 				false,
@@ -318,10 +339,28 @@ class CrewControllerTest {
 	@Test
 	void returnsCrewMembersForJoinedMember() throws Exception {
 		when(getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(1L, 77L)))
-			.thenReturn(List.of(
-				GetCrewMembersUseCase.View.of(201L, "leader-pot", null, null, null, 0, CrewRole.LEADER, "2026-04-11T00:00:00Z"),
-				GetCrewMembersUseCase.View.of(202L, "member-pot", null, null, null, 0, CrewRole.MEMBER, "2026-04-10T00:00:00Z")
-			));
+			.thenReturn(CrewMembersView.of(CrewRole.MEMBER, List.of(
+				CrewMembersView.Item.of(
+					201L,
+					"leader-pot",
+					null,
+					null,
+					null,
+					0,
+					CrewRole.LEADER,
+					java.time.Instant.parse("2026-04-11T00:00:00Z")
+				),
+				CrewMembersView.Item.of(
+					202L,
+					"member-pot",
+					null,
+					null,
+					null,
+					0,
+					CrewRole.MEMBER,
+					java.time.Instant.parse("2026-04-10T00:00:00Z")
+				)
+			)));
 
 		mockMvc.perform(
 			get("/api/crews/1/members")
@@ -350,10 +389,10 @@ class CrewControllerTest {
 	@Test
 	void returnsMyCrewsForMeetingCreateWhenAuthenticated() throws Exception {
 		when(getMeetingCreateCrewsUseCase.handle(GetMeetingCreateCrewsUseCase.Query.of(7L)))
-			.thenReturn(GetMeetingCreateCrewsUseCase.Result.of(
+			.thenReturn(MeetingCreateCrewsView.of(
 				List.of(
-					GetMeetingCreateCrewsUseCase.CrewItem.of(101L, "Alpha Crew"),
-					GetMeetingCreateCrewsUseCase.CrewItem.of(202L, "Beta Crew")
+					MeetingCreateCrewsView.Item.of(101L, "Alpha Crew"),
+					MeetingCreateCrewsView.Item.of(202L, "Beta Crew")
 				)
 			));
 
@@ -377,10 +416,10 @@ class CrewControllerTest {
 	@Test
 	void returnsCrewPoliciesForJoinedMember() throws Exception {
 		when(getCrewPoliciesUseCase.handle(GetCrewPoliciesUseCase.Query.of(1L, 77L)))
-			.thenReturn(List.of(
-				GetCrewPoliciesUseCase.View.of(301L, "모임 규칙", "시간 약속을 지켜주세요."),
-				GetCrewPoliciesUseCase.View.of(302L, "참여 기준", "노쇼는 금지합니다.\n불참 시 미리 알려주세요.")
-			));
+			.thenReturn(CrewPoliciesView.of(CrewRole.MEMBER, List.of(
+				CrewPoliciesView.Item.of(301L, "紐⑥엫 洹쒖튃", "?쒓컙 ?쎌냽??吏耳쒖＜?몄슂."),
+				CrewPoliciesView.Item.of(302L, "李몄뿬 湲곗?", "?몄눥??湲덉??⑸땲??\n遺덉갭 ??誘몃━ ?뚮젮二쇱꽭??")
+			)));
 
 		mockMvc.perform(
 			get("/api/crews/1/policies")
@@ -388,18 +427,23 @@ class CrewControllerTest {
 		)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[0].policyId").value(301))
-			.andExpect(jsonPath("$[0].title").value("모임 규칙"))
-			.andExpect(jsonPath("$[0].content").value("시간 약속을 지켜주세요."))
+			.andExpect(jsonPath("$[0].title").value("紐⑥엫 洹쒖튃"))
+			.andExpect(jsonPath("$[0].content").value("?쒓컙 ?쎌냽??吏耳쒖＜?몄슂."))
 			.andExpect(jsonPath("$[1].policyId").value(302))
-			.andExpect(jsonPath("$[1].content").value("노쇼는 금지합니다.\n불참 시 미리 알려주세요."));
+			.andExpect(jsonPath("$[1].content").value("?몄눥??湲덉??⑸땲??\n遺덉갭 ??誘몃━ ?뚮젮二쇱꽭??"));
 	}
 
 	@Test
 	void returnsCrewScheduleForJoinedMember() throws Exception {
-		when(getCrewScheduleUseCase.handle(GetCrewScheduleUseCase.Query.of(1L, 77L, "2026-04-20", "2026-04-30")))
-			.thenReturn(GetCrewScheduleUseCase.Result.of(
+		when(getCrewScheduleUseCase.handle(GetCrewScheduleUseCase.Query.of(
+			1L,
+			77L,
+			LocalDate.parse("2026-04-20"),
+			LocalDate.parse("2026-04-30")
+		)))
+			.thenReturn(CrewScheduleView.of(
 				List.of(
-					GetCrewScheduleUseCase.Item.of(
+					CrewScheduleView.Item.of(
 						501L,
 						"Deep Blue",
 						"2026-04-20",
@@ -410,7 +454,7 @@ class CrewControllerTest {
 						4L,
 						false
 					),
-					GetCrewScheduleUseCase.Item.of(
+					CrewScheduleView.Item.of(
 						502L,
 						"Black Out",
 						"2026-04-21",
@@ -466,7 +510,7 @@ class CrewControllerTest {
 	@Test
 	void returnsEmptyCrewPoliciesWhenNoPolicyExists() throws Exception {
 		when(getCrewPoliciesUseCase.handle(GetCrewPoliciesUseCase.Query.of(1L, 77L)))
-			.thenReturn(List.of());
+			.thenReturn(CrewPoliciesView.of(CrewRole.MEMBER, List.of()));
 
 		mockMvc.perform(
 			get("/api/crews/1/policies")
@@ -590,44 +634,59 @@ class CrewControllerTest {
 
 	@Test
 	void returnsPendingJoinRequestsForLeader() throws Exception {
-		when(getPendingCrewJoinRequestsUseCase.handle(GetPendingCrewJoinRequestsUseCase.Query.of(1L, 77L)))
-			.thenReturn(List.of(
-				GetPendingCrewJoinRequestsUseCase.View.of(10L, 201L, "bangpot-user"),
-				GetPendingCrewJoinRequestsUseCase.View.of(11L, 202L, "runner")
+		when(getPendingCrewJoinRequestsUseCase.handle(GetPendingCrewJoinRequestsUseCase.Query.of(1L, 77L, 1, 10)))
+			.thenReturn(PendingCrewJoinRequestsView.of(
+				List.of(
+					PendingCrewJoinRequestsView.Item.of(10L, 201L, "bangpot-user"),
+					PendingCrewJoinRequestsView.Item.of(11L, 202L, "runner")
+				),
+				PendingCrewJoinRequestsView.Page.of(1, 10, true)
 			));
 
 		mockMvc.perform(
 			get("/api/crews/1/join-requests/pending")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "1")
+				.param("size", "10")
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].requestId").value(10))
-			.andExpect(jsonPath("$[0].userId").value(201))
-			.andExpect(jsonPath("$[0].nickname").value("bangpot-user"))
-			.andExpect(jsonPath("$[1].requestId").value(11));
+			.andExpect(jsonPath("$.items[0].requestId").value(10))
+			.andExpect(jsonPath("$.items[0].userId").value(201))
+			.andExpect(jsonPath("$.items[0].nickname").value("bangpot-user"))
+			.andExpect(jsonPath("$.items[1].requestId").value(11))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(10))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
 
 	@Test
 	void returnsJoinRequestsForLeaderManagementView() throws Exception {
-		when(getCrewJoinRequestsUseCase.handle(GetCrewJoinRequestsUseCase.Query.of(1L, 77L)))
-			.thenReturn(List.of(
-				GetCrewJoinRequestsUseCase.View.of(10L, 201L, "bangpot-user", "같이 달리고 싶어요", "PENDING"),
-				GetCrewJoinRequestsUseCase.View.of(11L, 202L, "runner", "아침 러닝 가능합니다", "APPROVED")
+		when(getCrewJoinRequestsUseCase.handle(GetCrewJoinRequestsUseCase.Query.of(1L, 77L, 1, 10)))
+			.thenReturn(CrewJoinRequestsView.of(
+				List.of(
+					CrewJoinRequestsView.Item.of(10L, 201L, "bangpot-user", "join me", "PENDING"),
+					CrewJoinRequestsView.Item.of(11L, 202L, "runner", "approved message", "APPROVED")
+				),
+				CrewJoinRequestsView.Page.of(1, 10, true)
 			));
 
 		mockMvc.perform(
 			get("/api/crews/1/join-requests")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+				.param("page", "1")
+				.param("size", "10")
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].requestId").value(10))
-			.andExpect(jsonPath("$[0].userId").value(201))
-			.andExpect(jsonPath("$[0].nickname").value("bangpot-user"))
-			.andExpect(jsonPath("$[0].message").value("같이 달리고 싶어요"))
-			.andExpect(jsonPath("$[0].status").value("PENDING"))
-			.andExpect(jsonPath("$[1].status").value("APPROVED"));
+			.andExpect(jsonPath("$.items[0].requestId").value(10))
+			.andExpect(jsonPath("$.items[0].userId").value(201))
+			.andExpect(jsonPath("$.items[0].nickname").value("bangpot-user"))
+			.andExpect(jsonPath("$.items[0].message").value("join me"))
+			.andExpect(jsonPath("$.items[0].status").value("PENDING"))
+			.andExpect(jsonPath("$.items[1].status").value("APPROVED"))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(10))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
-
 	@Test
 	void approvesPendingJoinRequestForLeader() throws Exception {
 		when(approveCrewJoinRequestUseCase.handle(ApproveCrewJoinRequestUseCase.Command.of(1L, 10L, 77L)))
@@ -695,19 +754,25 @@ class CrewControllerTest {
 
 	@Test
 	void returnsInviteCandidatesForPrivateCrewLeader() throws Exception {
-		when(getCrewInviteCandidatesUseCase.handle(GetCrewInviteCandidatesUseCase.Query.of(1L, 77L, "bang")))
-			.thenReturn(List.of(
-				GetCrewInviteCandidatesUseCase.View.of(201L, "bangpot-user")
+		when(getCrewInviteCandidatesUseCase.handle(GetCrewInviteCandidatesUseCase.Query.of(1L, 77L, "bang", 1, 10)))
+			.thenReturn(CrewInviteCandidatesView.of(
+				List.of(CrewInviteCandidatesView.Item.of(201L, "bangpot-user")),
+				CrewInviteCandidatesView.Page.of(1, 10, true)
 			));
 
 		mockMvc.perform(
 			get("/api/crews/1/invite-candidates")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 				.param("nickname", "bang")
+				.param("page", "1")
+				.param("size", "10")
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].userId").value(201))
-			.andExpect(jsonPath("$[0].nickname").value("bangpot-user"));
+			.andExpect(jsonPath("$.items[0].userId").value(201))
+			.andExpect(jsonPath("$.items[0].nickname").value("bangpot-user"))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(10))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
 	}
 
 	@Test

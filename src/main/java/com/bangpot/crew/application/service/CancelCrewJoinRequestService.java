@@ -1,6 +1,5 @@
 package com.bangpot.crew.application.service;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -8,7 +7,7 @@ import com.bangpot.crew.application.exception.CrewJoinRequestNotFoundException;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.application.usecase.CancelCrewJoinRequestUseCase;
 import com.bangpot.crew.domain.CrewJoinRequest;
-import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,16 +16,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CancelCrewJoinRequestService implements CancelCrewJoinRequestUseCase {
 
-	private final UserRepository userRepository;
+	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewJoinRequestRepository crewJoinRequestRepository;
 
 	@Override
 	public Result handle(Command command) {
-		if (userRepository.findById(command.userId()).isEmpty()) {
-			throw new AccessDeniedException("프로필 완료가 필요합니다.");
-		}
+		completedUserAccessService.validateCompletedUser(command.userId(), "가입 신청 취소 권한이 없습니다.");
 
-		CrewJoinRequest joinRequest = crewJoinRequestRepository.findPendingByIdAndUserId(
+		CrewJoinRequest joinRequest = crewJoinRequestRepository.findPendingByIdAndUserIdForUpdate(
 			command.requestId(),
 			command.userId()
 		).orElseThrow(() -> new CrewJoinRequestNotFoundException(command.requestId()));

@@ -13,13 +13,10 @@ import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
 import com.bangpot.crew.application.usecase.GetCrewInviteCandidatesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
-import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
-import com.bangpot.crew.application.usecase.GetMeetingCreateCrewsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
-import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.exception.CrewScheduleRequestValidationException;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
@@ -27,6 +24,16 @@ import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
+import com.bangpot.crew.domain.view.CrewHubView;
+import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
+import com.bangpot.crew.domain.view.CrewJoinView;
+import com.bangpot.crew.domain.view.CrewJoinRequestsView;
+import com.bangpot.crew.domain.view.CrewMembersView;
+import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
+import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
+import com.bangpot.crew.domain.view.PublicCrewCardsView;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 final class CrewDtoMapper {
 
@@ -47,28 +54,34 @@ final class CrewDtoMapper {
 		return new CrewDto.CreateCrewResponse(result.crewId(), result.name(), result.myRole());
 	}
 
-	static List<CrewDto.PublicCrewCardResponse> toPublicCardResponses(List<GetPublicCrewCardsUseCase.View> views) {
-		return views.stream()
-			.map(view -> new CrewDto.PublicCrewCardResponse(
-				view.crewId(),
-				view.name(),
-				view.description(),
-				view.visibility(),
-				view.imageUrl()
-			))
-			.toList();
+	static CrewDto.PublicCrewCardsResponse toPublicCardResponse(PublicCrewCardsView view) {
+		return new CrewDto.PublicCrewCardsResponse(
+			view.items().stream()
+				.map(item -> new CrewDto.PublicCrewCardResponse(
+					item.crewId(),
+					item.name(),
+					item.description(),
+					item.imageUrl()
+				))
+				.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static GetCrewHubUseCase.Query toHubQuery(Long crewId, Long userId) {
 		return GetCrewHubUseCase.Query.of(crewId, userId);
 	}
 
-	static CrewDto.CrewHubResponse toResponse(GetCrewHubUseCase.Result result) {
+	static CrewDto.CrewHubResponse toResponse(CrewHubView result) {
 		return new CrewDto.CrewHubResponse(
 			result.crewId(),
 			result.name(),
 			result.description(),
-			result.visibility(),
+			result.visibility().name(),
 			result.imageUrl(),
 			result.myRole(),
 			result.hasNotice(),
@@ -80,25 +93,25 @@ final class CrewDtoMapper {
 		return GetCrewMembersUseCase.Query.of(crewId, userId);
 	}
 
-	static List<CrewDto.CrewMemberResponse> toMemberResponses(List<GetCrewMembersUseCase.View> views) {
-		return views.stream()
-			.map(view -> new CrewDto.CrewMemberResponse(
-				view.userId(),
-				view.nickname(),
-				view.profileImageUrl(),
-				view.bio(),
-				view.gender(),
-				view.escapeCount(),
-				view.role(),
-				view.joinedAt()
+	static List<CrewDto.CrewMemberResponse> toMemberResponses(CrewMembersView view) {
+		return view.items().stream()
+			.map(item -> new CrewDto.CrewMemberResponse(
+				item.userId(),
+				item.nickname(),
+				item.profileImageUrl(),
+				item.bio(),
+				item.gender(),
+				item.escapeCount(),
+				item.role(),
+				item.joinedAt().toString()
 			))
 			.toList();
 	}
 
-	static CrewDto.MeetingCreateCrewsResponse toResponse(GetMeetingCreateCrewsUseCase.Result result) {
+	static CrewDto.MeetingCreateCrewsResponse toResponse(MeetingCreateCrewsView result) {
 		return new CrewDto.MeetingCreateCrewsResponse(
-			result.crews().stream()
-				.map(crew -> new CrewDto.MeetingCreateCrewResponse(crew.crewId(), crew.crewName()))
+			result.items().stream()
+				.map(item -> new CrewDto.MeetingCreateCrewResponse(item.crewId(), item.crewName()))
 				.toList()
 		);
 	}
@@ -107,12 +120,12 @@ final class CrewDtoMapper {
 		return GetCrewPoliciesUseCase.Query.of(crewId, userId);
 	}
 
-	static List<CrewDto.CrewPolicyResponse> toPolicyResponses(List<GetCrewPoliciesUseCase.View> views) {
-		return views.stream()
-			.map(view -> new CrewDto.CrewPolicyResponse(
-				view.policyId(),
-				view.title(),
-				view.content()
+	static List<CrewDto.CrewPolicyResponse> toPolicyResponses(CrewPoliciesView view) {
+		return view.items().stream()
+			.map(item -> new CrewDto.CrewPolicyResponse(
+				item.policyId(),
+				item.title(),
+				item.content()
 			))
 			.toList();
 	}
@@ -120,15 +133,10 @@ final class CrewDtoMapper {
 	static GetCrewScheduleUseCase.Query toScheduleQuery(Long crewId, Long userId, String from, String to) {
 		LocalDate fromDate = parseDate("from", from);
 		LocalDate toDate = parseDate("to", to);
-		if (fromDate.isAfter(toDate)) {
-			throw new CrewScheduleRequestValidationException(
-				List.of(new ApiErrorField("to", "종료일은 시작일과 같거나 이후 날짜여야 합니다."))
-			);
-		}
-		return GetCrewScheduleUseCase.Query.of(crewId, userId, fromDate.toString(), toDate.toString());
+		return GetCrewScheduleUseCase.Query.of(crewId, userId, fromDate, toDate);
 	}
 
-	static CrewDto.CrewScheduleResponse toResponse(GetCrewScheduleUseCase.Result result) {
+	static CrewDto.CrewScheduleResponse toResponse(CrewScheduleView result) {
 		return new CrewDto.CrewScheduleResponse(
 			result.items().stream()
 				.map(item -> new CrewDto.CrewScheduleItemResponse(
@@ -198,12 +206,12 @@ final class CrewDtoMapper {
 		return new CrewDto.TransferCrewLeadershipResponse(result.crewId(), result.leaderUserId());
 	}
 
-	static CrewDto.CrewJoinViewResponse toResponse(GetCrewJoinViewUseCase.Result result) {
+	static CrewDto.CrewJoinViewResponse toResponse(CrewJoinView result) {
 		return new CrewDto.CrewJoinViewResponse(
 			result.crewId(),
 			result.name(),
 			result.description(),
-			result.visibility(),
+			result.visibility().name(),
 			result.imageUrl(),
 			result.myStatus()
 		);
@@ -221,36 +229,50 @@ final class CrewDtoMapper {
 		return new CrewDto.RequestCrewJoinResponse(result.crewId(), result.myStatus());
 	}
 
-	static GetPendingCrewJoinRequestsUseCase.Query toQuery(Long crewId, Long leaderUserId) {
-		return GetPendingCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId);
+	static GetPendingCrewJoinRequestsUseCase.Query toQuery(Long crewId, Long leaderUserId, int page, int size) {
+		return GetPendingCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId, page, size);
 	}
 
-	static GetCrewJoinRequestsUseCase.Query toManagementQuery(Long crewId, Long leaderUserId) {
-		return GetCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId);
+	static GetCrewJoinRequestsUseCase.Query toManagementQuery(Long crewId, Long leaderUserId, int page, int size) {
+		return GetCrewJoinRequestsUseCase.Query.of(crewId, leaderUserId, page, size);
 	}
 
-	static List<CrewDto.PendingCrewJoinRequestResponse> toPendingResponses(
-		List<GetPendingCrewJoinRequestsUseCase.View> views
+	static CrewDto.PendingCrewJoinRequestsResponse toPendingResponses(
+		PendingCrewJoinRequestsView view
 	) {
-		return views.stream()
-			.map(view -> new CrewDto.PendingCrewJoinRequestResponse(
-				view.requestId(),
-				view.userId(),
-				view.nickname()
-			))
-			.toList();
+		return new CrewDto.PendingCrewJoinRequestsResponse(
+			view.items().stream()
+				.map(item -> new CrewDto.PendingCrewJoinRequestResponse(
+					item.requestId(),
+					item.userId(),
+					item.nickname()
+				))
+				.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
-	static List<CrewDto.CrewJoinRequestResponse> toJoinRequestResponses(List<GetCrewJoinRequestsUseCase.View> views) {
-		return views.stream()
-			.map(view -> new CrewDto.CrewJoinRequestResponse(
-				view.requestId(),
-				view.userId(),
-				view.nickname(),
-				view.message(),
-				view.status()
-			))
-			.toList();
+	static CrewDto.CrewJoinRequestsResponse toJoinRequestResponses(CrewJoinRequestsView view) {
+		return new CrewDto.CrewJoinRequestsResponse(
+			view.items().stream()
+				.map(item -> new CrewDto.CrewJoinRequestResponse(
+					item.requestId(),
+					item.userId(),
+					item.nickname(),
+					item.message(),
+					item.status()
+				))
+				.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static ApproveCrewJoinRequestUseCase.Command toApproveCommand(Long crewId, Long requestId, Long leaderUserId) {
@@ -285,17 +307,26 @@ final class CrewDtoMapper {
 	static GetCrewInviteCandidatesUseCase.Query toInviteCandidatesQuery(
 		Long crewId,
 		Long leaderUserId,
-		String nickname
+		String nickname,
+		int page,
+		int size
 	) {
-		return GetCrewInviteCandidatesUseCase.Query.of(crewId, leaderUserId, nickname);
+		return GetCrewInviteCandidatesUseCase.Query.of(crewId, leaderUserId, nickname, page, size);
 	}
 
-	static List<CrewDto.CrewInviteCandidateResponse> toInviteCandidateResponses(
-		List<GetCrewInviteCandidatesUseCase.View> views
+	static CrewDto.CrewInviteCandidatesResponse toInviteCandidateResponses(
+		CrewInviteCandidatesView view
 	) {
-		return views.stream()
-			.map(view -> new CrewDto.CrewInviteCandidateResponse(view.userId(), view.nickname()))
-			.toList();
+		return new CrewDto.CrewInviteCandidatesResponse(
+			view.items().stream()
+				.map(item -> new CrewDto.CrewInviteCandidateResponse(item.userId(), item.nickname()))
+				.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static CreateCrewInviteUseCase.Command toCreateInviteCommand(
@@ -315,7 +346,7 @@ final class CrewDtoMapper {
 			return LocalDate.parse(value);
 		} catch (DateTimeParseException exception) {
 			throw new CrewScheduleRequestValidationException(
-				List.of(new ApiErrorField(field, field + " must be a valid date in yyyy-MM-dd format."))
+				List.of(new ApiErrorField(field, field + "은(는) yyyy-MM-dd 형식의 올바른 날짜여야 합니다."))
 			);
 		}
 	}

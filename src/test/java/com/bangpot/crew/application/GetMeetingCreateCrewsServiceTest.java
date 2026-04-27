@@ -46,10 +46,10 @@ class GetMeetingCreateCrewsServiceTest {
 			))
 		);
 
-		GetMeetingCreateCrewsUseCase.Result result = useCase.handle(GetMeetingCreateCrewsUseCase.Query.of(1L));
+		MeetingCreateCrewsView result = useCase.handle(GetMeetingCreateCrewsUseCase.Query.of(1L));
 
-		assertThat(result.crews())
-			.extracting(GetMeetingCreateCrewsUseCase.CrewItem::crewName)
+		assertThat(result.items())
+			.extracting(MeetingCreateCrewsView.Item::crewName)
 			.containsExactly("Alpha Crew", "Beta Crew");
 	}
 
@@ -57,9 +57,9 @@ class GetMeetingCreateCrewsServiceTest {
 	void returnsEmptyArrayWhenUserHasNoActiveCrews() {
 		userRepository.save(User.create(1L, "alpha"));
 
-		GetMeetingCreateCrewsUseCase.Result result = useCase.handle(GetMeetingCreateCrewsUseCase.Query.of(1L));
+		MeetingCreateCrewsView result = useCase.handle(GetMeetingCreateCrewsUseCase.Query.of(1L));
 
-		assertThat(result.crews()).isEmpty();
+		assertThat(result.items()).isEmpty();
 	}
 
 	@Test
@@ -70,6 +70,53 @@ class GetMeetingCreateCrewsServiceTest {
 
 	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
 
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
+			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMemberAccessView>
+			findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
 		private final java.util.Map<Long, MeetingCreateCrewsView> meetingCreateCrewsByUserId =
 			new java.util.HashMap<>();
 
@@ -78,10 +125,17 @@ class GetMeetingCreateCrewsServiceTest {
 		}
 
 		@Override
-		public MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+		public MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
 			return meetingCreateCrewsByUserId.getOrDefault(userId, MeetingCreateCrewsView.of(List.of()));
 		}
 
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
 		@Override
 		public com.bangpot.crew.domain.view.MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
 			throw new UnsupportedOperationException();
@@ -94,6 +148,11 @@ class GetMeetingCreateCrewsServiceTest {
 
 		@Override
 		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
 			throw new UnsupportedOperationException();
 		}
 

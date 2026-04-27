@@ -166,11 +166,66 @@ class GetHomeServiceTest {
 	}
 
 	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
+			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.crew.domain.view.CrewInviteCandidatesView findCrewInviteCandidatesView(
+			Long crewId,
+			Long leaderUserId,
+			String nickname,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewHubView> findCrewHubViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMemberAccessView>
+			findCrewMemberAccessByCrewIdAndUserId(Long crewId, Long userId) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
 		private final Map<Long, MyCrewsView> myCrewsViewByUserId = new HashMap<>();
 		private final Map<Long, Long> myCrewsViewCountByUserId = new HashMap<>();
 		private final Map<Long, Long> activeCrewCountByUserId = new HashMap<>();
 		private PublicCrewPreviewView publicCrewPreviewView = PublicCrewPreviewView.of(List.of());
 
+		@Override
+		public java.util.Optional<com.bangpot.crew.domain.view.CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
 		@Override
 		public MyCrewsView findMyCrewsViewByMemberUserId(Long userId, int page, int size) {
 			return myCrewsViewByUserId.getOrDefault(userId, MyCrewsView.of(List.of(), MyCrewsView.Page.of(page, size, false)));
@@ -187,6 +242,11 @@ class GetHomeServiceTest {
 		}
 
 		@Override
+		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public long countActiveByMemberUserId(Long userId) {
 			return activeCrewCountByUserId.getOrDefault(userId, 0L);
 		}
@@ -197,7 +257,7 @@ class GetHomeServiceTest {
 		}
 
 		@Override
-		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findMeetingCreateCrewsByMemberUserId(Long userId) {
+		public com.bangpot.crew.domain.view.MeetingCreateCrewsView findActiveCrewsByUserId(Long userId) {
 			return com.bangpot.crew.domain.view.MeetingCreateCrewsView.of(List.of());
 		}
 
@@ -228,6 +288,15 @@ class GetHomeServiceTest {
 		@Override
 		public UpcomingMeetingsView findUpcomingMeetingsViewByUserId(Long userId, int limit, String currentDate, String currentTime) {
 			return upcomingMeetingsViewByUserId.getOrDefault(userId, UpcomingMeetingsView.of(List.of(), 0L));
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.CrewScheduleView findCrewScheduleViewByCrewId(
+			Long crewId,
+			java.time.LocalDate from,
+			java.time.LocalDate to
+		) {
+			throw new UnsupportedOperationException();
 		}
 
 		@Override

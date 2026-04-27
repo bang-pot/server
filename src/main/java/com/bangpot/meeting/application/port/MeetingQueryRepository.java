@@ -1,8 +1,10 @@
 package com.bangpot.meeting.application.port;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Map;
 
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -22,6 +24,8 @@ public interface MeetingQueryRepository {
 		String currentDate,
 		String currentTime
 	);
+
+	CrewScheduleView findCrewScheduleViewByCrewId(Long crewId, LocalDate from, LocalDate to);
 
 	long countCreatedByHostUserId(Long userId);
 

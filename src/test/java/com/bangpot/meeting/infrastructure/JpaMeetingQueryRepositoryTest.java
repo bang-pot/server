@@ -2,6 +2,7 @@ package com.bangpot.meeting.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +18,8 @@ import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 @DataJpaTest
 @Import(JpaMeetingQueryRepository.class)
@@ -162,5 +165,59 @@ class JpaMeetingQueryRepositoryTest {
 		assertThat(result).containsEntry(7L, 2);
 		assertThat(result).containsEntry(8L, 1);
 		assertThat(result).doesNotContainKeys(9L, 10L);
+	}
+
+	@Test
+	void returnsCrewScheduleItemsWithParticipantCountInDateRange() {
+		Crew crew = entityManager.persist(Crew.create("Schedule Crew", "desc", CrewVisibility.PUBLIC, null));
+		Meeting recruiting = entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Recruiting", "Theme A", "Hongdae", "2026-04-20", "18:00", 4, null, null, null
+		));
+		Meeting completed = entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Completed", "Theme B", "Gangnam", "2026-04-21", "19:00", 4, null, null, null
+		));
+		completed.closeRecruitment();
+		completed.complete();
+		entityManager.persistAndFlush(completed);
+		Meeting canceled = entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Canceled", "Theme C", "Seongsu", "2026-04-22", "20:00", 4, null, null, null
+		));
+		canceled.cancel();
+		entityManager.persistAndFlush(canceled);
+		entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Outside", "Theme D", "Jamsil", "2026-04-23", "21:00", 4, null, null, null
+		));
+
+		entityManager.persistAndFlush(MeetingParticipant.join(recruiting.getId(), 8L));
+		entityManager.persistAndFlush(
+			MeetingParticipant.rehydrate(null, recruiting.getId(), 9L, MeetingParticipationStatus.APPROVED, null, null)
+		);
+		entityManager.persistAndFlush(
+			MeetingParticipant.rehydrate(null, recruiting.getId(), 10L, MeetingParticipationStatus.PENDING, null, null)
+		);
+		entityManager.persistAndFlush(MeetingParticipant.join(completed.getId(), 8L));
+		entityManager.flush();
+		entityManager.clear();
+
+		CrewScheduleView result = repository.findCrewScheduleViewByCrewId(
+			crew.getId(),
+			LocalDate.parse("2026-04-20"),
+			LocalDate.parse("2026-04-22")
+		);
+
+		assertThat(result.items()).extracting(CrewScheduleView.Item::meetingId)
+			.containsExactly(recruiting.getId(), completed.getId(), canceled.getId());
+		assertThat(result.items()).extracting(CrewScheduleView.Item::meetingStatus)
+			.containsExactly(
+				MeetingStatus.RECRUITING.name(),
+				MeetingStatus.COMPLETED.name(),
+				MeetingStatus.CANCELED.name()
+			);
+		assertThat(result.items()).extracting(CrewScheduleView.Item::recruitmentStatus)
+			.containsExactly("OPEN", "CLOSED", "CLOSED");
+		assertThat(result.items()).extracting(CrewScheduleView.Item::participantCount)
+			.containsExactly(4L, 2L, 1L);
+		assertThat(result.items()).extracting(CrewScheduleView.Item::isCanceled)
+			.containsExactly(false, false, true);
 	}
 }
