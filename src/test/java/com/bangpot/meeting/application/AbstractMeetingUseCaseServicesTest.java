@@ -34,6 +34,7 @@ import com.bangpot.meeting.application.service.CreateMeetingService;
 import com.bangpot.meeting.application.service.GetMeetingDetailService;
 import com.bangpot.meeting.application.service.GetMeetingsService;
 import com.bangpot.meeting.application.service.JoinMeetingService;
+import com.bangpot.meeting.application.service.MeetingAccessService;
 import com.bangpot.meeting.application.service.MeetingAutomaticTransitionService;
 import com.bangpot.meeting.application.service.RecordMeetingResultService;
 import com.bangpot.meeting.application.service.ReopenMeetingRecruitmentService;
@@ -69,6 +70,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 	protected InMemoryCrewMemberRepository crewMemberRepository;
 	protected InMemoryMeetingRepository meetingRepository;
 	protected InMemoryMeetingQueryRepository meetingQueryRepository;
+	protected MeetingAccessService meetingAccessService;
 	protected InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	protected MutableClock clock;
 	protected MeetingAutomaticTransitionService meetingAutomaticTransitionService;
@@ -99,6 +101,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			meetingRepository,
 			meetingParticipantRepository
 		);
+		meetingAccessService = new MeetingAccessService(meetingQueryRepository);
 		clock = new MutableClock(NOW);
 		meetingAutomaticTransitionService = new MeetingAutomaticTransitionService(
 			meetingRepository,
@@ -108,10 +111,12 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		createMeetingUseCase = new CreateMeetingService(completedUserAccessService, crewRepository, crewMemberRepository, meetingRepository);
 		getMeetingsUseCase = new GetMeetingsService(
 			completedUserAccessService,
+			meetingAccessService,
 			meetingQueryRepository
 		);
 		getMeetingDetailUseCase = new GetMeetingDetailService(
 			completedUserAccessService,
+			meetingAccessService,
 			meetingQueryRepository
 		);
 		joinMeetingUseCase = new JoinMeetingService(

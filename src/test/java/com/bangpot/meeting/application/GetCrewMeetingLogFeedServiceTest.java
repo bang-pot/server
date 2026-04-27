@@ -19,6 +19,7 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.meeting.application.port.MeetingLogFeedReadRepository;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.service.GetCrewMeetingLogFeedService;
+import com.bangpot.meeting.application.service.MeetingAccessService;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingLogFeedUseCase;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.CrewMeetingLogFeedView;
@@ -48,7 +49,7 @@ class GetCrewMeetingLogFeedServiceTest {
 		meetingLogFeedReadRepository = new InMemoryMeetingLogFeedReadRepository();
 		getCrewMeetingLogFeedUseCase = new GetCrewMeetingLogFeedService(
 			new CompletedUserAccessService(userRepository),
-			meetingQueryRepository,
+			new MeetingAccessService(meetingQueryRepository),
 			meetingLogFeedReadRepository
 		);
 	}

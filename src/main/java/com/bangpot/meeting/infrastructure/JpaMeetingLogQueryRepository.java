@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
+import com.bangpot.meeting.domain.view.MeetingLogDetailView;
 import com.bangpot.meeting.domain.view.MyMeetingLogView;
 import com.bangpot.meeting.domain.view.MyMeetingLogsView;
 
@@ -47,6 +48,27 @@ public class JpaMeetingLogQueryRepository implements MeetingLogQueryRepository {
 			.map(source -> {
 				List<String> photos = meetingLogJpaRepository.findPhotoUrlsByLogId(source.logId());
 				return MyMeetingLogView.of(
+					source.logId(),
+					source.meetingId(),
+					source.meetingTitle(),
+					source.themeName(),
+					source.place(),
+					source.date(),
+					source.authorNickname(),
+					source.createdAt(),
+					source.updatedAt(),
+					source.body(),
+					photos
+				);
+			});
+	}
+
+	@Override
+	public Optional<MeetingLogDetailView> findMeetingLogDetailView(Long crewId, Long logId) {
+		return meetingLogJpaRepository.findMeetingLogDetailSource(crewId, logId)
+			.map(source -> {
+				List<String> photos = meetingLogJpaRepository.findPhotoUrlsByLogId(source.logId());
+				return MeetingLogDetailView.of(
 					source.logId(),
 					source.meetingId(),
 					source.meetingTitle(),

@@ -33,6 +33,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
+import com.bangpot.meeting.domain.view.MeetingLogDetailView;
 import com.bangpot.meeting.domain.view.MyMeetingLogView;
 
 @ActiveProfiles("test")
@@ -211,7 +212,7 @@ class MeetingLogControllerTest {
 	@Test
 	void returnsMeetingLogDetailForAnotherUser() throws Exception {
 		when(getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(5L, 101L, 9L)))
-			.thenReturn(GetMeetingLogDetailUseCase.Result.of(
+			.thenReturn(MeetingLogDetailView.of(
 				101L,
 				55L,
 				"Friday Escape",

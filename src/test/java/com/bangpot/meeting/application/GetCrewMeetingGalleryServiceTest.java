@@ -18,6 +18,7 @@ import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.service.GetCrewMeetingGalleryService;
+import com.bangpot.meeting.application.service.MeetingAccessService;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
@@ -44,6 +45,7 @@ class GetCrewMeetingGalleryServiceTest {
 		meetingQueryRepository = new InMemoryMeetingQueryRepository();
 		getCrewMeetingGalleryUseCase = new GetCrewMeetingGalleryService(
 			new CompletedUserAccessService(userRepository),
+			new MeetingAccessService(meetingQueryRepository),
 			meetingQueryRepository
 		);
 	}

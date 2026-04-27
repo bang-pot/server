@@ -1072,6 +1072,14 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MeetingLogDetailView> findMeetingLogDetailView(
+			Long crewId,
+			Long logId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
 		public boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
 			return false;
 		}

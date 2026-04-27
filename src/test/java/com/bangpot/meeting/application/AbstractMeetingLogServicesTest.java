@@ -2,6 +2,7 @@ package com.bangpot.meeting.application;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -19,11 +20,13 @@ import com.bangpot.meeting.application.port.MeetingLogPhotoRepository;
 import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
 import com.bangpot.meeting.application.port.MeetingLogRepository;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.application.service.CreateMeetingLogService;
 import com.bangpot.meeting.application.service.DeleteMeetingLogService;
 import com.bangpot.meeting.application.service.GetMeetingLogDetailService;
 import com.bangpot.meeting.application.service.GetMyMeetingLogService;
+import com.bangpot.meeting.application.service.MeetingAccessService;
 import com.bangpot.meeting.application.service.UpdateMeetingLogService;
 import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
@@ -35,6 +38,8 @@ import com.bangpot.meeting.domain.MeetingLog;
 import com.bangpot.meeting.domain.MeetingLogPhoto;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.view.MeetingLogDetailView;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.meeting.domain.view.MyMeetingLogView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
@@ -52,6 +57,8 @@ abstract class AbstractMeetingLogServicesTest {
 	protected InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	protected InMemoryMeetingLogRepository meetingLogRepository;
 	protected InMemoryMeetingLogPhotoRepository meetingLogPhotoRepository;
+	protected InMemoryMeetingQueryRepository meetingQueryRepository;
+	protected MeetingAccessService meetingAccessService;
 	protected InMemoryMeetingLogQueryRepository meetingLogQueryRepository;
 	protected CreateMeetingLogUseCase createMeetingLogUseCase;
 	protected UpdateMeetingLogUseCase updateMeetingLogUseCase;
@@ -69,6 +76,8 @@ abstract class AbstractMeetingLogServicesTest {
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		meetingLogRepository = new InMemoryMeetingLogRepository();
 		meetingLogPhotoRepository = new InMemoryMeetingLogPhotoRepository();
+		meetingQueryRepository = new InMemoryMeetingQueryRepository(crewRepository, crewMemberRepository);
+		meetingAccessService = new MeetingAccessService(meetingQueryRepository);
 		meetingLogQueryRepository = new InMemoryMeetingLogQueryRepository(
 			meetingRepository,
 			meetingLogRepository,
@@ -101,12 +110,8 @@ abstract class AbstractMeetingLogServicesTest {
 		);
 		getMeetingLogDetailUseCase = new GetMeetingLogDetailService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			meetingLogRepository,
-			meetingLogPhotoRepository,
-			meetingRepository,
-			userRepository
+			meetingAccessService,
+			meetingLogQueryRepository
 		);
 	}
 
@@ -546,6 +551,139 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 	}
 
+	protected static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+
+		private InMemoryMeetingQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MyCalendarView.of(List.of(), 0);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.MyCreatedMeetingsView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.MyCreatedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.MyJoinedMeetingsView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.MyJoinedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.UpcomingMeetingsView findUpcomingMeetingsViewByUserId(
+			Long userId,
+			int limit,
+			String currentDate,
+			String currentTime
+		) {
+			return com.bangpot.meeting.domain.view.UpcomingMeetingsView.of(List.of(), 0L);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.CrewScheduleView findCrewScheduleViewByCrewId(
+			Long crewId,
+			java.time.LocalDate from,
+			java.time.LocalDate to
+		) {
+			return com.bangpot.meeting.domain.view.CrewScheduleView.of(List.of());
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.CrewMeetingGalleryView findCrewMeetingGalleryView(
+			Long crewId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.CrewMeetingGalleryView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.CrewMeetingGalleryView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public Optional<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView>
+			findCrewMeetingGalleryDetailTargetView(Long crewId, Long meetingId) {
+			return Optional.empty();
+		}
+
+		@Override
+		public List<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView.Photo>
+			findCrewMeetingGalleryDetailPhotos(Long meetingId) {
+			return List.of();
+		}
+
+		@Override
+		public Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId) {
+			return crewRepository.findById(crewId)
+				.map(crew -> MeetingsAccessView.of(
+					crew.getId(),
+					crewMemberRepository.findByCrewIdAndUserId(crew.getId(), userId)
+						.map(CrewMember::getRole)
+						.orElse(null)
+				));
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MeetingsView findMeetingsViewByCrewId(
+			Long crewId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.MeetingsView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.MeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public Optional<com.bangpot.meeting.domain.view.MeetingDetailView> findMeetingDetailView(
+			Long crewId,
+			Long meetingId,
+			Long userId
+		) {
+			return Optional.empty();
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public Map<Long, Integer> countCompletedByUserIds(Collection<Long> userIds) {
+			return Map.of();
+		}
+	}
+
 	protected static final class InMemoryMeetingLogQueryRepository implements MeetingLogQueryRepository {
 
 		private final InMemoryMeetingRepository meetingRepository;
@@ -591,6 +729,28 @@ abstract class AbstractMeetingLogServicesTest {
 				.flatMap(log -> meetingRepository.findById(meetingId)
 					.flatMap(meeting -> userRepository.findById(authorUserId)
 						.map(user -> MyMeetingLogView.of(
+							log.getId(),
+							meeting.getId(),
+							meeting.getTitle(),
+							meeting.getThemeName(),
+							meeting.getPlace(),
+							meeting.getMeetingDate(),
+							user.getNickname(),
+							log.getCreatedAt(),
+							log.getUpdatedAt(),
+							log.getBody(),
+							meetingLogPhotoRepository.findAllByLogId(log.getId()).stream()
+								.map(MeetingLogPhoto::getPhotoUrl)
+								.toList()
+						))));
+		}
+
+		@Override
+		public Optional<MeetingLogDetailView> findMeetingLogDetailView(Long crewId, Long logId) {
+			return meetingLogRepository.findById(logId)
+				.flatMap(log -> meetingRepository.findByIdAndCrewId(log.getMeetingId(), crewId)
+					.flatMap(meeting -> userRepository.findById(log.getAuthorUserId())
+						.map(user -> MeetingLogDetailView.of(
 							log.getId(),
 							meeting.getId(),
 							meeting.getTitle(),

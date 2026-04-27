@@ -11,6 +11,7 @@ import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
+import com.bangpot.meeting.domain.view.MeetingLogDetailView;
 import com.bangpot.meeting.domain.view.MyMeetingLogView;
 
 class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
@@ -42,7 +43,9 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of())
 		);
 
-		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 10L));
+		MeetingLogDetailView detail = getMeetingLogDetailUseCase.handle(
+			GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 10L)
+		);
 
 		assertThat(detail.logId()).isEqualTo(created.logId());
 		assertThat(detail.themeName()).isEqualTo("Deep Blue");

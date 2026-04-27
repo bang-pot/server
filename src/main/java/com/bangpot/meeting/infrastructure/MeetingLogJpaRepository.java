@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.domain.MeetingLog;
+import com.bangpot.meeting.domain.view.MeetingLogDetailView;
 import com.bangpot.meeting.domain.view.MyMeetingLogView;
 import com.bangpot.meeting.domain.view.MyMeetingLogsView;
 
@@ -55,6 +56,32 @@ interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 	Optional<MyMeetingLogView.Source> findMyMeetingLogSource(
 		@Param("meetingId") Long meetingId,
 		@Param("authorUserId") Long authorUserId
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.MeetingLogDetailView$Source(
+			ml.id,
+			m.id,
+			m.title,
+			m.themeName,
+			m.place,
+			m.meetingDate,
+			u.nickname,
+			ml.createdAt,
+			ml.updatedAt,
+			ml.body
+		)
+		from MeetingLog ml, Meeting m, UserJpaEntity u
+		where ml.meetingId = m.id
+		  and ml.authorUserId = u.id
+		  and ml.id = :logId
+		  and m.crewId = :crewId
+		  and ml.deletedAt is null
+		  and u.withdrawnAt is null
+		""")
+	Optional<MeetingLogDetailView.Source> findMeetingLogDetailSource(
+		@Param("crewId") Long crewId,
+		@Param("logId") Long logId
 	);
 
 	@Query("""
