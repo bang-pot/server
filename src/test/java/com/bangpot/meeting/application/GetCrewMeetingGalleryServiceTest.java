@@ -190,6 +190,21 @@ class GetCrewMeetingGalleryServiceTest {
 		}
 
 		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView> findCrewMeetingGalleryDetailTargetView(
+			Long crewId,
+			Long meetingId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
+		public List<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView.Photo> findCrewMeetingGalleryDetailPhotos(
+			Long meetingId
+		) {
+			return List.of();
+		}
+
+		@Override
 		public MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
 			return MeetingsView.of(List.of(), MeetingsView.Page.of(page, size, false));
 		}

@@ -2,10 +2,13 @@ package com.bangpot.meeting.application.port;
 
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
@@ -33,6 +36,10 @@ public interface MeetingQueryRepository {
 	CrewScheduleView findCrewScheduleViewByCrewId(Long crewId, LocalDate from, LocalDate to);
 
 	CrewMeetingGalleryView findCrewMeetingGalleryView(Long crewId, int page, int size);
+
+	Optional<CrewMeetingGalleryDetailTargetView> findCrewMeetingGalleryDetailTargetView(Long crewId, Long meetingId);
+
+	List<CrewMeetingGalleryDetailView.Photo> findCrewMeetingGalleryDetailPhotos(Long meetingId);
 
 	Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId);
 

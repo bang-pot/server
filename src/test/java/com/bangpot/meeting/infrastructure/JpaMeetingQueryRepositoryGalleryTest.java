@@ -2,6 +2,8 @@ package com.bangpot.meeting.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -10,23 +12,20 @@ import org.springframework.context.annotation.Import;
 
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewVisibility;
-import com.bangpot.meeting.application.port.MeetingGalleryReadRepository;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 
 @DataJpaTest
-@Import({JpaMeetingGalleryReadRepository.class, JpaMeetingQueryRepository.class})
-class JpaMeetingGalleryReadRepositoryTest {
+@Import(JpaMeetingQueryRepository.class)
+class JpaMeetingQueryRepositoryGalleryTest {
 
 	@Autowired
 	private TestEntityManager entityManager;
 
 	@Autowired
 	private MeetingQueryRepository meetingQueryRepository;
-
-	@Autowired
-	private MeetingGalleryReadRepository repository;
 
 	@Test
 	void returnsCompletedMeetingsWithHostPhotosOnly() {
@@ -150,22 +149,24 @@ class JpaMeetingGalleryReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		java.util.Optional<MeetingGalleryReadRepository.Detail> result = repository.findDetail(crew.getId(), meeting.getId());
+		var target = meetingQueryRepository.findCrewMeetingGalleryDetailTargetView(crew.getId(), meeting.getId());
+		List<CrewMeetingGalleryDetailView.Photo> photos =
+			meetingQueryRepository.findCrewMeetingGalleryDetailPhotos(meeting.getId());
 
-		assertThat(result).isPresent();
-		assertThat(result.get().meetingId()).isEqualTo(meeting.getId());
-		assertThat(result.get().meetingDate()).isEqualTo("2026-04-12");
-		assertThat(result.get().meetingTitle()).isEqualTo("Gallery Detail");
-		assertThat(result.get().totalPhotoCount()).isEqualTo(3);
-		assertThat(result.get().photos()).extracting(MeetingGalleryReadRepository.DetailPhoto::photoId)
+		assertThat(target).isPresent();
+		assertThat(target.get().meetingId()).isEqualTo(meeting.getId());
+		assertThat(target.get().meetingDate()).isEqualTo("2026-04-12");
+		assertThat(target.get().meetingTitle()).isEqualTo("Gallery Detail");
+		assertThat(photos).hasSize(3);
+		assertThat(photos).extracting(CrewMeetingGalleryDetailView.Photo::photoId)
 			.containsExactly(firstHostPhotoId, memberPhotoId, secondHostPhotoId);
-		assertThat(result.get().photos()).extracting(MeetingGalleryReadRepository.DetailPhoto::url)
+		assertThat(photos).extracting(CrewMeetingGalleryDetailView.Photo::url)
 			.containsExactly(
 				"https://cdn.example.com/host-1.jpg",
 				"https://cdn.example.com/member-1.jpg",
 				"https://cdn.example.com/host-2.jpg"
 			);
-		assertThat(result.get().photos()).extracting(MeetingGalleryReadRepository.DetailPhoto::order)
+		assertThat(photos).extracting(CrewMeetingGalleryDetailView.Photo::order)
 			.containsExactly(1, 2, 3);
 	}
 
@@ -186,7 +187,8 @@ class JpaMeetingGalleryReadRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		assertThat(repository.findDetail(crew.getId(), noHostPhotoMeeting.getId())).isEmpty();
+		assertThat(meetingQueryRepository.findCrewMeetingGalleryDetailTargetView(crew.getId(), noHostPhotoMeeting.getId()))
+			.isEmpty();
 	}
 
 	private Meeting completedMeeting(Long crewId, Long hostUserId, String meetingDate, String title) {

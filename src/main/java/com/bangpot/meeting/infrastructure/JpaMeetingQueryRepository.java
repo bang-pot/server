@@ -20,6 +20,8 @@ import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 import com.bangpot.meeting.domain.view.MeetingDetailView;
@@ -174,6 +176,31 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			items = items.subList(0, size);
 		}
 		return CrewMeetingGalleryView.of(items, CrewMeetingGalleryView.Page.of(page, size, hasNext));
+	}
+
+	@Override
+	public Optional<CrewMeetingGalleryDetailTargetView> findCrewMeetingGalleryDetailTargetView(
+		Long crewId,
+		Long meetingId
+	) {
+		return meetingGalleryJpaRepository.findGalleryDetailMeeting(crewId, meetingId);
+	}
+
+	@Override
+	public List<CrewMeetingGalleryDetailView.Photo> findCrewMeetingGalleryDetailPhotos(Long meetingId) {
+		List<CrewMeetingGalleryDetailView.PhotoSource> sources =
+			meetingGalleryJpaRepository.findGalleryDetailPhotos(meetingId);
+
+		List<CrewMeetingGalleryDetailView.Photo> photos = new ArrayList<>(sources.size());
+		for (int index = 0; index < sources.size(); index++) {
+			CrewMeetingGalleryDetailView.PhotoSource source = sources.get(index);
+			photos.add(CrewMeetingGalleryDetailView.Photo.of(
+				source.photoId(),
+				source.url(),
+				index + 1
+			));
+		}
+		return photos;
 	}
 
 	@Override

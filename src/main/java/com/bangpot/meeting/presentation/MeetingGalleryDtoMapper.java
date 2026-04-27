@@ -2,7 +2,7 @@ package com.bangpot.meeting.presentation;
 
 import java.util.List;
 
-import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryDetailUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 
 final class MeetingGalleryDtoMapper {
@@ -31,8 +31,8 @@ final class MeetingGalleryDtoMapper {
 		);
 	}
 
-	static MeetingGalleryDto.MeetingGalleryDetailResponse toResponse(GetCrewMeetingGalleryDetailUseCase.Result result) {
-		List<MeetingGalleryDto.MeetingGalleryDetailPhotoResponse> photos = result.photos().stream()
+	static MeetingGalleryDto.MeetingGalleryDetailResponse toResponse(CrewMeetingGalleryDetailView view) {
+		List<MeetingGalleryDto.MeetingGalleryDetailPhotoResponse> photos = view.photos().stream()
 			.map(photo -> new MeetingGalleryDto.MeetingGalleryDetailPhotoResponse(
 				photo.photoId(),
 				photo.url(),
@@ -41,11 +41,11 @@ final class MeetingGalleryDtoMapper {
 			.toList();
 
 		return new MeetingGalleryDto.MeetingGalleryDetailResponse(
-			result.meetingId(),
-			result.meetingDate(),
-			result.meetingTitle(),
+			view.meetingId(),
+			view.meetingDate(),
+			view.meetingTitle(),
 			photos,
-			result.totalPhotoCount()
+			view.totalPhotoCount()
 		);
 	}
 }
