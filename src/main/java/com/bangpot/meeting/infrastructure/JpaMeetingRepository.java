@@ -159,12 +159,16 @@ class JpaMeetingRepository implements MeetingRepository {
 	}
 
 	@Override
-	public boolean existsByCrewIdAndHostUserIdAndStatusIn(Long crewId, Long hostUserId, List<MeetingStatus> statuses) {
-		return meetingJpaRepository.existsByCrewIdAndHostUserIdAndStatusIn(crewId, hostUserId, statuses);
+	public boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId) {
+		return meetingJpaRepository.existsByCrewIdAndHostUserIdAndStatusIn(
+			crewId,
+			hostUserId,
+			UNFINISHED_STATUSES
+		);
 	}
 
 	@Override
-	public boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses) {
-		return meetingJpaRepository.existsByCrewIdAndStatusIn(crewId, statuses);
+	public boolean existsUnfinishedByCrewId(Long crewId) {
+		return meetingJpaRepository.existsByCrewIdAndStatusIn(crewId, UNFINISHED_STATUSES);
 	}
 }

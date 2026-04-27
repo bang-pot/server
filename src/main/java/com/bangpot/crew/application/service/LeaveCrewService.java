@@ -1,7 +1,5 @@
 package com.bangpot.crew.application.service;
 
-import java.util.List;
-
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +14,7 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.application.usecase.CleanupMeetingsForInactiveCrewMemberUseCase;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +29,7 @@ public class LeaveCrewService implements LeaveCrewUseCase {
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
+	private final CleanupMeetingsForInactiveCrewMemberUseCase cleanupMeetingsForInactiveCrewMemberUseCase;
 
 	@Override
 	@Transactional
@@ -47,14 +46,20 @@ public class LeaveCrewService implements LeaveCrewUseCase {
 			throw new CrewLeaderLeaveNotAllowedException(crew.getId(), command.userId());
 		}
 
-		boolean hasHostedUnfinishedMeeting = meetingRepository.existsByCrewIdAndHostUserIdAndStatusIn(
+		boolean hasHostedUnfinishedMeeting = meetingRepository.existsUnfinishedByCrewIdAndHostUserId(
 			crew.getId(),
-			command.userId(),
-			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
+			command.userId()
 		);
 		if (hasHostedUnfinishedMeeting) {
 			throw new CrewLeaveNotAllowedForHostedMeetingException(crew.getId(), command.userId());
 		}
+
+		cleanupMeetingsForInactiveCrewMemberUseCase.handle(
+			CleanupMeetingsForInactiveCrewMemberUseCase.InactiveCrewMember.of(
+				crew.getId(),
+				command.userId()
+			)
+		);
 
 		crewMember.leave();
 		crewMemberRepository.save(crewMember);

@@ -35,8 +35,8 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.application.service.CleanupMeetingsForRemovedCrewMemberService;
-import com.bangpot.meeting.application.usecase.CleanupMeetingsForRemovedCrewMemberUseCase;
+import com.bangpot.meeting.application.service.CleanupMeetingsForInactiveCrewMemberService;
+import com.bangpot.meeting.application.usecase.CleanupMeetingsForInactiveCrewMemberUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
@@ -67,13 +67,13 @@ class CrewRemoveMemberUseCaseServicesTest {
 		meetingRepository = new InMemoryMeetingRepository();
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository(meetingRepository);
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
-		CleanupMeetingsForRemovedCrewMemberUseCase cleanupMeetingsForRemovedCrewMemberUseCase =
-			new CleanupMeetingsForRemovedCrewMemberService(meetingRepository, meetingParticipantRepository);
+		CleanupMeetingsForInactiveCrewMemberUseCase cleanupMeetingsForInactiveCrewMemberUseCase =
+			new CleanupMeetingsForInactiveCrewMemberService(meetingRepository, meetingParticipantRepository);
 		removeCrewMemberUseCase = new RemoveCrewMemberService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			cleanupMeetingsForRemovedCrewMemberUseCase
+			cleanupMeetingsForInactiveCrewMemberUseCase
 		);
 		getCrewHubUseCase = new GetCrewHubService(
 			completedUserAccessService,
@@ -397,16 +397,12 @@ class CrewRemoveMemberUseCaseServicesTest {
 
 	private static final class InMemoryMeetingRepository implements MeetingRepository {
 		@Override
-		public boolean existsByCrewIdAndStatusIn(Long crewId, java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+		public boolean existsUnfinishedByCrewId(Long crewId) {
 			return false;
 		}
 
 		@Override
-		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
-			Long crewId,
-			Long hostUserId,
-			java.util.List<com.bangpot.meeting.domain.MeetingStatus> statuses
-		) {
+		public boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId) {
 			return false;
 		}
 

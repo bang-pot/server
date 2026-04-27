@@ -12,7 +12,7 @@ import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
-import com.bangpot.meeting.application.usecase.CleanupMeetingsForRemovedCrewMemberUseCase;
+import com.bangpot.meeting.application.usecase.CleanupMeetingsForInactiveCrewMemberUseCase;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class RemoveCrewMemberService implements RemoveCrewMemberUseCase {
 	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
-	private final CleanupMeetingsForRemovedCrewMemberUseCase cleanupMeetingsForRemovedCrewMemberUseCase;
+	private final CleanupMeetingsForInactiveCrewMemberUseCase cleanupMeetingsForInactiveCrewMemberUseCase;
 
 	@Override
 	@Transactional
@@ -48,8 +48,8 @@ public class RemoveCrewMemberService implements RemoveCrewMemberUseCase {
 			throw new CrewRemoveMemberTargetNotAllowedException(crew.getId(), command.targetUserId());
 		}
 
-		cleanupMeetingsForRemovedCrewMemberUseCase.handle(
-			CleanupMeetingsForRemovedCrewMemberUseCase.RemovedCrewMember.of(
+		cleanupMeetingsForInactiveCrewMemberUseCase.handle(
+			CleanupMeetingsForInactiveCrewMemberUseCase.InactiveCrewMember.of(
 				crew.getId(),
 				command.targetUserId()
 			)

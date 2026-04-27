@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.meeting.domain.Meeting;
-import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
@@ -32,11 +31,7 @@ public interface MeetingRepository {
 
 	long countJoinedByUserId(Long userId);
 
-	boolean existsByCrewIdAndHostUserIdAndStatusIn(
-		Long crewId,
-		Long hostUserId,
-		List<MeetingStatus> statuses
-	);
+	boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId);
 
-	boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses);
+	boolean existsUnfinishedByCrewId(Long crewId);
 }

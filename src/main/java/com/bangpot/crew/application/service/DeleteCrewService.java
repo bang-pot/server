@@ -1,7 +1,5 @@
 package com.bangpot.crew.application.service;
 
-import java.util.List;
-
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +15,6 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -59,10 +56,7 @@ public class DeleteCrewService implements DeleteCrewUseCase {
 			throw new CrewDeleteNotAllowedWithActiveMembersException();
 		}
 
-		boolean hasUnfinishedMeetings = meetingRepository.existsByCrewIdAndStatusIn(
-			crew.getId(),
-			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
-		);
+		boolean hasUnfinishedMeetings = meetingRepository.existsUnfinishedByCrewId(crew.getId());
 		if (hasUnfinishedMeetings) {
 			throw new CrewDeleteNotAllowedWithActiveMeetingsException();
 		}

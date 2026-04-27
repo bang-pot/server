@@ -517,17 +517,20 @@ class CrewDeleteUseCaseServicesTest {
 		}
 
 		@Override
-		public boolean existsByCrewIdAndHostUserIdAndStatusIn(Long crewId, Long hostUserId, List<MeetingStatus> statuses) {
+		public boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId) {
 			return meetingsById.values().stream()
 				.anyMatch(meeting -> crewId.equals(meeting.getCrewId())
 					&& hostUserId.equals(meeting.getHostUserId())
-					&& statuses.contains(meeting.getStatus()));
+					&& List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
+						.contains(meeting.getStatus()));
 		}
 
 		@Override
-		public boolean existsByCrewIdAndStatusIn(Long crewId, List<MeetingStatus> statuses) {
+		public boolean existsUnfinishedByCrewId(Long crewId) {
 			return meetingsById.values().stream()
-				.anyMatch(meeting -> crewId.equals(meeting.getCrewId()) && statuses.contains(meeting.getStatus()));
+				.anyMatch(meeting -> crewId.equals(meeting.getCrewId())
+					&& List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
+						.contains(meeting.getStatus()));
 		}
 	}
 

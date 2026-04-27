@@ -31,8 +31,13 @@ import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.service.CleanupMeetingsForInactiveCrewMemberService;
+import com.bangpot.meeting.application.usecase.CleanupMeetingsForInactiveCrewMemberUseCase;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -47,6 +52,7 @@ class CrewLeaveUseCaseServicesTest {
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
 	private InMemoryMeetingRepository meetingRepository;
+	private InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	private LeaveCrewUseCase leaveCrewUseCase;
 	private GetCrewHubUseCase getCrewHubUseCase;
 
@@ -58,12 +64,16 @@ class CrewLeaveUseCaseServicesTest {
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		crewJoinRequestRepository = new InMemoryCrewJoinRequestRepository();
 		meetingRepository = new InMemoryMeetingRepository();
+		meetingParticipantRepository = new InMemoryMeetingParticipantRepository(meetingRepository);
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
+		CleanupMeetingsForInactiveCrewMemberUseCase cleanupMeetingsForInactiveCrewMemberUseCase =
+			new CleanupMeetingsForInactiveCrewMemberService(meetingRepository, meetingParticipantRepository);
 		leaveCrewUseCase = new LeaveCrewService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository
+			meetingRepository,
+			cleanupMeetingsForInactiveCrewMemberUseCase
 		);
 		getCrewHubUseCase = new GetCrewHubService(
 			completedUserAccessService,
@@ -165,6 +175,37 @@ class CrewLeaveUseCaseServicesTest {
 
 		assertThatThrownBy(() -> leaveCrewUseCase.handle(LeaveCrewUseCase.Command.of(crew.getId(), outsider.getId())))
 			.isInstanceOf(AccessDeniedException.class);
+	}
+
+	@Test
+	void leavesJoinedUnfinishedMeetingParticipationsWhenLeavingCrew() {
+		AuthUser member = fullUser(1L, "member-provider", "member");
+		AuthUser host = fullUser(2L, "host-provider", "host");
+		authUserRepository.save(member);
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(),
+			host.getId(),
+			"Theme",
+			"Gangnam",
+			"2026-04-20",
+			"19:30",
+			4,
+			null,
+			null,
+			null,
+			null
+		));
+		meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), member.getId()));
+
+		leaveCrewUseCase.handle(LeaveCrewUseCase.Command.of(crew.getId(), member.getId()));
+
+		assertThat(meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), member.getId())).get()
+			.extracting(MeetingParticipant::getStatus)
+			.isEqualTo(MeetingParticipationStatus.LEFT);
 	}
 
 	private AuthUser fullUser(Long id, String providerId, String nickname) {
@@ -456,21 +497,86 @@ class CrewLeaveUseCaseServicesTest {
 		}
 
 		@Override
-		public boolean existsByCrewIdAndHostUserIdAndStatusIn(
-			Long crewId,
-			Long hostUserId,
-			List<com.bangpot.meeting.domain.MeetingStatus> statuses
-		) {
+		public boolean existsUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId) {
 			return meetingsById.values().stream()
 				.anyMatch(meeting -> crewId.equals(meeting.getCrewId())
 					&& hostUserId.equals(meeting.getHostUserId())
-					&& statuses.contains(meeting.getStatus()));
+					&& List.of(
+						com.bangpot.meeting.domain.MeetingStatus.RECRUITING,
+						com.bangpot.meeting.domain.MeetingStatus.RECRUITMENT_CLOSED
+					).contains(meeting.getStatus()));
 		}
 
 		@Override
-		public boolean existsByCrewIdAndStatusIn(Long crewId, List<com.bangpot.meeting.domain.MeetingStatus> statuses) {
+		public boolean existsUnfinishedByCrewId(Long crewId) {
 			return meetingsById.values().stream()
-				.anyMatch(meeting -> crewId.equals(meeting.getCrewId()) && statuses.contains(meeting.getStatus()));
+				.anyMatch(meeting -> crewId.equals(meeting.getCrewId())
+					&& List.of(
+						com.bangpot.meeting.domain.MeetingStatus.RECRUITING,
+						com.bangpot.meeting.domain.MeetingStatus.RECRUITMENT_CLOSED
+					).contains(meeting.getStatus()));
+		}
+	}
+
+	private static final class InMemoryMeetingParticipantRepository implements MeetingParticipantRepository {
+
+		private final InMemoryMeetingRepository meetingRepository;
+		private final Map<Long, MeetingParticipant> participantsById = new HashMap<>();
+		private long sequence = 1L;
+
+		private InMemoryMeetingParticipantRepository(InMemoryMeetingRepository meetingRepository) {
+			this.meetingRepository = meetingRepository;
+		}
+
+		@Override
+		public MeetingParticipant save(MeetingParticipant participant) {
+			if (participant.getId() == null) {
+				participant.assignId(sequence++);
+			}
+			participantsById.put(participant.getId(), participant);
+			return participant;
+		}
+
+		@Override
+		public Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId) {
+			return participantsById.values().stream()
+				.filter(participant -> meetingId.equals(participant.getMeetingId()) && userId.equals(participant.getUserId()))
+				.findFirst();
+		}
+
+		@Override
+		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+			Long crewId,
+			Long userId,
+			java.time.Instant updatedAt
+		) {
+			List<MeetingParticipant> targetParticipants = participantsById.values().stream()
+				.filter(participant -> userId.equals(participant.getUserId()))
+				.filter(participant -> participant.getStatus().representsJoined())
+				.filter(participant -> meetingRepository.findById(participant.getMeetingId())
+					.filter(meeting -> crewId.equals(meeting.getCrewId()))
+					.filter(meeting -> !userId.equals(meeting.getHostUserId()))
+					.filter(meeting -> List.of(
+						com.bangpot.meeting.domain.MeetingStatus.RECRUITING,
+						com.bangpot.meeting.domain.MeetingStatus.RECRUITMENT_CLOSED
+					).contains(meeting.getStatus()))
+					.isPresent())
+				.toList();
+			targetParticipants.forEach(MeetingParticipant::leave);
+			return targetParticipants.size();
+		}
+
+		@Override
+		public long countByMeetingId(Long meetingId) {
+			return participantsById.values().stream()
+				.filter(participant -> meetingId.equals(participant.getMeetingId()))
+				.filter(participant -> participant.getStatus().representsJoined())
+				.count();
+		}
+
+		@Override
+		public void delete(MeetingParticipant participant) {
+			participantsById.remove(participant.getId());
 		}
 	}
 

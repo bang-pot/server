@@ -7,29 +7,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.application.usecase.CleanupMeetingsForRemovedCrewMemberUseCase;
+import com.bangpot.meeting.application.usecase.CleanupMeetingsForInactiveCrewMemberUseCase;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class CleanupMeetingsForRemovedCrewMemberService implements CleanupMeetingsForRemovedCrewMemberUseCase {
+public class CleanupMeetingsForInactiveCrewMemberService implements CleanupMeetingsForInactiveCrewMemberUseCase {
 
 	private final MeetingRepository meetingRepository;
 	private final MeetingParticipantRepository meetingParticipantRepository;
 
 	@Override
 	@Transactional
-	public void handle(RemovedCrewMember removedCrewMember) {
+	public void handle(InactiveCrewMember inactiveCrewMember) {
 		Instant cleanedAt = Instant.now();
 		meetingRepository.cancelUnfinishedByCrewIdAndHostUserId(
-			removedCrewMember.crewId(),
-			removedCrewMember.userId(),
+			inactiveCrewMember.crewId(),
+			inactiveCrewMember.userId(),
 			cleanedAt
 		);
 		meetingParticipantRepository.leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
-			removedCrewMember.crewId(),
-			removedCrewMember.userId(),
+			inactiveCrewMember.crewId(),
+			inactiveCrewMember.userId(),
 			cleanedAt
 		);
 	}
