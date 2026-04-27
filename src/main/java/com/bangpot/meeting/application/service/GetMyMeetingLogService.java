@@ -1,18 +1,12 @@
 package com.bangpot.meeting.application.service;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.meeting.application.port.MeetingLogPhotoRepository;
-import com.bangpot.meeting.application.port.MeetingLogRepository;
-import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
-import com.bangpot.meeting.domain.MeetingLog;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
-import com.bangpot.meeting.application.port.MeetingRepository;
-import com.bangpot.meeting.domain.Meeting;
-import com.bangpot.user.application.exception.UserNotFoundException;
-import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
+import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
+import com.bangpot.meeting.domain.view.MyMeetingLogView;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -21,49 +15,28 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetMyMeetingLogService implements GetMyMeetingLogUseCase {
 
+	private static final String ACCESS_DENIED_MESSAGE = "내 방탈로그 조회는 가입 완료 사용자만 가능합니다.";
+
 	private final CompletedUserAccessService completedUserAccessService;
-	private final MeetingRepository meetingRepository;
-	private final MeetingLogRepository meetingLogRepository;
-	private final MeetingLogPhotoRepository meetingLogPhotoRepository;
-	private final UserRepository userRepository;
+	private final MeetingLogQueryRepository meetingLogQueryRepository;
 
 	@Override
-	public Result handle(Query query) {
-		completedUserAccessService.validateCompletedUser(query.userId(), "내 방탈로그 조회는 가입 완료 사용자만 가능합니다.");
-		Meeting meeting = meetingRepository.findById(query.meetingId())
-			.orElseThrow(() -> new MeetingNotFoundException(query.meetingId()));
-		return meetingLogRepository.findByMeetingIdAndAuthorUserId(query.meetingId(), query.userId())
-			.map(log -> toResult(log, meeting))
-			.orElseGet(() -> toMissingResult(query));
-	}
-
-	Result toResult(MeetingLog log, Meeting meeting) {
-		String nickname = userRepository.findById(log.getAuthorUserId())
-			.orElseThrow(() -> new UserNotFoundException(log.getAuthorUserId()))
-			.getNickname();
-		List<String> photos = meetingLogPhotoRepository.findAllByLogId(log.getId()).stream()
-			.map(photo -> photo.getPhotoUrl())
-			.toList();
-		return Result.of(
-			Status.EXISTS,
-			log.getId(),
-			meeting.getId(),
-			meeting.getTitle(),
-			meeting.getThemeName(),
-			meeting.getPlace(),
-			meeting.getMeetingDate(),
-			nickname,
-			log.getCreatedAt(),
-			log.getUpdatedAt(),
-			log.getBody(),
-			photos
-		);
-	}
-
-	private Result toMissingResult(Query query) {
-		if (meetingLogRepository.existsDeletedByMeetingIdAndAuthorUserId(query.meetingId(), query.userId())) {
-			return Result.deletedBlocked();
+	@Transactional(readOnly = true)
+	public MyMeetingLogView handle(Query query) {
+		completedUserAccessService.validateCompletedUser(query.userId(), ACCESS_DENIED_MESSAGE);
+		if (!meetingLogQueryRepository.existsMeetingById(query.meetingId())) {
+			throw new MeetingNotFoundException(query.meetingId());
 		}
-		return Result.notWritten();
+		return meetingLogQueryRepository.findMyMeetingLogView(
+			query.meetingId(),
+			query.userId()
+		).orElseGet(() -> toMissingView(query));
+	}
+
+	private MyMeetingLogView toMissingView(Query query) {
+		if (meetingLogQueryRepository.existsDeletedByMeetingIdAndAuthorUserId(query.meetingId(), query.userId())) {
+			return MyMeetingLogView.deletedBlocked();
+		}
+		return MyMeetingLogView.notWritten();
 	}
 }

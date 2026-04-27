@@ -1057,6 +1057,24 @@ abstract class AbstractUserApplicationServiceTest {
 				MyMeetingLogsView.of(List.of(), MyMeetingLogsView.Page.of(page, size, false))
 			);
 		}
+
+		@Override
+		public boolean existsMeetingById(Long meetingId) {
+			return false;
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MyMeetingLogView> findMyMeetingLogView(
+			Long meetingId,
+			Long authorUserId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
+		public boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return false;
+		}
 	}
 
 	protected static final class InMemoryUserWithdrawalRepository

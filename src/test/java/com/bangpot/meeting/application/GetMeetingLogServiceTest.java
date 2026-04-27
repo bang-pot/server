@@ -11,6 +11,7 @@ import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
+import com.bangpot.meeting.domain.view.MyMeetingLogView;
 
 class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
@@ -27,7 +28,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
 		var detail = getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(meeting.getId(), 10L));
 
-		assertThat(detail.status()).isEqualTo(GetMyMeetingLogUseCase.Status.EXISTS);
+		assertThat(detail.status()).isEqualTo(MyMeetingLogView.Status.EXISTS);
 		assertThat(detail.meetingId()).isEqualTo(meeting.getId());
 		assertThat(detail.authorNickname()).isEqualTo("host");
 		assertThat(detail.photos()).containsExactly("https://cdn.example.com/a.jpg");
@@ -84,7 +85,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
 		var result = getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(meeting.getId(), 10L));
 
-		assertThat(result.status()).isEqualTo(GetMyMeetingLogUseCase.Status.NOT_WRITTEN);
+		assertThat(result.status()).isEqualTo(MyMeetingLogView.Status.NOT_WRITTEN);
 		assertThat(result.logId()).isNull();
 		assertThat(result.body()).isNull();
 		assertThat(result.photos()).isEmpty();
@@ -104,7 +105,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
 		var result = getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(meeting.getId(), 10L));
 
-		assertThat(result.status()).isEqualTo(GetMyMeetingLogUseCase.Status.DELETED_BLOCKED);
+		assertThat(result.status()).isEqualTo(MyMeetingLogView.Status.DELETED_BLOCKED);
 		assertThat(result.logId()).isNull();
 		assertThat(result.body()).isNull();
 		assertThat(result.photos()).isEmpty();

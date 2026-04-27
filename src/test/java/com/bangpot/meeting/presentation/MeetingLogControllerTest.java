@@ -33,6 +33,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
+import com.bangpot.meeting.domain.view.MyMeetingLogView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -152,8 +153,7 @@ class MeetingLogControllerTest {
 	@Test
 	void returnsMyMeetingLogDetail() throws Exception {
 		when(getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(55L, 7L)))
-			.thenReturn(GetMyMeetingLogUseCase.Result.of(
-				GetMyMeetingLogUseCase.Status.EXISTS,
+			.thenReturn(MyMeetingLogView.of(
 				101L,
 				55L,
 				"Friday Escape",
@@ -181,7 +181,7 @@ class MeetingLogControllerTest {
 	@Test
 	void returnsNotWrittenStatusWhenMyLogDoesNotExist() throws Exception {
 		when(getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(55L, 7L)))
-			.thenReturn(GetMyMeetingLogUseCase.Result.notWritten());
+			.thenReturn(MyMeetingLogView.notWritten());
 
 		mockMvc.perform(
 			get("/api/meetings/55/logs/me")
@@ -196,7 +196,7 @@ class MeetingLogControllerTest {
 	@Test
 	void returnsDeletedBlockedStatusWhenMyLogWasDeleted() throws Exception {
 		when(getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(55L, 7L)))
-			.thenReturn(GetMyMeetingLogUseCase.Result.deletedBlocked());
+			.thenReturn(MyMeetingLogView.deletedBlocked());
 
 		mockMvc.perform(
 			get("/api/meetings/55/logs/me")

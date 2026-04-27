@@ -8,6 +8,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
+import com.bangpot.meeting.domain.view.MyMeetingLogView;
 
 final class MeetingLogDtoMapper {
 
@@ -78,7 +79,7 @@ final class MeetingLogDtoMapper {
 		return new MeetingLogDto.MeetingLogPhotoUploadResponse(result.url(), result.sizeBytes());
 	}
 
-	static MeetingLogDto.MyMeetingLogResponse toResponse(GetMyMeetingLogUseCase.Result result) {
+	static MeetingLogDto.MyMeetingLogResponse toResponse(MyMeetingLogView result) {
 		return new MeetingLogDto.MyMeetingLogResponse(
 			result.status().name(),
 			result.logId(),

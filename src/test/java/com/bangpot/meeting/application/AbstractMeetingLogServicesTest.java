@@ -16,6 +16,7 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingLogPhotoRepository;
+import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
 import com.bangpot.meeting.application.port.MeetingLogRepository;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
@@ -34,6 +35,7 @@ import com.bangpot.meeting.domain.MeetingLog;
 import com.bangpot.meeting.domain.MeetingLogPhoto;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.view.MyMeetingLogView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -50,6 +52,7 @@ abstract class AbstractMeetingLogServicesTest {
 	protected InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	protected InMemoryMeetingLogRepository meetingLogRepository;
 	protected InMemoryMeetingLogPhotoRepository meetingLogPhotoRepository;
+	protected InMemoryMeetingLogQueryRepository meetingLogQueryRepository;
 	protected CreateMeetingLogUseCase createMeetingLogUseCase;
 	protected UpdateMeetingLogUseCase updateMeetingLogUseCase;
 	protected DeleteMeetingLogUseCase deleteMeetingLogUseCase;
@@ -66,6 +69,12 @@ abstract class AbstractMeetingLogServicesTest {
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		meetingLogRepository = new InMemoryMeetingLogRepository();
 		meetingLogPhotoRepository = new InMemoryMeetingLogPhotoRepository();
+		meetingLogQueryRepository = new InMemoryMeetingLogQueryRepository(
+			meetingRepository,
+			meetingLogRepository,
+			meetingLogPhotoRepository,
+			userRepository
+		);
 		createMeetingLogUseCase = new CreateMeetingLogService(
 			completedUserAccessService,
 			meetingRepository,
@@ -88,10 +97,7 @@ abstract class AbstractMeetingLogServicesTest {
 		);
 		getMyMeetingLogUseCase = new GetMyMeetingLogService(
 			completedUserAccessService,
-			meetingRepository,
-			meetingLogRepository,
-			meetingLogPhotoRepository,
-			userRepository
+			meetingLogQueryRepository
 		);
 		getMeetingLogDetailUseCase = new GetMeetingLogDetailService(
 			completedUserAccessService,
@@ -537,6 +543,73 @@ abstract class AbstractMeetingLogServicesTest {
 		@Override
 		public void deleteByLogId(Long logId) {
 			photos.entrySet().removeIf(entry -> entry.getValue().getLogId().equals(logId));
+		}
+	}
+
+	protected static final class InMemoryMeetingLogQueryRepository implements MeetingLogQueryRepository {
+
+		private final InMemoryMeetingRepository meetingRepository;
+		private final InMemoryMeetingLogRepository meetingLogRepository;
+		private final InMemoryMeetingLogPhotoRepository meetingLogPhotoRepository;
+		private final InMemoryUserRepository userRepository;
+
+		private InMemoryMeetingLogQueryRepository(
+			InMemoryMeetingRepository meetingRepository,
+			InMemoryMeetingLogRepository meetingLogRepository,
+			InMemoryMeetingLogPhotoRepository meetingLogPhotoRepository,
+			InMemoryUserRepository userRepository
+		) {
+			this.meetingRepository = meetingRepository;
+			this.meetingLogRepository = meetingLogRepository;
+			this.meetingLogPhotoRepository = meetingLogPhotoRepository;
+			this.userRepository = userRepository;
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyMeetingLogsView findMyMeetingLogsViewByAuthorUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.MyMeetingLogsView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.MyMeetingLogsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public boolean existsMeetingById(Long meetingId) {
+			return meetingRepository.findById(meetingId).isPresent();
+		}
+
+		@Override
+		public Optional<MyMeetingLogView> findMyMeetingLogView(
+			Long meetingId,
+			Long authorUserId
+		) {
+			return meetingLogRepository.findByMeetingIdAndAuthorUserId(meetingId, authorUserId)
+				.flatMap(log -> meetingRepository.findById(meetingId)
+					.flatMap(meeting -> userRepository.findById(authorUserId)
+						.map(user -> MyMeetingLogView.of(
+							log.getId(),
+							meeting.getId(),
+							meeting.getTitle(),
+							meeting.getThemeName(),
+							meeting.getPlace(),
+							meeting.getMeetingDate(),
+							user.getNickname(),
+							log.getCreatedAt(),
+							log.getUpdatedAt(),
+							log.getBody(),
+							meetingLogPhotoRepository.findAllByLogId(log.getId()).stream()
+								.map(MeetingLogPhoto::getPhotoUrl)
+								.toList()
+						))));
+		}
+
+		@Override
+		public boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return meetingLogRepository.existsDeletedByMeetingIdAndAuthorUserId(meetingId, authorUserId);
 		}
 	}
 }

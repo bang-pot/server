@@ -1,5 +1,6 @@
 package com.bangpot.meeting.infrastructure;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.domain.MeetingLog;
+import com.bangpot.meeting.domain.view.MyMeetingLogView;
 import com.bangpot.meeting.domain.view.MyMeetingLogsView;
 
 interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
@@ -21,6 +23,47 @@ interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 	boolean existsByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId);
 
 	boolean existsByMeetingIdAndAuthorUserIdAndDeletedAtIsNotNull(Long meetingId, Long authorUserId);
+
+	@Query("""
+		select count(m) > 0
+		from Meeting m
+		where m.id = :meetingId
+		""")
+	boolean existsMeetingById(@Param("meetingId") Long meetingId);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.MyMeetingLogView$Source(
+			ml.id,
+			m.id,
+			m.title,
+			m.themeName,
+			m.place,
+			m.meetingDate,
+			u.nickname,
+			ml.createdAt,
+			ml.updatedAt,
+			ml.body
+		)
+		from MeetingLog ml, Meeting m, UserJpaEntity u
+		where ml.meetingId = m.id
+		  and ml.authorUserId = u.id
+		  and ml.meetingId = :meetingId
+		  and ml.authorUserId = :authorUserId
+		  and ml.deletedAt is null
+		  and u.withdrawnAt is null
+		""")
+	Optional<MyMeetingLogView.Source> findMyMeetingLogSource(
+		@Param("meetingId") Long meetingId,
+		@Param("authorUserId") Long authorUserId
+	);
+
+	@Query("""
+		select photo.photoUrl
+		from MeetingLogPhoto photo
+		where photo.logId = :logId
+		order by photo.id asc
+		""")
+	List<String> findPhotoUrlsByLogId(@Param("logId") Long logId);
 
 	@Query("""
 		select new com.bangpot.meeting.domain.view.MyMeetingLogsView$Item(
