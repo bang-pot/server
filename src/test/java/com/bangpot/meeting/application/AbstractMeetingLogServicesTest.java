@@ -398,6 +398,15 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 
 		@Override
+		public int cancelUnfinishedByCrewIdAndHostUserId(
+			Long crewId,
+			Long hostUserId,
+			java.time.Instant updatedAt
+		) {
+			return 0;
+		}
+
+		@Override
 		public Optional<Meeting> findById(Long meetingId) {
 			return Optional.ofNullable(meetings.get(meetingId));
 		}
@@ -436,6 +445,15 @@ abstract class AbstractMeetingLogServicesTest {
 			return participants.values().stream()
 				.filter(participant -> participant.getMeetingId().equals(meetingId) && participant.getUserId().equals(userId))
 				.findFirst();
+		}
+
+		@Override
+		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+			Long crewId,
+			Long userId,
+			java.time.Instant updatedAt
+		) {
+			return 0;
 		}
 
 		@Override

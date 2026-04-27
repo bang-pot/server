@@ -35,10 +35,10 @@ public class LeaveCrewService implements LeaveCrewUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
-		Crew crew = crewRepository.findById(command.crewId())
-			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
-
 		completedUserAccessService.validateCompletedUser(command.userId(), LEAVE_DENIED_MESSAGE);
+
+		Crew crew = crewRepository.findByIdForUpdate(command.crewId())
+			.orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
 		CrewMember crewMember = crewMemberRepository.findByCrewIdAndUserId(crew.getId(), command.userId())
 			.orElseThrow(() -> new AccessDeniedException(LEAVE_DENIED_MESSAGE));

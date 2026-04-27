@@ -1,5 +1,6 @@
 package com.bangpot.meeting.application.port;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,8 @@ public interface MeetingRepository {
 	Meeting save(Meeting meeting);
 
 	List<Meeting> findAllByCrewId(Long crewId);
+
+	int cancelUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId, Instant updatedAt);
 
 	Optional<Meeting> findById(Long meetingId);
 

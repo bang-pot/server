@@ -35,6 +35,8 @@ import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.service.CleanupMeetingsForRemovedCrewMemberService;
+import com.bangpot.meeting.application.usecase.CleanupMeetingsForRemovedCrewMemberUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
@@ -63,14 +65,15 @@ class CrewRemoveMemberUseCaseServicesTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
-		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
+		meetingParticipantRepository = new InMemoryMeetingParticipantRepository(meetingRepository);
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
+		CleanupMeetingsForRemovedCrewMemberUseCase cleanupMeetingsForRemovedCrewMemberUseCase =
+			new CleanupMeetingsForRemovedCrewMemberService(meetingRepository, meetingParticipantRepository);
 		removeCrewMemberUseCase = new RemoveCrewMemberService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository,
-			meetingParticipantRepository
+			cleanupMeetingsForRemovedCrewMemberUseCase
 		);
 		getCrewHubUseCase = new GetCrewHubService(
 			completedUserAccessService,
@@ -141,6 +144,7 @@ class CrewRemoveMemberUseCaseServicesTest {
 		assertThat(meetingRepository.findById(hostedClosed.getId())).get()
 			.extracting(Meeting::getStatus)
 			.isEqualTo(MeetingStatus.CANCELED);
+		assertThat(meetingParticipantRepository.findByMeetingIdAndUserIdCallCount()).isZero();
 		assertThat(meetingParticipantRepository.findByMeetingIdAndUserId(joinedMeeting.getId(), target.getId())).get()
 			.extracting(MeetingParticipant::getStatus)
 			.isEqualTo(MeetingParticipationStatus.LEFT);
@@ -449,6 +453,25 @@ class CrewRemoveMemberUseCaseServicesTest {
 		}
 
 		@Override
+		public int cancelUnfinishedByCrewIdAndHostUserId(
+			Long crewId,
+			Long hostUserId,
+			java.time.Instant updatedAt
+		) {
+			List<Meeting> targetMeetings = meetingsById.values().stream()
+				.filter(meeting -> crewId.equals(meeting.getCrewId()))
+				.filter(meeting -> hostUserId.equals(meeting.getHostUserId()))
+				.filter(meeting -> List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
+					.contains(meeting.getStatus()))
+				.toList();
+			targetMeetings.forEach(meeting -> {
+				meeting.cancel();
+				setField(meeting, "updatedAt", updatedAt);
+			});
+			return targetMeetings.size();
+		}
+
+		@Override
 		public Optional<Meeting> findById(Long meetingId) {
 			return Optional.ofNullable(meetingsById.get(meetingId));
 		}
@@ -472,8 +495,14 @@ class CrewRemoveMemberUseCaseServicesTest {
 
 	private static final class InMemoryMeetingParticipantRepository implements MeetingParticipantRepository {
 
+		private final InMemoryMeetingRepository meetingRepository;
 		private final Map<Long, MeetingParticipant> participantsById = new HashMap<>();
 		private long sequence = 1L;
+		private int findByMeetingIdAndUserIdCallCount;
+
+		private InMemoryMeetingParticipantRepository(InMemoryMeetingRepository meetingRepository) {
+			this.meetingRepository = meetingRepository;
+		}
 
 		@Override
 		public MeetingParticipant save(MeetingParticipant participant) {
@@ -490,9 +519,33 @@ class CrewRemoveMemberUseCaseServicesTest {
 
 		@Override
 		public Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId) {
+			findByMeetingIdAndUserIdCallCount++;
 			return participantsById.values().stream()
 				.filter(participant -> meetingId.equals(participant.getMeetingId()) && userId.equals(participant.getUserId()))
 				.findFirst();
+		}
+
+		@Override
+		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+			Long crewId,
+			Long userId,
+			java.time.Instant updatedAt
+		) {
+			List<MeetingParticipant> targetParticipants = participantsById.values().stream()
+				.filter(participant -> userId.equals(participant.getUserId()))
+				.filter(participant -> participant.getStatus().representsJoined())
+				.filter(participant -> meetingRepository.findById(participant.getMeetingId())
+					.filter(meeting -> crewId.equals(meeting.getCrewId()))
+					.filter(meeting -> !userId.equals(meeting.getHostUserId()))
+					.filter(meeting -> List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED)
+						.contains(meeting.getStatus()))
+					.isPresent())
+				.toList();
+			targetParticipants.forEach(participant -> {
+				participant.leave();
+				setField(participant, "updatedAt", updatedAt);
+			});
+			return targetParticipants.size();
 		}
 
 		@Override
@@ -508,6 +561,10 @@ class CrewRemoveMemberUseCaseServicesTest {
 		@Override
 		public void delete(MeetingParticipant participant) {
 			participantsById.remove(participant.getId());
+		}
+
+		private int findByMeetingIdAndUserIdCallCount() {
+			return findByMeetingIdAndUserIdCallCount;
 		}
 	}
 

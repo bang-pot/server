@@ -1,5 +1,6 @@
 package com.bangpot.meeting.infrastructure;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -7,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,6 +30,23 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	}
 
 	List<Meeting> findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(Long crewId);
+
+	@Modifying(flushAutomatically = true)
+	@Query("""
+		update Meeting m
+		set m.status = :canceledStatus,
+		    m.updatedAt = :updatedAt
+		where m.crewId = :crewId
+		  and m.hostUserId = :hostUserId
+		  and m.status in :unfinishedStatuses
+		""")
+	int cancelUnfinishedByCrewIdAndHostUserId(
+		@Param("crewId") Long crewId,
+		@Param("hostUserId") Long hostUserId,
+		@Param("unfinishedStatuses") List<MeetingStatus> unfinishedStatuses,
+		@Param("canceledStatus") MeetingStatus canceledStatus,
+		@Param("updatedAt") Instant updatedAt
+	);
 
 	Optional<Meeting> findByIdAndCrewId(Long id, Long crewId);
 
