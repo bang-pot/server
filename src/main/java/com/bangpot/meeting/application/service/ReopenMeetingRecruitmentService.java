@@ -26,7 +26,7 @@ public class ReopenMeetingRecruitmentService implements ReopenMeetingRecruitment
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
-	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
+	private final MeetingRecruitmentCloseService meetingRecruitmentCloseService;
 
 	@Override
 	@Transactional
@@ -41,7 +41,7 @@ public class ReopenMeetingRecruitmentService implements ReopenMeetingRecruitment
 
 		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
-		meetingAutomaticTransitionService.apply(meeting);
+		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 		if (!meeting.getHostUserId().equals(command.userId())) {
 			throw new AccessDeniedException(HOST_ONLY_MESSAGE);
 		}

@@ -1,6 +1,7 @@
 package com.bangpot.meeting.application.port;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,10 @@ public interface MeetingRepository {
 	Meeting save(Meeting meeting);
 
 	List<Meeting> findAllByCrewId(Long crewId);
+
+	List<Meeting> findRecruitmentCloseTargets(LocalDateTime now, int limit);
+
+	List<Meeting> findCompletionTargets(LocalDateTime completionCutoff, int limit);
 
 	int cancelUnfinishedByCrewIdAndHostUserId(Long crewId, Long hostUserId, Instant updatedAt);
 

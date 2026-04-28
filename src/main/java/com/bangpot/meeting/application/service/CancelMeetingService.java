@@ -23,7 +23,7 @@ public class CancelMeetingService implements CancelMeetingUseCase {
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
-	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
+	private final MeetingRecruitmentCloseService meetingRecruitmentCloseService;
 
 	@Override
 	@Transactional
@@ -36,7 +36,7 @@ public class CancelMeetingService implements CancelMeetingUseCase {
 
 		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
-		meetingAutomaticTransitionService.apply(meeting);
+		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 
 		boolean isHost = meeting.getHostUserId().equals(command.userId());
 		boolean isLeader = crewMember.getRole() == com.bangpot.crew.domain.CrewRole.LEADER;

@@ -1,11 +1,11 @@
 package com.bangpot.meeting.application.service;
 
 import java.time.Clock;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 import org.springframework.stereotype.Service;
 
-import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingStatus;
@@ -14,26 +14,28 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class MeetingAutomaticTransitionService {
+public class MeetingCompletionService {
 
 	private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
 
 	private final MeetingRepository meetingRepository;
-	private final MeetingParticipantRepository meetingParticipantRepository;
 	private final Clock clock;
 
-	public Meeting apply(Meeting meeting) {
-		if (meeting.getStatus() == MeetingStatus.CANCELED || meeting.getStatus() == MeetingStatus.COMPLETED) {
-			return meeting;
+	public void completeTargets(int limit) {
+		for (Meeting meeting : meetingRepository.findCompletionTargets(now().minusHours(6), limit)) {
+			completeAndSaveIfNeeded(meeting);
 		}
+	}
 
+	public void completeAndSaveIfNeeded(Meeting meeting) {
 		MeetingStatus before = meeting.getStatus();
-		long joinedCount = meetingParticipantRepository.countByMeetingId(meeting.getId()) + 1L;
-		meeting.applyAutomaticTransition(clock.instant().atZone(BUSINESS_ZONE).toLocalDateTime(), joinedCount);
-
+		meeting.completeAutomatically(now());
 		if (before != meeting.getStatus()) {
 			meetingRepository.save(meeting);
 		}
-		return meeting;
+	}
+
+	private LocalDateTime now() {
+		return clock.instant().atZone(BUSINESS_ZONE).toLocalDateTime();
 	}
 }

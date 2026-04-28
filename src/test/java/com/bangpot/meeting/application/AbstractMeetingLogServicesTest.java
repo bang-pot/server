@@ -405,6 +405,36 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 
 		@Override
+		public List<Meeting> findRecruitmentCloseTargets(java.time.LocalDateTime now, int limit) {
+			return meetings.values().stream()
+				.filter(meeting -> meeting.getStatus() == com.bangpot.meeting.domain.MeetingStatus.RECRUITING)
+				.filter(meeting -> !startAt(meeting).isAfter(now))
+				.sorted(Comparator
+					.comparing(Meeting::getMeetingDate)
+					.thenComparing(Meeting::getMeetingTime)
+					.thenComparing(Meeting::getId))
+				.limit(limit)
+				.toList();
+		}
+
+		@Override
+		public List<Meeting> findCompletionTargets(java.time.LocalDateTime completionCutoff, int limit) {
+			return meetings.values().stream()
+				.filter(meeting -> meeting.getStatus() == com.bangpot.meeting.domain.MeetingStatus.RECRUITMENT_CLOSED)
+				.filter(meeting -> !startAt(meeting).isAfter(completionCutoff))
+				.sorted(Comparator
+					.comparing(Meeting::getMeetingDate)
+					.thenComparing(Meeting::getMeetingTime)
+					.thenComparing(Meeting::getId))
+				.limit(limit)
+				.toList();
+		}
+
+		private java.time.LocalDateTime startAt(Meeting meeting) {
+			return java.time.LocalDate.parse(meeting.getMeetingDate()).atTime(java.time.LocalTime.parse(meeting.getMeetingTime()));
+		}
+
+		@Override
 		public int cancelUnfinishedByCrewIdAndHostUserId(
 			Long crewId,
 			Long hostUserId,

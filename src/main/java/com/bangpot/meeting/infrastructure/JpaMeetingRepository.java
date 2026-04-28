@@ -1,6 +1,8 @@
 package com.bangpot.meeting.infrastructure;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +49,8 @@ class JpaMeetingRepository implements MeetingRepository {
 		MeetingStatus.RECRUITING,
 		MeetingStatus.RECRUITMENT_CLOSED
 	);
+	private static final DateTimeFormatter MEETING_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
+	private static final DateTimeFormatter MEETING_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
 	private final MeetingJpaRepository meetingJpaRepository;
 
@@ -58,6 +62,34 @@ class JpaMeetingRepository implements MeetingRepository {
 	@Override
 	public List<Meeting> findAllByCrewId(Long crewId) {
 		return meetingJpaRepository.findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(crewId);
+	}
+
+	@Override
+	public List<Meeting> findRecruitmentCloseTargets(LocalDateTime now, int limit) {
+		return meetingJpaRepository.findByStatusAndStartAtLessThanOrEqualOrderByStartAtAsc(
+			MeetingStatus.RECRUITING,
+			formatDate(now),
+			formatTime(now),
+			PageRequest.of(0, limit)
+		);
+	}
+
+	@Override
+	public List<Meeting> findCompletionTargets(LocalDateTime completionCutoff, int limit) {
+		return meetingJpaRepository.findByStatusAndStartAtLessThanOrEqualOrderByStartAtAsc(
+			MeetingStatus.RECRUITMENT_CLOSED,
+			formatDate(completionCutoff),
+			formatTime(completionCutoff),
+			PageRequest.of(0, limit)
+		);
+	}
+
+	private String formatDate(LocalDateTime dateTime) {
+		return dateTime.format(MEETING_DATE_FORMATTER);
+	}
+
+	private String formatTime(LocalDateTime dateTime) {
+		return dateTime.format(MEETING_TIME_FORMATTER);
 	}
 
 	@Override

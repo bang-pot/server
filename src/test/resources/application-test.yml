@@ -44,6 +44,9 @@ bangpot:
     slack:
       all-log-webhook-url: ""
       error-log-webhook-url: ""
+  meeting:
+    automatic-transition:
+      enabled: false
 
 management:
   endpoints:

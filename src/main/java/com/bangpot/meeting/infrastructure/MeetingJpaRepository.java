@@ -35,6 +35,28 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 
 	List<Meeting> findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(Long crewId);
 
+	List<Meeting> findByStatusInOrderByMeetingDateAscMeetingTimeAscIdAsc(
+		List<MeetingStatus> statuses,
+		Pageable pageable
+	);
+
+	@Query("""
+		select m
+		from Meeting m
+		where m.status = :status
+		  and (
+			m.meetingDate < :meetingDate
+			or (m.meetingDate = :meetingDate and m.meetingTime <= :meetingTime)
+		  )
+		order by m.meetingDate asc, m.meetingTime asc, m.id asc
+		""")
+	List<Meeting> findByStatusAndStartAtLessThanOrEqualOrderByStartAtAsc(
+		@Param("status") MeetingStatus status,
+		@Param("meetingDate") String meetingDate,
+		@Param("meetingTime") String meetingTime,
+		Pageable pageable
+	);
+
 	@Query("""
 		select new com.bangpot.meeting.domain.view.MeetingsAccessView(
 			c.id,

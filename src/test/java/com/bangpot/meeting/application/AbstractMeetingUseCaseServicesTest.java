@@ -35,10 +35,13 @@ import com.bangpot.meeting.application.service.GetMeetingDetailService;
 import com.bangpot.meeting.application.service.GetMeetingsService;
 import com.bangpot.meeting.application.service.JoinMeetingService;
 import com.bangpot.meeting.application.service.MeetingAccessService;
-import com.bangpot.meeting.application.service.MeetingAutomaticTransitionService;
+import com.bangpot.meeting.application.service.MeetingCompletionService;
+import com.bangpot.meeting.application.service.MeetingRecruitmentCloseService;
 import com.bangpot.meeting.application.service.RecordMeetingResultService;
 import com.bangpot.meeting.application.service.ReopenMeetingRecruitmentService;
 import com.bangpot.meeting.application.service.UpdateMeetingService;
+import com.bangpot.scheduler.meeting.MeetingCompletionScheduler;
+import com.bangpot.scheduler.meeting.MeetingRecruitmentCloseScheduler;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CloseMeetingRecruitmentUseCase;
@@ -52,6 +55,7 @@ import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.meeting.domain.view.MeetingsView;
@@ -73,7 +77,10 @@ abstract class AbstractMeetingUseCaseServicesTest {
 	protected MeetingAccessService meetingAccessService;
 	protected InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	protected MutableClock clock;
-	protected MeetingAutomaticTransitionService meetingAutomaticTransitionService;
+	protected MeetingRecruitmentCloseService meetingRecruitmentCloseService;
+	protected MeetingCompletionService meetingCompletionService;
+	protected MeetingRecruitmentCloseScheduler meetingRecruitmentCloseScheduler;
+	protected MeetingCompletionScheduler meetingCompletionScheduler;
 	protected CreateMeetingUseCase createMeetingUseCase;
 	protected GetMeetingsUseCase getMeetingsUseCase;
 	protected GetMeetingDetailUseCase getMeetingDetailUseCase;
@@ -103,11 +110,14 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		);
 		meetingAccessService = new MeetingAccessService(meetingQueryRepository);
 		clock = new MutableClock(NOW);
-		meetingAutomaticTransitionService = new MeetingAutomaticTransitionService(
+		meetingRecruitmentCloseService = new MeetingRecruitmentCloseService(
 			meetingRepository,
 			meetingParticipantRepository,
 			clock
 		);
+		meetingCompletionService = new MeetingCompletionService(meetingRepository, clock);
+		meetingRecruitmentCloseScheduler = new MeetingRecruitmentCloseScheduler(meetingRecruitmentCloseService);
+		meetingCompletionScheduler = new MeetingCompletionScheduler(meetingCompletionService);
 		createMeetingUseCase = new CreateMeetingService(completedUserAccessService, crewRepository, crewMemberRepository, meetingRepository);
 		getMeetingsUseCase = new GetMeetingsService(
 			completedUserAccessService,
@@ -125,7 +135,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			crewMemberRepository,
 			meetingRepository,
 			meetingParticipantRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		cancelMeetingParticipationUseCase = new CancelMeetingParticipationService(
 			completedUserAccessService,
@@ -139,42 +149,41 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		closeMeetingRecruitmentUseCase = new CloseMeetingRecruitmentService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		reopenMeetingRecruitmentUseCase = new ReopenMeetingRecruitmentService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		cancelMeetingUseCase = new CancelMeetingService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		completeMeetingUseCase = new CompleteMeetingService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRepository
 		);
 		recordMeetingResultUseCase = new RecordMeetingResultService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 	}
 
@@ -463,6 +472,36 @@ abstract class AbstractMeetingUseCaseServicesTest {
 					.thenComparing(Meeting::getMeetingTime)
 					.thenComparing(Meeting::getId))
 				.toList();
+		}
+
+		@Override
+		public List<Meeting> findRecruitmentCloseTargets(java.time.LocalDateTime now, int limit) {
+			return meetingsById.values().stream()
+				.filter(meeting -> meeting.getStatus() == MeetingStatus.RECRUITING)
+				.filter(meeting -> !startAt(meeting).isAfter(now))
+				.sorted(Comparator
+					.comparing(Meeting::getMeetingDate)
+					.thenComparing(Meeting::getMeetingTime)
+					.thenComparing(Meeting::getId))
+				.limit(limit)
+				.toList();
+		}
+
+		@Override
+		public List<Meeting> findCompletionTargets(java.time.LocalDateTime completionCutoff, int limit) {
+			return meetingsById.values().stream()
+				.filter(meeting -> meeting.getStatus() == MeetingStatus.RECRUITMENT_CLOSED)
+				.filter(meeting -> !startAt(meeting).isAfter(completionCutoff))
+				.sorted(Comparator
+					.comparing(Meeting::getMeetingDate)
+					.thenComparing(Meeting::getMeetingTime)
+					.thenComparing(Meeting::getId))
+				.limit(limit)
+				.toList();
+		}
+
+		private java.time.LocalDateTime startAt(Meeting meeting) {
+			return java.time.LocalDate.parse(meeting.getMeetingDate()).atTime(java.time.LocalTime.parse(meeting.getMeetingTime()));
 		}
 
 		@Override
