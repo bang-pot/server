@@ -735,7 +735,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		@Override
-		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+		public int leaveInactiveCrewMemberParticipations(
 			Long crewId,
 			Long userId,
 			java.time.Instant updatedAt

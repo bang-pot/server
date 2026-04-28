@@ -3,7 +3,9 @@ package com.bangpot.crew.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +69,11 @@ class CrewLeaveUseCaseServicesTest {
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository(meetingRepository);
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
 		CleanupMeetingsForInactiveCrewMemberUseCase cleanupMeetingsForInactiveCrewMemberUseCase =
-			new CleanupMeetingsForInactiveCrewMemberService(meetingRepository, meetingParticipantRepository);
+			new CleanupMeetingsForInactiveCrewMemberService(
+				meetingRepository,
+				meetingParticipantRepository,
+				Clock.fixed(NOW, ZoneId.of("UTC"))
+			);
 		leaveCrewUseCase = new LeaveCrewService(
 			completedUserAccessService,
 			crewRepository,
@@ -555,7 +561,7 @@ class CrewLeaveUseCaseServicesTest {
 		}
 
 		@Override
-		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+		public int leaveInactiveCrewMemberParticipations(
 			Long crewId,
 			Long userId,
 			java.time.Instant updatedAt

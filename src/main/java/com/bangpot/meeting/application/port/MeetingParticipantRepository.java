@@ -11,7 +11,7 @@ public interface MeetingParticipantRepository {
 
 	Optional<MeetingParticipant> findByMeetingIdAndUserId(Long meetingId, Long userId);
 
-	int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(Long crewId, Long userId, Instant updatedAt);
+	int leaveInactiveCrewMemberParticipations(Long crewId, Long userId, Instant updatedAt);
 
 	long countByMeetingId(Long meetingId);
 

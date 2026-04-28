@@ -33,7 +33,7 @@ interface MeetingParticipantJpaRepository extends JpaRepository<MeetingParticipa
 			  and m.status in :unfinishedMeetingStatuses
 		  )
 		""")
-	int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+	int leaveInactiveCrewMemberParticipations(
 		@Param("crewId") Long crewId,
 		@Param("userId") Long userId,
 		@Param("unfinishedMeetingStatuses") List<MeetingStatus> unfinishedMeetingStatuses,

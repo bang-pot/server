@@ -50,7 +50,7 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 		  )
 		order by m.meetingDate asc, m.meetingTime asc, m.id asc
 		""")
-	List<Meeting> findByStatusAndStartAtLessThanOrEqualOrderByStartAtAsc(
+	List<Meeting> findDueMeetingsByStatus(
 		@Param("status") MeetingStatus status,
 		@Param("meetingDate") String meetingDate,
 		@Param("meetingTime") String meetingTime,

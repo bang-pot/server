@@ -1,5 +1,6 @@
 package com.bangpot.meeting.application.service;
 
+import java.time.Clock;
 import java.time.Instant;
 
 import org.springframework.stereotype.Service;
@@ -17,17 +18,18 @@ public class CleanupMeetingsForInactiveCrewMemberService implements CleanupMeeti
 
 	private final MeetingRepository meetingRepository;
 	private final MeetingParticipantRepository meetingParticipantRepository;
+	private final Clock clock;
 
 	@Override
 	@Transactional
 	public void handle(InactiveCrewMember inactiveCrewMember) {
-		Instant cleanedAt = Instant.now();
+		Instant cleanedAt = clock.instant();
 		meetingRepository.cancelUnfinishedByCrewIdAndHostUserId(
 			inactiveCrewMember.crewId(),
 			inactiveCrewMember.userId(),
 			cleanedAt
 		);
-		meetingParticipantRepository.leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+		meetingParticipantRepository.leaveInactiveCrewMemberParticipations(
 			inactiveCrewMember.crewId(),
 			inactiveCrewMember.userId(),
 			cleanedAt

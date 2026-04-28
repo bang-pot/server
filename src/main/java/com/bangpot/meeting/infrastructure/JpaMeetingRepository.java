@@ -66,7 +66,7 @@ class JpaMeetingRepository implements MeetingRepository {
 
 	@Override
 	public List<Meeting> findRecruitmentCloseTargets(LocalDateTime now, int limit) {
-		return meetingJpaRepository.findByStatusAndStartAtLessThanOrEqualOrderByStartAtAsc(
+		return meetingJpaRepository.findDueMeetingsByStatus(
 			MeetingStatus.RECRUITING,
 			formatDate(now),
 			formatTime(now),
@@ -76,7 +76,7 @@ class JpaMeetingRepository implements MeetingRepository {
 
 	@Override
 	public List<Meeting> findCompletionTargets(LocalDateTime completionCutoff, int limit) {
-		return meetingJpaRepository.findByStatusAndStartAtLessThanOrEqualOrderByStartAtAsc(
+		return meetingJpaRepository.findDueMeetingsByStatus(
 			MeetingStatus.RECRUITMENT_CLOSED,
 			formatDate(completionCutoff),
 			formatTime(completionCutoff),
