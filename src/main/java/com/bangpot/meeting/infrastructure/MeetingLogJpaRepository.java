@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -15,9 +16,20 @@ import com.bangpot.meeting.domain.view.MeetingLogDetailView;
 import com.bangpot.meeting.domain.view.MyMeetingLogView;
 import com.bangpot.meeting.domain.view.MyMeetingLogsView;
 
+import jakarta.persistence.LockModeType;
+
 interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 
 	Optional<MeetingLog> findByIdAndDeletedAtIsNull(Long id);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		select log
+		from MeetingLog log
+		where log.id = :id
+		  and log.deletedAt is null
+		""")
+	Optional<MeetingLog> findActiveByIdForUpdate(@Param("id") Long id);
 
 	Optional<MeetingLog> findByMeetingIdAndAuthorUserIdAndDeletedAtIsNull(Long meetingId, Long authorUserId);
 

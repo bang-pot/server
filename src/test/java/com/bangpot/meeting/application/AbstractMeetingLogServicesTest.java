@@ -97,7 +97,8 @@ abstract class AbstractMeetingLogServicesTest {
 		updateMeetingLogUseCase = new UpdateMeetingLogService(
 			completedUserAccessService,
 			meetingLogRepository,
-			meetingLogPhotoRepository
+			meetingLogPhotoRepository,
+			Clock.fixed(NOW, ZoneOffset.UTC)
 		);
 		deleteMeetingLogUseCase = new DeleteMeetingLogService(
 			completedUserAccessService,
@@ -523,6 +524,7 @@ abstract class AbstractMeetingLogServicesTest {
 	protected static final class InMemoryMeetingLogRepository implements MeetingLogRepository {
 		private final Map<Long, MeetingLog> logs = new HashMap<>();
 		private long sequence = 1L;
+		private boolean findByIdForUpdateCalled;
 
 		@Override
 		public MeetingLog save(MeetingLog log) {
@@ -537,6 +539,20 @@ abstract class AbstractMeetingLogServicesTest {
 		public Optional<MeetingLog> findById(Long logId) {
 			return Optional.ofNullable(logs.get(logId))
 				.filter(log -> log.getDeletedAt() == null);
+		}
+
+		@Override
+		public Optional<MeetingLog> findByIdForUpdate(Long logId) {
+			findByIdForUpdateCalled = true;
+			return findById(logId);
+		}
+
+		void resetLockTracking() {
+			findByIdForUpdateCalled = false;
+		}
+
+		boolean findByIdForUpdateCalled() {
+			return findByIdForUpdateCalled;
 		}
 
 		@Override

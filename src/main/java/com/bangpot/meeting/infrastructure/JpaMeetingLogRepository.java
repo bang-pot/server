@@ -26,6 +26,11 @@ class JpaMeetingLogRepository implements MeetingLogRepository {
 	}
 
 	@Override
+	public Optional<MeetingLog> findByIdForUpdate(Long logId) {
+		return meetingLogJpaRepository.findActiveByIdForUpdate(logId);
+	}
+
+	@Override
 	public Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
 		return meetingLogJpaRepository.findByMeetingIdAndAuthorUserIdAndDeletedAtIsNull(meetingId, authorUserId);
 	}
