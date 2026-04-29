@@ -12,6 +12,8 @@ public interface MeetingLogRepository {
 
 	Optional<MeetingLog> findByIdForUpdate(Long logId);
 
+	Optional<MeetingLog> findActiveLogInCrewForUpdate(Long crewId, Long logId);
+
 	Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId);
 
 	boolean existsAnyByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId);

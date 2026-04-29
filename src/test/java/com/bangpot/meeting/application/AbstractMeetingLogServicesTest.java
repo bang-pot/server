@@ -76,7 +76,7 @@ abstract class AbstractMeetingLogServicesTest {
 		crewRepository = new InMemoryCrewRepository();
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
-		meetingLogRepository = new InMemoryMeetingLogRepository();
+		meetingLogRepository = new InMemoryMeetingLogRepository(meetingRepository);
 		meetingLogPhotoRepository = new InMemoryMeetingLogPhotoRepository();
 		meetingQueryRepository = new InMemoryMeetingQueryRepository(crewRepository, crewMemberRepository);
 		meetingAccessService = new MeetingAccessService(meetingQueryRepository);
@@ -104,8 +104,8 @@ abstract class AbstractMeetingLogServicesTest {
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository,
-			meetingLogRepository
+			meetingLogRepository,
+			Clock.fixed(NOW, ZoneOffset.UTC)
 		);
 		getMyMeetingLogUseCase = new GetMyMeetingLogService(
 			completedUserAccessService,
@@ -522,9 +522,14 @@ abstract class AbstractMeetingLogServicesTest {
 	}
 
 	protected static final class InMemoryMeetingLogRepository implements MeetingLogRepository {
+		private final InMemoryMeetingRepository meetingRepository;
 		private final Map<Long, MeetingLog> logs = new HashMap<>();
 		private long sequence = 1L;
 		private boolean findByIdForUpdateCalled;
+
+		private InMemoryMeetingLogRepository(InMemoryMeetingRepository meetingRepository) {
+			this.meetingRepository = meetingRepository;
+		}
 
 		@Override
 		public MeetingLog save(MeetingLog log) {
@@ -547,12 +552,25 @@ abstract class AbstractMeetingLogServicesTest {
 			return findById(logId);
 		}
 
+		@Override
+		public Optional<MeetingLog> findActiveLogInCrewForUpdate(Long crewId, Long logId) {
+			findByIdForUpdateCalled = true;
+			return findById(logId)
+				.filter(log -> meetingRepository.findById(log.getMeetingId())
+					.map(meeting -> meeting.getCrewId().equals(crewId))
+					.orElse(false));
+		}
+
 		void resetLockTracking() {
 			findByIdForUpdateCalled = false;
 		}
 
 		boolean findByIdForUpdateCalled() {
 			return findByIdForUpdateCalled;
+		}
+
+		Optional<MeetingLog> findAnyById(Long logId) {
+			return Optional.ofNullable(logs.get(logId));
 		}
 
 		@Override

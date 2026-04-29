@@ -31,6 +31,20 @@ interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 		""")
 	Optional<MeetingLog> findActiveByIdForUpdate(@Param("id") Long id);
 
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		select log
+		from MeetingLog log, Meeting meeting
+		where log.meetingId = meeting.id
+		  and log.id = :logId
+		  and meeting.crewId = :crewId
+		  and log.deletedAt is null
+		""")
+	Optional<MeetingLog> findActiveLogInCrewForUpdate(
+		@Param("crewId") Long crewId,
+		@Param("logId") Long logId
+	);
+
 	Optional<MeetingLog> findByMeetingIdAndAuthorUserIdAndDeletedAtIsNull(Long meetingId, Long authorUserId);
 
 	boolean existsByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId);

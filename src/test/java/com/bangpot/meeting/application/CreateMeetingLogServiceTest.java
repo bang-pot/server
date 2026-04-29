@@ -180,6 +180,11 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		}
 
 		@Override
+		public java.util.Optional<MeetingLog> findActiveLogInCrewForUpdate(Long crewId, Long logId) {
+			return delegate.findActiveLogInCrewForUpdate(crewId, logId);
+		}
+
+		@Override
 		public java.util.Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
 			return delegate.findByMeetingIdAndAuthorUserId(meetingId, authorUserId);
 		}

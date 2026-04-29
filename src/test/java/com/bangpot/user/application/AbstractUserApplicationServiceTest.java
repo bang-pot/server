@@ -1048,6 +1048,11 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public Optional<MeetingLog> findActiveLogInCrewForUpdate(Long crewId, Long logId) {
+			return findByIdForUpdate(logId);
+		}
+
+		@Override
 		public Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
 			return logsById.values().stream()
 				.filter(log -> meetingId.equals(log.getMeetingId()) && authorUserId.equals(log.getAuthorUserId()))
