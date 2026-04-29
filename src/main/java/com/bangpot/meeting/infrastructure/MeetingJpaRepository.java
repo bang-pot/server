@@ -16,6 +16,7 @@ import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingResult;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 import com.bangpot.meeting.domain.view.MeetingDetailView;
@@ -154,6 +155,27 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	);
 
 	Optional<Meeting> findByIdAndCrewId(Long id, Long crewId);
+
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+		update Meeting m
+		set m.result = :result,
+		    m.updatedAt = :updatedAt
+		where m.id = :meetingId
+		  and m.crewId = :crewId
+		  and m.hostUserId = :hostUserId
+		  and m.status = :completedStatus
+		  and m.result = :notRecordedResult
+		""")
+	int recordResultIfNotRecorded(
+		@Param("meetingId") Long meetingId,
+		@Param("crewId") Long crewId,
+		@Param("hostUserId") Long hostUserId,
+		@Param("completedStatus") MeetingStatus completedStatus,
+		@Param("notRecordedResult") MeetingResult notRecordedResult,
+		@Param("result") MeetingResult result,
+		@Param("updatedAt") Instant updatedAt
+	);
 
 	@Query("""
 		select new com.bangpot.meeting.domain.view.MyCalendarView$Item(

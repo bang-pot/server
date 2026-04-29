@@ -17,6 +17,7 @@ import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingResult;
+import com.bangpot.meeting.domain.MeetingStatus;
 
 class MeetingResultUseCaseServicesTest extends AbstractMeetingUseCaseServicesTest {
 
@@ -49,6 +50,27 @@ class MeetingResultUseCaseServicesTest extends AbstractMeetingUseCaseServicesTes
 	}
 
 	@Test
+	void updatesMeetingTimestampWhenRecordingResult() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+		meeting.closeRecruitment();
+		meeting.complete();
+		clock.setInstant(NOW.plusSeconds(120));
+
+		recordMeetingResultUseCase.handle(
+			RecordMeetingResultUseCase.Command.of(crew.getId(), meeting.getId(), host.getId(), "SUCCESS")
+		);
+
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getUpdatedAt)
+			.isEqualTo(NOW.plusSeconds(120));
+	}
+
+	@Test
 	void rejectsMeetingResultRecordWhenMeetingIsNotCompleted() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		authUserRepository.save(host);
@@ -61,6 +83,24 @@ class MeetingResultUseCaseServicesTest extends AbstractMeetingUseCaseServicesTes
 		assertThatThrownBy(() -> recordMeetingResultUseCase.handle(
 			RecordMeetingResultUseCase.Command.of(crew.getId(), meeting.getId(), host.getId(), "SUCCESS")
 		)).isInstanceOf(MeetingResultRecordNotAllowedException.class);
+	}
+
+	@Test
+	void doesNotCloseRecruitmentWhenRecordingResultBeforeMeetingCompletion() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-01", "19:30", 4, null, null, null, null
+		));
+
+		assertThatThrownBy(() -> recordMeetingResultUseCase.handle(
+			RecordMeetingResultUseCase.Command.of(crew.getId(), meeting.getId(), host.getId(), "SUCCESS")
+		)).isInstanceOf(MeetingResultRecordNotAllowedException.class);
+
+		assertThat(meetingRepository.findById(meeting.getId())).get().extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.RECRUITING);
 	}
 
 	@Test

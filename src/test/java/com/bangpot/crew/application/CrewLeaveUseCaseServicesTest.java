@@ -503,6 +503,17 @@ class CrewLeaveUseCaseServicesTest {
 		}
 
 		@Override
+		public int recordResultIfNotRecorded(
+			Long meetingId,
+			Long crewId,
+			Long hostUserId,
+			com.bangpot.meeting.domain.MeetingResult result,
+			java.time.Instant updatedAt
+		) {
+			return 0;
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return 0L;
 		}

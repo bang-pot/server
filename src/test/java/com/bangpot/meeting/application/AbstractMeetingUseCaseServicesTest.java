@@ -1,5 +1,6 @@
 package com.bangpot.meeting.application;
 
+import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -183,7 +184,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingRecruitmentCloseService
+			clock
 		);
 	}
 
@@ -526,6 +527,26 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		@Override
+		public int recordResultIfNotRecorded(
+			Long meetingId,
+			Long crewId,
+			Long hostUserId,
+			com.bangpot.meeting.domain.MeetingResult result,
+			java.time.Instant updatedAt
+		) {
+			return findByIdAndCrewId(meetingId, crewId)
+				.filter(meeting -> hostUserId.equals(meeting.getHostUserId()))
+				.filter(meeting -> meeting.getStatus() == MeetingStatus.COMPLETED)
+				.filter(meeting -> meeting.getResult() == com.bangpot.meeting.domain.MeetingResult.NOT_RECORDED)
+				.map(meeting -> {
+					meeting.recordResult(result);
+					setField(meeting, "updatedAt", updatedAt);
+					return 1;
+				})
+				.orElse(0);
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return 0L;
 		}
@@ -533,6 +554,16 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		@Override
 		public long countJoinedByUserId(Long userId) {
 			return 0L;
+		}
+	}
+
+	private static void setField(Object target, String fieldName, Object value) {
+		try {
+			Field field = target.getClass().getDeclaredField(fieldName);
+			field.setAccessible(true);
+			field.set(target, value);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(exception);
 		}
 	}
 
@@ -777,6 +808,10 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		@Override
 		public Instant instant() {
 			return instant;
+		}
+
+		void setInstant(Instant instant) {
+			this.instant = instant;
 		}
 	}
 }
