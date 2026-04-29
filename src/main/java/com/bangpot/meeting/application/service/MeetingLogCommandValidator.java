@@ -42,7 +42,7 @@ final class MeetingLogCommandValidator {
 		}
 
 		if (safePhotos.size() > MAX_PHOTO_COUNT) {
-			fieldErrors.add(new ApiErrorField("photos", "사진은 최대 5장까지만 첨부할 수 있습니다."));
+			fieldErrors.add(new ApiErrorField("photos", "사진은 최대 5개까지 첨부할 수 있습니다."));
 		}
 
 		for (int index = 0; index < safePhotos.size(); index++) {

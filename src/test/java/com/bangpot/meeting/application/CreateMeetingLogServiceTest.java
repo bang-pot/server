@@ -3,13 +3,20 @@ package com.bangpot.meeting.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Clock;
+import java.time.ZoneOffset;
+
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 
 import com.bangpot.meeting.application.exception.MeetingLogAlreadyExistsException;
 import com.bangpot.meeting.application.exception.MeetingLogRequestValidationException;
 import com.bangpot.meeting.application.exception.MeetingLogWriteNotAllowedException;
+import com.bangpot.meeting.application.port.MeetingLogRepository;
+import com.bangpot.meeting.application.service.CreateMeetingLogService;
 import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
+import com.bangpot.meeting.domain.MeetingLog;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 
 class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
@@ -30,6 +37,10 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
 		assertThat(result.logId()).isNotNull();
 		assertThat(result.meetingId()).isEqualTo(meeting.getId());
+		assertThat(meetingLogRepository.findById(result.logId()))
+			.get()
+			.extracting(MeetingLog::getCreatedAt, MeetingLog::getUpdatedAt)
+			.containsExactly(NOW, NOW);
 	}
 
 	@Test
@@ -111,6 +122,27 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 	}
 
 	@Test
+	void translatesDuplicateInsertRaceToDomainException() {
+		completedUser(10L, "host");
+		var meeting = completedMeeting(1L, 10L, "Deep Blue");
+		createMeetingLogUseCase = new CreateMeetingLogService(
+			completedUserAccessService,
+			meetingRepository,
+			meetingParticipantRepository,
+			new DuplicateInsertMeetingLogRepository(meetingLogRepository),
+			meetingLogPhotoRepository,
+			Clock.fixed(NOW, ZoneOffset.UTC)
+		);
+
+		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
+			meeting.getId(),
+			10L,
+			"동시에 작성된 방탈로그입니다.",
+			java.util.List.of()
+		))).isInstanceOf(MeetingLogAlreadyExistsException.class);
+	}
+
+	@Test
 	void validatesPhotoExtensionAndSizeAndCount() {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
@@ -128,5 +160,33 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/f.jpg", 1024L)
 			)
 		))).isInstanceOf(MeetingLogRequestValidationException.class);
+	}
+
+	private record DuplicateInsertMeetingLogRepository(MeetingLogRepository delegate) implements MeetingLogRepository {
+
+		@Override
+		public MeetingLog save(MeetingLog log) {
+			throw new DataIntegrityViolationException("uk_meeting_logs_meeting_author");
+		}
+
+		@Override
+		public java.util.Optional<MeetingLog> findById(Long logId) {
+			return delegate.findById(logId);
+		}
+
+		@Override
+		public java.util.Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return delegate.findByMeetingIdAndAuthorUserId(meetingId, authorUserId);
+		}
+
+		@Override
+		public boolean existsAnyByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return false;
+		}
+
+		@Override
+		public boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return delegate.existsDeletedByMeetingIdAndAuthorUserId(meetingId, authorUserId);
+		}
 	}
 }

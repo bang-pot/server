@@ -1,21 +1,28 @@
 package com.bangpot.meeting.application.service;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.meeting.application.exception.MeetingLogAlreadyExistsException;
+import com.bangpot.meeting.application.exception.MeetingLogWriteNotAllowedException;
+import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.port.MeetingLogPhotoRepository;
 import com.bangpot.meeting.application.port.MeetingLogRepository;
-import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
-import com.bangpot.meeting.domain.MeetingLog;
-import com.bangpot.meeting.domain.MeetingLogPhoto;
-import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.domain.Meeting;
-import com.bangpot.user.application.port.UserRepository;
+import com.bangpot.meeting.domain.MeetingLog;
+import com.bangpot.meeting.domain.MeetingLogPhoto;
+import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -24,33 +31,67 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 
+	private static final String COMPLETED_USER_REQUIRED_MESSAGE = "완료된 사용자만 방탈로그를 작성할 수 있습니다.";
+	private static final String PARTICIPATION_HISTORY_REQUIRED_MESSAGE = "완료된 모임에 참여한 사용자만 방탈로그를 작성할 수 있습니다.";
+	private static final Set<MeetingParticipationStatus> WRITABLE_HISTORY_STATUSES = Set.of(
+		MeetingParticipationStatus.JOINED,
+		MeetingParticipationStatus.PENDING,
+		MeetingParticipationStatus.APPROVED
+	);
+
 	private final CompletedUserAccessService completedUserAccessService;
 	private final MeetingRepository meetingRepository;
 	private final MeetingParticipantRepository meetingParticipantRepository;
 	private final MeetingLogRepository meetingLogRepository;
 	private final MeetingLogPhotoRepository meetingLogPhotoRepository;
-	private final UserRepository userRepository;
+	private final Clock clock;
 
 	@Override
+	@Transactional
 	public Result handle(Command command) {
-		completedUserAccessService.validateCompletedUser(command.userId(), "방탈로그 작성은 가입 완료 사용자만 가능합니다.");
+		completedUserAccessService.validateCompletedUser(command.userId(), COMPLETED_USER_REQUIRED_MESSAGE);
 		Meeting meeting = meetingRepository.findById(command.meetingId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
-		MeetingLogAccessPolicy.validateWritableMeeting(meeting);
-		MeetingLogAccessPolicy.validateParticipantHistory(meeting, command.userId(), meetingParticipantRepository);
+		validateWritableMeeting(meeting);
+		validateParticipantHistory(meeting, command.userId());
 		if (meetingLogRepository.existsAnyByMeetingIdAndAuthorUserId(command.meetingId(), command.userId())) {
 			throw new MeetingLogAlreadyExistsException(command.meetingId(), command.userId());
 		}
 
 		MeetingLogCommandValidator.validate(command.body(), command.photos());
-		userRepository.findById(command.userId()).orElseThrow(() -> new IllegalStateException("user not found"));
 
-		Instant now = Instant.now();
-		MeetingLog savedLog = meetingLogRepository.save(
-			MeetingLog.create(command.meetingId(), command.userId(), command.body(), now)
-		);
+		Instant now = clock.instant();
+		MeetingLog savedLog = saveLog(command, now);
 		meetingLogPhotoRepository.saveAll(toPhotos(savedLog.getId(), command.photos(), now));
 		return Result.of(savedLog.getId(), savedLog.getMeetingId());
+	}
+
+	private void validateWritableMeeting(Meeting meeting) {
+		if (meeting.getStatus() != MeetingStatus.COMPLETED) {
+			throw new MeetingLogWriteNotAllowedException(meeting.getId());
+		}
+	}
+
+	private void validateParticipantHistory(Meeting meeting, Long userId) {
+		if (meeting.getHostUserId().equals(userId)) {
+			return;
+		}
+		boolean hasHistory = meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), userId)
+			.map(participant -> WRITABLE_HISTORY_STATUSES.contains(participant.getStatus()))
+			.orElse(false);
+		if (!hasHistory) {
+			throw new AccessDeniedException(PARTICIPATION_HISTORY_REQUIRED_MESSAGE);
+		}
+	}
+
+	private MeetingLog saveLog(Command command, Instant now) {
+		try {
+			return meetingLogRepository.save(
+				MeetingLog.create(command.meetingId(), command.userId(), command.body(), now)
+			);
+		} catch (DataIntegrityViolationException exception) {
+			throw new MeetingLogAlreadyExistsException(command.meetingId(), command.userId(), exception);
+		}
 	}
 
 	private List<MeetingLogPhoto> toPhotos(Long logId, List<PhotoInput> photos, Instant now) {

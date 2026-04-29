@@ -17,7 +17,7 @@ class JpaMeetingLogRepository implements MeetingLogRepository {
 
 	@Override
 	public MeetingLog save(MeetingLog log) {
-		return meetingLogJpaRepository.save(log);
+		return meetingLogJpaRepository.saveAndFlush(log);
 	}
 
 	@Override

@@ -1,6 +1,8 @@
 package com.bangpot.meeting.application;
 
 import java.time.Instant;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -90,7 +92,7 @@ abstract class AbstractMeetingLogServicesTest {
 			meetingParticipantRepository,
 			meetingLogRepository,
 			meetingLogPhotoRepository,
-			userRepository
+			Clock.fixed(NOW, ZoneOffset.UTC)
 		);
 		updateMeetingLogUseCase = new UpdateMeetingLogService(
 			completedUserAccessService,
