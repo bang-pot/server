@@ -469,6 +469,16 @@ abstract class AbstractUserApplicationServiceTest {
 	protected static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
 
 		@Override
+		public com.bangpot.crew.domain.view.ExploreCrewCardsView findExploreCrewCardsView(
+			String keyword,
+			com.bangpot.crew.domain.ExploreCrewSort sort,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public java.util.Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
 			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
 			throw new UnsupportedOperationException();
@@ -541,14 +551,6 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
 			return PublicCrewPreviewView.of(List.of());
-		}
-
-		@Override
-		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
-			return com.bangpot.crew.domain.view.PublicCrewCardsView.of(
-				List.of(),
-				com.bangpot.crew.domain.view.PublicCrewCardsView.Page.of(page, size, false)
-			);
 		}
 
 		@Override

@@ -27,9 +27,9 @@ import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.ExploreCrewCardsView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
-import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
@@ -345,20 +345,150 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	);
 
 	@Query("""
-		select new com.bangpot.crew.domain.view.PublicCrewCardsView$Item(
+		select new com.bangpot.crew.domain.view.ExploreCrewCardsView$Item(
 			c.id,
 			c.name,
 			c.description,
-			c.imageUrl
+			c.imageUrl,
+			c.visibility,
+			leaderUser.nickname,
+			count(activeMember.id)
 		)
 		from Crew c
+		join CrewMember leaderMember
+		  on leaderMember.crewId = c.id
+		 and leaderMember.role = :leaderRole
+		 and leaderMember.status = :activeMemberStatus
+		join UserJpaEntity leaderUser
+		  on leaderUser.id = leaderMember.userId
+		left join CrewMember activeMember
+		  on activeMember.crewId = c.id
+		 and activeMember.status = :activeMemberStatus
 		where c.status = :activeCrewStatus
-		  and c.visibility = :publicVisibility
-		order by c.id asc
+		  and (
+			:keyword = ''
+			or lower(c.name) like lower(concat('%', :keyword, '%')) escape '\\'
+			or lower(leaderUser.nickname) like lower(concat('%', :keyword, '%')) escape '\\'
+		  )
+		group by c.id, c.name, c.description, c.imageUrl, c.visibility, c.createdAt, leaderUser.nickname
+		order by c.createdAt desc, c.id desc
 		""")
-	Slice<PublicCrewCardsView.Item> findPublicCrewCardItems(
+	Slice<ExploreCrewCardsView.Item> findExploreCrewCardItemsOrderByLatest(
+		@Param("keyword") String keyword,
 		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
-		@Param("publicVisibility") CrewVisibility publicVisibility,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		@Param("leaderRole") CrewRole leaderRole,
+		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.ExploreCrewCardsView$Item(
+			c.id,
+			c.name,
+			c.description,
+			c.imageUrl,
+			c.visibility,
+			leaderUser.nickname,
+			count(activeMember.id)
+		)
+		from Crew c
+		join CrewMember leaderMember
+		  on leaderMember.crewId = c.id
+		 and leaderMember.role = :leaderRole
+		 and leaderMember.status = :activeMemberStatus
+		join UserJpaEntity leaderUser
+		  on leaderUser.id = leaderMember.userId
+		left join CrewMember activeMember
+		  on activeMember.crewId = c.id
+		 and activeMember.status = :activeMemberStatus
+		where c.status = :activeCrewStatus
+		  and (
+			:keyword = ''
+			or lower(c.name) like lower(concat('%', :keyword, '%')) escape '\\'
+			or lower(leaderUser.nickname) like lower(concat('%', :keyword, '%')) escape '\\'
+		  )
+		group by c.id, c.name, c.description, c.imageUrl, c.visibility, c.createdAt, leaderUser.nickname
+		order by c.createdAt asc, c.id asc
+		""")
+	Slice<ExploreCrewCardsView.Item> findExploreCrewCardItemsOrderByOldest(
+		@Param("keyword") String keyword,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		@Param("leaderRole") CrewRole leaderRole,
+		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.ExploreCrewCardsView$Item(
+			c.id,
+			c.name,
+			c.description,
+			c.imageUrl,
+			c.visibility,
+			leaderUser.nickname,
+			count(activeMember.id)
+		)
+		from Crew c
+		join CrewMember leaderMember
+		  on leaderMember.crewId = c.id
+		 and leaderMember.role = :leaderRole
+		 and leaderMember.status = :activeMemberStatus
+		join UserJpaEntity leaderUser
+		  on leaderUser.id = leaderMember.userId
+		left join CrewMember activeMember
+		  on activeMember.crewId = c.id
+		 and activeMember.status = :activeMemberStatus
+		where c.status = :activeCrewStatus
+		  and (
+			:keyword = ''
+			or lower(c.name) like lower(concat('%', :keyword, '%')) escape '\\'
+			or lower(leaderUser.nickname) like lower(concat('%', :keyword, '%')) escape '\\'
+		  )
+		group by c.id, c.name, c.description, c.imageUrl, c.visibility, c.createdAt, leaderUser.nickname
+		order by count(activeMember.id) desc, c.createdAt desc, c.id desc
+		""")
+	Slice<ExploreCrewCardsView.Item> findExploreCrewCardItemsOrderByMemberCountDesc(
+		@Param("keyword") String keyword,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		@Param("leaderRole") CrewRole leaderRole,
+		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.crew.domain.view.ExploreCrewCardsView$Item(
+			c.id,
+			c.name,
+			c.description,
+			c.imageUrl,
+			c.visibility,
+			leaderUser.nickname,
+			count(activeMember.id)
+		)
+		from Crew c
+		join CrewMember leaderMember
+		  on leaderMember.crewId = c.id
+		 and leaderMember.role = :leaderRole
+		 and leaderMember.status = :activeMemberStatus
+		join UserJpaEntity leaderUser
+		  on leaderUser.id = leaderMember.userId
+		left join CrewMember activeMember
+		  on activeMember.crewId = c.id
+		 and activeMember.status = :activeMemberStatus
+		where c.status = :activeCrewStatus
+		  and (
+			:keyword = ''
+			or lower(c.name) like lower(concat('%', :keyword, '%')) escape '\\'
+			or lower(leaderUser.nickname) like lower(concat('%', :keyword, '%')) escape '\\'
+		  )
+		group by c.id, c.name, c.description, c.imageUrl, c.visibility, c.createdAt, leaderUser.nickname
+		order by count(activeMember.id) asc, c.createdAt desc, c.id desc
+		""")
+	Slice<ExploreCrewCardsView.Item> findExploreCrewCardItemsOrderByMemberCountAsc(
+		@Param("keyword") String keyword,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
+		@Param("leaderRole") CrewRole leaderRole,
 		Pageable pageable
 	);
 

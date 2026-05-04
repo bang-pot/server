@@ -34,9 +34,9 @@ import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
+import com.bangpot.crew.application.usecase.GetExploreCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.GetMeetingCreateCrewsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
-import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
@@ -53,9 +53,9 @@ import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.ExploreCrewCardsView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
-import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 @ActiveProfiles("test")
@@ -74,7 +74,7 @@ class CrewControllerTest {
 	private GetCrewJoinViewUseCase getCrewJoinViewUseCase;
 
 	@MockitoBean
-	private GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
+	private GetExploreCrewCardsUseCase getExploreCrewCardsUseCase;
 
 	@MockitoBean
 	private GetCrewHubUseCase getCrewHubUseCase;
@@ -253,30 +253,38 @@ class CrewControllerTest {
 	}
 
 	@Test
-	void returnsPublicCrewCardsForCardList() throws Exception {
-		when(getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(1, 10)))
-			.thenReturn(PublicCrewCardsView.of(
-				List.of(
-					PublicCrewCardsView.Item.of(1L, "Crew Alpha", "public crew", null),
-					PublicCrewCardsView.Item.of(2L, "Crew Beta", "night runners", "https://image.example/beta.png")
-				),
-				PublicCrewCardsView.Page.of(1, 10, true)
+	void returnsExploreCrewCardsForGuestUser() throws Exception {
+		when(getExploreCrewCardsUseCase.handle(GetExploreCrewCardsUseCase.Query.of(
+			0,
+			20,
+			"bang",
+			com.bangpot.crew.domain.ExploreCrewSort.LATEST
+		)))
+			.thenReturn(ExploreCrewCardsView.of(
+				List.of(ExploreCrewCardsView.Item.of(
+					1L,
+					"Bang Escape",
+					"weekend crew",
+					null,
+					CrewVisibility.PRIVATE,
+					"leader-pot",
+					12L
+				)),
+				ExploreCrewCardsView.Page.of(0, 20, false)
 			));
 
-		mockMvc.perform(get("/api/crews/public")
-				.param("page", "1")
-				.param("size", "10"))
+		mockMvc.perform(get("/api/crews/explore")
+				.param("keyword", "bang"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items[0].crewId").value(1))
-			.andExpect(jsonPath("$.items[0].name").value("Crew Alpha"))
-			.andExpect(jsonPath("$.items[0].description").value("public crew"))
-			.andExpect(jsonPath("$.items[0].visibility").doesNotExist())
-			.andExpect(jsonPath("$.items[0].imageUrl").doesNotExist())
-			.andExpect(jsonPath("$.items[1].crewId").value(2))
-			.andExpect(jsonPath("$.items[1].imageUrl").value("https://image.example/beta.png"))
-			.andExpect(jsonPath("$.pageInfo.page").value(1))
-			.andExpect(jsonPath("$.pageInfo.size").value(10))
-			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
+			.andExpect(jsonPath("$.items[0].name").value("Bang Escape"))
+			.andExpect(jsonPath("$.items[0].description").value("weekend crew"))
+			.andExpect(jsonPath("$.items[0].visibility").value("PRIVATE"))
+			.andExpect(jsonPath("$.items[0].leaderNickname").value("leader-pot"))
+			.andExpect(jsonPath("$.items[0].memberCount").value(12))
+			.andExpect(jsonPath("$.pageInfo.page").value(0))
+			.andExpect(jsonPath("$.pageInfo.size").value(20))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
 	}
 
 	@Test

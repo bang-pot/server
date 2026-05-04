@@ -26,9 +26,9 @@ import com.bangpot.crew.application.usecase.GetCrewJoinViewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
+import com.bangpot.crew.application.usecase.GetExploreCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.GetMeetingCreateCrewsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
-import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
 import com.bangpot.crew.application.usecase.RemoveCrewMemberUseCase;
@@ -52,7 +52,7 @@ class CrewController {
 
 	private final CreateCrewUseCase createCrewUseCase;
 	private final GetCrewJoinViewUseCase getCrewJoinViewUseCase;
-	private final GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
+	private final GetExploreCrewCardsUseCase getExploreCrewCardsUseCase;
 	private final GetCrewHubUseCase getCrewHubUseCase;
 	private final GetCrewMembersUseCase getCrewMembersUseCase;
 	private final GetMeetingCreateCrewsUseCase getMeetingCreateCrewsUseCase;
@@ -83,14 +83,20 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(result));
 	}
 
-	@GetMapping("/public")
-	ResponseEntity<CrewDto.PublicCrewCardsResponse> getPublicCrewCards(
+	@GetMapping("/explore")
+	ResponseEntity<CrewDto.ExploreCrewCardsResponse> getExploreCrewCards(
 		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
 		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.")
-		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size
+		@Max(value = 50, message = "size는 50 이하여야 합니다.") int size,
+		@RequestParam(required = false) String keyword,
+		@RequestParam(value = "sort", defaultValue = "LATEST")
+		@Pattern(
+			regexp = "LATEST|OLDEST|MEMBER_COUNT_DESC|MEMBER_COUNT_ASC",
+			message = "sort는 LATEST, OLDEST, MEMBER_COUNT_DESC, MEMBER_COUNT_ASC 중 하나여야 합니다."
+		) String sort
 	) {
-		return ResponseEntity.ok(CrewDtoMapper.toPublicCardResponse(
-			getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(page, size))
+		return ResponseEntity.ok(CrewDtoMapper.toExploreCardResponse(
+			getExploreCrewCardsUseCase.handle(CrewDtoMapper.toExploreQuery(page, size, keyword, sort))
 		));
 	}
 

@@ -26,14 +26,6 @@ final class CrewDto {
 	record CreateCrewResponse(Long crewId, String name, CrewRole myRole) {
 	}
 
-	record PublicCrewCardResponse(
-		Long crewId,
-		String name,
-		String description,
-		String imageUrl
-	) {
-	}
-
 	record PageInfoResponse(
 		int page,
 		int size,
@@ -41,8 +33,19 @@ final class CrewDto {
 	) {
 	}
 
-	record PublicCrewCardsResponse(
-		java.util.List<PublicCrewCardResponse> items,
+	record ExploreCrewCardResponse(
+		Long crewId,
+		String name,
+		String description,
+		String imageUrl,
+		String visibility,
+		String leaderNickname,
+		Long memberCount
+	) {
+	}
+
+	record ExploreCrewCardsResponse(
+		java.util.List<ExploreCrewCardResponse> items,
 		PageInfoResponse pageInfo
 	) {
 	}

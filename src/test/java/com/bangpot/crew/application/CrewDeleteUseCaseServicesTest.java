@@ -27,10 +27,8 @@ import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.application.service.DeleteCrewService;
 import com.bangpot.crew.application.service.GetCrewHubService;
-import com.bangpot.crew.application.service.GetPublicCrewCardsService;
 import com.bangpot.crew.application.usecase.DeleteCrewUseCase;
 import com.bangpot.crew.application.usecase.GetCrewHubUseCase;
-import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewJoinRequest;
 import com.bangpot.crew.domain.CrewJoinRequestStatus;
@@ -57,7 +55,6 @@ class CrewDeleteUseCaseServicesTest {
 	private InMemoryMeetingRepository meetingRepository;
 	private DeleteCrewUseCase deleteCrewUseCase;
 	private GetCrewHubUseCase getCrewHubUseCase;
-	private GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 
 	@BeforeEach
 	void setUp() {
@@ -81,11 +78,6 @@ class CrewDeleteUseCaseServicesTest {
 				new InMemoryCrewJoinRequestRepository()
 			)
 		);
-		getPublicCrewCardsUseCase = new GetPublicCrewCardsService(new InMemoryCrewQueryRepository(
-			crewRepository,
-			crewMemberRepository,
-			new InMemoryCrewJoinRequestRepository()
-		));
 	}
 
 	@Test
@@ -108,7 +100,6 @@ class CrewDeleteUseCaseServicesTest {
 		assertThat(crewMemberRepository.findAnyByCrewIdAndUserId(crew.getId(), leader.getId())).get()
 			.extracting(CrewMember::getStatus)
 			.isEqualTo(CrewMemberStatus.LEFT);
-		assertThat(getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(0, 20)).items()).isEmpty();
 		assertThatThrownBy(() -> getCrewHubUseCase.handle(GetCrewHubUseCase.Query.of(crew.getId(), leader.getId())))
 			.isInstanceOf(CrewNotFoundException.class);
 	}
@@ -558,6 +549,16 @@ class CrewDeleteUseCaseServicesTest {
 	private static final class InMemoryCrewQueryRepository implements com.bangpot.crew.application.port.CrewQueryRepository {
 
 		@Override
+		public com.bangpot.crew.domain.view.ExploreCrewCardsView findExploreCrewCardsView(
+			String keyword,
+			com.bangpot.crew.domain.ExploreCrewSort sort,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public java.util.Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
 			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
 			throw new UnsupportedOperationException();
@@ -656,24 +657,6 @@ class CrewDeleteUseCaseServicesTest {
 		@Override
 		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
 			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
-			List<com.bangpot.crew.domain.view.PublicCrewCardsView.Item> items = crewRepository.findPublicCrews().stream()
-				.map(crew -> com.bangpot.crew.domain.view.PublicCrewCardsView.Item.of(
-					crew.getId(),
-					crew.getName(),
-					crew.getDescription(),
-					crew.getImageUrl()
-				))
-				.toList();
-			int fromIndex = Math.min(page * size, items.size());
-			int toIndex = Math.min(fromIndex + size, items.size());
-			return com.bangpot.crew.domain.view.PublicCrewCardsView.of(
-				items.subList(fromIndex, toIndex),
-				com.bangpot.crew.domain.view.PublicCrewCardsView.Page.of(page, size, toIndex < items.size())
-			);
 		}
 
 		@Override

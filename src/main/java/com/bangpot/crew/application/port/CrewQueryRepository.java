@@ -3,6 +3,7 @@ package com.bangpot.crew.application.port;
 import java.util.List;
 import java.util.Optional;
 
+import com.bangpot.crew.domain.ExploreCrewSort;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewInviteCandidateAccessView;
 import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
@@ -10,9 +11,9 @@ import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.ExploreCrewCardsView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
-import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
@@ -44,7 +45,7 @@ public interface CrewQueryRepository {
 
 	PublicCrewPreviewView findPublicCrewPreviewView(int limit);
 
-	PublicCrewCardsView findPublicCrewCardsView(int page, int size);
+	ExploreCrewCardsView findExploreCrewCardsView(String keyword, ExploreCrewSort sort, int page, int size);
 
 	long countActiveByMemberUserId(Long userId);
 
