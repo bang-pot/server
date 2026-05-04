@@ -369,6 +369,16 @@ class CrewInviteUseCaseServicesTest {
 
 	private static final class InMemoryCrewQueryRepository implements CrewQueryRepository {
 
+		@Override
+		public com.bangpot.crew.domain.view.ExploreCrewCardsView findExploreCrewCardsView(
+			String keyword,
+			com.bangpot.crew.domain.ExploreCrewSort sort,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
 		private final InMemoryUserRepository userRepository;
 		private final InMemoryCrewRepository crewRepository;
 		private final InMemoryCrewMemberRepository crewMemberRepository;
@@ -475,11 +485,6 @@ class CrewInviteUseCaseServicesTest {
 
 		@Override
 		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
 			throw new UnsupportedOperationException();
 		}
 

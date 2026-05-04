@@ -16,6 +16,7 @@ import com.bangpot.crew.application.usecase.GetCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.usecase.GetCrewMembersUseCase;
 import com.bangpot.crew.application.usecase.GetCrewPoliciesUseCase;
 import com.bangpot.crew.application.usecase.GetCrewScheduleUseCase;
+import com.bangpot.crew.application.usecase.GetExploreCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.GetPendingCrewJoinRequestsUseCase;
 import com.bangpot.crew.application.exception.CrewScheduleRequestValidationException;
 import com.bangpot.crew.application.usecase.LeaveCrewUseCase;
@@ -24,15 +25,16 @@ import com.bangpot.crew.application.usecase.RejectCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.TransferCrewLeadershipUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
+import com.bangpot.crew.domain.ExploreCrewSort;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
 import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.crew.domain.view.CrewJoinRequestsView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.ExploreCrewCardsView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.PendingCrewJoinRequestsView;
-import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
 final class CrewDtoMapper {
@@ -54,14 +56,21 @@ final class CrewDtoMapper {
 		return new CrewDto.CreateCrewResponse(result.crewId(), result.name(), result.myRole());
 	}
 
-	static CrewDto.PublicCrewCardsResponse toPublicCardResponse(PublicCrewCardsView view) {
-		return new CrewDto.PublicCrewCardsResponse(
+	static GetExploreCrewCardsUseCase.Query toExploreQuery(int page, int size, String keyword, String sort) {
+		return GetExploreCrewCardsUseCase.Query.of(page, size, keyword, ExploreCrewSort.from(sort));
+	}
+
+	static CrewDto.ExploreCrewCardsResponse toExploreCardResponse(ExploreCrewCardsView view) {
+		return new CrewDto.ExploreCrewCardsResponse(
 			view.items().stream()
-				.map(item -> new CrewDto.PublicCrewCardResponse(
+				.map(item -> new CrewDto.ExploreCrewCardResponse(
 					item.crewId(),
 					item.name(),
 					item.description(),
-					item.imageUrl()
+					item.imageUrl(),
+					item.visibility().name(),
+					item.leaderNickname(),
+					item.memberCount()
 				))
 				.toList(),
 			new CrewDto.PageInfoResponse(

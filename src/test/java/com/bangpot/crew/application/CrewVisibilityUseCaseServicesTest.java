@@ -23,10 +23,8 @@ import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
-import com.bangpot.crew.application.service.GetPublicCrewCardsService;
 import com.bangpot.crew.application.service.RequestCrewJoinService;
 import com.bangpot.crew.application.service.UpdateCrewVisibilityService;
-import com.bangpot.crew.application.usecase.GetPublicCrewCardsUseCase;
 import com.bangpot.crew.application.usecase.RequestCrewJoinUseCase;
 import com.bangpot.crew.application.usecase.UpdateCrewVisibilityUseCase;
 import com.bangpot.crew.domain.Crew;
@@ -50,7 +48,6 @@ class CrewVisibilityUseCaseServicesTest {
 	private InMemoryCrewMemberRepository crewMemberRepository;
 	private InMemoryCrewJoinRequestRepository crewJoinRequestRepository;
 	private UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
-	private GetPublicCrewCardsUseCase getPublicCrewCardsUseCase;
 	private RequestCrewJoinUseCase requestCrewJoinUseCase;
 
 	@BeforeEach
@@ -65,7 +62,6 @@ class CrewVisibilityUseCaseServicesTest {
 			crewRepository,
 			crewMemberRepository
 		);
-		getPublicCrewCardsUseCase = new GetPublicCrewCardsService(new InMemoryCrewQueryRepository(crewRepository));
 		requestCrewJoinUseCase = new RequestCrewJoinService(
 			new CompletedUserAccessService(userRepository),
 			crewRepository,
@@ -92,7 +88,6 @@ class CrewVisibilityUseCaseServicesTest {
 
 		assertThat(result.crewId()).isEqualTo(crew.getId());
 		assertThat(result.visibility()).isEqualTo("PRIVATE");
-		assertThat(getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(0, 20)).items()).isEmpty();
 		assertThat(crewJoinRequestRepository.findPendingByCrewId(crew.getId())).hasSize(1);
 		assertThatThrownBy(() -> requestCrewJoinUseCase.handle(
 			RequestCrewJoinUseCase.Command.of(crew.getId(), requester.getId(), "new join")
@@ -113,9 +108,6 @@ class CrewVisibilityUseCaseServicesTest {
 		);
 
 		assertThat(result.visibility()).isEqualTo("PUBLIC");
-		assertThat(getPublicCrewCardsUseCase.handle(GetPublicCrewCardsUseCase.Query.of(0, 20)).items())
-			.extracting(com.bangpot.crew.domain.view.PublicCrewCardsView.Item::crewId)
-			.containsExactly(crew.getId());
 		RequestCrewJoinUseCase.Result joinResult = requestCrewJoinUseCase.handle(
 			RequestCrewJoinUseCase.Command.of(crew.getId(), requester.getId(), "join please")
 		);
@@ -347,6 +339,16 @@ class CrewVisibilityUseCaseServicesTest {
 	private static final class InMemoryCrewQueryRepository implements com.bangpot.crew.application.port.CrewQueryRepository {
 
 		@Override
+		public com.bangpot.crew.domain.view.ExploreCrewCardsView findExploreCrewCardsView(
+			String keyword,
+			com.bangpot.crew.domain.ExploreCrewSort sort,
+			int page,
+			int size
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public Optional<com.bangpot.crew.domain.view.CrewInviteCandidateAccessView>
 			findCrewInviteCandidateAccessByCrewIdAndUserId(Long crewId, Long userId) {
 			throw new UnsupportedOperationException();
@@ -422,24 +424,6 @@ class CrewVisibilityUseCaseServicesTest {
 		@Override
 		public com.bangpot.crew.domain.view.PublicCrewPreviewView findPublicCrewPreviewView(int limit) {
 			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public com.bangpot.crew.domain.view.PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
-			List<com.bangpot.crew.domain.view.PublicCrewCardsView.Item> items = crewRepository.findPublicCrews().stream()
-				.map(crew -> com.bangpot.crew.domain.view.PublicCrewCardsView.Item.of(
-					crew.getId(),
-					crew.getName(),
-					crew.getDescription(),
-					crew.getImageUrl()
-				))
-				.toList();
-			int fromIndex = Math.min(page * size, items.size());
-			int toIndex = Math.min(fromIndex + size, items.size());
-			return com.bangpot.crew.domain.view.PublicCrewCardsView.of(
-				items.subList(fromIndex, toIndex),
-				com.bangpot.crew.domain.view.PublicCrewCardsView.Page.of(page, size, toIndex < items.size())
-			);
 		}
 
 		@Override

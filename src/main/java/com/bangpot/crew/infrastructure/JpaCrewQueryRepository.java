@@ -15,6 +15,7 @@ import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.crew.domain.ExploreCrewSort;
 import com.bangpot.crew.domain.view.CrewHubView;
 import com.bangpot.crew.domain.view.CrewInviteCandidateAccessView;
 import com.bangpot.crew.domain.view.CrewInviteCandidatesView;
@@ -22,9 +23,9 @@ import com.bangpot.crew.domain.view.CrewJoinView;
 import com.bangpot.crew.domain.view.CrewMemberAccessView;
 import com.bangpot.crew.domain.view.CrewMembersView;
 import com.bangpot.crew.domain.view.CrewPoliciesView;
+import com.bangpot.crew.domain.view.ExploreCrewCardsView;
 import com.bangpot.crew.domain.view.MeetingCreateCrewsView;
 import com.bangpot.crew.domain.view.MyCrewsView;
-import com.bangpot.crew.domain.view.PublicCrewCardsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.user.domain.view.MyWithdrawalCheckView;
 
@@ -179,16 +180,63 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 	}
 
 	@Override
-	public PublicCrewCardsView findPublicCrewCardsView(int page, int size) {
-		Slice<PublicCrewCardsView.Item> slice = crewJpaRepository.findPublicCrewCardItems(
-			CrewStatus.ACTIVE,
-			CrewVisibility.PUBLIC,
-			PageRequest.of(page, size)
-		);
-		return PublicCrewCardsView.of(
+	public ExploreCrewCardsView findExploreCrewCardsView(String keyword, ExploreCrewSort sort, int page, int size) {
+		String escapedKeyword = escapeLikeKeyword(keyword);
+		Slice<ExploreCrewCardsView.Item> slice = findExploreCrewCardItems(escapedKeyword, sort, page, size);
+		return ExploreCrewCardsView.of(
 			slice.getContent(),
-			PublicCrewCardsView.Page.of(page, size, slice.hasNext())
+			ExploreCrewCardsView.Page.of(page, size, slice.hasNext())
 		);
+	}
+
+	private Slice<ExploreCrewCardsView.Item> findExploreCrewCardItems(
+		String keyword,
+		ExploreCrewSort sort,
+		int page,
+		int size
+	) {
+		ExploreCrewSort normalizedSort = sort == null ? ExploreCrewSort.LATEST : sort;
+		PageRequest pageRequest = PageRequest.of(page, size);
+		return switch (normalizedSort) {
+			case LATEST -> crewJpaRepository.findExploreCrewCardItemsOrderByLatest(
+				keyword,
+				CrewStatus.ACTIVE,
+				CrewMemberStatus.ACTIVE,
+				CrewRole.LEADER,
+				pageRequest
+			);
+			case OLDEST -> crewJpaRepository.findExploreCrewCardItemsOrderByOldest(
+				keyword,
+				CrewStatus.ACTIVE,
+				CrewMemberStatus.ACTIVE,
+				CrewRole.LEADER,
+				pageRequest
+			);
+			case MEMBER_COUNT_DESC -> crewJpaRepository.findExploreCrewCardItemsOrderByMemberCountDesc(
+				keyword,
+				CrewStatus.ACTIVE,
+				CrewMemberStatus.ACTIVE,
+				CrewRole.LEADER,
+				pageRequest
+			);
+			case MEMBER_COUNT_ASC -> crewJpaRepository.findExploreCrewCardItemsOrderByMemberCountAsc(
+				keyword,
+				CrewStatus.ACTIVE,
+				CrewMemberStatus.ACTIVE,
+				CrewRole.LEADER,
+				pageRequest
+			);
+		};
+	}
+
+	private String escapeLikeKeyword(String keyword) {
+		if (keyword == null) {
+			return "";
+		}
+		return keyword
+			.replace("\\", "\\\\")
+			.replace("%", "\\%")
+			.replace("_", "\\_");
 	}
 
 	@Override
