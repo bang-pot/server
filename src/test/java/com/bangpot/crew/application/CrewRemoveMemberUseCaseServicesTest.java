@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.lang.reflect.Field;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,7 +70,11 @@ class CrewRemoveMemberUseCaseServicesTest {
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository(meetingRepository);
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
 		CleanupMeetingsForInactiveCrewMemberUseCase cleanupMeetingsForInactiveCrewMemberUseCase =
-			new CleanupMeetingsForInactiveCrewMemberService(meetingRepository, meetingParticipantRepository);
+			new CleanupMeetingsForInactiveCrewMemberService(
+				meetingRepository,
+				meetingParticipantRepository,
+				Clock.fixed(NOW, ZoneId.of("UTC"))
+			);
 		removeCrewMemberUseCase = new RemoveCrewMemberService(
 			completedUserAccessService,
 			crewRepository,
@@ -449,6 +455,16 @@ class CrewRemoveMemberUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Meeting> findRecruitmentCloseTargets(java.time.LocalDateTime now, int limit) {
+			return List.of();
+		}
+
+		@Override
+		public List<Meeting> findCompletionTargets(java.time.LocalDateTime completionCutoff, int limit) {
+			return List.of();
+		}
+
+		@Override
 		public int cancelUnfinishedByCrewIdAndHostUserId(
 			Long crewId,
 			Long hostUserId,
@@ -476,6 +492,17 @@ class CrewRemoveMemberUseCaseServicesTest {
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return Optional.ofNullable(meetingsById.get(meetingId))
 				.filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public int recordResultIfNotRecorded(
+			Long meetingId,
+			Long crewId,
+			Long hostUserId,
+			com.bangpot.meeting.domain.MeetingResult result,
+			java.time.Instant updatedAt
+		) {
+			return 0;
 		}
 
 		@Override
@@ -522,7 +549,7 @@ class CrewRemoveMemberUseCaseServicesTest {
 		}
 
 		@Override
-		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+		public int leaveInactiveCrewMemberParticipations(
 			Long crewId,
 			Long userId,
 			java.time.Instant updatedAt

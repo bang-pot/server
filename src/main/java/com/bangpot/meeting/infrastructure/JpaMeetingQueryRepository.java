@@ -2,19 +2,31 @@ package com.bangpot.meeting.infrastructure;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
+import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
+import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -33,13 +45,14 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 		MeetingStatus.CANCELED
 	);
 
-	private static final List<MeetingParticipationStatus> JOINED_STATUSES = java.util.Arrays.stream(
+	private static final List<MeetingParticipationStatus> JOINED_STATUSES = Arrays.stream(
 		MeetingParticipationStatus.values()
 	)
 		.filter(MeetingParticipationStatus::representsJoined)
 		.toList();
 
 	private final MeetingJpaRepository meetingJpaRepository;
+	private final MeetingGalleryJpaRepository meetingGalleryJpaRepository;
 
 	@Override
 	public MyCalendarView findMyCalendarViewByUserId(Long userId) {
@@ -70,7 +83,7 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 		}
 
 		List<MyCalendarView.Item> items = new ArrayList<>(uniqueItemsByMeetingId.values());
-		items.sort(java.util.Comparator
+		items.sort(Comparator
 			.comparing(MyCalendarView.Item::date)
 			.thenComparing(MyCalendarView.Item::time)
 			.thenComparing(MyCalendarView.Item::meetingId));
@@ -144,6 +157,90 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 	}
 
 	@Override
+	public CrewMeetingGalleryView findCrewMeetingGalleryView(Long crewId, int page, int size) {
+		List<CrewMeetingGalleryView.Item> items = meetingGalleryJpaRepository.findGalleryCards(
+				crewId,
+				PageRequest.of(page, size + 1)
+			).stream()
+			.map(row -> CrewMeetingGalleryView.Item.of(
+				toLong(row.getMeetingId()),
+				row.getMeetingDate(),
+				row.getMeetingTitle(),
+				row.getCoverPhotoUrl(),
+				toLong(row.getExtraPhotoCount())
+			))
+			.toList();
+
+		boolean hasNext = items.size() > size;
+		if (hasNext) {
+			items = items.subList(0, size);
+		}
+		return CrewMeetingGalleryView.of(items, CrewMeetingGalleryView.Page.of(page, size, hasNext));
+	}
+
+	@Override
+	public Optional<CrewMeetingGalleryDetailTargetView> findCrewMeetingGalleryDetailTargetView(
+		Long crewId,
+		Long meetingId
+	) {
+		return meetingGalleryJpaRepository.findGalleryDetailMeeting(crewId, meetingId);
+	}
+
+	@Override
+	public List<CrewMeetingGalleryDetailView.Photo> findCrewMeetingGalleryDetailPhotos(Long meetingId) {
+		List<CrewMeetingGalleryDetailView.PhotoSource> sources =
+			meetingGalleryJpaRepository.findGalleryDetailPhotos(meetingId);
+
+		List<CrewMeetingGalleryDetailView.Photo> photos = new ArrayList<>(sources.size());
+		for (int index = 0; index < sources.size(); index++) {
+			CrewMeetingGalleryDetailView.PhotoSource source = sources.get(index);
+			photos.add(CrewMeetingGalleryDetailView.Photo.of(
+				source.photoId(),
+				source.url(),
+				index + 1
+			));
+		}
+		return photos;
+	}
+
+	@Override
+	public Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId) {
+		return meetingJpaRepository.findMeetingsAccessViewByCrewIdAndUserId(
+			crewId,
+			userId,
+			CrewStatus.ACTIVE,
+			CrewMemberStatus.ACTIVE
+		);
+	}
+
+	@Override
+	public MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
+		Slice<MeetingsView.Item> slice = meetingJpaRepository.findMeetingItemsByCrewId(
+			crewId,
+			INCLUDED_CREATED_MEETING_STATUSES,
+			PageRequest.of(page, size)
+		);
+		return MeetingsView.of(
+			slice.getContent(),
+			MeetingsView.Page.of(page, size, slice.hasNext())
+		);
+	}
+
+	@Override
+	public Optional<MeetingDetailView> findMeetingDetailView(
+		Long crewId,
+		Long meetingId,
+		Long userId
+	) {
+		return meetingJpaRepository.findMeetingDetailView(
+			crewId,
+			meetingId,
+			userId,
+			JOINED_STATUSES
+		);
+	}
+
+	@Override
 	public long countCreatedByHostUserId(Long userId) {
 		return meetingJpaRepository.countByHostUserId(userId);
 	}
@@ -159,7 +256,7 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			return Map.of();
 		}
 
-		Map<Long, Integer> countsByUserId = new java.util.HashMap<>();
+		Map<Long, Integer> countsByUserId = new HashMap<>();
 		meetingJpaRepository.countCompletedHostedMeetingsByUserIds(userIds, MeetingStatus.COMPLETED)
 			.forEach(row -> countsByUserId.put(row.getUserId(), Math.toIntExact(row.getMeetingCount())));
 		meetingJpaRepository.countCompletedJoinedMeetingsByUserIds(
@@ -168,5 +265,12 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			MeetingStatus.COMPLETED
 		).forEach(row -> countsByUserId.merge(row.getUserId(), Math.toIntExact(row.getMeetingCount()), Integer::sum));
 		return countsByUserId;
+	}
+
+	private Long toLong(Number value) {
+		if (value == null) {
+			return null;
+		}
+		return value.longValue();
 	}
 }

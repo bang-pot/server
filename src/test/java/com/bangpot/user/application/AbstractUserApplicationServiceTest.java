@@ -390,6 +390,55 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public com.bangpot.meeting.domain.view.CrewMeetingGalleryView findCrewMeetingGalleryView(
+			Long crewId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.CrewMeetingGalleryView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.CrewMeetingGalleryView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView> findCrewMeetingGalleryDetailTargetView(
+			Long crewId,
+			Long meetingId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
+		public java.util.List<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView.Photo> findCrewMeetingGalleryDetailPhotos(
+			Long meetingId
+		) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MeetingDetailView> findMeetingDetailView(
+			Long crewId,
+			Long meetingId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return meetingRepository.countCreatedByHostUserId(userId);
 		}
@@ -558,6 +607,16 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public List<Meeting> findRecruitmentCloseTargets(java.time.LocalDateTime now, int limit) {
+			return List.of();
+		}
+
+		@Override
+		public List<Meeting> findCompletionTargets(java.time.LocalDateTime completionCutoff, int limit) {
+			return List.of();
+		}
+
+		@Override
 		public int cancelUnfinishedByCrewIdAndHostUserId(
 			Long crewId,
 			Long hostUserId,
@@ -574,6 +633,17 @@ abstract class AbstractUserApplicationServiceTest {
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return findById(meetingId).filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public int recordResultIfNotRecorded(
+			Long meetingId,
+			Long crewId,
+			Long hostUserId,
+			com.bangpot.meeting.domain.MeetingResult result,
+			java.time.Instant updatedAt
+		) {
+			return 0;
 		}
 
 		@Override
@@ -973,6 +1043,16 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public Optional<MeetingLog> findByIdForUpdate(Long logId) {
+			return findById(logId);
+		}
+
+		@Override
+		public Optional<MeetingLog> findActiveLogInCrewForUpdate(Long crewId, Long logId) {
+			return findByIdForUpdate(logId);
+		}
+
+		@Override
 		public Optional<MeetingLog> findByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
 			return logsById.values().stream()
 				.filter(log -> meetingId.equals(log.getMeetingId()) && authorUserId.equals(log.getAuthorUserId()))
@@ -1007,6 +1087,32 @@ abstract class AbstractUserApplicationServiceTest {
 				userId,
 				MyMeetingLogsView.of(List.of(), MyMeetingLogsView.Page.of(page, size, false))
 			);
+		}
+
+		@Override
+		public boolean existsMeetingById(Long meetingId) {
+			return false;
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MyMeetingLogView> findMyMeetingLogView(
+			Long meetingId,
+			Long authorUserId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MeetingLogDetailView> findMeetingLogDetailView(
+			Long crewId,
+			Long logId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
+		public boolean existsDeletedByMeetingIdAndAuthorUserId(Long meetingId, Long authorUserId) {
+			return false;
 		}
 	}
 

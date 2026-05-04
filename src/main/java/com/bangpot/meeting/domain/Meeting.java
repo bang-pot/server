@@ -275,20 +275,24 @@ public class Meeting {
 		this.description = description;
 	}
 
-	public void applyAutomaticTransition(LocalDateTime now, long joinedCount) {
-		if (status == MeetingStatus.CANCELED || status == MeetingStatus.COMPLETED) {
-			return;
-		}
-
-		LocalDateTime startAt = LocalDate.parse(meetingDate).atTime(LocalTime.parse(meetingTime));
-		if (!now.isBefore(startAt.plusHours(6))) {
-			status = MeetingStatus.COMPLETED;
-			return;
-		}
-
-		if (status == MeetingStatus.RECRUITING && (joinedCount >= capacity || !now.isBefore(startAt))) {
+	public void closeRecruitmentAutomatically(LocalDateTime now, long joinedCount) {
+		if (status == MeetingStatus.RECRUITING && (joinedCount >= capacity || !now.isBefore(startAt()))) {
 			status = MeetingStatus.RECRUITMENT_CLOSED;
 		}
+	}
+
+	public void completeAutomatically(LocalDateTime now) {
+		if (status != MeetingStatus.RECRUITMENT_CLOSED) {
+			return;
+		}
+
+		if (!now.isBefore(startAt().plusHours(6))) {
+			status = MeetingStatus.COMPLETED;
+		}
+	}
+
+	private LocalDateTime startAt() {
+		return LocalDate.parse(meetingDate).atTime(LocalTime.parse(meetingTime));
 	}
 
 	@PrePersist

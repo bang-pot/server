@@ -17,12 +17,22 @@ class JpaMeetingLogRepository implements MeetingLogRepository {
 
 	@Override
 	public MeetingLog save(MeetingLog log) {
-		return meetingLogJpaRepository.save(log);
+		return meetingLogJpaRepository.saveAndFlush(log);
 	}
 
 	@Override
 	public Optional<MeetingLog> findById(Long logId) {
 		return meetingLogJpaRepository.findByIdAndDeletedAtIsNull(logId);
+	}
+
+	@Override
+	public Optional<MeetingLog> findByIdForUpdate(Long logId) {
+		return meetingLogJpaRepository.findActiveByIdForUpdate(logId);
+	}
+
+	@Override
+	public Optional<MeetingLog> findActiveLogInCrewForUpdate(Long crewId, Long logId) {
+		return meetingLogJpaRepository.findActiveLogInCrewForUpdate(crewId, logId);
 	}
 
 	@Override

@@ -1,6 +1,8 @@
 package com.bangpot.meeting.infrastructure;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,6 +16,7 @@ import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingResult;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
@@ -47,6 +50,8 @@ class JpaMeetingRepository implements MeetingRepository {
 		MeetingStatus.RECRUITING,
 		MeetingStatus.RECRUITMENT_CLOSED
 	);
+	private static final DateTimeFormatter MEETING_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
+	private static final DateTimeFormatter MEETING_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
 	private final MeetingJpaRepository meetingJpaRepository;
 
@@ -58,6 +63,34 @@ class JpaMeetingRepository implements MeetingRepository {
 	@Override
 	public List<Meeting> findAllByCrewId(Long crewId) {
 		return meetingJpaRepository.findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(crewId);
+	}
+
+	@Override
+	public List<Meeting> findRecruitmentCloseTargets(LocalDateTime now, int limit) {
+		return meetingJpaRepository.findDueMeetingsByStatus(
+			MeetingStatus.RECRUITING,
+			formatDate(now),
+			formatTime(now),
+			PageRequest.of(0, limit)
+		);
+	}
+
+	@Override
+	public List<Meeting> findCompletionTargets(LocalDateTime completionCutoff, int limit) {
+		return meetingJpaRepository.findDueMeetingsByStatus(
+			MeetingStatus.RECRUITMENT_CLOSED,
+			formatDate(completionCutoff),
+			formatTime(completionCutoff),
+			PageRequest.of(0, limit)
+		);
+	}
+
+	private String formatDate(LocalDateTime dateTime) {
+		return dateTime.format(MEETING_DATE_FORMATTER);
+	}
+
+	private String formatTime(LocalDateTime dateTime) {
+		return dateTime.format(MEETING_TIME_FORMATTER);
 	}
 
 	@Override
@@ -79,6 +112,25 @@ class JpaMeetingRepository implements MeetingRepository {
 	@Override
 	public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 		return meetingJpaRepository.findByIdAndCrewId(meetingId, crewId);
+	}
+
+	@Override
+	public int recordResultIfNotRecorded(
+		Long meetingId,
+		Long crewId,
+		Long hostUserId,
+		MeetingResult result,
+		Instant updatedAt
+	) {
+		return meetingJpaRepository.recordResultIfNotRecorded(
+			meetingId,
+			crewId,
+			hostUserId,
+			MeetingStatus.COMPLETED,
+			MeetingResult.NOT_RECORDED,
+			result,
+			updatedAt
+		);
 	}
 
 	@Override

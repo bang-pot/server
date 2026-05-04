@@ -12,11 +12,16 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingResult;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
+import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -30,6 +35,107 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	}
 
 	List<Meeting> findAllByCrewIdOrderByMeetingDateAscMeetingTimeAscIdAsc(Long crewId);
+
+	List<Meeting> findByStatusInOrderByMeetingDateAscMeetingTimeAscIdAsc(
+		List<MeetingStatus> statuses,
+		Pageable pageable
+	);
+
+	@Query("""
+		select m
+		from Meeting m
+		where m.status = :status
+		  and (
+			m.meetingDate < :meetingDate
+			or (m.meetingDate = :meetingDate and m.meetingTime <= :meetingTime)
+		  )
+		order by m.meetingDate asc, m.meetingTime asc, m.id asc
+		""")
+	List<Meeting> findDueMeetingsByStatus(
+		@Param("status") MeetingStatus status,
+		@Param("meetingDate") String meetingDate,
+		@Param("meetingTime") String meetingTime,
+		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.MeetingsAccessView(
+			c.id,
+			member.role
+		)
+		from Crew c
+		left join CrewMember member
+		  on member.crewId = c.id
+		 and member.userId = :userId
+		 and member.status = :activeMemberStatus
+		where c.id = :crewId
+		  and c.status = :activeCrewStatus
+		""")
+	Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(
+		@Param("crewId") Long crewId,
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.MeetingsView$Item(
+			m.id,
+			m.title,
+			m.themeName,
+			m.place,
+			m.meetingDate,
+			m.meetingTime,
+			concat('', m.status),
+			concat('', m.result),
+			m.capacity
+		)
+		from Meeting m
+		where m.crewId = :crewId
+		  and m.status in :includedStatuses
+		order by m.meetingDate asc, m.meetingTime asc, m.id asc
+		""")
+	Slice<MeetingsView.Item> findMeetingItemsByCrewId(
+		@Param("crewId") Long crewId,
+		@Param("includedStatuses") List<MeetingStatus> includedStatuses,
+		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.MeetingDetailView(
+			m.id,
+			m.crewId,
+			m.hostUserId,
+			m.title,
+			m.themeName,
+			m.place,
+			m.meetingDate,
+			m.meetingTime,
+			m.capacity,
+			m.totalCost,
+			m.contactLink,
+			m.description,
+			concat('', m.status),
+			concat('', m.result),
+			case
+				when m.hostUserId = :userId then 'JOINED'
+				when participant.status in :joinedStatuses then 'JOINED'
+				else 'NOT_JOINED'
+			end
+		)
+		from Meeting m
+		left join MeetingParticipant participant
+		  on participant.meetingId = m.id
+		 and participant.userId = :userId
+		where m.crewId = :crewId
+		  and m.id = :meetingId
+		""")
+	Optional<MeetingDetailView> findMeetingDetailView(
+		@Param("crewId") Long crewId,
+		@Param("meetingId") Long meetingId,
+		@Param("userId") Long userId,
+		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses
+	);
 
 	@Modifying(flushAutomatically = true)
 	@Query("""
@@ -49,6 +155,27 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	);
 
 	Optional<Meeting> findByIdAndCrewId(Long id, Long crewId);
+
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+		update Meeting m
+		set m.result = :result,
+		    m.updatedAt = :updatedAt
+		where m.id = :meetingId
+		  and m.crewId = :crewId
+		  and m.hostUserId = :hostUserId
+		  and m.status = :completedStatus
+		  and m.result = :notRecordedResult
+		""")
+	int recordResultIfNotRecorded(
+		@Param("meetingId") Long meetingId,
+		@Param("crewId") Long crewId,
+		@Param("hostUserId") Long hostUserId,
+		@Param("completedStatus") MeetingStatus completedStatus,
+		@Param("notRecordedResult") MeetingResult notRecordedResult,
+		@Param("result") MeetingResult result,
+		@Param("updatedAt") Instant updatedAt
+	);
 
 	@Query("""
 		select new com.bangpot.meeting.domain.view.MyCalendarView$Item(

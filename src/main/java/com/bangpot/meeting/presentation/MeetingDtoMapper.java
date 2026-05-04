@@ -1,7 +1,5 @@
 package com.bangpot.meeting.presentation;
 
-import java.util.List;
-
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
@@ -13,6 +11,8 @@ import com.bangpot.meeting.application.usecase.JoinMeetingUseCase;
 import com.bangpot.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
+import com.bangpot.meeting.domain.view.MeetingsView;
 
 final class MeetingDtoMapper {
 
@@ -90,31 +90,38 @@ final class MeetingDtoMapper {
 		);
 	}
 
-	static GetMeetingsUseCase.Query toQuery(Long crewId, Long userId) {
-		return GetMeetingsUseCase.Query.of(crewId, userId);
+	static GetMeetingsUseCase.Query toQuery(Long crewId, Long userId, int page, int size) {
+		return GetMeetingsUseCase.Query.of(crewId, userId, page, size);
 	}
 
-	static List<MeetingDto.MeetingListResponse> toListResponses(List<GetMeetingsUseCase.View> views) {
-		return views.stream()
-			.map(view -> new MeetingDto.MeetingListResponse(
-				view.meetingId(),
-				view.title(),
-				view.themeName(),
-				view.place(),
-				view.date(),
-				view.time(),
-				view.status(),
-				view.result(),
-				view.capacity()
-			))
-			.toList();
+	static MeetingDto.MeetingListPageResponse toListResponse(MeetingsView meetingsView) {
+		return new MeetingDto.MeetingListPageResponse(
+			meetingsView.items().stream()
+				.map(item -> new MeetingDto.MeetingListResponse(
+					item.meetingId(),
+					item.title(),
+					item.themeName(),
+					item.place(),
+					item.date(),
+					item.time(),
+					item.status(),
+					item.result(),
+					item.capacity()
+				))
+				.toList(),
+			new MeetingDto.PageInfoResponse(
+				meetingsView.page().page(),
+				meetingsView.page().size(),
+				meetingsView.page().hasNext()
+			)
+		);
 	}
 
 	static GetMeetingDetailUseCase.Query toQuery(Long crewId, Long meetingId, Long userId) {
 		return GetMeetingDetailUseCase.Query.of(crewId, meetingId, userId);
 	}
 
-	static MeetingDto.MeetingDetailResponse toResponse(GetMeetingDetailUseCase.Result result) {
+	static MeetingDto.MeetingDetailResponse toResponse(MeetingDetailView result) {
 		return new MeetingDto.MeetingDetailResponse(
 			result.meetingId(),
 			result.crewId(),

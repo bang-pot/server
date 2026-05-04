@@ -488,6 +488,16 @@ class CrewDeleteUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Meeting> findRecruitmentCloseTargets(java.time.LocalDateTime now, int limit) {
+			return List.of();
+		}
+
+		@Override
+		public List<Meeting> findCompletionTargets(java.time.LocalDateTime completionCutoff, int limit) {
+			return List.of();
+		}
+
+		@Override
 		public int cancelUnfinishedByCrewIdAndHostUserId(
 			Long crewId,
 			Long hostUserId,
@@ -504,6 +514,17 @@ class CrewDeleteUseCaseServicesTest {
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return findById(meetingId).filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public int recordResultIfNotRecorded(
+			Long meetingId,
+			Long crewId,
+			Long hostUserId,
+			com.bangpot.meeting.domain.MeetingResult result,
+			java.time.Instant updatedAt
+		) {
+			return 0;
 		}
 
 		@Override

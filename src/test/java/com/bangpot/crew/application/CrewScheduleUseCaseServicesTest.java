@@ -492,6 +492,55 @@ class CrewScheduleUseCaseServicesTest {
 		}
 
 		@Override
+		public com.bangpot.meeting.domain.view.CrewMeetingGalleryView findCrewMeetingGalleryView(
+			Long crewId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.CrewMeetingGalleryView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.CrewMeetingGalleryView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView> findCrewMeetingGalleryDetailTargetView(
+			Long crewId,
+			Long meetingId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
+		public List<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView.Photo> findCrewMeetingGalleryDetailPhotos(
+			Long meetingId
+		) {
+			return List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MeetingDetailView> findMeetingDetailView(
+			Long crewId,
+			Long meetingId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			throw new UnsupportedOperationException();
 		}
@@ -758,6 +807,16 @@ class CrewScheduleUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Meeting> findRecruitmentCloseTargets(java.time.LocalDateTime now, int limit) {
+			return List.of();
+		}
+
+		@Override
+		public List<Meeting> findCompletionTargets(java.time.LocalDateTime completionCutoff, int limit) {
+			return List.of();
+		}
+
+		@Override
 		public int cancelUnfinishedByCrewIdAndHostUserId(
 			Long crewId,
 			Long hostUserId,
@@ -774,6 +833,17 @@ class CrewScheduleUseCaseServicesTest {
 		@Override
 		public Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId) {
 			return findById(meetingId).filter(meeting -> crewId.equals(meeting.getCrewId()));
+		}
+
+		@Override
+		public int recordResultIfNotRecorded(
+			Long meetingId,
+			Long crewId,
+			Long hostUserId,
+			com.bangpot.meeting.domain.MeetingResult result,
+			java.time.Instant updatedAt
+		) {
+			return 0;
 		}
 
 		@Override
@@ -810,7 +880,7 @@ class CrewScheduleUseCaseServicesTest {
 		}
 
 		@Override
-		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+		public int leaveInactiveCrewMemberParticipations(
 			Long crewId,
 			Long userId,
 			java.time.Instant updatedAt

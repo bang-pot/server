@@ -23,7 +23,7 @@ public class UpdateMeetingService implements UpdateMeetingUseCase {
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
-	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
+	private final MeetingRecruitmentCloseService meetingRecruitmentCloseService;
 
 	@Override
 	@Transactional
@@ -37,7 +37,7 @@ public class UpdateMeetingService implements UpdateMeetingUseCase {
 
 		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
-		meetingAutomaticTransitionService.apply(meeting);
+		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 		if (!meeting.getHostUserId().equals(command.userId())) {
 			throw new AccessDeniedException("모임 개설자만 모임을 수정할 수 있습니다.");
 		}
@@ -53,7 +53,7 @@ public class UpdateMeetingService implements UpdateMeetingUseCase {
 			command.contactLink(),
 			command.description()
 		);
-		meetingAutomaticTransitionService.apply(meeting);
+		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 		meetingRepository.save(meeting);
 
 		return Result.of(

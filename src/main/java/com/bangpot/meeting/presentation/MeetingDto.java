@@ -66,6 +66,19 @@ final class MeetingDto {
 	) {
 	}
 
+	record MeetingListPageResponse(
+		java.util.List<MeetingListResponse> items,
+		PageInfoResponse pageInfo
+	) {
+	}
+
+	record PageInfoResponse(
+		int page,
+		int size,
+		boolean hasNext
+	) {
+	}
+
 	record MeetingDetailResponse(
 		Long meetingId,
 		Long crewId,

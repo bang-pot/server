@@ -1,8 +1,10 @@
 package com.bangpot.meeting.application;
 
+import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +25,7 @@ import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.application.service.CancelMeetingService;
 import com.bangpot.meeting.application.service.CancelMeetingParticipationService;
@@ -32,10 +35,14 @@ import com.bangpot.meeting.application.service.CreateMeetingService;
 import com.bangpot.meeting.application.service.GetMeetingDetailService;
 import com.bangpot.meeting.application.service.GetMeetingsService;
 import com.bangpot.meeting.application.service.JoinMeetingService;
-import com.bangpot.meeting.application.service.MeetingAutomaticTransitionService;
+import com.bangpot.meeting.application.service.MeetingAccessService;
+import com.bangpot.meeting.application.service.MeetingCompletionService;
+import com.bangpot.meeting.application.service.MeetingRecruitmentCloseService;
 import com.bangpot.meeting.application.service.RecordMeetingResultService;
 import com.bangpot.meeting.application.service.ReopenMeetingRecruitmentService;
 import com.bangpot.meeting.application.service.UpdateMeetingService;
+import com.bangpot.scheduler.meeting.MeetingCompletionScheduler;
+import com.bangpot.scheduler.meeting.MeetingRecruitmentCloseScheduler;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CloseMeetingRecruitmentUseCase;
@@ -49,6 +56,10 @@ import com.bangpot.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
+import com.bangpot.meeting.domain.MeetingStatus;
+import com.bangpot.meeting.domain.view.MeetingDetailView;
+import com.bangpot.meeting.domain.view.MeetingsAccessView;
+import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -63,9 +74,14 @@ abstract class AbstractMeetingUseCaseServicesTest {
 	protected InMemoryCrewRepository crewRepository;
 	protected InMemoryCrewMemberRepository crewMemberRepository;
 	protected InMemoryMeetingRepository meetingRepository;
+	protected InMemoryMeetingQueryRepository meetingQueryRepository;
+	protected MeetingAccessService meetingAccessService;
 	protected InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	protected MutableClock clock;
-	protected MeetingAutomaticTransitionService meetingAutomaticTransitionService;
+	protected MeetingRecruitmentCloseService meetingRecruitmentCloseService;
+	protected MeetingCompletionService meetingCompletionService;
+	protected MeetingRecruitmentCloseScheduler meetingRecruitmentCloseScheduler;
+	protected MeetingCompletionScheduler meetingCompletionScheduler;
 	protected CreateMeetingUseCase createMeetingUseCase;
 	protected GetMeetingsUseCase getMeetingsUseCase;
 	protected GetMeetingDetailUseCase getMeetingDetailUseCase;
@@ -87,27 +103,32 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		crewMemberRepository = new InMemoryCrewMemberRepository();
 		meetingRepository = new InMemoryMeetingRepository();
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
+		meetingQueryRepository = new InMemoryMeetingQueryRepository(
+			crewRepository,
+			crewMemberRepository,
+			meetingRepository,
+			meetingParticipantRepository
+		);
+		meetingAccessService = new MeetingAccessService(meetingQueryRepository);
 		clock = new MutableClock(NOW);
-		meetingAutomaticTransitionService = new MeetingAutomaticTransitionService(
+		meetingRecruitmentCloseService = new MeetingRecruitmentCloseService(
 			meetingRepository,
 			meetingParticipantRepository,
 			clock
 		);
+		meetingCompletionService = new MeetingCompletionService(meetingRepository, clock);
+		meetingRecruitmentCloseScheduler = new MeetingRecruitmentCloseScheduler(meetingRecruitmentCloseService);
+		meetingCompletionScheduler = new MeetingCompletionScheduler(meetingCompletionService);
 		createMeetingUseCase = new CreateMeetingService(completedUserAccessService, crewRepository, crewMemberRepository, meetingRepository);
 		getMeetingsUseCase = new GetMeetingsService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingAccessService,
+			meetingQueryRepository
 		);
 		getMeetingDetailUseCase = new GetMeetingDetailService(
 			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			meetingRepository,
-			meetingParticipantRepository,
-			meetingAutomaticTransitionService
+			meetingAccessService,
+			meetingQueryRepository
 		);
 		joinMeetingUseCase = new JoinMeetingService(
 			completedUserAccessService,
@@ -115,7 +136,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			crewMemberRepository,
 			meetingRepository,
 			meetingParticipantRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		cancelMeetingParticipationUseCase = new CancelMeetingParticipationService(
 			completedUserAccessService,
@@ -129,42 +150,41 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		closeMeetingRecruitmentUseCase = new CloseMeetingRecruitmentService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		reopenMeetingRecruitmentUseCase = new ReopenMeetingRecruitmentService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		cancelMeetingUseCase = new CancelMeetingService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRecruitmentCloseService
 		);
 		completeMeetingUseCase = new CompleteMeetingService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository,
-			meetingAutomaticTransitionService
+			meetingRepository
 		);
 		recordMeetingResultUseCase = new RecordMeetingResultService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingAutomaticTransitionService
+			clock
 		);
 	}
 
@@ -456,6 +476,36 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Meeting> findRecruitmentCloseTargets(java.time.LocalDateTime now, int limit) {
+			return meetingsById.values().stream()
+				.filter(meeting -> meeting.getStatus() == MeetingStatus.RECRUITING)
+				.filter(meeting -> !startAt(meeting).isAfter(now))
+				.sorted(Comparator
+					.comparing(Meeting::getMeetingDate)
+					.thenComparing(Meeting::getMeetingTime)
+					.thenComparing(Meeting::getId))
+				.limit(limit)
+				.toList();
+		}
+
+		@Override
+		public List<Meeting> findCompletionTargets(java.time.LocalDateTime completionCutoff, int limit) {
+			return meetingsById.values().stream()
+				.filter(meeting -> meeting.getStatus() == MeetingStatus.RECRUITMENT_CLOSED)
+				.filter(meeting -> !startAt(meeting).isAfter(completionCutoff))
+				.sorted(Comparator
+					.comparing(Meeting::getMeetingDate)
+					.thenComparing(Meeting::getMeetingTime)
+					.thenComparing(Meeting::getId))
+				.limit(limit)
+				.toList();
+		}
+
+		private java.time.LocalDateTime startAt(Meeting meeting) {
+			return java.time.LocalDate.parse(meeting.getMeetingDate()).atTime(java.time.LocalTime.parse(meeting.getMeetingTime()));
+		}
+
+		@Override
 		public int cancelUnfinishedByCrewIdAndHostUserId(
 			Long crewId,
 			Long hostUserId,
@@ -477,6 +527,26 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		@Override
+		public int recordResultIfNotRecorded(
+			Long meetingId,
+			Long crewId,
+			Long hostUserId,
+			com.bangpot.meeting.domain.MeetingResult result,
+			java.time.Instant updatedAt
+		) {
+			return findByIdAndCrewId(meetingId, crewId)
+				.filter(meeting -> hostUserId.equals(meeting.getHostUserId()))
+				.filter(meeting -> meeting.getStatus() == MeetingStatus.COMPLETED)
+				.filter(meeting -> meeting.getResult() == com.bangpot.meeting.domain.MeetingResult.NOT_RECORDED)
+				.map(meeting -> {
+					meeting.recordResult(result);
+					setField(meeting, "updatedAt", updatedAt);
+					return 1;
+				})
+				.orElse(0);
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return 0L;
 		}
@@ -484,6 +554,194 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		@Override
 		public long countJoinedByUserId(Long userId) {
 			return 0L;
+		}
+	}
+
+	private static void setField(Object target, String fieldName, Object value) {
+		try {
+			Field field = target.getClass().getDeclaredField(fieldName);
+			field.setAccessible(true);
+			field.set(target, value);
+		} catch (ReflectiveOperationException exception) {
+			throw new IllegalStateException(exception);
+		}
+	}
+
+	protected static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
+
+		private final InMemoryCrewRepository crewRepository;
+		private final InMemoryCrewMemberRepository crewMemberRepository;
+		private final InMemoryMeetingRepository meetingRepository;
+		private final InMemoryMeetingParticipantRepository meetingParticipantRepository;
+
+		private InMemoryMeetingQueryRepository(
+			InMemoryCrewRepository crewRepository,
+			InMemoryCrewMemberRepository crewMemberRepository,
+			InMemoryMeetingRepository meetingRepository,
+			InMemoryMeetingParticipantRepository meetingParticipantRepository
+		) {
+			this.crewRepository = crewRepository;
+			this.crewMemberRepository = crewMemberRepository;
+			this.meetingRepository = meetingRepository;
+			this.meetingParticipantRepository = meetingParticipantRepository;
+		}
+
+		@Override
+		public Optional<MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(Long crewId, Long userId) {
+			return crewRepository.findById(crewId)
+				.map(crew -> MeetingsAccessView.of(
+					crew.getId(),
+					crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+						.map(CrewMember::getRole)
+						.orElse(null)
+				));
+		}
+
+		@Override
+		public MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
+			List<MeetingsView.Item> allItems = meetingRepository.findAllByCrewId(crewId).stream()
+				.map(meeting -> MeetingsView.Item.of(
+					meeting.getId(),
+					meeting.getTitle(),
+					meeting.getThemeName(),
+					meeting.getPlace(),
+					meeting.getMeetingDate(),
+					meeting.getMeetingTime(),
+					meeting.getStatus().name(),
+					meeting.getResult().name(),
+					meeting.getCapacity()
+				))
+				.toList();
+			int fromIndex = Math.min(page * size, allItems.size());
+			int toIndex = Math.min(fromIndex + size, allItems.size());
+			return MeetingsView.of(
+				allItems.subList(fromIndex, toIndex),
+				MeetingsView.Page.of(page, size, toIndex < allItems.size())
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.CrewMeetingGalleryView findCrewMeetingGalleryView(
+			Long crewId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.CrewMeetingGalleryView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.CrewMeetingGalleryView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView> findCrewMeetingGalleryDetailTargetView(
+			Long crewId,
+			Long meetingId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
+		public List<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView.Photo> findCrewMeetingGalleryDetailPhotos(
+			Long meetingId
+		) {
+			return List.of();
+		}
+
+		@Override
+		public Optional<MeetingDetailView> findMeetingDetailView(
+			Long crewId,
+			Long meetingId,
+			Long userId
+		) {
+			return meetingRepository.findByIdAndCrewId(meetingId, crewId)
+				.map(meeting -> MeetingDetailView.of(
+					meeting.getId(),
+					meeting.getCrewId(),
+					meeting.getHostUserId(),
+					meeting.getTitle(),
+					meeting.getThemeName(),
+					meeting.getPlace(),
+					meeting.getMeetingDate(),
+					meeting.getMeetingTime(),
+					meeting.getCapacity(),
+					meeting.getTotalCost(),
+					meeting.getContactLink(),
+					meeting.getDescription(),
+					meeting.getStatus().name(),
+					meeting.getResult().name(),
+					meeting.getHostUserId().equals(userId) || hasJoined(meeting.getId(), userId)
+						? "JOINED"
+						: "NOT_JOINED"
+				));
+		}
+
+		private boolean hasJoined(Long meetingId, Long userId) {
+			return meetingParticipantRepository.findByMeetingIdAndUserId(meetingId, userId)
+				.map(participant -> participant.getStatus().representsJoined())
+				.orElse(false);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCalendarView findMyCalendarViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MyCalendarView.of(List.of(), 0);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.MyCreatedMeetingsView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.MyCreatedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MyJoinedMeetingsView findMyJoinedMeetingsViewByUserId(
+			Long userId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.MyJoinedMeetingsView.of(
+				List.of(),
+				com.bangpot.meeting.domain.view.MyJoinedMeetingsView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.UpcomingMeetingsView findUpcomingMeetingsViewByUserId(
+			Long userId,
+			int limit,
+			String currentDate,
+			String currentTime
+		) {
+			return com.bangpot.meeting.domain.view.UpcomingMeetingsView.of(List.of(), 0L);
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.CrewScheduleView findCrewScheduleViewByCrewId(
+			Long crewId,
+			java.time.LocalDate from,
+			java.time.LocalDate to
+		) {
+			return com.bangpot.meeting.domain.view.CrewScheduleView.of(List.of());
+		}
+
+		@Override
+		public long countCreatedByHostUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public long countJoinedByUserId(Long userId) {
+			return 0L;
+		}
+
+		@Override
+		public Map<Long, Integer> countCompletedByUserIds(Collection<Long> userIds) {
+			return Map.of();
 		}
 	}
 
@@ -508,7 +766,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		@Override
-		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+		public int leaveInactiveCrewMemberParticipations(
 			Long crewId,
 			Long userId,
 			java.time.Instant updatedAt
@@ -550,6 +808,10 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		@Override
 		public Instant instant() {
 			return instant;
+		}
+
+		void setInstant(Instant instant) {
+			this.instant = instant;
 		}
 	}
 }

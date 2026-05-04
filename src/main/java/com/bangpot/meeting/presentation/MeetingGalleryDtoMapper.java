@@ -2,16 +2,16 @@ package com.bangpot.meeting.presentation;
 
 import java.util.List;
 
-import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryDetailUseCase;
-import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 
 final class MeetingGalleryDtoMapper {
 
 	private MeetingGalleryDtoMapper() {
 	}
 
-	static MeetingGalleryDto.MeetingGalleryResponse toResponse(GetCrewMeetingGalleryUseCase.Result result) {
-		List<MeetingGalleryDto.MeetingGalleryItemResponse> items = result.items().stream()
+	static MeetingGalleryDto.MeetingGalleryResponse toResponse(CrewMeetingGalleryView view) {
+		List<MeetingGalleryDto.MeetingGalleryItemResponse> items = view.items().stream()
 			.map(item -> new MeetingGalleryDto.MeetingGalleryItemResponse(
 				item.meetingId(),
 				item.meetingDate(),
@@ -24,15 +24,15 @@ final class MeetingGalleryDtoMapper {
 		return new MeetingGalleryDto.MeetingGalleryResponse(
 			items,
 			new MeetingGalleryDto.MeetingGalleryPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
 			)
 		);
 	}
 
-	static MeetingGalleryDto.MeetingGalleryDetailResponse toResponse(GetCrewMeetingGalleryDetailUseCase.Result result) {
-		List<MeetingGalleryDto.MeetingGalleryDetailPhotoResponse> photos = result.photos().stream()
+	static MeetingGalleryDto.MeetingGalleryDetailResponse toResponse(CrewMeetingGalleryDetailView view) {
+		List<MeetingGalleryDto.MeetingGalleryDetailPhotoResponse> photos = view.photos().stream()
 			.map(photo -> new MeetingGalleryDto.MeetingGalleryDetailPhotoResponse(
 				photo.photoId(),
 				photo.url(),
@@ -41,11 +41,11 @@ final class MeetingGalleryDtoMapper {
 			.toList();
 
 		return new MeetingGalleryDto.MeetingGalleryDetailResponse(
-			result.meetingId(),
-			result.meetingDate(),
-			result.meetingTitle(),
+			view.meetingId(),
+			view.meetingDate(),
+			view.meetingTitle(),
 			photos,
-			result.totalPhotoCount()
+			view.totalPhotoCount()
 		);
 	}
 }

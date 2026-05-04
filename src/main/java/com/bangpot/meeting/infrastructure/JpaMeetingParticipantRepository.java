@@ -41,8 +41,8 @@ class JpaMeetingParticipantRepository implements MeetingParticipantRepository {
 	}
 
 	@Override
-	public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(Long crewId, Long userId, Instant updatedAt) {
-		return meetingParticipantJpaRepository.leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+	public int leaveInactiveCrewMemberParticipations(Long crewId, Long userId, Instant updatedAt) {
+		return meetingParticipantJpaRepository.leaveInactiveCrewMemberParticipations(
 			crewId,
 			userId,
 			UNFINISHED_MEETING_STATUSES,

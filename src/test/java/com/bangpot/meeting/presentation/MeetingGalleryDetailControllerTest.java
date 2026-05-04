@@ -21,6 +21,8 @@ import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.meeting.application.exception.MeetingGalleryNotFoundException;
 import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryDetailUseCase;
+import com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
 
 @ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
@@ -32,7 +34,7 @@ class MeetingGalleryDetailControllerTest {
 	private MockMvc mockMvc;
 
 	@MockitoBean
-	private com.bangpot.meeting.application.usecase.GetCrewMeetingGalleryUseCase getCrewMeetingGalleryUseCase;
+	private GetCrewMeetingGalleryUseCase getCrewMeetingGalleryUseCase;
 
 	@MockitoBean
 	private GetCrewMeetingGalleryDetailUseCase getCrewMeetingGalleryDetailUseCase;
@@ -40,13 +42,13 @@ class MeetingGalleryDetailControllerTest {
 	@Test
 	void returnsMeetingGalleryDetailForAuthenticatedUser() throws Exception {
 		when(getCrewMeetingGalleryDetailUseCase.handle(GetCrewMeetingGalleryDetailUseCase.Query.of(5L, 55L, 7L)))
-			.thenReturn(GetCrewMeetingGalleryDetailUseCase.Result.of(
+			.thenReturn(CrewMeetingGalleryDetailView.of(
 				55L,
 				"2026-04-12",
 				"금요일 이스케이프",
 				List.of(
-					GetCrewMeetingGalleryDetailUseCase.Photo.of(501L, "https://cdn.example.com/a.jpg", 1),
-					GetCrewMeetingGalleryDetailUseCase.Photo.of(502L, "https://cdn.example.com/b.jpg", 2)
+					CrewMeetingGalleryDetailView.Photo.of(501L, "https://cdn.example.com/a.jpg", 1),
+					CrewMeetingGalleryDetailView.Photo.of(502L, "https://cdn.example.com/b.jpg", 2)
 				),
 				2
 			));

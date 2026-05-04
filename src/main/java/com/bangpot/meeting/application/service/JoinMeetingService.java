@@ -29,7 +29,7 @@ public class JoinMeetingService implements JoinMeetingUseCase {
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
 	private final MeetingParticipantRepository meetingParticipantRepository;
-	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
+	private final MeetingRecruitmentCloseService meetingRecruitmentCloseService;
 
 	@Override
 	@Transactional
@@ -43,7 +43,7 @@ public class JoinMeetingService implements JoinMeetingUseCase {
 
 		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
-		meetingAutomaticTransitionService.apply(meeting);
+		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 		if (meeting.getStatus() != MeetingStatus.RECRUITING) {
 			throw new AccessDeniedException("모집 중인 모임만 참여할 수 있습니다.");
 		}
@@ -63,7 +63,7 @@ public class JoinMeetingService implements JoinMeetingUseCase {
 		} else {
 			meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), command.userId()));
 		}
-		meetingAutomaticTransitionService.apply(meeting);
+		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 		return Result.of(meeting.getId(), MeetingParticipationStatus.JOINED.name());
 	}
 }

@@ -1,16 +1,11 @@
 package com.bangpot.meeting.application.service;
 
-import java.util.List;
-
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bangpot.crew.application.exception.CrewNotFoundException;
-import com.bangpot.crew.application.port.CrewMemberRepository;
-import com.bangpot.crew.application.port.CrewRepository;
-import com.bangpot.meeting.application.port.MeetingRepository;
+import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.usecase.GetMeetingsUseCase;
+import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
 import lombok.RequiredArgsConstructor;
@@ -19,35 +14,18 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetMeetingsService implements GetMeetingsUseCase {
 
+	private static final String ACCESS_DENIED_MESSAGE = "가입한 크루원만 모임 목록을 조회할 수 있습니다.";
+
 	private final CompletedUserAccessService completedUserAccessService;
-	private final CrewRepository crewRepository;
-	private final CrewMemberRepository crewMemberRepository;
-	private final MeetingRepository meetingRepository;
-	private final MeetingAutomaticTransitionService meetingAutomaticTransitionService;
+	private final MeetingAccessService meetingAccessService;
+	private final MeetingQueryRepository meetingQueryRepository;
 
 	@Override
-	@Transactional
-	public List<View> handle(Query query) {
-		crewRepository.findById(query.crewId()).orElseThrow(() -> new CrewNotFoundException(query.crewId()));
+	@Transactional(readOnly = true)
+	public MeetingsView handle(Query query) {
+		completedUserAccessService.validateCompletedUser(query.userId(), ACCESS_DENIED_MESSAGE);
+		meetingAccessService.validateActiveCrewMember(query.crewId(), query.userId(), ACCESS_DENIED_MESSAGE);
 
-		completedUserAccessService.validateCompletedUser(query.userId(), "가입한 크루원만 모임 목록을 조회할 수 있습니다.");
-		if (crewMemberRepository.findByCrewIdAndUserId(query.crewId(), query.userId()).isEmpty()) {
-			throw new AccessDeniedException("가입한 크루원만 모임 목록을 조회할 수 있습니다.");
-		}
-
-		return meetingRepository.findAllByCrewId(query.crewId()).stream()
-			.peek(meetingAutomaticTransitionService::apply)
-			.map(meeting -> View.of(
-				meeting.getId(),
-				meeting.getTitle(),
-				meeting.getThemeName(),
-				meeting.getPlace(),
-				meeting.getMeetingDate(),
-				meeting.getMeetingTime(),
-				meeting.getStatus().name(),
-				meeting.getResult().name(),
-				meeting.getCapacity()
-			))
-			.toList();
+		return meetingQueryRepository.findMeetingsViewByCrewId(query.crewId(), query.page(), query.size());
 	}
 }

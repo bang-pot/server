@@ -300,6 +300,55 @@ class GetHomeServiceTest {
 		}
 
 		@Override
+		public com.bangpot.meeting.domain.view.CrewMeetingGalleryView findCrewMeetingGalleryView(
+			Long crewId,
+			int page,
+			int size
+		) {
+			return com.bangpot.meeting.domain.view.CrewMeetingGalleryView.of(
+				java.util.List.of(),
+				com.bangpot.meeting.domain.view.CrewMeetingGalleryView.Page.of(page, size, false)
+			);
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView> findCrewMeetingGalleryDetailTargetView(
+			Long crewId,
+			Long meetingId
+		) {
+			return java.util.Optional.empty();
+		}
+
+		@Override
+		public java.util.List<com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView.Photo> findCrewMeetingGalleryDetailPhotos(
+			Long meetingId
+		) {
+			return java.util.List.of();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MeetingsAccessView> findMeetingsAccessViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public com.bangpot.meeting.domain.view.MeetingsView findMeetingsViewByCrewId(Long crewId, int page, int size) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public java.util.Optional<com.bangpot.meeting.domain.view.MeetingDetailView> findMeetingDetailView(
+			Long crewId,
+			Long meetingId,
+			Long userId
+		) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return 0L;
 		}

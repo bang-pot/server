@@ -1,15 +1,15 @@
 package com.bangpot.meeting.presentation;
 
-import com.bangpot.meeting.application.usecase.GetCrewMeetingLogFeedUseCase;
+import com.bangpot.meeting.domain.view.CrewMeetingLogFeedView;
 
 final class MeetingLogFeedDtoMapper {
 
 	private MeetingLogFeedDtoMapper() {
 	}
 
-	static MeetingLogFeedDto.MeetingLogFeedResponse toResponse(GetCrewMeetingLogFeedUseCase.Result result) {
+	static MeetingLogFeedDto.MeetingLogFeedResponse toResponse(CrewMeetingLogFeedView view) {
 		return new MeetingLogFeedDto.MeetingLogFeedResponse(
-			result.items().stream()
+			view.items().stream()
 				.map(item -> new MeetingLogFeedDto.MeetingLogFeedItemResponse(
 					item.logId(),
 					item.meetingId(),
@@ -23,9 +23,9 @@ final class MeetingLogFeedDtoMapper {
 				))
 				.toList(),
 			new MeetingLogFeedDto.MeetingLogFeedPageInfo(
-				result.pageInfo().page(),
-				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
 			)
 		);
 	}

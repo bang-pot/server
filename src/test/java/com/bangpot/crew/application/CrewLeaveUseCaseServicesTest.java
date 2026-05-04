@@ -3,7 +3,9 @@ package com.bangpot.crew.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +69,11 @@ class CrewLeaveUseCaseServicesTest {
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository(meetingRepository);
 		CompletedUserAccessService completedUserAccessService = new CompletedUserAccessService(userRepository);
 		CleanupMeetingsForInactiveCrewMemberUseCase cleanupMeetingsForInactiveCrewMemberUseCase =
-			new CleanupMeetingsForInactiveCrewMemberService(meetingRepository, meetingParticipantRepository);
+			new CleanupMeetingsForInactiveCrewMemberService(
+				meetingRepository,
+				meetingParticipantRepository,
+				Clock.fixed(NOW, ZoneId.of("UTC"))
+			);
 		leaveCrewUseCase = new LeaveCrewService(
 			completedUserAccessService,
 			crewRepository,
@@ -466,6 +472,16 @@ class CrewLeaveUseCaseServicesTest {
 		}
 
 		@Override
+		public List<Meeting> findRecruitmentCloseTargets(java.time.LocalDateTime now, int limit) {
+			return List.of();
+		}
+
+		@Override
+		public List<Meeting> findCompletionTargets(java.time.LocalDateTime completionCutoff, int limit) {
+			return List.of();
+		}
+
+		@Override
 		public int cancelUnfinishedByCrewIdAndHostUserId(
 			Long crewId,
 			Long hostUserId,
@@ -484,6 +500,17 @@ class CrewLeaveUseCaseServicesTest {
 			return meetingsById.values().stream()
 				.filter(meeting -> meetingId.equals(meeting.getId()) && crewId.equals(meeting.getCrewId()))
 				.findFirst();
+		}
+
+		@Override
+		public int recordResultIfNotRecorded(
+			Long meetingId,
+			Long crewId,
+			Long hostUserId,
+			com.bangpot.meeting.domain.MeetingResult result,
+			java.time.Instant updatedAt
+		) {
+			return 0;
 		}
 
 		@Override
@@ -545,7 +572,7 @@ class CrewLeaveUseCaseServicesTest {
 		}
 
 		@Override
-		public int leaveJoinedByCrewIdAndUserIdInUnfinishedMeetings(
+		public int leaveInactiveCrewMemberParticipations(
 			Long crewId,
 			Long userId,
 			java.time.Instant updatedAt
