@@ -1,5 +1,7 @@
 package com.bangpot.meeting.application.service;
 
+import java.util.Optional;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class JoinMeetingService implements JoinMeetingUseCase {
 
+	private static final String CREW_MEMBER_JOIN_REQUIRED_MESSAGE = "가입한 크루원만 모임에 참여할 수 있습니다.";
+	private static final String RECRUITING_MEETING_REQUIRED_MESSAGE = "모집 중인 모임만 참여할 수 있습니다.";
+
 	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
@@ -34,32 +39,30 @@ public class JoinMeetingService implements JoinMeetingUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
+		completedUserAccessService.validateCompletedUser(command.userId(), CREW_MEMBER_JOIN_REQUIRED_MESSAGE);
 		crewRepository.findById(command.crewId()).orElseThrow(() -> new CrewNotFoundException(command.crewId()));
-
-		completedUserAccessService.validateCompletedUser(command.userId(), "가입한 크루원만 모임에 참여할 수 있습니다.");
 		if (crewMemberRepository.findByCrewIdAndUserId(command.crewId(), command.userId()).isEmpty()) {
-			throw new AccessDeniedException("가입한 크루원만 모임에 참여할 수 있습니다.");
+			throw new AccessDeniedException(CREW_MEMBER_JOIN_REQUIRED_MESSAGE);
 		}
 
-		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
+		Meeting meeting = meetingRepository.findByIdAndCrewIdForUpdate(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
 		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 		if (meeting.getStatus() != MeetingStatus.RECRUITING) {
-			throw new AccessDeniedException("모집 중인 모임만 참여할 수 있습니다.");
+			throw new AccessDeniedException(RECRUITING_MEETING_REQUIRED_MESSAGE);
 		}
 
 		if (meeting.getHostUserId().equals(command.userId())) {
 			throw new MeetingParticipationAlreadyJoinedException(meeting.getId(), command.userId());
 		}
 
-		var existingParticipant = meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), command.userId());
+		Optional<MeetingParticipant> existingParticipant = meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), command.userId());
 		if (existingParticipant.isPresent()) {
 			MeetingParticipant participant = existingParticipant.get();
 			if (participant.getStatus().representsJoined()) {
 				throw new MeetingParticipationAlreadyJoinedException(meeting.getId(), command.userId());
 			}
 			participant.rejoin();
-			meetingParticipantRepository.save(participant);
 		} else {
 			meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), command.userId()));
 		}

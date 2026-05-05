@@ -156,22 +156,21 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository,
-			meetingRecruitmentCloseService
+			meetingRepository
 		);
 		reopenMeetingRecruitmentUseCase = new ReopenMeetingRecruitmentService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingRecruitmentCloseService
+			meetingParticipantRepository,
+			clock
 		);
 		cancelMeetingUseCase = new CancelMeetingService(
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository,
-			meetingRecruitmentCloseService
+			meetingRepository
 		);
 		completeMeetingUseCase = new CompleteMeetingService(
 			completedUserAccessService,
@@ -454,6 +453,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 
 		private final Map<Long, Meeting> meetingsById = new HashMap<>();
 		private long sequence = 1L;
+		private boolean findByIdAndCrewIdForUpdateCalled;
 
 		@Override
 		public Meeting save(Meeting meeting) {
@@ -524,6 +524,20 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			return meetingsById.values().stream()
 				.filter(meeting -> meetingId.equals(meeting.getId()) && crewId.equals(meeting.getCrewId()))
 				.findFirst();
+		}
+
+		@Override
+		public Optional<Meeting> findByIdAndCrewIdForUpdate(Long meetingId, Long crewId) {
+			findByIdAndCrewIdForUpdateCalled = true;
+			return findByIdAndCrewId(meetingId, crewId);
+		}
+
+		void resetLockTracking() {
+			findByIdAndCrewIdForUpdateCalled = false;
+		}
+
+		boolean findByIdAndCrewIdForUpdateCalled() {
+			return findByIdAndCrewIdForUpdateCalled;
 		}
 
 		@Override

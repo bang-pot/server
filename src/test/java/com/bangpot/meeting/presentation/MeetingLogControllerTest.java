@@ -262,7 +262,7 @@ class MeetingLogControllerTest {
 			));
 
 		mockMvc.perform(
-			multipart("/api/uploads/log-photos")
+			multipart("/api/meetings/55/logs/photos")
 				.file(file)
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
 		)
@@ -276,7 +276,7 @@ class MeetingLogControllerTest {
 		var file = new MockMultipartFile("file", "sample.jpg", MediaType.IMAGE_JPEG_VALUE, "image-bytes".getBytes());
 
 		mockMvc.perform(
-			multipart("/api/uploads/log-photos")
+			multipart("/api/meetings/55/logs/photos")
 				.file(file)
 		)
 			.andExpect(status().isUnauthorized())

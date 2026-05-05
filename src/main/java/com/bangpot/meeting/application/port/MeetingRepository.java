@@ -27,6 +27,8 @@ public interface MeetingRepository {
 
 	Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId);
 
+	Optional<Meeting> findByIdAndCrewIdForUpdate(Long meetingId, Long crewId);
+
 	int recordResultIfNotRecorded(
 		Long meetingId,
 		Long crewId,

@@ -115,6 +115,11 @@ class JpaMeetingRepository implements MeetingRepository {
 	}
 
 	@Override
+	public Optional<Meeting> findByIdAndCrewIdForUpdate(Long meetingId, Long crewId) {
+		return meetingJpaRepository.findByIdAndCrewIdForUpdate(meetingId, crewId);
+	}
+
+	@Override
 	public int recordResultIfNotRecorded(
 		Long meetingId,
 		Long crewId,

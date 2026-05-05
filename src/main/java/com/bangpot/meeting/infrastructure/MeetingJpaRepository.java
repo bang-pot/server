@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +27,8 @@ import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
 import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
+
+import jakarta.persistence.LockModeType;
 
 interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 
@@ -155,6 +158,18 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	);
 
 	Optional<Meeting> findByIdAndCrewId(Long id, Long crewId);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		select meeting
+		from Meeting meeting
+		where meeting.id = :id
+		  and meeting.crewId = :crewId
+		""")
+	Optional<Meeting> findByIdAndCrewIdForUpdate(
+		@Param("id") Long id,
+		@Param("crewId") Long crewId
+	);
 
 	@Modifying(clearAutomatically = true, flushAutomatically = true)
 	@Query("""

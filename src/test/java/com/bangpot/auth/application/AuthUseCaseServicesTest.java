@@ -724,6 +724,11 @@ class AuthUseCaseServicesTest {
 		}
 
 		@Override
+		public Optional<Meeting> findByIdAndCrewIdForUpdate(Long meetingId, Long crewId) {
+			return findByIdAndCrewId(meetingId, crewId);
+		}
+
+		@Override
 		public int recordResultIfNotRecorded(
 			Long meetingId,
 			Long crewId,

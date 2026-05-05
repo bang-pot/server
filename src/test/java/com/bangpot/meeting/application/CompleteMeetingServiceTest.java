@@ -37,6 +37,23 @@ class CompleteMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 	}
 
 	@Test
+	void locksMeetingWhenCompleting() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+		meeting.closeRecruitment();
+		meetingRepository.resetLockTracking();
+
+		completeMeetingUseCase.handle(CompleteMeetingUseCase.Command.of(crew.getId(), meeting.getId(), host.getId()));
+
+		assertThat(meetingRepository.findByIdAndCrewIdForUpdateCalled()).isTrue();
+	}
+
+	@Test
 	void completesMeetingExplicitlyEvenAfterAutomaticCompletionTime() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		authUserRepository.save(host);
