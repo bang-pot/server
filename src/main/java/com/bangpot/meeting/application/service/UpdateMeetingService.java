@@ -35,9 +35,8 @@ public class UpdateMeetingService implements UpdateMeetingUseCase {
 			throw new AccessDeniedException("가입한 크루원만 모임을 수정할 수 있습니다.");
 		}
 
-		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
+		Meeting meeting = meetingRepository.findByIdAndCrewIdForUpdate(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
-		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 		if (!meeting.getHostUserId().equals(command.userId())) {
 			throw new AccessDeniedException("모임 개설자만 모임을 수정할 수 있습니다.");
 		}
@@ -54,7 +53,6 @@ public class UpdateMeetingService implements UpdateMeetingUseCase {
 			command.description()
 		);
 		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
-		meetingRepository.save(meeting);
 
 		return Result.of(
 			meeting.getId(),

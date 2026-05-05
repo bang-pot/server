@@ -13,6 +13,7 @@ import com.bangpot.crew.domain.CrewVisibility;
 import com.bangpot.meeting.application.exception.MeetingEditNotAllowedException;
 import com.bangpot.meeting.application.usecase.UpdateMeetingUseCase;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingStatus;
 
 class UpdateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 
@@ -102,6 +103,70 @@ class UpdateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 			null,
 			null
 		))).isInstanceOf(AccessDeniedException.class);
+	}
+
+	@Test
+	void rejectsNonHostBeforeAutomaticRecruitmentClose() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		AuthUser member = fullUser(78L, "member-provider", "member");
+		authUserRepository.save(host);
+		authUserRepository.save(member);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Friday Escape", "Time Attack", "Gangnam", "2026-04-12", "18:00", 4, null, null, null
+		));
+		clock.setInstant(NOW.plusSeconds(60));
+
+		assertThatThrownBy(() -> updateMeetingUseCase.handle(UpdateMeetingUseCase.Command.of(
+			crew.getId(),
+			meeting.getId(),
+			member.getId(),
+			"Late Night Escape",
+			"2026-04-22",
+			"20:00",
+			"Hongdae",
+			"Deep Blue",
+			2,
+			null,
+			null,
+			null
+		))).isInstanceOf(AccessDeniedException.class);
+
+		assertThat(meetingRepository.findById(meeting.getId()))
+			.get()
+			.extracting(Meeting::getStatus)
+			.isEqualTo(MeetingStatus.RECRUITING);
+	}
+
+	@Test
+	void locksMeetingWhenUpdating() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		authUserRepository.save(host);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Friday Escape", "Time Attack", "Gangnam", "2026-04-20", "19:30", 4, null, null, null
+		));
+		meetingRepository.resetLockTracking();
+
+		updateMeetingUseCase.handle(UpdateMeetingUseCase.Command.of(
+			crew.getId(),
+			meeting.getId(),
+			host.getId(),
+			"Late Night Escape",
+			"2026-04-22",
+			"20:00",
+			"Hongdae",
+			"Deep Blue",
+			2,
+			null,
+			null,
+			null
+		));
+
+		assertThat(meetingRepository.findByIdAndCrewIdForUpdateCalled()).isTrue();
 	}
 
 	@Test
