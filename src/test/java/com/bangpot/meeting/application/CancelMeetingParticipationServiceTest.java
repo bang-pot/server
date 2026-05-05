@@ -44,6 +44,28 @@ class CancelMeetingParticipationServiceTest extends AbstractMeetingUseCaseServic
 	}
 
 	@Test
+	void locksMeetingWhenCancelingParticipation() {
+		AuthUser host = fullUser(77L, "host-provider", "host");
+		AuthUser member = fullUser(78L, "member-provider", "member");
+		authUserRepository.save(host);
+		authUserRepository.save(member);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(CrewMember.createLeader(crew.getId(), host.getId()));
+		crewMemberRepository.save(CrewMember.createMember(crew.getId(), member.getId()));
+		Meeting meeting = meetingRepository.save(Meeting.create(
+			crew.getId(), host.getId(), "Test Theme", "Gangnam", "2026-04-20", "19:30", 4, null, null, null, null
+		));
+		meetingParticipantRepository.save(MeetingParticipant.join(meeting.getId(), member.getId()));
+		meetingRepository.resetLockTracking();
+
+		cancelMeetingParticipationUseCase.handle(
+			CancelMeetingParticipationUseCase.Command.of(crew.getId(), meeting.getId(), member.getId())
+		);
+
+		assertThat(meetingRepository.findByIdAndCrewIdForUpdateCalled()).isTrue();
+	}
+
+	@Test
 	void rejectsCancelWhenNotJoinedYet() {
 		AuthUser host = fullUser(77L, "host-provider", "host");
 		AuthUser member = fullUser(78L, "member-provider", "member");
