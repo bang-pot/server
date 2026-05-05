@@ -121,8 +121,9 @@ class MeetingLogController {
 
 	// Gallery detail is handled by MeetingGalleryController to keep card list/detail roles separate.
 
-	@PostMapping("/uploads/log-photos")
+	@PostMapping("/meetings/{meetingId}/logs/photos")
 	ResponseEntity<MeetingLogDto.MeetingLogPhotoUploadResponse> uploadPhoto(
+		@PathVariable Long meetingId,
 		Authentication authentication,
 		@RequestParam("file") MultipartFile file
 	) {
@@ -130,6 +131,7 @@ class MeetingLogController {
 			MeetingLogDtoMapper.toResponse(
 				uploadMeetingLogPhotoUseCase.handle(
 					UploadMeetingLogPhotoUseCase.Command.of(
+						meetingId,
 						requireAuthenticatedUserId(authentication),
 						ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString(),
 						file
