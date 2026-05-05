@@ -14,6 +14,7 @@ import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.domain.Meeting;
+import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 
@@ -45,7 +46,7 @@ public class CancelMeetingParticipationService implements CancelMeetingParticipa
 			throw new MeetingHostCannotCancelParticipationException(meeting.getId(), command.userId());
 		}
 
-		var participant = meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), command.userId())
+		MeetingParticipant participant = meetingParticipantRepository.findByMeetingIdAndUserId(meeting.getId(), command.userId())
 			.orElseThrow(() -> new MeetingParticipationNotJoinedException(meeting.getId(), command.userId()));
 		if (!participant.getStatus().representsJoined()) {
 			throw new MeetingParticipationNotJoinedException(meeting.getId(), command.userId());

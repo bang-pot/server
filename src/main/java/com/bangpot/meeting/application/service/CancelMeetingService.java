@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.bangpot.crew.application.exception.CrewNotFoundException;
 import com.bangpot.crew.application.port.CrewMemberRepository;
 import com.bangpot.crew.application.port.CrewRepository;
+import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
 import com.bangpot.meeting.application.port.MeetingRepository;
@@ -31,7 +32,7 @@ public class CancelMeetingService implements CancelMeetingUseCase {
 		crewRepository.findById(command.crewId()).orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
 		completedUserAccessService.validateCompletedUser(command.userId(), "가입한 크루원만 모임 취소를 실행할 수 있습니다.");
-		var crewMember = crewMemberRepository.findByCrewIdAndUserId(command.crewId(), command.userId())
+		CrewMember crewMember = crewMemberRepository.findByCrewIdAndUserId(command.crewId(), command.userId())
 			.orElseThrow(() -> new AccessDeniedException("가입한 크루원만 모임 취소를 실행할 수 있습니다."));
 
 		Meeting meeting = meetingRepository.findByIdAndCrewIdForUpdate(command.meetingId(), command.crewId())
