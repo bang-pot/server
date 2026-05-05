@@ -62,4 +62,18 @@ class CreateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 			crew.getId(), outsider.getId(), "Friday Escape", "2026-04-20", "19:30", "Gangnam", "Time Attack", 4, null, null, null
 		))).isInstanceOf(AccessDeniedException.class);
 	}
+
+	@Test
+	void validatesCompletedUserBeforeTakingCrewShareLock() {
+		AuthUser tempUser = tempUser(99L, "temp-provider");
+		authUserRepository.save(tempUser);
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+
+		assertThatThrownBy(() -> createMeetingUseCase.handle(CreateMeetingUseCase.Command.of(
+			crew.getId(), tempUser.getId(), "Friday Escape", "2026-04-20", "19:30", "Gangnam", "Time Attack", 4, null, null, null
+		))).isInstanceOf(AccessDeniedException.class)
+			.hasMessageContaining("가입한 크루원만 모임을 생성할 수 있습니다.");
+
+		assertThat(crewRepository.findByIdForShareCallCount).isZero();
+	}
 }

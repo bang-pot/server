@@ -18,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CreateMeetingService implements CreateMeetingUseCase {
 
+	private static final String CREATE_MEETING_DENIED_MESSAGE = "가입한 크루원만 모임을 생성할 수 있습니다.";
+
 	private final CompletedUserAccessService completedUserAccessService;
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
@@ -26,11 +28,11 @@ public class CreateMeetingService implements CreateMeetingUseCase {
 	@Override
 	@Transactional
 	public Result handle(Command command) {
+		completedUserAccessService.validateCompletedUser(command.userId(), CREATE_MEETING_DENIED_MESSAGE);
 		crewRepository.findByIdForShare(command.crewId()).orElseThrow(() -> new CrewNotFoundException(command.crewId()));
 
-		completedUserAccessService.validateCompletedUser(command.userId(), "가입한 크루원만 모임을 생성할 수 있습니다.");
 		if (crewMemberRepository.findByCrewIdAndUserId(command.crewId(), command.userId()).isEmpty()) {
-			throw new AccessDeniedException("가입한 크루원만 모임을 생성할 수 있습니다.");
+			throw new AccessDeniedException(CREATE_MEETING_DENIED_MESSAGE);
 		}
 
 		Meeting meeting = meetingRepository.save(Meeting.create(
