@@ -41,6 +41,7 @@ class JoinMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 			.get()
 			.extracting(MeetingParticipant::getStatus)
 			.isEqualTo(MeetingParticipationStatus.JOINED);
+		assertThat(meetingRepository.findByIdAndCrewIdForUpdateCalled()).isTrue();
 	}
 
 	@Test
