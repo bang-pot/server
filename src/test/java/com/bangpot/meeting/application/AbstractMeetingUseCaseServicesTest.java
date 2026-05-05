@@ -170,8 +170,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			completedUserAccessService,
 			crewRepository,
 			crewMemberRepository,
-			meetingRepository,
-			meetingRecruitmentCloseService
+			meetingRepository
 		);
 		completeMeetingUseCase = new CompleteMeetingService(
 			completedUserAccessService,
