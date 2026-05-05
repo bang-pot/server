@@ -20,6 +20,7 @@ import lombok.Getter;
 
 import com.bangpot.meeting.application.exception.MeetingEditNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingInvalidStatusTransitionException;
+import com.bangpot.meeting.application.exception.MeetingRecruitmentReopenNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingResultAlreadyRecordedException;
 import com.bangpot.meeting.application.exception.MeetingResultRecordNotAllowedException;
 
@@ -219,9 +220,12 @@ public class Meeting {
 		status = MeetingStatus.RECRUITMENT_CLOSED;
 	}
 
-	public void reopenRecruitment() {
+	public void reopenRecruitment(LocalDateTime now, long joinedCount) {
 		if (status != MeetingStatus.RECRUITMENT_CLOSED) {
 			throw new MeetingInvalidStatusTransitionException(id, status.name(), MeetingStatus.RECRUITING.name());
+		}
+		if (!now.isBefore(startAt()) || joinedCount >= capacity) {
+			throw new MeetingRecruitmentReopenNotAllowedException(id);
 		}
 		status = MeetingStatus.RECRUITING;
 	}

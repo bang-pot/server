@@ -163,7 +163,8 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository,
-			meetingRecruitmentCloseService
+			meetingParticipantRepository,
+			clock
 		);
 		cancelMeetingUseCase = new CancelMeetingService(
 			completedUserAccessService,
