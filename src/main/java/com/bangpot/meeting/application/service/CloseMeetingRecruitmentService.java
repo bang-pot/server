@@ -23,7 +23,6 @@ public class CloseMeetingRecruitmentService implements CloseMeetingRecruitmentUs
 	private final CrewRepository crewRepository;
 	private final CrewMemberRepository crewMemberRepository;
 	private final MeetingRepository meetingRepository;
-	private final MeetingRecruitmentCloseService meetingRecruitmentCloseService;
 
 	@Override
 	@Transactional
@@ -35,15 +34,13 @@ public class CloseMeetingRecruitmentService implements CloseMeetingRecruitmentUs
 			throw new AccessDeniedException("가입한 크루원만 모집마감을 변경할 수 있습니다.");
 		}
 
-		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
+		Meeting meeting = meetingRepository.findByIdAndCrewIdForUpdate(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
-		meetingRecruitmentCloseService.closeAndSaveIfNeeded(meeting);
 		if (!meeting.getHostUserId().equals(command.userId())) {
 			throw new AccessDeniedException("모임 개설자만 모집마감을 변경할 수 있습니다.");
 		}
 
 		meeting.closeRecruitment();
-		meetingRepository.save(meeting);
 		return Result.of(meeting.getId(), meeting.getStatus().name());
 	}
 }
