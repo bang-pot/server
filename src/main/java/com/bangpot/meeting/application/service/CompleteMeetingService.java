@@ -34,14 +34,13 @@ public class CompleteMeetingService implements CompleteMeetingUseCase {
 			throw new AccessDeniedException("가입한 크루원만 모임 종료를 실행할 수 있습니다.");
 		}
 
-		Meeting meeting = meetingRepository.findByIdAndCrewId(command.meetingId(), command.crewId())
+		Meeting meeting = meetingRepository.findByIdAndCrewIdForUpdate(command.meetingId(), command.crewId())
 			.orElseThrow(() -> new MeetingNotFoundException(command.meetingId()));
 		if (!meeting.getHostUserId().equals(command.userId())) {
 			throw new AccessDeniedException("모임 개설자만 모임 종료를 실행할 수 있습니다.");
 		}
 
 		meeting.complete();
-		meetingRepository.save(meeting);
 		return Result.of(meeting.getId(), meeting.getStatus().name());
 	}
 }
