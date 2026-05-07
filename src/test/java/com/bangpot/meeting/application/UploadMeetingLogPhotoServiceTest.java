@@ -7,19 +7,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.mock.web.MockMultipartFile;
 
 import com.bangpot.common.error.ApiErrorField;
 import com.bangpot.common.storage.FileStorage;
-import com.bangpot.common.storage.FileStorageProperties;
-import com.bangpot.common.storage.LocalFileStorage;
+import com.bangpot.common.storage.StoredFile;
 import com.bangpot.meeting.application.exception.MeetingLogRequestValidationException;
 import com.bangpot.meeting.application.port.MeetingParticipantRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
@@ -31,25 +27,25 @@ import com.bangpot.user.application.service.CompletedUserAccessService;
 
 class UploadMeetingLogPhotoServiceTest {
 
-	@TempDir
-	Path tempDir;
-
 	@Test
-	void uploadsPhotoAndReturnsUrlAndSize() throws Exception {
+	void uploadsPhotoAndReturnsUrlAndSize() {
 		var meetingRepository = meetingRepository(completedMeeting(1L, 7L));
+		FileStorage fileStorage = fileStorage("log-photos/stored-sample.jpg");
 		var service = new UploadMeetingLogPhotoService(
-			fileStorage(),
+			fileStorage,
 			completedUserAccessService(),
 			meetingRepository,
 			mock(MeetingParticipantRepository.class)
 		);
 		var file = new MockMultipartFile("file", "sample.jpg", "image/jpeg", "image-bytes".getBytes());
 
-		var result = service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, "http://localhost:8080", file));
+		var result = service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, file));
 
 		assertThat(result.sizeBytes()).isEqualTo(file.getSize());
-		assertThat(result.url()).startsWith("http://localhost:8080/uploads/log-photos/");
-		assertThat(Files.list(tempDir.resolve("log-photos")).count()).isEqualTo(1);
+		assertThat(result.url()).isEqualTo(
+			"https://banglog-image.s3.ap-northeast-2.amazonaws.com/log-photos/stored-sample.jpg"
+		);
+		verify(fileStorage).store("log-photos", file);
 	}
 
 	@Test
@@ -66,29 +62,31 @@ class UploadMeetingLogPhotoServiceTest {
 		);
 		var file = new MockMultipartFile("file", "sample.jpg", "image/jpeg", "image-bytes".getBytes());
 
-		assertThatThrownBy(() -> service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, "http://localhost:8080", file)))
+		assertThatThrownBy(() -> service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, file)))
 			.isInstanceOf(AccessDeniedException.class);
-		verify(fileStorage, never()).store(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+		verify(fileStorage, never()).store(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
 	}
 
 	@Test
-	void uploadsPhotoForParticipantWithHistory() throws Exception {
+	void uploadsPhotoForParticipantWithHistory() {
 		var meeting = completedMeeting(1L, 99L);
 		var meetingParticipantRepository = mock(MeetingParticipantRepository.class);
 		when(meetingParticipantRepository.findByMeetingIdAndUserId(1L, 7L))
 			.thenReturn(Optional.of(MeetingParticipant.join(1L, 7L)));
+		FileStorage fileStorage = fileStorage("log-photos/participant-sample.jpg");
 		var service = new UploadMeetingLogPhotoService(
-			fileStorage(),
+			fileStorage,
 			completedUserAccessService(),
 			meetingRepository(meeting),
 			meetingParticipantRepository
 		);
 		var file = new MockMultipartFile("file", "sample.jpg", "image/jpeg", "image-bytes".getBytes());
 
-		var result = service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, "http://localhost:8080", file));
+		var result = service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, file));
 
-		assertThat(result.url()).startsWith("http://localhost:8080/uploads/log-photos/");
-		assertThat(Files.list(tempDir.resolve("log-photos")).count()).isEqualTo(1);
+		assertThat(result.url()).isEqualTo(
+			"https://banglog-image.s3.ap-northeast-2.amazonaws.com/log-photos/participant-sample.jpg"
+		);
 	}
 
 	@Test
@@ -96,7 +94,7 @@ class UploadMeetingLogPhotoServiceTest {
 		var service = serviceFor(completedMeeting(1L, 7L));
 		var file = new MockMultipartFile("file", "sample.gif", "image/gif", "image-bytes".getBytes());
 
-		assertThatThrownBy(() -> service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, "http://localhost:8080", file)))
+		assertThatThrownBy(() -> service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, file)))
 			.isInstanceOf(MeetingLogRequestValidationException.class)
 			.extracting(ex -> ((MeetingLogRequestValidationException) ex).getFieldErrors())
 			.asList()
@@ -108,7 +106,7 @@ class UploadMeetingLogPhotoServiceTest {
 		var service = serviceFor(completedMeeting(1L, 7L));
 		var file = new MockMultipartFile("file", "sample.jpg", "text/plain", "image-bytes".getBytes());
 
-		assertThatThrownBy(() -> service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, "http://localhost:8080", file)))
+		assertThatThrownBy(() -> service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, file)))
 			.isInstanceOf(MeetingLogRequestValidationException.class)
 			.extracting(ex -> ((MeetingLogRequestValidationException) ex).getFieldErrors())
 			.asList()
@@ -121,7 +119,7 @@ class UploadMeetingLogPhotoServiceTest {
 		byte[] bytes = new byte[(int) (5L * 1024 * 1024) + 1];
 		var file = new MockMultipartFile("file", "sample.jpg", "image/jpeg", bytes);
 
-		assertThatThrownBy(() -> service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, "http://localhost:8080", file)))
+		assertThatThrownBy(() -> service.handle(UploadMeetingLogPhotoUseCase.Command.of(1L, 7L, file)))
 			.isInstanceOf(MeetingLogRequestValidationException.class)
 			.extracting(ex -> ((MeetingLogRequestValidationException) ex).getFieldErrors())
 			.asList()
@@ -134,7 +132,7 @@ class UploadMeetingLogPhotoServiceTest {
 
 	private UploadMeetingLogPhotoService serviceFor(Meeting meeting) {
 		return new UploadMeetingLogPhotoService(
-			fileStorage(),
+			fileStorage("log-photos/service-sample.jpg"),
 			completedUserAccessService(),
 			meetingRepository(meeting),
 			mock(MeetingParticipantRepository.class)
@@ -167,9 +165,15 @@ class UploadMeetingLogPhotoServiceTest {
 		return meeting;
 	}
 
-	private LocalFileStorage fileStorage() {
-		var properties = new FileStorageProperties();
-		properties.setRootDirectory(tempDir.toString());
-		return new LocalFileStorage(properties);
+	private FileStorage fileStorage(String key) {
+		FileStorage fileStorage = mock(FileStorage.class);
+		when(fileStorage.store(org.mockito.ArgumentMatchers.eq("log-photos"), org.mockito.ArgumentMatchers.any()))
+			.thenReturn(new StoredFile(
+				key,
+				"https://banglog-image.s3.ap-northeast-2.amazonaws.com/" + key,
+				"image-bytes".getBytes().length,
+				key.substring(key.lastIndexOf('/') + 1)
+			));
+		return fileStorage;
 	}
 }

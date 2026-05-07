@@ -257,7 +257,7 @@ class MeetingLogControllerTest {
 
 		when(uploadMeetingLogPhotoUseCase.handle(org.mockito.ArgumentMatchers.any()))
 			.thenReturn(UploadMeetingLogPhotoUseCase.Result.of(
-				"http://localhost:8080/uploads/log-photos/stored-sample.jpg",
+				"https://banglog-image.s3.ap-northeast-2.amazonaws.com/log-photos/stored-sample.jpg",
 				(Long) file.getSize()
 			));
 
@@ -267,7 +267,9 @@ class MeetingLogControllerTest {
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.url").value("http://localhost:8080/uploads/log-photos/stored-sample.jpg"))
+			.andExpect(jsonPath("$.url").value(
+				"https://banglog-image.s3.ap-northeast-2.amazonaws.com/log-photos/stored-sample.jpg"
+			))
 			.andExpect(jsonPath("$.sizeBytes").value((int) file.getSize()));
 	}
 

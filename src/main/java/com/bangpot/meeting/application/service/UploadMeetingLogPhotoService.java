@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.bangpot.common.error.ApiErrorField;
 import com.bangpot.common.storage.FileStorage;
+import com.bangpot.common.storage.StoredFile;
 import com.bangpot.meeting.application.exception.MeetingLogRequestValidationException;
 import com.bangpot.meeting.application.exception.MeetingLogWriteNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
@@ -49,7 +50,7 @@ public class UploadMeetingLogPhotoService implements UploadMeetingLogPhotoUseCas
 		MultipartFile file = command.file();
 		validate(file);
 
-		var storedFile = fileStorage.store(command.baseUrl(), LOG_PHOTO_CATEGORY, file);
+		StoredFile storedFile = fileStorage.store(LOG_PHOTO_CATEGORY, file);
 		return Result.of(storedFile.url(), storedFile.sizeBytes());
 	}
 
