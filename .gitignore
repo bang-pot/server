@@ -4,6 +4,7 @@ application-local-secret.yml
 src/main/resources/application-local-secret.yml
 .gradle
 build/
+perf/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
