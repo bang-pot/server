@@ -83,7 +83,7 @@ class ExploreControllerTest {
 					false
 				)
 			),
-			ExploreThemeSearchView.PageInfo.of(0, 20, true)
+			ExploreThemeSearchView.PageInfo.of(0, 20, true, 1234L, 62)
 		));
 
 		mockMvc.perform(
@@ -103,7 +103,9 @@ class ExploreControllerTest {
 			.andExpect(jsonPath("$.items[0].favoriteCount").value(0))
 			.andExpect(jsonPath("$.items[0].isFavorite").value(false))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
-			.andExpect(jsonPath("$.pageInfo.hasNext").value(true));
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(true))
+			.andExpect(jsonPath("$.pageInfo.totalElements").value(1234))
+			.andExpect(jsonPath("$.pageInfo.totalPages").value(62));
 	}
 
 	@Test
@@ -209,7 +211,7 @@ class ExploreControllerTest {
 					true
 				)
 			),
-			ExploreThemeSearchView.PageInfo.of(0, 20, false)
+			ExploreThemeSearchView.PageInfo.of(0, 20, false, 1L, 1)
 		));
 		when(getExploreThemeDetailUseCase.handle(GetExploreThemeDetailUseCase.Query.of(7L, 5L)))
 			.thenReturn(ExploreThemeDetailView.of(

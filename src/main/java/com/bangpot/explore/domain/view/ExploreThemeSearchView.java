@@ -92,10 +92,12 @@ public record ExploreThemeSearchView(
 	public record PageInfo(
 		int page,
 		int size,
-		boolean hasNext
+		boolean hasNext,
+		long totalElements,
+		int totalPages
 	) {
-		public static PageInfo of(int page, int size, boolean hasNext) {
-			return new PageInfo(page, size, hasNext);
+		public static PageInfo of(int page, int size, boolean hasNext, long totalElements, int totalPages) {
+			return new PageInfo(page, size, hasNext, totalElements, totalPages);
 		}
 	}
 }

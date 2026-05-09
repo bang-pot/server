@@ -34,7 +34,9 @@ final class ExploreDtoMapper {
 			new ExploreDto.PageInfoResponse(
 				result.pageInfo().page(),
 				result.pageInfo().size(),
-				result.pageInfo().hasNext()
+				result.pageInfo().hasNext(),
+				result.pageInfo().totalElements(),
+				result.pageInfo().totalPages()
 			)
 		);
 	}
