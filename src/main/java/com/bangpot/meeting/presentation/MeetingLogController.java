@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
@@ -119,8 +118,6 @@ class MeetingLogController {
 		);
 	}
 
-	// Gallery detail is handled by MeetingGalleryController to keep card list/detail roles separate.
-
 	@PostMapping("/meetings/{meetingId}/logs/photos")
 	ResponseEntity<MeetingLogDto.MeetingLogPhotoUploadResponse> uploadPhoto(
 		@PathVariable Long meetingId,
@@ -133,7 +130,6 @@ class MeetingLogController {
 					UploadMeetingLogPhotoUseCase.Command.of(
 						meetingId,
 						requireAuthenticatedUserId(authentication),
-						ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString(),
 						file
 					)
 				)

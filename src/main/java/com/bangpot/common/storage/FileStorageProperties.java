@@ -1,8 +1,5 @@
 package com.bangpot.common.storage;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import lombok.Getter;
@@ -13,9 +10,20 @@ import lombok.Setter;
 @ConfigurationProperties(prefix = "bangpot.storage")
 public class FileStorageProperties {
 
-	private String rootDirectory = Paths.get(System.getProperty("user.dir"), "storage").toString();
+	private String publicBaseUrl = "";
 
-	public Path rootDirectoryPath() {
-		return Paths.get(rootDirectory).toAbsolutePath().normalize();
+	private S3 s3 = new S3();
+
+	@Getter
+	@Setter
+	public static class S3 {
+
+		private String bucket = "";
+
+		private String region = "ap-northeast-2";
+
+		private String accessKey = "";
+
+		private String secretKey = "";
 	}
 }

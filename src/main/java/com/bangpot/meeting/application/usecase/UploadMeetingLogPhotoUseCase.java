@@ -9,11 +9,10 @@ public interface UploadMeetingLogPhotoUseCase {
 	record Command(
 		Long meetingId,
 		Long userId,
-		String baseUrl,
 		MultipartFile file
 	) {
-		public static Command of(Long meetingId, Long userId, String baseUrl, MultipartFile file) {
-			return new Command(meetingId, userId, baseUrl, file);
+		public static Command of(Long meetingId, Long userId, MultipartFile file) {
+			return new Command(meetingId, userId, file);
 		}
 	}
 
