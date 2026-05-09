@@ -45,7 +45,7 @@ public class Theme {
 	@Column(name = "running_time_minutes")
 	private Integer runningTimeMinutes;
 
-	@Column(name = "description")
+	@Column(name = "description", columnDefinition = "text")
 	private String description;
 
 	@Column(name = "external_link")
