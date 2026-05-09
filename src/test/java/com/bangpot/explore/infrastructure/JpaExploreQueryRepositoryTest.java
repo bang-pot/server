@@ -39,6 +39,8 @@ class JpaExploreQueryRepositoryTest {
 
 		assertThat(result.items()).hasSize(2);
 		assertThat(result.pageInfo().hasNext()).isFalse();
+		assertThat(result.pageInfo().totalElements()).isEqualTo(2L);
+		assertThat(result.pageInfo().totalPages()).isEqualTo(1);
 	}
 
 	@Test

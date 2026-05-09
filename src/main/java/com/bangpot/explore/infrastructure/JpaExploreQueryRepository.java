@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Repository;
 
 import com.bangpot.explore.application.port.ExploreQueryRepository;
@@ -35,7 +35,7 @@ class JpaExploreQueryRepository implements ExploreQueryRepository {
 		boolean keywordEmpty = isBlank(searchCondition.keyword());
 		boolean regionEmpty = isBlank(searchCondition.region());
 		boolean districtEmpty = isBlank(searchCondition.district());
-		Slice<ThemeJpaRepository.ThemeCardProjection> slice = themeJpaRepository.search(
+		Page<ThemeJpaRepository.ThemeCardProjection> page = themeJpaRepository.search(
 			keywordEmpty,
 			keywordPattern(searchCondition.keyword()),
 			genres,
@@ -47,13 +47,19 @@ class JpaExploreQueryRepository implements ExploreQueryRepository {
 			PageRequest.of(searchCondition.page(), searchCondition.size())
 		);
 
-		List<ExploreThemeSearchView.Item> items = slice.getContent().stream()
+		List<ExploreThemeSearchView.Item> items = page.getContent().stream()
 			.map(this::toItem)
 			.toList();
 
 		return ExploreThemeSearchView.of(
 			items,
-			ExploreThemeSearchView.PageInfo.of(searchCondition.page(), searchCondition.size(), slice.hasNext())
+			ExploreThemeSearchView.PageInfo.of(
+				searchCondition.page(),
+				searchCondition.size(),
+				page.hasNext(),
+				page.getTotalElements(),
+				page.getTotalPages()
+			)
 		);
 	}
 

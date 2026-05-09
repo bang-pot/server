@@ -221,9 +221,18 @@ class ExploreThemeSearchServiceTest {
 				.toList();
 
 			boolean hasNext = toIndex < filtered.size();
+			int totalPages = filtered.isEmpty()
+				? 0
+				: (int)Math.ceil((double)filtered.size() / searchCondition.size());
 			return ExploreThemeSearchView.of(
 				items,
-				ExploreThemeSearchView.PageInfo.of(searchCondition.page(), searchCondition.size(), hasNext)
+				ExploreThemeSearchView.PageInfo.of(
+					searchCondition.page(),
+					searchCondition.size(),
+					hasNext,
+					filtered.size(),
+					totalPages
+				)
 			);
 		}
 

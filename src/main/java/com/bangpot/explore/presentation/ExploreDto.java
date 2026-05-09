@@ -27,7 +27,9 @@ final class ExploreDto {
 	record PageInfoResponse(
 		int page,
 		int size,
-		boolean hasNext
+		boolean hasNext,
+		long totalElements,
+		int totalPages
 	) {
 	}
 

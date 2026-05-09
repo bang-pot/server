@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemeDetailUseCase;
 import com.bangpot.explore.application.usecase.GetExploreThemesUseCase;
@@ -67,13 +66,6 @@ class ExploreController {
 	@GetMapping("/filters")
 	ResponseEntity<ExploreDto.ExploreFiltersResponse> getFilters() {
 		return ResponseEntity.ok(ExploreDtoMapper.toResponse(getExploreFiltersUseCase.handle()));
-	}
-
-	private Long requireAuthenticatedUserId(Authentication authentication) {
-		if (authentication == null || !(authentication.getPrincipal() instanceof Long userId)) {
-			throw new UnauthenticatedException();
-		}
-		return userId;
 	}
 
 	private Long authenticatedUserIdOrNull(Authentication authentication) {
