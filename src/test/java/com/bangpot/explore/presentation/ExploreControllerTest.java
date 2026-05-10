@@ -73,7 +73,7 @@ class ExploreControllerTest {
 					101L,
 					"Seoul Escape Hongdae",
 					"Seoul Mapo",
-					"HORROR",
+					List.of("HORROR", "THRILLER"),
 					"https://image.example/deep-blue.jpg",
 					4,
 					"ACTIVE",
@@ -99,7 +99,8 @@ class ExploreControllerTest {
 			.andExpect(jsonPath("$.items[0].themeId").value(1))
 			.andExpect(jsonPath("$.items[0].themeName").value("Deep Blue"))
 			.andExpect(jsonPath("$.items[0].storeName").value("Seoul Escape Hongdae"))
-			.andExpect(jsonPath("$.items[0].genre").value("HORROR"))
+			.andExpect(jsonPath("$.items[0].genres[0]").value("HORROR"))
+			.andExpect(jsonPath("$.items[0].genres[1]").value("THRILLER"))
 			.andExpect(jsonPath("$.items[0].favoriteCount").value(0))
 			.andExpect(jsonPath("$.items[0].isFavorite").value(false))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
@@ -145,7 +146,7 @@ class ExploreControllerTest {
 				1L,
 				"Seoul Escape Hongdae",
 				"Seoul Mapo",
-				"HORROR",
+				List.of("HORROR"),
 				"https://image.example/deep-blue.jpg",
 				4,
 				60,
@@ -159,7 +160,7 @@ class ExploreControllerTest {
 						1L,
 						"Seoul Escape Hongdae",
 						"Seoul Mapo",
-						"COMEDY",
+						List.of("COMEDY"),
 						null,
 						2,
 						50,
@@ -201,7 +202,7 @@ class ExploreControllerTest {
 					101L,
 					"Seoul Escape Hongdae",
 					"Seoul Mapo",
-					"HORROR",
+					List.of("HORROR"),
 					"https://image.example/deep-blue.jpg",
 					4,
 					"ACTIVE",
@@ -220,7 +221,7 @@ class ExploreControllerTest {
 				1L,
 				"Seoul Escape Hongdae",
 				"Seoul Mapo",
-				"HORROR",
+				List.of("HORROR"),
 				"https://image.example/deep-blue.jpg",
 				4,
 				60,

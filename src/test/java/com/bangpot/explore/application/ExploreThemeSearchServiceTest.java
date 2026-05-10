@@ -44,11 +44,11 @@ class ExploreThemeSearchServiceTest {
 	void searchesThemesByKeywordAcrossThemeStoreAndRegion() {
 		repository.append(
 			1L, 101L, "Deep Blue", "Seoul Escape Hongdae", "Seoul", "Mapo",
-			"HORROR", "https://image.example/deep-blue.jpg", 4, "HIGH", "2-4 players", 60, 0
+			List.of("HORROR", "THRILLER"), "https://image.example/deep-blue.jpg", 4, "HIGH", "2-4 players", 60, 0
 		);
 		repository.append(
 			2L, 102L, "Time Attack", "Busan Escape Haeundae", "Busan", "Haeundae",
-			"THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0
+			List.of("THRILLER"), null, 3, "MEDIUM", "3-5 players", 75, 0
 		);
 
 		ExploreThemeSearchView result = getExploreThemesUseCase.handle(
@@ -75,9 +75,9 @@ class ExploreThemeSearchServiceTest {
 
 	@Test
 	void appliesGenreAndRegionFiltersWithPagination() {
-		repository.append(1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam", "HORROR", null, 4, "HIGH", "2-4 players", 60, 0);
-		repository.append(2L, 101L, "Lost Temple", "Store A", "Seoul", "Gangnam", "HORROR", null, 3, "MEDIUM", "3-5 players", 75, 0);
-		repository.append(3L, 102L, "Comedy Room", "Store B", "Seoul", "Mapo", "COMEDY", null, 2, "LOW", "2-3 players", 50, 0);
+		repository.append(1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam", List.of("HORROR", "THRILLER"), null, 4, "HIGH", "2-4 players", 60, 0);
+		repository.append(2L, 101L, "Lost Temple", "Store A", "Seoul", "Gangnam", List.of("HORROR"), null, 3, "MEDIUM", "3-5 players", 75, 0);
+		repository.append(3L, 102L, "Comedy Room", "Store B", "Seoul", "Mapo", List.of("COMEDY"), null, 2, "LOW", "2-3 players", 50, 0);
 
 		ExploreThemeSearchView firstPage = getExploreThemesUseCase.handle(
 			GetExploreThemesUseCase.Query.of(null, List.of("HORROR"), "Seoul", "Gangnam", 0, 1)
@@ -95,19 +95,19 @@ class ExploreThemeSearchServiceTest {
 		assertThat(secondPage.items()).hasSize(1);
 		assertThat(secondPage.pageInfo().hasNext()).isFalse();
 		assertThat(secondPage.items())
-			.extracting(ExploreThemeSearchView.Item::genre)
-			.containsOnly("HORROR");
+			.extracting(ExploreThemeSearchView.Item::genres)
+			.allMatch(genres -> genres.contains("HORROR"));
 	}
 
 	@Test
 	void marksFavoritedThemesForAuthenticatedUserOnly() {
 		repository.append(
 			1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam",
-			"HORROR", null, 4, "HIGH", "2-4 players", 60, 3
+			List.of("HORROR"), null, 4, "HIGH", "2-4 players", 60, 3
 		);
 		repository.append(
 			2L, 101L, "Laugh Track", "Store A", "Seoul", "Gangnam",
-			"COMEDY", null, 2, "LOW", "2-4 players", 50, 1
+			List.of("COMEDY"), null, 2, "LOW", "2-4 players", 50, 1
 		);
 		themeFavoriteRepository.favorite(7L, 1L);
 
@@ -128,7 +128,7 @@ class ExploreThemeSearchServiceTest {
 	void skipsFavoriteLookupWhenAuthenticatedSearchResultIsEmpty() {
 		repository.append(
 			1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam",
-			"HORROR", null, 4, "HIGH", "2-4 players", 60, 3
+			List.of("HORROR"), null, 4, "HIGH", "2-4 players", 60, 3
 		);
 
 		ExploreThemeSearchView result = getExploreThemesUseCase.handle(
@@ -141,9 +141,9 @@ class ExploreThemeSearchServiceTest {
 
 	@Test
 	void returnsFilterOptionsGroupedByRegion() {
-		repository.append(1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam", "HORROR", null, 4, "HIGH", "2-4 players", 60, 0);
-		repository.append(2L, 102L, "Lost Temple", "Store B", "Seoul", "Mapo", "THRILLER", null, 3, "MEDIUM", "3-5 players", 75, 0);
-		repository.append(3L, 103L, "Comedy Room", "Store C", "Busan", "Haeundae", "COMEDY", null, 2, "LOW", "2-3 players", 50, 0);
+		repository.append(1L, 101L, "Deep Blue", "Store A", "Seoul", "Gangnam", List.of("HORROR", "THRILLER"), null, 4, "HIGH", "2-4 players", 60, 0);
+		repository.append(2L, 102L, "Lost Temple", "Store B", "Seoul", "Mapo", List.of("THRILLER"), null, 3, "MEDIUM", "3-5 players", 75, 0);
+		repository.append(3L, 103L, "Comedy Room", "Store C", "Busan", "Haeundae", List.of("COMEDY"), null, 2, "LOW", "2-3 players", 50, 0);
 
 		ExploreFiltersView result = getExploreFiltersUseCase.handle();
 
@@ -166,7 +166,7 @@ class ExploreThemeSearchServiceTest {
 			String storeName,
 			String region,
 			String district,
-			String genre,
+			List<String> genres,
 			String posterImageUrl,
 			Integer difficulty,
 			String activityLabel,
@@ -181,7 +181,7 @@ class ExploreThemeSearchServiceTest {
 				storeName,
 				region,
 				district,
-				genre,
+				genres,
 				posterImageUrl,
 				difficulty,
 				activityLabel,
@@ -210,7 +210,7 @@ class ExploreThemeSearchServiceTest {
 					row.storeId(),
 					row.storeName(),
 					row.region() + " " + row.district(),
-					row.genre(),
+					row.genres(),
 					row.posterImageUrl(),
 					row.difficulty(),
 					row.activityLabel(),
@@ -239,7 +239,7 @@ class ExploreThemeSearchServiceTest {
 		@Override
 		public ExploreFiltersView getFilters() {
 			List<String> genres = rows.stream()
-				.map(Row::genre)
+				.flatMap(row -> row.genres().stream())
 				.distinct()
 				.sorted()
 				.toList();
@@ -288,7 +288,7 @@ class ExploreThemeSearchServiceTest {
 		}
 
 		private boolean matchesGenres(Row row, List<String> genres) {
-			return genres == null || genres.isEmpty() || genres.contains(row.genre());
+			return genres == null || genres.isEmpty() || row.genres().stream().anyMatch(genres::contains);
 		}
 
 		private boolean matchesRegion(Row row, String region) {
@@ -310,7 +310,7 @@ class ExploreThemeSearchServiceTest {
 			String storeName,
 			String region,
 			String district,
-			String genre,
+			List<String> genres,
 			String posterImageUrl,
 			Integer difficulty,
 			String activityLabel,
