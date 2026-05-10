@@ -27,10 +27,10 @@ public class Theme {
 	@Column(name = "name", nullable = false)
 	private String name;
 
-	@Column(name = "genre", nullable = false)
+	@Column(name = "genre")
 	private String genre;
 
-	@Column(name = "poster_image_url")
+	@Column(name = "poster_image_url", columnDefinition = "text")
 	private String posterImageUrl;
 
 	@Column(name = "difficulty")
@@ -48,7 +48,7 @@ public class Theme {
 	@Column(name = "description", columnDefinition = "text")
 	private String description;
 
-	@Column(name = "external_link")
+	@Column(name = "external_link", columnDefinition = "text")
 	private String externalLink;
 
 	@Column(name = "favorite_count", nullable = false)

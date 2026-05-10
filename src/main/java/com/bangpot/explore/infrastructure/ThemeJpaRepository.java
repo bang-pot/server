@@ -49,7 +49,6 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 			       s.name as storeName,
 			       s.region as region,
 			       s.district as district,
-			       t.genre as genre,
 			       t.posterImageUrl as posterImageUrl,
 			       t.difficulty as difficulty,
 			       t.activityLabel as activityLabel,
@@ -66,7 +65,7 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 			        or lower(s.region) like :keywordPattern
 			        or lower(coalesce(s.district, '')) like :keywordPattern
 			      )
-			  and (:genresEmpty = true or t.genre in :genres)
+			  and (:genresEmpty = true or t.id in :genreThemeIds)
 			  and (:regionEmpty = true or s.region = :region)
 			  and (:districtEmpty = true or s.district = :district)
 			order by t.id desc
@@ -83,7 +82,7 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 			        or lower(s.region) like :keywordPattern
 			        or lower(coalesce(s.district, '')) like :keywordPattern
 			      )
-			  and (:genresEmpty = true or t.genre in :genres)
+			  and (:genresEmpty = true or t.id in :genreThemeIds)
 			  and (:regionEmpty = true or s.region = :region)
 			  and (:districtEmpty = true or s.district = :district)
 			"""
@@ -91,7 +90,7 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 	Page<ThemeCardProjection> search(
 		@Param("keywordEmpty") boolean keywordEmpty,
 		@Param("keywordPattern") String keywordPattern,
-		@Param("genres") List<String> genres,
+		@Param("genreThemeIds") List<Long> genreThemeIds,
 		@Param("genresEmpty") boolean genresEmpty,
 		@Param("regionEmpty") boolean regionEmpty,
 		@Param("region") String region,
@@ -100,14 +99,33 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		Pageable pageable
 	);
 
-	@Query("""
-		select distinct t.genre
-		from Theme t
-		where t.active = true
-		  and t.genre is not null
-		order by t.genre asc
-		""")
+	@Query(value = """
+		select distinct g.name
+		from genres g
+		join theme_genres tg on tg.genre_id = g.id
+		join themes t on t.id = tg.theme_id
+		where t.is_active = true
+		order by g.name asc
+		""", nativeQuery = true)
 	List<String> findActiveGenres();
+
+	@Query(value = """
+		select tg.theme_id as themeId,
+		       g.name as genreName
+		from theme_genres tg
+		join genres g on g.id = tg.genre_id
+		where tg.theme_id in :themeIds
+		order by tg.theme_id asc, g.name asc
+		""", nativeQuery = true)
+	List<ThemeGenreProjection> findGenresByThemeIds(@Param("themeIds") List<Long> themeIds);
+
+	@Query(value = """
+		select distinct tg.theme_id
+		from theme_genres tg
+		join genres g on g.id = tg.genre_id
+		where g.name in :genres
+		""", nativeQuery = true)
+	List<Long> findThemeIdsByGenres(@Param("genres") List<String> genres);
 
 	@Query("""
 		select t.id as themeId,
@@ -116,7 +134,6 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		       s.name as storeName,
 		       s.region as region,
 		       s.district as district,
-		       t.genre as genre,
 		       t.posterImageUrl as posterImageUrl,
 		       t.difficulty as difficulty,
 		       t.runningTimeMinutes as runningTimeMinutes,
@@ -136,7 +153,6 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		       s.name as storeName,
 		       s.region as region,
 		       s.district as district,
-		       t.genre as genre,
 		       t.posterImageUrl as posterImageUrl,
 		       t.difficulty as difficulty,
 		       t.runningTimeMinutes as runningTimeMinutes,
@@ -177,8 +193,6 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 
 		String getDistrict();
 
-		String getGenre();
-
 		String getPosterImageUrl();
 
 		Integer getDifficulty();
@@ -205,8 +219,6 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 
 		String getDistrict();
 
-		String getGenre();
-
 		String getPosterImageUrl();
 
 		Integer getDifficulty();
@@ -231,8 +243,6 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 
 		String getDistrict();
 
-		String getGenre();
-
 		String getPosterImageUrl();
 
 		Integer getDifficulty();
@@ -246,5 +256,11 @@ interface ThemeJpaRepository extends JpaRepository<Theme, Long> {
 		String getThemeName();
 
 		String getPosterImageUrl();
+	}
+
+	interface ThemeGenreProjection {
+		Long getThemeId();
+
+		String getGenreName();
 	}
 }

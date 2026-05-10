@@ -58,7 +58,7 @@ public class GetExploreThemesService implements GetExploreThemesUseCase {
 					item.storeId(),
 					item.storeName(),
 					item.regionLabel(),
-					item.genre(),
+					item.genres(),
 					item.posterImageUrl(),
 					item.difficulty(),
 					item.activityLabel(),
