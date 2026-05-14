@@ -12,13 +12,15 @@ import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.PublicCrewPreviewView;
 import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.domain.view.ThemePreviewView;
+import com.bangpot.home.application.usecase.GetHomeUseCase;
+import com.bangpot.home.domain.view.HomeActivityRecordView;
 import com.bangpot.home.domain.view.HomeMyCrewsView;
 import com.bangpot.home.domain.view.HomePublicCrewPreviewView;
 import com.bangpot.home.domain.view.HomeThemePreviewView;
 import com.bangpot.home.domain.view.HomeUpcomingMeetingsView;
 import com.bangpot.home.domain.view.HomeView;
-import com.bangpot.home.application.usecase.GetHomeUseCase;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
+import com.bangpot.meeting.domain.view.MeetingActivityRecordView;
 import com.bangpot.meeting.domain.view.UpcomingMeetingsView;
 import com.bangpot.user.application.port.UserQueryRepository;
 
@@ -29,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class GetHomeService implements GetHomeUseCase {
 
 	private static final int MY_CREWS_LIMIT = 5;
-	private static final int UPCOMING_MEETINGS_LIMIT = 5;
+	private static final int NEAREST_UPCOMING_MEETING_LIMIT = 1;
 	private static final int PUBLIC_CREW_PREVIEW_LIMIT = 8;
 	private static final int THEME_PREVIEW_LIMIT = 8;
 
@@ -48,6 +50,7 @@ public class GetHomeService implements GetHomeUseCase {
 			isLoggedIn,
 			loadMyCrewsSection(query.userId(), isLoggedIn),
 			loadUpcomingMeetingsSection(query.userId(), isLoggedIn),
+			loadActivityRecordSection(query.userId(), isLoggedIn),
 			loadPublicCrewPreviewSection(),
 			loadThemeExplorePreviewSection(query.userId(), isLoggedIn)
 		);
@@ -75,31 +78,49 @@ public class GetHomeService implements GetHomeUseCase {
 
 	private HomeUpcomingMeetingsView loadUpcomingMeetingsSection(Long userId, boolean isLoggedIn) {
 		if (!isLoggedIn) {
-			return HomeUpcomingMeetingsView.of(List.of(), 0L);
+			return HomeUpcomingMeetingsView.empty();
 		}
 
 		LocalDateTime now = LocalDateTime.now(clock);
 		UpcomingMeetingsView result = meetingQueryRepository.findUpcomingMeetingsViewByUserId(
 			userId,
-			UPCOMING_MEETINGS_LIMIT,
+			NEAREST_UPCOMING_MEETING_LIMIT,
 			now.toLocalDate().toString(),
 			now.toLocalTime().withSecond(0).withNano(0).toString()
 		);
 
+		UpcomingMeetingsView.Item nearestMeeting = result.nearestMeeting();
+		if (nearestMeeting == null) {
+			return HomeUpcomingMeetingsView.of(null, result.totalCount());
+		}
 		return HomeUpcomingMeetingsView.of(
-			result.items().stream()
-				.map(item -> HomeUpcomingMeetingsView.Item.of(
-					item.meetingId(),
-					item.title(),
-					item.crewId(),
-					item.crewName(),
-					item.date(),
-					item.time(),
-					item.status()
-				))
-				.toList(),
+			HomeUpcomingMeetingsView.Item.of(
+				nearestMeeting.meetingId(),
+				nearestMeeting.themeName(),
+				nearestMeeting.date(),
+				nearestMeeting.time()
+			),
 			result.totalCount()
 		);
+	}
+
+	private HomeActivityRecordView loadActivityRecordSection(Long userId, boolean isLoggedIn) {
+		if (!isLoggedIn) {
+			return HomeActivityRecordView.empty();
+		}
+
+		MeetingActivityRecordView result = meetingQueryRepository.findActivityRecordViewByUserId(userId);
+		return HomeActivityRecordView.of(
+			result.completedCount(),
+			calculateSuccessRate(result.completedCount(), result.successCount())
+		);
+	}
+
+	private int calculateSuccessRate(Long completedCount, Long successCount) {
+		if (completedCount == 0L) {
+			return 0;
+		}
+		return (int) Math.round(successCount * 100.0 / completedCount);
 	}
 
 	private HomePublicCrewPreviewView loadPublicCrewPreviewSection() {

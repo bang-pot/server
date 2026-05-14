@@ -1,34 +1,30 @@
 package com.bangpot.home.domain.view;
 
-import java.util.List;
-
 public record HomeUpcomingMeetingsView(
-	List<HomeUpcomingMeetingsView.Item> items,
+	HomeUpcomingMeetingsView.Item nearestMeeting,
 	Long totalCount
 ) {
-	public static HomeUpcomingMeetingsView of(List<HomeUpcomingMeetingsView.Item> items, Long totalCount) {
-		return new HomeUpcomingMeetingsView(items, totalCount);
+	public static HomeUpcomingMeetingsView of(HomeUpcomingMeetingsView.Item nearestMeeting, Long totalCount) {
+		return new HomeUpcomingMeetingsView(nearestMeeting, totalCount);
+	}
+
+	public static HomeUpcomingMeetingsView empty() {
+		return new HomeUpcomingMeetingsView(null, 0L);
 	}
 
 	public record Item(
 		Long meetingId,
-		String title,
-		Long crewId,
-		String crewName,
+		String themeName,
 		String date,
-		String time,
-		String status
+		String time
 	) {
 		public static Item of(
 			Long meetingId,
-			String title,
-			Long crewId,
-			String crewName,
+			String themeName,
 			String date,
-			String time,
-			String status
+			String time
 		) {
-			return new Item(meetingId, title, crewId, crewName, date, time, status);
+			return new Item(meetingId, themeName, date, time);
 		}
 	}
 }

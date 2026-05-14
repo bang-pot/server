@@ -18,6 +18,7 @@ import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.Meeting;
 import com.bangpot.meeting.domain.MeetingParticipant;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingResult;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
 
@@ -90,16 +91,62 @@ class JpaMeetingQueryRepositoryTest {
 
 		var result = repository.findUpcomingMeetingsViewByUserId(7L, 10, "2026-04-19", "10:00");
 
-		assertThat(result.items()).extracting(com.bangpot.meeting.domain.view.UpcomingMeetingsView.Item::meetingId)
-			.containsExactly(
-				hostRecruiting.getId(),
-				approvedMeeting.getId(),
-				joinedMeeting.getId(),
-				pendingMeeting.getId()
-			);
-		assertThat(result.items()).extracting(com.bangpot.meeting.domain.view.UpcomingMeetingsView.Item::status)
-			.containsExactly("RECRUITING", "RECRUITING", "RECRUITING", "RECRUITING");
+		assertThat(result.nearestMeeting().meetingId()).isEqualTo(hostRecruiting.getId());
+		assertThat(result.nearestMeeting().themeName()).isEqualTo("Theme A");
 		assertThat(result.totalCount()).isEqualTo(4L);
+	}
+
+	@Test
+	void returnsActivityRecordWithCompletedCountAndSuccessCount() {
+		Meeting hostedSuccess = entityManager.persist(Meeting.create(
+			1L, 7L, "hosted success", "Theme A", "Seoul", "2026-04-20", "10:00", 4, null, null, "desc"
+		));
+		hostedSuccess.closeRecruitment();
+		hostedSuccess.complete();
+		hostedSuccess.recordResult(MeetingResult.SUCCESS);
+
+		Meeting hostedFailure = entityManager.persist(Meeting.create(
+			1L, 7L, "hosted failure", "Theme B", "Seoul", "2026-04-21", "11:00", 4, null, null, "desc"
+		));
+		hostedFailure.closeRecruitment();
+		hostedFailure.complete();
+		hostedFailure.recordResult(MeetingResult.FAILURE);
+
+		Meeting joinedSuccess = entityManager.persist(Meeting.create(
+			1L, 20L, "joined success", "Theme C", "Seoul", "2026-04-22", "12:00", 4, null, null, "desc"
+		));
+		joinedSuccess.closeRecruitment();
+		joinedSuccess.complete();
+		joinedSuccess.recordResult(MeetingResult.SUCCESS);
+		entityManager.persist(MeetingParticipant.join(joinedSuccess.getId(), 7L));
+
+		Meeting joinedFailure = entityManager.persist(Meeting.create(
+			1L, 21L, "joined failure", "Theme D", "Seoul", "2026-04-23", "13:00", 4, null, null, "desc"
+		));
+		joinedFailure.closeRecruitment();
+		joinedFailure.complete();
+		joinedFailure.recordResult(MeetingResult.FAILURE);
+		entityManager.persist(MeetingParticipant.rehydrate(
+			null,
+			joinedFailure.getId(),
+			7L,
+			MeetingParticipationStatus.APPROVED,
+			null,
+			null
+		));
+
+		Meeting recruiting = entityManager.persist(Meeting.create(
+			1L, 7L, "recruiting", "Theme E", "Seoul", "2026-04-24", "14:00", 4, null, null, "desc"
+		));
+		entityManager.persist(MeetingParticipant.join(recruiting.getId(), 7L));
+
+		entityManager.flush();
+		entityManager.clear();
+
+		var result = repository.findActivityRecordViewByUserId(7L);
+
+		assertThat(result.completedCount()).isEqualTo(4L);
+		assertThat(result.successCount()).isEqualTo(2L);
 	}
 
 	@Test

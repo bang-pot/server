@@ -23,10 +23,11 @@ import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
 import com.bangpot.home.application.service.GetHomeService;
 import com.bangpot.home.application.usecase.GetHomeUseCase;
+import com.bangpot.home.domain.view.HomeActivityRecordView;
 import com.bangpot.home.domain.view.HomeMyCrewsView;
-import com.bangpot.home.domain.view.HomeUpcomingMeetingsView;
 import com.bangpot.home.domain.view.HomeView;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
+import com.bangpot.meeting.domain.view.MeetingActivityRecordView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
 import com.bangpot.meeting.domain.view.MyCreatedMeetingsView;
 import com.bangpot.meeting.domain.view.MyJoinedMeetingsView;
@@ -83,8 +84,9 @@ class GetHomeServiceTest {
 		assertThat(result.isLoggedIn()).isFalse();
 		assertThat(result.myCrews().items()).isEmpty();
 		assertThat(result.myCrews().totalCount()).isZero();
-		assertThat(result.upcomingMeetings().items()).isEmpty();
+		assertThat(result.upcomingMeetings().nearestMeeting()).isNull();
 		assertThat(result.upcomingMeetings().totalCount()).isZero();
+		assertThat(result.activityRecord()).isEqualTo(HomeActivityRecordView.empty());
 		assertThat(result.publicCrewPreview().items()).hasSize(1);
 		assertThat(result.themeExplorePreview().items()).hasSize(1);
 		assertThat(result.themeExplorePreview().items().getFirst().favoriteCount()).isEqualTo(7);
@@ -113,12 +115,13 @@ class GetHomeServiceTest {
 			UpcomingMeetingsView.of(
 				List.of(
 					UpcomingMeetingsView.Item.of(
-						101L, "Friday Escape", 11L, "Alpha Crew", "2026-04-20", "19:00", "RECRUITING"
+						101L, "Theme A", "2026-04-20", "19:00"
 					)
 				),
 				4L
 			)
 		);
+		meetingQueryRepository.activityRecordViewByUserId.put(7L, MeetingActivityRecordView.of(4L, 3L));
 		exploreQueryRepository.themePreviewView = ThemePreviewView.of(List.of(
 			ThemePreviewView.Item.of(
 				101L,
@@ -138,8 +141,10 @@ class GetHomeServiceTest {
 		assertThat(result.myCrews().items()).extracting(HomeMyCrewsView.Item::crewId)
 			.containsExactly(11L, 12L);
 		assertThat(result.upcomingMeetings().totalCount()).isEqualTo(4L);
-		assertThat(result.upcomingMeetings().items()).extracting(HomeUpcomingMeetingsView.Item::meetingId)
-			.containsExactly(101L);
+		assertThat(result.upcomingMeetings().nearestMeeting().meetingId()).isEqualTo(101L);
+		assertThat(result.upcomingMeetings().nearestMeeting().themeName()).isEqualTo("Theme A");
+		assertThat(result.activityRecord().completedCount()).isEqualTo(4L);
+		assertThat(result.activityRecord().successRate()).isEqualTo(75);
 		assertThat(result.publicCrewPreview().items()).hasSize(1);
 		assertThat(result.themeExplorePreview().items()).hasSize(1);
 		assertThat(result.themeExplorePreview().items().getFirst().favoriteCount()).isEqualTo(7);
@@ -274,6 +279,7 @@ class GetHomeServiceTest {
 
 	private static final class InMemoryMeetingQueryRepository implements MeetingQueryRepository {
 		private final Map<Long, UpcomingMeetingsView> upcomingMeetingsViewByUserId = new HashMap<>();
+		private final Map<Long, MeetingActivityRecordView> activityRecordViewByUserId = new HashMap<>();
 
 		@Override
 		public MyCalendarView findMyCalendarViewByUserId(Long userId) {
@@ -293,6 +299,11 @@ class GetHomeServiceTest {
 		@Override
 		public UpcomingMeetingsView findUpcomingMeetingsViewByUserId(Long userId, int limit, String currentDate, String currentTime) {
 			return upcomingMeetingsViewByUserId.getOrDefault(userId, UpcomingMeetingsView.of(List.of(), 0L));
+		}
+
+		@Override
+		public MeetingActivityRecordView findActivityRecordViewByUserId(Long userId) {
+			return activityRecordViewByUserId.getOrDefault(userId, MeetingActivityRecordView.empty());
 		}
 
 		@Override

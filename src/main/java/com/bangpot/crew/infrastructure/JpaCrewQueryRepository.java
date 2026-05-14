@@ -164,8 +164,7 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 		return crewJpaRepository.countMyCrewsViewByMemberUserId(
 			userId,
 			CrewMemberStatus.ACTIVE,
-			CrewStatus.ACTIVE,
-			CrewRole.LEADER
+			CrewStatus.ACTIVE
 		);
 	}
 

@@ -8,6 +8,7 @@ final class HomeDto {
 		boolean isLoggedIn,
 		MyCrewsSectionResponse myCrews,
 		UpcomingMeetingsSectionResponse upcomingMeetings,
+		ActivityRecordSectionResponse activityRecord,
 		PublicCrewPreviewSectionResponse publicCrewPreview,
 		ThemeExplorePreviewSectionResponse themeExplorePreview
 	) {
@@ -26,19 +27,22 @@ final class HomeDto {
 	}
 
 	record UpcomingMeetingsSectionResponse(
-		List<UpcomingMeetingItemResponse> items,
+		UpcomingMeetingItemResponse nearestMeeting,
 		Long totalCount
 	) {
 	}
 
 	record UpcomingMeetingItemResponse(
 		Long meetingId,
-		String title,
-		Long crewId,
-		String crewName,
+		String themeName,
 		String date,
-		String time,
-		String status
+		String time
+	) {
+	}
+
+	record ActivityRecordSectionResponse(
+		Long completedCount,
+		Integer successRate
 	) {
 	}
 

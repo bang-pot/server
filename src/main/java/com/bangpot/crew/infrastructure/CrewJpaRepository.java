@@ -302,22 +302,17 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	);
 
 	@Query("""
-		select count(c)
-		from CrewMember member, Crew c, CrewMember leaderMember, UserJpaEntity leaderUser
+		select count(c.id)
+		from CrewMember member, Crew c
 		where member.crewId = c.id
-		  and leaderMember.crewId = c.id
-		  and leaderUser.id = leaderMember.userId
 		  and member.userId = :userId
 		  and member.status = :activeMemberStatus
 		  and c.status = :activeCrewStatus
-		  and leaderMember.role = :leaderRole
-		  and leaderMember.status = :activeMemberStatus
 		""")
 	long countMyCrewsViewByMemberUserId(
 		@Param("userId") Long userId,
 		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
-		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
-		@Param("leaderRole") com.bangpot.crew.domain.CrewRole leaderRole
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus
 	);
 
 	@Query("""

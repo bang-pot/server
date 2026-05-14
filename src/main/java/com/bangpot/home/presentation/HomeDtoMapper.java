@@ -21,10 +21,12 @@ final class HomeDtoMapper {
 				result.myCrews().totalCount()
 			),
 			new HomeDto.UpcomingMeetingsSectionResponse(
-				result.upcomingMeetings().items().stream()
-					.map(HomeDtoMapper::toUpcomingMeetingItemResponse)
-					.toList(),
+				toUpcomingMeetingItemResponse(result.upcomingMeetings().nearestMeeting()),
 				result.upcomingMeetings().totalCount()
+			),
+			new HomeDto.ActivityRecordSectionResponse(
+				result.activityRecord().completedCount(),
+				result.activityRecord().successRate()
 			),
 			new HomeDto.PublicCrewPreviewSectionResponse(
 				result.publicCrewPreview().items().stream()
@@ -44,14 +46,14 @@ final class HomeDtoMapper {
 	}
 
 	private static HomeDto.UpcomingMeetingItemResponse toUpcomingMeetingItemResponse(HomeUpcomingMeetingsView.Item item) {
+		if (item == null) {
+			return null;
+		}
 		return new HomeDto.UpcomingMeetingItemResponse(
 			item.meetingId(),
-			item.title(),
-			item.crewId(),
-			item.crewName(),
+			item.themeName(),
 			item.date(),
-			item.time(),
-			item.status()
+			item.time()
 		);
 	}
 

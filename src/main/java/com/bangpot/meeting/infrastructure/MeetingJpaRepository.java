@@ -325,12 +325,9 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	@Query("""
 		select new com.bangpot.meeting.domain.view.UpcomingMeetingsView$Item(
 			m.id,
-			m.title,
-			c.id,
-			c.name,
+			m.themeName,
 			m.meetingDate,
-			m.meetingTime,
-			concat('', m.status)
+			m.meetingTime
 		)
 		from Meeting m, Crew c
 		where m.crewId = c.id
@@ -340,19 +337,40 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 			m.meetingDate > :currentDate
 			or (m.meetingDate = :currentDate and m.meetingTime >= :currentTime)
 		  )
+		  and m.hostUserId = :userId
+		order by m.meetingDate asc, m.meetingTime asc, m.id asc
+		""")
+	List<UpcomingMeetingsView.Item> findHostedUpcomingMeetingsViewByUserId(
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("upcomingStatuses") List<MeetingStatus> upcomingStatuses,
+		@Param("currentDate") String currentDate,
+		@Param("currentTime") String currentTime,
+		Pageable pageable
+	);
+
+	@Query("""
+		select new com.bangpot.meeting.domain.view.UpcomingMeetingsView$Item(
+			m.id,
+			m.themeName,
+			m.meetingDate,
+			m.meetingTime
+		)
+		from MeetingParticipant mp, Meeting m, Crew c
+		where mp.meetingId = m.id
+		  and m.crewId = c.id
+		  and c.status = :activeCrewStatus
+		  and mp.userId = :userId
+		  and mp.status in :includedParticipationStatuses
+		  and m.hostUserId <> :userId
+		  and m.status in :upcomingStatuses
 		  and (
-			m.hostUserId = :userId
-			or exists (
-				select 1
-				from MeetingParticipant mp
-				where mp.meetingId = m.id
-				  and mp.userId = :userId
-				  and mp.status in :includedParticipationStatuses
-			)
+			m.meetingDate > :currentDate
+			or (m.meetingDate = :currentDate and m.meetingTime >= :currentTime)
 		  )
 		order by m.meetingDate asc, m.meetingTime asc, m.id asc
 		""")
-	List<UpcomingMeetingsView.Item> findUpcomingMeetingsViewByUserId(
+	List<UpcomingMeetingsView.Item> findJoinedUpcomingMeetingsViewByUserId(
 		@Param("userId") Long userId,
 		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
 		@Param("upcomingStatuses") List<MeetingStatus> upcomingStatuses,
@@ -372,24 +390,94 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 			m.meetingDate > :currentDate
 			or (m.meetingDate = :currentDate and m.meetingTime >= :currentTime)
 		  )
+		  and m.hostUserId = :userId
+		""")
+	long countHostedUpcomingMeetingsByUserId(
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("upcomingStatuses") List<MeetingStatus> upcomingStatuses,
+		@Param("currentDate") String currentDate,
+		@Param("currentTime") String currentTime
+	);
+
+	@Query("""
+		select count(mp.id)
+		from MeetingParticipant mp, Meeting m, Crew c
+		where mp.meetingId = m.id
+		  and m.crewId = c.id
+		  and c.status = :activeCrewStatus
+		  and mp.userId = :userId
+		  and mp.status in :includedParticipationStatuses
+		  and m.hostUserId <> :userId
+		  and m.status in :upcomingStatuses
 		  and (
-			m.hostUserId = :userId
-			or exists (
-				select 1
-				from MeetingParticipant mp
-				where mp.meetingId = m.id
-				  and mp.userId = :userId
-				  and mp.status in :includedParticipationStatuses
-			)
+			m.meetingDate > :currentDate
+			or (m.meetingDate = :currentDate and m.meetingTime >= :currentTime)
 		  )
 		""")
-	long countUpcomingMeetingsByUserId(
+	long countJoinedUpcomingMeetingsByUserId(
 		@Param("userId") Long userId,
 		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
 		@Param("upcomingStatuses") List<MeetingStatus> upcomingStatuses,
 		@Param("includedParticipationStatuses") List<MeetingParticipationStatus> includedParticipationStatuses,
 		@Param("currentDate") String currentDate,
 		@Param("currentTime") String currentTime
+	);
+
+	@Query("""
+		select count(m)
+		from Meeting m
+		where m.hostUserId = :userId
+		  and m.status = :completedStatus
+		""")
+	long countCompletedHostedActivityByUserId(
+		@Param("userId") Long userId,
+		@Param("completedStatus") MeetingStatus completedStatus
+	);
+
+	@Query("""
+		select count(mp)
+		from MeetingParticipant mp, Meeting m
+		where mp.meetingId = m.id
+		  and mp.userId = :userId
+		  and mp.status in :joinedStatuses
+		  and m.status = :completedStatus
+		  and m.hostUserId <> mp.userId
+		""")
+	long countCompletedJoinedActivityByUserId(
+		@Param("userId") Long userId,
+		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses,
+		@Param("completedStatus") MeetingStatus completedStatus
+	);
+
+	@Query("""
+		select count(m)
+		from Meeting m
+		where m.hostUserId = :userId
+		  and m.status = :completedStatus
+		  and m.result = :successResult
+		""")
+	long countSuccessfulHostedActivityByUserId(
+		@Param("userId") Long userId,
+		@Param("completedStatus") MeetingStatus completedStatus,
+		@Param("successResult") MeetingResult successResult
+	);
+
+	@Query("""
+		select count(mp)
+		from MeetingParticipant mp, Meeting m
+		where mp.meetingId = m.id
+		  and mp.userId = :userId
+		  and mp.status in :joinedStatuses
+		  and m.status = :completedStatus
+		  and m.result = :successResult
+		  and m.hostUserId <> mp.userId
+		""")
+	long countSuccessfulJoinedActivityByUserId(
+		@Param("userId") Long userId,
+		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses,
+		@Param("completedStatus") MeetingStatus completedStatus,
+		@Param("successResult") MeetingResult successResult
 	);
 
 	@Query("""
