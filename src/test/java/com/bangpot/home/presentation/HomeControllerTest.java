@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.bangpot.common.error.ApiErrorResponseFactory;
 import com.bangpot.common.error.GlobalApiExceptionHandler;
 import com.bangpot.home.application.usecase.GetHomeUseCase;
+import com.bangpot.home.domain.view.HomeActivityRecordView;
 import com.bangpot.home.domain.view.HomeMyCrewsView;
 import com.bangpot.home.domain.view.HomePublicCrewPreviewView;
 import com.bangpot.home.domain.view.HomeThemePreviewView;
@@ -44,7 +45,8 @@ class HomeControllerTest {
 			.thenReturn(HomeView.of(
 				false,
 				HomeMyCrewsView.of(List.of(), 0L),
-				HomeUpcomingMeetingsView.of(List.of(), 0L),
+				HomeUpcomingMeetingsView.empty(),
+				HomeActivityRecordView.empty(),
 				HomePublicCrewPreviewView.of(
 					List.of(HomePublicCrewPreviewView.Item.of(31L, "Alpha Crew", null, 12L))
 				),
@@ -67,9 +69,9 @@ class HomeControllerTest {
 			.andExpect(jsonPath("$.myCrews.items").isArray())
 			.andExpect(jsonPath("$.myCrews.items").isEmpty())
 			.andExpect(jsonPath("$.myCrews.totalCount").value(0))
-			.andExpect(jsonPath("$.upcomingMeetings.items").isArray())
-			.andExpect(jsonPath("$.upcomingMeetings.items").isEmpty())
 			.andExpect(jsonPath("$.upcomingMeetings.totalCount").value(0))
+			.andExpect(jsonPath("$.activityRecord.completedCount").value(0))
+			.andExpect(jsonPath("$.activityRecord.successRate").value(0))
 			.andExpect(jsonPath("$.publicCrewPreview.items[0].crewId").value(31))
 			.andExpect(jsonPath("$.themeExplorePreview.items[0].themeId").value(101))
 			.andExpect(jsonPath("$.themeExplorePreview.items[0].favoriteCount").value(7))
@@ -86,11 +88,12 @@ class HomeControllerTest {
 					3L
 				),
 				HomeUpcomingMeetingsView.of(
-					List.of(HomeUpcomingMeetingsView.Item.of(
-						101L, "Friday Escape", 11L, "Alpha Crew", "2026-04-20", "19:00", "RECRUITING"
-					)),
+					HomeUpcomingMeetingsView.Item.of(
+						101L, "Theme A", "2026-04-20", "19:00"
+					),
 					4L
 				),
+				HomeActivityRecordView.of(4L, 75),
 				HomePublicCrewPreviewView.of(List.of()),
 				HomeThemePreviewView.of(List.of())
 			));
@@ -104,8 +107,10 @@ class HomeControllerTest {
 			.andExpect(jsonPath("$.myCrews.items[0].crewId").value(11))
 			.andExpect(jsonPath("$.myCrews.items[0].crewName").value("Alpha Crew"))
 			.andExpect(jsonPath("$.myCrews.totalCount").value(3))
-			.andExpect(jsonPath("$.upcomingMeetings.items[0].meetingId").value(101))
-			.andExpect(jsonPath("$.upcomingMeetings.items[0].crewName").value("Alpha Crew"))
-			.andExpect(jsonPath("$.upcomingMeetings.totalCount").value(4));
+			.andExpect(jsonPath("$.upcomingMeetings.nearestMeeting.meetingId").value(101))
+			.andExpect(jsonPath("$.upcomingMeetings.nearestMeeting.themeName").value("Theme A"))
+			.andExpect(jsonPath("$.upcomingMeetings.totalCount").value(4))
+			.andExpect(jsonPath("$.activityRecord.completedCount").value(4))
+			.andExpect(jsonPath("$.activityRecord.successRate").value(75));
 	}
 }

@@ -11,6 +11,7 @@ import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.MeetingDetailView;
+import com.bangpot.meeting.domain.view.MeetingActivityRecordView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.meeting.domain.view.MeetingsView;
 import com.bangpot.meeting.domain.view.MyCalendarView;
@@ -32,6 +33,8 @@ public interface MeetingQueryRepository {
 		String currentDate,
 		String currentTime
 	);
+
+	MeetingActivityRecordView findActivityRecordViewByUserId(Long userId);
 
 	CrewScheduleView findCrewScheduleViewByCrewId(Long crewId, LocalDate from, LocalDate to);
 

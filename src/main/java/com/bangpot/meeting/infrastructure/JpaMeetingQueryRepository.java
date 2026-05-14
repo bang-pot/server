@@ -19,11 +19,13 @@ import com.bangpot.crew.domain.CrewMemberStatus;
 import com.bangpot.crew.domain.CrewStatus;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.domain.MeetingParticipationStatus;
+import com.bangpot.meeting.domain.MeetingResult;
 import com.bangpot.meeting.domain.MeetingStatus;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailView;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryDetailTargetView;
 import com.bangpot.meeting.domain.view.CrewMeetingGalleryView;
 import com.bangpot.meeting.domain.view.CrewScheduleView;
+import com.bangpot.meeting.domain.view.MeetingActivityRecordView;
 import com.bangpot.meeting.domain.view.MeetingDetailView;
 import com.bangpot.meeting.domain.view.MeetingsAccessView;
 import com.bangpot.meeting.domain.view.MeetingsView;
@@ -123,7 +125,16 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 		String currentDate,
 		String currentTime
 	) {
-		List<UpcomingMeetingsView.Item> items = meetingJpaRepository.findUpcomingMeetingsViewByUserId(
+		List<UpcomingMeetingsView.Item> items = new ArrayList<>();
+		items.addAll(meetingJpaRepository.findHostedUpcomingMeetingsViewByUserId(
+			userId,
+			CrewStatus.ACTIVE,
+			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED),
+			currentDate,
+			currentTime,
+			PageRequest.of(0, limit)
+		));
+		items.addAll(meetingJpaRepository.findJoinedUpcomingMeetingsViewByUserId(
 			userId,
 			CrewStatus.ACTIVE,
 			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED),
@@ -131,8 +142,21 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			currentDate,
 			currentTime,
 			PageRequest.of(0, limit)
-		);
-		long totalCount = meetingJpaRepository.countUpcomingMeetingsByUserId(
+		));
+
+		UpcomingMeetingsView.Item nearestMeeting = items.stream()
+			.min(Comparator
+				.comparing(UpcomingMeetingsView.Item::date)
+				.thenComparing(UpcomingMeetingsView.Item::time)
+				.thenComparing(UpcomingMeetingsView.Item::meetingId))
+			.orElse(null);
+		long totalCount = meetingJpaRepository.countHostedUpcomingMeetingsByUserId(
+			userId,
+			CrewStatus.ACTIVE,
+			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED),
+			currentDate,
+			currentTime
+		) + meetingJpaRepository.countJoinedUpcomingMeetingsByUserId(
 			userId,
 			CrewStatus.ACTIVE,
 			List.of(MeetingStatus.RECRUITING, MeetingStatus.RECRUITMENT_CLOSED),
@@ -140,7 +164,22 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 			currentDate,
 			currentTime
 		);
-		return UpcomingMeetingsView.of(items, totalCount);
+		return UpcomingMeetingsView.of(nearestMeeting, totalCount);
+	}
+
+	@Override
+	public MeetingActivityRecordView findActivityRecordViewByUserId(Long userId) {
+		return MeetingActivityRecordView.of(
+			meetingJpaRepository.countCompletedHostedActivityByUserId(userId, MeetingStatus.COMPLETED)
+				+ meetingJpaRepository.countCompletedJoinedActivityByUserId(userId, JOINED_STATUSES, MeetingStatus.COMPLETED),
+			meetingJpaRepository.countSuccessfulHostedActivityByUserId(userId, MeetingStatus.COMPLETED, MeetingResult.SUCCESS)
+				+ meetingJpaRepository.countSuccessfulJoinedActivityByUserId(
+					userId,
+					JOINED_STATUSES,
+					MeetingStatus.COMPLETED,
+					MeetingResult.SUCCESS
+				)
+		);
 	}
 
 	@Override

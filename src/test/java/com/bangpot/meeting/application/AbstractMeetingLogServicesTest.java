@@ -686,6 +686,11 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 
 		@Override
+		public com.bangpot.meeting.domain.view.MeetingActivityRecordView findActivityRecordViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MeetingActivityRecordView.empty();
+		}
+
+		@Override
 		public com.bangpot.meeting.domain.view.CrewScheduleView findCrewScheduleViewByCrewId(
 			Long crewId,
 			java.time.LocalDate from,

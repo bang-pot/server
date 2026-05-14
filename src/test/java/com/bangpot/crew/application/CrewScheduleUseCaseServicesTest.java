@@ -477,6 +477,11 @@ class CrewScheduleUseCaseServicesTest {
 		}
 
 		@Override
+		public com.bangpot.meeting.domain.view.MeetingActivityRecordView findActivityRecordViewByUserId(Long userId) {
+			return com.bangpot.meeting.domain.view.MeetingActivityRecordView.empty();
+		}
+
+		@Override
 		public CrewScheduleView findCrewScheduleViewByCrewId(Long crewId, LocalDate from, LocalDate to) {
 			return CrewScheduleView.of(meetingRepository.findAllByCrewId(crewId).stream()
 				.filter(meeting -> INCLUDED_STATUSES.contains(meeting.getStatus()))
