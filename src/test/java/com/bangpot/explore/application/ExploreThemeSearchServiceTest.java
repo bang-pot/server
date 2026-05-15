@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import com.bangpot.explore.application.port.ExploreQueryRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteRepository;
+import com.bangpot.explore.application.service.ExploreThemeSearchReader;
 import com.bangpot.explore.application.service.GetExploreFiltersService;
 import com.bangpot.explore.application.service.GetExploreThemesService;
 import com.bangpot.explore.application.usecase.GetExploreFiltersUseCase;
@@ -36,7 +37,10 @@ class ExploreThemeSearchServiceTest {
 	void setUp() {
 		repository = new InMemoryExploreQueryRepository();
 		themeFavoriteRepository = new InMemoryThemeFavoriteRepository();
-		getExploreThemesUseCase = new GetExploreThemesService(repository, themeFavoriteRepository);
+		getExploreThemesUseCase = new GetExploreThemesService(
+			new ExploreThemeSearchReader(repository),
+			themeFavoriteRepository
+		);
 		getExploreFiltersUseCase = new GetExploreFiltersService(repository);
 	}
 

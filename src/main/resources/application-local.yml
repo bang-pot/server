@@ -32,6 +32,9 @@ bangpot:
       secure-cookie: ${BANGPOT_AUTH_JWT_SECURE_COOKIE:false}
   ops:
     environment-name: local
+  cache:
+    redis:
+      enabled: ${BANGPOT_CACHE_REDIS_ENABLED:true}
 
 logging:
   level:

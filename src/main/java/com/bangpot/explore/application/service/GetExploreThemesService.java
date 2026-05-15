@@ -17,13 +17,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GetExploreThemesService implements GetExploreThemesUseCase {
 
-	private final ExploreQueryRepository exploreQueryRepository;
+	private final ExploreThemeSearchReader exploreThemeSearchReader;
 	private final ThemeFavoriteRepository themeFavoriteRepository;
 
 	@Override
 	@Transactional(readOnly = true)
 	public ExploreThemeSearchView handle(Query query) {
-		ExploreThemeSearchView result = exploreQueryRepository.search(
+		ExploreThemeSearchView result = exploreThemeSearchReader.search(
 			ExploreQueryRepository.SearchCondition.of(
 				query.keyword(),
 				query.genres(),
