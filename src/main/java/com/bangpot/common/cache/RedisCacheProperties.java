@@ -8,7 +8,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record RedisCacheProperties(
 	boolean enabled,
 	Duration defaultTtl,
-	Duration exploreThemeSearchTtl
+	Duration exploreThemeSearchTtl,
+	Duration homeAnonymousTtl
 ) {
 
 	public RedisCacheProperties {
@@ -17,6 +18,9 @@ public record RedisCacheProperties(
 		}
 		if (exploreThemeSearchTtl == null) {
 			exploreThemeSearchTtl = Duration.ofSeconds(60);
+		}
+		if (homeAnonymousTtl == null) {
+			homeAnonymousTtl = Duration.ofSeconds(60);
 		}
 	}
 }
