@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.common.idempotency.Idempotent;
 import com.bangpot.meeting.application.usecase.CreateMeetingUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingParticipationUseCase;
 import com.bangpot.meeting.application.usecase.CancelMeetingUseCase;
@@ -50,6 +51,7 @@ class MeetingController {
 	private final RecordMeetingResultUseCase recordMeetingResultUseCase;
 
 	@PostMapping
+	@Idempotent
 	ResponseEntity<MeetingDto.CreateMeetingResponse> create(
 		@PathVariable Long crewId,
 		Authentication authentication,
@@ -63,6 +65,7 @@ class MeetingController {
 	}
 
 	@PatchMapping("/{meetingId}")
+	@Idempotent
 	ResponseEntity<MeetingDto.UpdateMeetingResponse> update(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,
@@ -105,6 +108,7 @@ class MeetingController {
 	}
 
 	@PostMapping("/{meetingId}/join")
+	@Idempotent
 	ResponseEntity<MeetingDto.MeetingJoinResponse> join(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,
@@ -118,6 +122,7 @@ class MeetingController {
 	}
 
 	@DeleteMapping("/{meetingId}/join")
+	@Idempotent
 	ResponseEntity<MeetingDto.MeetingJoinResponse> cancelJoin(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,
@@ -131,6 +136,7 @@ class MeetingController {
 	}
 
 	@PostMapping("/{meetingId}/close-recruitment")
+	@Idempotent
 	ResponseEntity<MeetingDto.MeetingStatusChangeResponse> closeRecruitment(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,
@@ -144,6 +150,7 @@ class MeetingController {
 	}
 
 	@PostMapping("/{meetingId}/reopen-recruitment")
+	@Idempotent
 	ResponseEntity<MeetingDto.MeetingStatusChangeResponse> reopenRecruitment(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,
@@ -157,6 +164,7 @@ class MeetingController {
 	}
 
 	@PostMapping("/{meetingId}/cancel")
+	@Idempotent
 	ResponseEntity<MeetingDto.MeetingStatusChangeResponse> cancelMeeting(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,
@@ -170,6 +178,7 @@ class MeetingController {
 	}
 
 	@PostMapping("/{meetingId}/complete")
+	@Idempotent
 	ResponseEntity<MeetingDto.MeetingStatusChangeResponse> completeMeeting(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,
@@ -183,6 +192,7 @@ class MeetingController {
 	}
 
 	@PostMapping("/{meetingId}/result")
+	@Idempotent
 	ResponseEntity<MeetingDto.MeetingResultRecordResponse> recordResult(
 		@PathVariable Long crewId,
 		@PathVariable Long meetingId,

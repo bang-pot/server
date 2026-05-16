@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.common.idempotency.Idempotent;
 import com.bangpot.explore.application.usecase.AddThemeFavoriteUseCase;
 import com.bangpot.explore.application.usecase.RemoveThemeFavoriteUseCase;
 
@@ -26,6 +27,7 @@ class ThemeFavoriteController {
 	private final RemoveThemeFavoriteUseCase removeThemeFavoriteUseCase;
 
 	@PostMapping("/{themeId}/favorite")
+	@Idempotent
 	ResponseEntity<ExploreDto.ThemeFavoriteResponse> addFavorite(
 		Authentication authentication,
 		@PathVariable("themeId") @Positive(message = "themeId는 1 이상이어야 합니다.") Long themeId
@@ -38,6 +40,7 @@ class ThemeFavoriteController {
 	}
 
 	@DeleteMapping("/{themeId}/favorite")
+	@Idempotent
 	ResponseEntity<ExploreDto.ThemeFavoriteResponse> removeFavorite(
 		Authentication authentication,
 		@PathVariable("themeId") @Positive(message = "themeId는 1 이상이어야 합니다.") Long themeId

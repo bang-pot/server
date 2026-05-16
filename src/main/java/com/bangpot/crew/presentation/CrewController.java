@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.common.idempotency.Idempotent;
 import com.bangpot.crew.application.usecase.CreateCrewUseCase;
 import com.bangpot.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.bangpot.crew.application.usecase.CancelCrewJoinRequestUseCase;
@@ -73,6 +74,7 @@ class CrewController {
 	private final RejectCrewJoinRequestUseCase rejectCrewJoinRequestUseCase;
 
 	@PostMapping
+	@Idempotent
 	ResponseEntity<CrewDto.CreateCrewResponse> create(
 		Authentication authentication,
 		@Valid @RequestBody CrewDto.CreateCrewRequest request
@@ -158,6 +160,7 @@ class CrewController {
 	}
 
 	@PatchMapping("/{crewId}/visibility")
+	@Idempotent
 	ResponseEntity<CrewDto.UpdateCrewVisibilityResponse> updateCrewVisibility(
 		@PathVariable Long crewId,
 		Authentication authentication,
@@ -171,6 +174,7 @@ class CrewController {
 	}
 
 	@PostMapping("/{crewId}/leave")
+	@Idempotent
 	ResponseEntity<CrewDto.LeaveCrewResponse> leaveCrew(
 		@PathVariable Long crewId,
 		Authentication authentication
@@ -183,6 +187,7 @@ class CrewController {
 	}
 
 	@PostMapping("/{crewId}/members/{targetUserId}/remove")
+	@Idempotent
 	ResponseEntity<CrewDto.RemoveCrewMemberResponse> removeCrewMember(
 		@PathVariable Long crewId,
 		@PathVariable Long targetUserId,
@@ -196,6 +201,7 @@ class CrewController {
 	}
 
 	@PostMapping("/{crewId}/delete")
+	@Idempotent
 	ResponseEntity<CrewDto.DeleteCrewResponse> deleteCrew(
 		@PathVariable Long crewId,
 		Authentication authentication,
@@ -209,6 +215,7 @@ class CrewController {
 	}
 
 	@PostMapping("/{crewId}/transfer-leadership")
+	@Idempotent
 	ResponseEntity<CrewDto.TransferCrewLeadershipResponse> transferLeadership(
 		@PathVariable Long crewId,
 		Authentication authentication,
@@ -233,6 +240,7 @@ class CrewController {
 	}
 
 	@PostMapping("/{crewId}/join-requests")
+	@Idempotent
 	ResponseEntity<CrewDto.RequestCrewJoinResponse> requestJoin(
 		@PathVariable Long crewId,
 		Authentication authentication,
@@ -297,6 +305,7 @@ class CrewController {
 	}
 
 	@PostMapping("/{crewId}/invites")
+	@Idempotent
 	ResponseEntity<CrewDto.CreateCrewInviteResponse> createInvite(
 		@PathVariable Long crewId,
 		Authentication authentication,
@@ -309,6 +318,7 @@ class CrewController {
 	}
 
 	@PostMapping("/{crewId}/join-requests/{requestId}/approve")
+	@Idempotent
 	ResponseEntity<CrewDto.ApproveCrewJoinRequestResponse> approveJoinRequest(
 		@PathVariable Long crewId,
 		@PathVariable Long requestId,
@@ -321,6 +331,7 @@ class CrewController {
 	}
 
 	@PostMapping("/{crewId}/join-requests/{requestId}/reject")
+	@Idempotent
 	ResponseEntity<CrewDto.RejectCrewJoinRequestResponse> rejectJoinRequest(
 		@PathVariable Long crewId,
 		@PathVariable Long requestId,
@@ -333,6 +344,7 @@ class CrewController {
 	}
 
 	@PostMapping("/join-requests/{requestId}/cancel")
+	@Idempotent
 	ResponseEntity<CrewDto.CancelCrewJoinRequestResponse> cancelJoinRequest(
 		@PathVariable Long requestId,
 		Authentication authentication

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.application.usecase.CompleteTempUserUseCase;
 import com.bangpot.auth.application.usecase.GetCurrentAuthUserUseCase;
+import com.bangpot.common.idempotency.Idempotent;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ class AuthController {
 	}
 
 	@PostMapping("/complete")
+	@Idempotent
 	ResponseEntity<AuthDto.AuthCompletionResponse> complete(
 		Authentication authentication,
 		@Valid @RequestBody AuthDto.AuthCompletionRequest completionRequest
