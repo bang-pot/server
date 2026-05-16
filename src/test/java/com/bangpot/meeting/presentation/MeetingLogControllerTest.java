@@ -1,5 +1,6 @@
 package com.bangpot.meeting.presentation;
 
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -255,14 +256,16 @@ class MeetingLogControllerTest {
 	void uploadsLogPhotoForAuthenticatedUser() throws Exception {
 		var file = new MockMultipartFile("file", "sample.jpg", MediaType.IMAGE_JPEG_VALUE, "image-bytes".getBytes());
 
-		when(uploadMeetingLogPhotoUseCase.handle(org.mockito.ArgumentMatchers.any()))
+		when(uploadMeetingLogPhotoUseCase.handle(argThat(command ->
+			command.userId().equals(7L) && command.file().equals(file)
+		)))
 			.thenReturn(UploadMeetingLogPhotoUseCase.Result.of(
 				"https://banglog-image.s3.ap-northeast-2.amazonaws.com/log-photos/stored-sample.jpg",
 				(Long) file.getSize()
 			));
 
 		mockMvc.perform(
-			multipart("/api/meetings/55/logs/photos")
+			multipart("/api/uploads/log-photos")
 				.file(file)
 				.principal(new UsernamePasswordAuthenticationToken(7L, null))
 		)
@@ -278,7 +281,7 @@ class MeetingLogControllerTest {
 		var file = new MockMultipartFile("file", "sample.jpg", MediaType.IMAGE_JPEG_VALUE, "image-bytes".getBytes());
 
 		mockMvc.perform(
-			multipart("/api/meetings/55/logs/photos")
+			multipart("/api/uploads/log-photos")
 				.file(file)
 		)
 			.andExpect(status().isUnauthorized())

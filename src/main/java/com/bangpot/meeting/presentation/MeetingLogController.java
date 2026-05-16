@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.common.idempotency.Idempotent;
 import com.bangpot.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
@@ -39,6 +40,7 @@ class MeetingLogController {
 	private final UploadMeetingLogPhotoUseCase uploadMeetingLogPhotoUseCase;
 
 	@PostMapping("/meetings/{meetingId}/logs")
+	@Idempotent
 	ResponseEntity<MeetingLogDto.MeetingLogWriteResponse> create(
 		@PathVariable Long meetingId,
 		Authentication authentication,
@@ -54,6 +56,7 @@ class MeetingLogController {
 	}
 
 	@PatchMapping("/logs/{logId}")
+	@Idempotent
 	ResponseEntity<MeetingLogDto.MeetingLogWriteResponse> update(
 		@PathVariable Long logId,
 		Authentication authentication,
@@ -69,6 +72,7 @@ class MeetingLogController {
 	}
 
 	@DeleteMapping("/crews/{crewId}/logs/{logId}")
+	@Idempotent
 	ResponseEntity<MeetingLogDto.MeetingLogDeleteResponse> delete(
 		@PathVariable Long crewId,
 		@PathVariable Long logId,
@@ -118,9 +122,8 @@ class MeetingLogController {
 		);
 	}
 
-	@PostMapping("/meetings/{meetingId}/logs/photos")
+	@PostMapping("/uploads/log-photos")
 	ResponseEntity<MeetingLogDto.MeetingLogPhotoUploadResponse> uploadPhoto(
-		@PathVariable Long meetingId,
 		Authentication authentication,
 		@RequestParam("file") MultipartFile file
 	) {
@@ -128,7 +131,6 @@ class MeetingLogController {
 			MeetingLogDtoMapper.toResponse(
 				uploadMeetingLogPhotoUseCase.handle(
 					UploadMeetingLogPhotoUseCase.Command.of(
-						meetingId,
 						requireAuthenticatedUserId(authentication),
 						file
 					)

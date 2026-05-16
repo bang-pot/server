@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.AuthCookieFactory;
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.common.idempotency.Idempotent;
 import com.bangpot.crew.domain.view.MyCrewsView;
 import com.bangpot.crew.domain.view.MyPendingCrewsView;
 import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
@@ -195,6 +196,7 @@ class UserController {
 	}
 
 	@PostMapping("/api/users/me/withdrawal")
+	@Idempotent
 	ResponseEntity<UserDto.WithdrawMyAccountResponse> withdrawMyAccount(
 		Authentication authentication,
 		@Valid @RequestBody UserDto.WithdrawMyAccountRequest request
@@ -218,6 +220,7 @@ class UserController {
 	}
 
 	@PatchMapping("/api/users/me")
+	@Idempotent
 	ResponseEntity<Void> updateProfile(
 		Authentication authentication,
 		@Valid @RequestBody UserDto.UpdateMyProfileRequest request

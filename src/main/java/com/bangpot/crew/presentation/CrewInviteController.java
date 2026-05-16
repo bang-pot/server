@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
+import com.bangpot.common.idempotency.Idempotent;
 import com.bangpot.crew.application.usecase.AcceptCrewInviteUseCase;
 import com.bangpot.crew.application.usecase.GetMyCrewInvitesUseCase;
 import com.bangpot.crew.application.usecase.RejectCrewInviteUseCase;
@@ -44,6 +45,7 @@ class CrewInviteController {
 	}
 
 	@PostMapping("/{inviteId}/accept")
+	@Idempotent
 	ResponseEntity<CrewInviteDto.ProcessCrewInviteResponse> accept(
 		@PathVariable Long inviteId,
 		Authentication authentication
@@ -56,6 +58,7 @@ class CrewInviteController {
 	}
 
 	@PostMapping("/{inviteId}/reject")
+	@Idempotent
 	ResponseEntity<CrewInviteDto.ProcessCrewInviteResponse> reject(
 		@PathVariable Long inviteId,
 		Authentication authentication

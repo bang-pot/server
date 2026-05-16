@@ -68,6 +68,10 @@ bangpot:
       explore-theme-search-ttl: ${BANGPOT_CACHE_REDIS_EXPLORE_THEME_SEARCH_TTL:60s}
       explore-filters-ttl: ${BANGPOT_CACHE_REDIS_EXPLORE_FILTERS_TTL:6h}
       home-anonymous-ttl: ${BANGPOT_CACHE_REDIS_HOME_ANONYMOUS_TTL:60s}
+  idempotency:
+    enabled: ${BANGPOT_IDEMPOTENCY_ENABLED:true}
+    header-name: ${BANGPOT_IDEMPOTENCY_HEADER_NAME:Idempotency-Key}
+    ttl: ${BANGPOT_IDEMPOTENCY_TTL:30s}
 
 management:
   endpoints:
