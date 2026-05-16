@@ -40,6 +40,8 @@ public class RedisCacheConfig {
 			.withInitialCacheConfigurations(Map.of(
 				CacheNames.EXPLORE_THEME_SEARCH,
 				defaultConfiguration.entryTtl(properties.exploreThemeSearchTtl()),
+				CacheNames.EXPLORE_FILTERS,
+				defaultConfiguration.entryTtl(properties.exploreFiltersTtl()),
 				CacheNames.HOME_ANONYMOUS,
 				defaultConfiguration.entryTtl(properties.homeAnonymousTtl())
 			))

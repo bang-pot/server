@@ -9,6 +9,7 @@ public record RedisCacheProperties(
 	boolean enabled,
 	Duration defaultTtl,
 	Duration exploreThemeSearchTtl,
+	Duration exploreFiltersTtl,
 	Duration homeAnonymousTtl
 ) {
 
@@ -18,6 +19,9 @@ public record RedisCacheProperties(
 		}
 		if (exploreThemeSearchTtl == null) {
 			exploreThemeSearchTtl = Duration.ofSeconds(60);
+		}
+		if (exploreFiltersTtl == null) {
+			exploreFiltersTtl = Duration.ofHours(6);
 		}
 		if (homeAnonymousTtl == null) {
 			homeAnonymousTtl = Duration.ofSeconds(60);
