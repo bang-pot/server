@@ -66,6 +66,7 @@ bangpot:
       enabled: ${BANGPOT_CACHE_REDIS_ENABLED:false}
       default-ttl: ${BANGPOT_CACHE_REDIS_DEFAULT_TTL:5m}
       explore-theme-search-ttl: ${BANGPOT_CACHE_REDIS_EXPLORE_THEME_SEARCH_TTL:60s}
+      explore-filters-ttl: ${BANGPOT_CACHE_REDIS_EXPLORE_FILTERS_TTL:6h}
       home-anonymous-ttl: ${BANGPOT_CACHE_REDIS_HOME_ANONYMOUS_TTL:60s}
 
 management:
