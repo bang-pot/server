@@ -7,12 +7,11 @@ public interface UploadMeetingLogPhotoUseCase {
 	Result handle(Command command);
 
 	record Command(
-		Long meetingId,
 		Long userId,
 		MultipartFile file
 	) {
-		public static Command of(Long meetingId, Long userId, MultipartFile file) {
-			return new Command(meetingId, userId, file);
+		public static Command of(Long userId, MultipartFile file) {
+			return new Command(userId, file);
 		}
 	}
 

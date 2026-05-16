@@ -122,9 +122,8 @@ class MeetingLogController {
 		);
 	}
 
-	@PostMapping("/meetings/{meetingId}/logs/photos")
+	@PostMapping("/uploads/log-photos")
 	ResponseEntity<MeetingLogDto.MeetingLogPhotoUploadResponse> uploadPhoto(
-		@PathVariable Long meetingId,
 		Authentication authentication,
 		@RequestParam("file") MultipartFile file
 	) {
@@ -132,7 +131,6 @@ class MeetingLogController {
 			MeetingLogDtoMapper.toResponse(
 				uploadMeetingLogPhotoUseCase.handle(
 					UploadMeetingLogPhotoUseCase.Command.of(
-						meetingId,
 						requireAuthenticatedUserId(authentication),
 						file
 					)
