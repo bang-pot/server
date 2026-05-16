@@ -34,7 +34,7 @@ bangpot:
     environment-name: local
   cache:
     redis:
-      enabled: ${BANGPOT_CACHE_REDIS_ENABLED:true}
+      enabled: true
 
 logging:
   level:

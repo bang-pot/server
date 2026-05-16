@@ -39,12 +39,16 @@ public class GetHomeService implements GetHomeUseCase {
 	private final CrewQueryRepository crewQueryRepository;
 	private final MeetingQueryRepository meetingQueryRepository;
 	private final ExploreQueryRepository exploreQueryRepository;
+	private final AnonymousHomeReader anonymousHomeReader;
 	private final Clock clock;
 
 	@Override
 	@Transactional(readOnly = true)
 	public HomeView handle(Query query) {
 		boolean isLoggedIn = isCompletedLoggedInUser(query.userId());
+		if (!isLoggedIn) {
+			return anonymousHomeReader.read(PUBLIC_CREW_PREVIEW_LIMIT, THEME_PREVIEW_LIMIT);
+		}
 
 		return HomeView.of(
 			isLoggedIn,
@@ -52,7 +56,7 @@ public class GetHomeService implements GetHomeUseCase {
 			loadUpcomingMeetingsSection(query.userId(), isLoggedIn),
 			loadActivityRecordSection(query.userId(), isLoggedIn),
 			loadPublicCrewPreviewSection(),
-			loadThemeExplorePreviewSection(query.userId(), isLoggedIn)
+			loadThemeExplorePreviewSection(query.userId())
 		);
 	}
 
@@ -137,8 +141,8 @@ public class GetHomeService implements GetHomeUseCase {
 		);
 	}
 
-	private HomeThemePreviewView loadThemeExplorePreviewSection(Long userId, boolean isLoggedIn) {
-		ThemePreviewView result = exploreQueryRepository.findThemePreviewView(isLoggedIn ? userId : null, THEME_PREVIEW_LIMIT);
+	private HomeThemePreviewView loadThemeExplorePreviewSection(Long userId) {
+		ThemePreviewView result = exploreQueryRepository.findThemePreviewView(userId, THEME_PREVIEW_LIMIT);
 		return HomeThemePreviewView.of(
 			result.items().stream()
 				.map(item -> HomeThemePreviewView.Item.of(

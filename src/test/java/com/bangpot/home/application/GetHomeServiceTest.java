@@ -21,6 +21,7 @@ import com.bangpot.explore.domain.view.ExploreFiltersView;
 import com.bangpot.explore.domain.view.ExploreThemeDetailView;
 import com.bangpot.explore.domain.view.ExploreThemeSearchView;
 import com.bangpot.explore.domain.view.ThemePreviewView;
+import com.bangpot.home.application.service.AnonymousHomeReader;
 import com.bangpot.home.application.service.GetHomeService;
 import com.bangpot.home.application.usecase.GetHomeUseCase;
 import com.bangpot.home.domain.view.HomeActivityRecordView;
@@ -58,6 +59,7 @@ class GetHomeServiceTest {
 			crewQueryRepository,
 			meetingQueryRepository,
 			exploreQueryRepository,
+			new AnonymousHomeReader(crewQueryRepository, exploreQueryRepository),
 			Clock.fixed(BASE_TIME, ZoneOffset.UTC)
 		);
 	}
