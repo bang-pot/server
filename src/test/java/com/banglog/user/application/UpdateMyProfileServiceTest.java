@@ -1,0 +1,92 @@
+package com.banglog.user.application;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
+
+import com.banglog.auth.domain.AuthUser;
+import com.banglog.user.application.exception.DuplicateNicknameException;
+import com.banglog.user.application.exception.InvalidNicknameException;
+import com.banglog.user.application.usecase.UpdateMyProfileUseCase;
+import com.banglog.user.domain.User;
+
+class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
+
+	@Test
+	void updatesNicknameForCompletedUser() {
+		AuthUser authUser = fullUser(7L, "banglog");
+		authUserRepository.save(authUser);
+		userRepository.save(User.create(7L, "banglog"));
+
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "  newpot  "));
+
+		assertThat(userRepository.findById(7L)).get().extracting(User::getNickname).isEqualTo("newpot");
+	}
+
+	@Test
+	void updatesProfileImageFromAttachedUpload() {
+		AuthUser authUser = fullUser(7L, "banglog");
+		authUserRepository.save(authUser);
+		userRepository.save(User.create(7L, "banglog"));
+
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "banglog", 100L));
+
+		assertThat(userRepository.findById(7L)).get()
+			.extracting(User::getProfileImageUrl)
+			.isEqualTo("https://cdn.example.com/profile-images/100.jpg");
+	}
+
+	@Test
+	void allowsKeepingSameNicknameWithoutDuplicateFailure() {
+		AuthUser authUser = fullUser(7L, "banglog");
+		authUserRepository.save(authUser);
+		userRepository.save(User.create(7L, "banglog"));
+		userRepository.save(User.create(8L, "other"));
+
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "banglog"));
+
+		assertThat(userRepository.findById(7L)).get().extracting(User::getNickname).isEqualTo("banglog");
+	}
+
+	@Test
+	void rejectsNicknameUpdateForBlankNickname() {
+		AuthUser authUser = fullUser(7L, "banglog");
+		authUserRepository.save(authUser);
+		userRepository.save(User.create(7L, "banglog"));
+
+		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "   ")))
+			.isInstanceOf(InvalidNicknameException.class);
+	}
+
+	@Test
+	void rejectsNicknameUpdateWhenNicknameAlreadyExists() {
+		AuthUser authUser = fullUser(7L, "banglog");
+		authUserRepository.save(authUser);
+		userRepository.save(User.create(7L, "banglog"));
+		userRepository.save(User.create(8L, "taken123"));
+
+		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "taken123")))
+			.isInstanceOf(DuplicateNicknameException.class);
+	}
+
+	@Test
+	void rejectsNicknameUpdateForTempUser() {
+		AuthUser authUser = tempUser(7L);
+		authUserRepository.save(authUser);
+
+		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "newpot")))
+			.isInstanceOf(AccessDeniedException.class);
+	}
+
+	@Test
+	void rejectsNicknameUpdateWhenNicknameContainsDisallowedCharacters() {
+		AuthUser authUser = fullUser(7L, "banglog");
+		authUserRepository.save(authUser);
+		userRepository.save(User.create(7L, "banglog"));
+
+		assertThatThrownBy(() -> updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "new-pot")))
+			.isInstanceOf(InvalidNicknameException.class);
+	}
+}

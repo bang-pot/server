@@ -3,19 +3,19 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: ${BANGPOT_DB_URL:${DB_URL:}}
-    username: ${BANGPOT_DB_USERNAME:${DB_USERNAME:}}
-    password: ${BANGPOT_DB_PASSWORD:${DB_PASSWORD:}}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: false
 
-bangpot:
+banglog:
   ops:
     environment-name: prod
 
 logging:
   level:
     root: INFO
-    com.bangpot: INFO
+    com.banglog: INFO
