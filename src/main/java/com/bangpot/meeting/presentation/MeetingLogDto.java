@@ -13,8 +13,7 @@ final class MeetingLogDto {
 	}
 
 	record PhotoRequest(
-		@NotBlank(message = "사진 URL은 비어 있을 수 없습니다.") String url,
-		@NotNull(message = "사진 용량은 비어 있을 수 없습니다.") Long sizeBytes
+		@NotNull(message = "사진 업로드 ID는 비어 있을 수 없습니다.") Long uploadId
 	) {
 	}
 
@@ -44,12 +43,6 @@ final class MeetingLogDto {
 	record MeetingLogDeleteResponse(
 		Long logId,
 		String deletedBy
-	) {
-	}
-
-	record MeetingLogPhotoUploadResponse(
-		String url,
-		Long sizeBytes
 	) {
 	}
 

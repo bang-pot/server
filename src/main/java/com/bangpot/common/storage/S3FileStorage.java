@@ -10,6 +10,8 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
@@ -20,11 +22,9 @@ public class S3FileStorage implements FileStorage {
 	private final FileStorageProperties fileStorageProperties;
 
 	@Override
-	public StoredFile store(String category, MultipartFile file) {
+	public String store(String category, MultipartFile file) {
 		validateRequiredProperties();
-		String extension = extractExtension(file.getOriginalFilename());
-		String storedName = UUID.randomUUID() + "." + extension;
-		String key = category + "/" + storedName;
+		String key = category + "/" + UUID.randomUUID() + "." + extractExtension(file.getOriginalFilename());
 		PutObjectRequest request = PutObjectRequest.builder()
 			.bucket(fileStorageProperties.getS3().getBucket())
 			.key(key)
@@ -33,10 +33,41 @@ public class S3FileStorage implements FileStorage {
 			.build();
 		try {
 			s3Client.putObject(request, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
-			return new StoredFile(key, publicUrl(key), file.getSize(), storedName);
+			return key;
 		} catch (IOException exception) {
-			throw new IllegalStateException("failed to store file", exception);
+			throw new IllegalStateException("파일 저장에 실패했습니다.", exception);
 		}
+	}
+
+	@Override
+	public void copy(String sourceKey, String targetKey) {
+		validateRequiredProperties();
+		CopyObjectRequest request = CopyObjectRequest.builder()
+			.sourceBucket(fileStorageProperties.getS3().getBucket())
+			.sourceKey(sourceKey)
+			.destinationBucket(fileStorageProperties.getS3().getBucket())
+			.destinationKey(targetKey)
+			.build();
+		s3Client.copyObject(request);
+	}
+
+	@Override
+	public void delete(String key) {
+		validateRequiredProperties();
+		DeleteObjectRequest request = DeleteObjectRequest.builder()
+			.bucket(fileStorageProperties.getS3().getBucket())
+			.key(key)
+			.build();
+		s3Client.deleteObject(request);
+	}
+
+	@Override
+	public String publicUrl(String key) {
+		String publicBaseUrl = fileStorageProperties.getPublicBaseUrl();
+		if (publicBaseUrl.endsWith("/")) {
+			return publicBaseUrl + key;
+		}
+		return publicBaseUrl + "/" + key;
 	}
 
 	private void validateRequiredProperties() {
@@ -47,14 +78,6 @@ public class S3FileStorage implements FileStorage {
 
 	private boolean isBlank(String value) {
 		return value == null || value.isBlank();
-	}
-
-	private String publicUrl(String key) {
-		String publicBaseUrl = fileStorageProperties.getPublicBaseUrl();
-		if (publicBaseUrl.endsWith("/")) {
-			return publicBaseUrl + key;
-		}
-		return publicBaseUrl + "/" + key;
 	}
 
 	private String extractExtension(String originalFilename) {

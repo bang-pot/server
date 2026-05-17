@@ -31,7 +31,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			10L,
 			"정말 재미있었던 방탈출이었어요.",
 			java.util.List.of(
-				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.jpg", 1024L)
+				CreateMeetingLogUseCase.PhotoInput.of(1L)
 			)
 		));
 
@@ -131,6 +131,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meetingParticipantRepository,
 			new DuplicateInsertMeetingLogRepository(meetingLogRepository),
 			meetingLogPhotoRepository,
+			attachImageUploadUseCase,
 			Clock.fixed(NOW, ZoneOffset.UTC)
 		);
 
@@ -143,7 +144,7 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 	}
 
 	@Test
-	void validatesPhotoExtensionAndSizeAndCount() {
+	void validatesPhotoUploadIdAndCount() {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 
@@ -152,12 +153,12 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			10L,
 			"사진 검증 실패",
 			java.util.List.of(
-				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.gif", 1024L),
-				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/b.jpg", 6L * 1024 * 1024),
-				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/c.jpg", 1024L),
-				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/d.jpg", 1024L),
-				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/e.jpg", 1024L),
-				CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/f.jpg", 1024L)
+				CreateMeetingLogUseCase.PhotoInput.of(null),
+				CreateMeetingLogUseCase.PhotoInput.of(2L),
+				CreateMeetingLogUseCase.PhotoInput.of(3L),
+				CreateMeetingLogUseCase.PhotoInput.of(4L),
+				CreateMeetingLogUseCase.PhotoInput.of(5L),
+				CreateMeetingLogUseCase.PhotoInput.of(6L)
 			)
 		))).isInstanceOf(MeetingLogRequestValidationException.class);
 	}

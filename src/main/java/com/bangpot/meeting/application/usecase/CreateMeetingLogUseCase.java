@@ -18,11 +18,10 @@ public interface CreateMeetingLogUseCase {
 	}
 
 	record PhotoInput(
-		String url,
-		Long sizeBytes
+		Long uploadId
 	) {
-		public static PhotoInput of(String url, Long sizeBytes) {
-			return new PhotoInput(url, sizeBytes);
+		public static PhotoInput of(Long uploadId) {
+			return new PhotoInput(uploadId);
 		}
 	}
 

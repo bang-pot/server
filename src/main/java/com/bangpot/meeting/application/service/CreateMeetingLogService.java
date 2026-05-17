@@ -10,6 +10,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.bangpot.image.application.usecase.AttachImageUploadUseCase;
+import com.bangpot.image.domain.ImageUploadCategory;
 import com.bangpot.meeting.application.exception.MeetingLogAlreadyExistsException;
 import com.bangpot.meeting.application.exception.MeetingLogWriteNotAllowedException;
 import com.bangpot.meeting.application.exception.MeetingNotFoundException;
@@ -32,7 +34,9 @@ import lombok.RequiredArgsConstructor;
 public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 
 	private static final String COMPLETED_USER_REQUIRED_MESSAGE = "완료된 사용자만 방탈로그를 작성할 수 있습니다.";
-	private static final String PARTICIPATION_HISTORY_REQUIRED_MESSAGE = "완료된 모임에 참여한 사용자만 방탈로그를 작성할 수 있습니다.";
+	private static final String PARTICIPATION_HISTORY_REQUIRED_MESSAGE =
+		"완료된 모임에 참여한 사용자만 방탈로그를 작성할 수 있습니다.";
+	private static final String LOG_PHOTO_DIRECTORY = "log-photos";
 	private static final Set<MeetingParticipationStatus> WRITABLE_HISTORY_STATUSES = Set.of(
 		MeetingParticipationStatus.JOINED,
 		MeetingParticipationStatus.PENDING,
@@ -44,6 +48,7 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 	private final MeetingParticipantRepository meetingParticipantRepository;
 	private final MeetingLogRepository meetingLogRepository;
 	private final MeetingLogPhotoRepository meetingLogPhotoRepository;
+	private final AttachImageUploadUseCase attachImageUploadUseCase;
 	private final Clock clock;
 
 	@Override
@@ -62,7 +67,8 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 
 		Instant now = clock.instant();
 		MeetingLog savedLog = saveLog(command, now);
-		meetingLogPhotoRepository.saveAll(toPhotos(savedLog.getId(), command.photos(), now));
+		List<String> photoUrls = attachPhotos(command);
+		meetingLogPhotoRepository.saveAll(toPhotos(savedLog.getId(), photoUrls, now));
 		return Result.of(savedLog.getId(), savedLog.getMeetingId());
 	}
 
@@ -94,12 +100,30 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 		}
 	}
 
-	private List<MeetingLogPhoto> toPhotos(Long logId, List<PhotoInput> photos, Instant now) {
+	private List<String> attachPhotos(Command command) {
+		return attachImageUploadUseCase.handle(AttachImageUploadUseCase.Command.of(
+			command.userId(),
+			ImageUploadCategory.MEETING_LOG_PHOTO,
+			LOG_PHOTO_DIRECTORY,
+			uploadIds(command.photos())
+		)).urls();
+	}
+
+	private List<Long> uploadIds(List<PhotoInput> photos) {
 		if (photos == null || photos.isEmpty()) {
 			return List.of();
 		}
 		return photos.stream()
-			.map(photo -> MeetingLogPhoto.create(logId, photo.url(), now))
+			.map(PhotoInput::uploadId)
+			.toList();
+	}
+
+	private List<MeetingLogPhoto> toPhotos(Long logId, List<String> photoUrls, Instant now) {
+		if (photoUrls == null || photoUrls.isEmpty()) {
+			return List.of();
+		}
+		return photoUrls.stream()
+			.map(url -> MeetingLogPhoto.create(logId, url, now))
 			.toList();
 	}
 }

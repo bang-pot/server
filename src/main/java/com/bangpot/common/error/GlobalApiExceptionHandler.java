@@ -38,6 +38,7 @@ import com.bangpot.crew.application.exception.InvalidCrewVisibilityException;
 import com.bangpot.crew.error.CrewErrorCode;
 import com.bangpot.explore.application.exception.ExploreThemeNotFoundException;
 import com.bangpot.explore.error.ExploreErrorCode;
+import com.bangpot.image.application.exception.ImageUploadRequestValidationException;
 import com.bangpot.meeting.application.exception.MeetingLogAlreadyExistsException;
 import com.bangpot.meeting.application.exception.MeetingLogNotFoundException;
 import com.bangpot.meeting.application.exception.MeetingLogRequestValidationException;
@@ -227,6 +228,15 @@ public class GlobalApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(MeetingLogRequestValidationException.class)
 	ResponseEntity<ApiErrorResponse> handleMeetingLogRequestValidation(
 		MeetingLogRequestValidationException exception
+	) {
+		return ResponseEntity.badRequest().body(
+			apiErrorResponseFactory.create(CommonErrorCode.COMMON_VALIDATION_ERROR, exception.getFieldErrors())
+		);
+	}
+
+	@ExceptionHandler(ImageUploadRequestValidationException.class)
+	ResponseEntity<ApiErrorResponse> handleImageUploadRequestValidation(
+		ImageUploadRequestValidationException exception
 	) {
 		return ResponseEntity.badRequest().body(
 			apiErrorResponseFactory.create(CommonErrorCode.COMMON_VALIDATION_ERROR, exception.getFieldErrors())
