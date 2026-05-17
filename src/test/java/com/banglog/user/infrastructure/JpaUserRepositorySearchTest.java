@@ -28,21 +28,21 @@ class JpaUserRepositorySearchTest {
 	void returnsOnlyActiveUsersMatchingNicknameInStableOrder() {
 		insertUser(10L, "BangLog", "bio-10", "MALE", "https://cdn.example.com/users/10.jpg", null);
 		insertUser(11L, "banglog", null, null, null, null);
-		insertUser(12L, "potter", "bio-12", "FEMALE", null, null);
-		insertUser(13L, "temp-pot", null, null, null, null);
+		insertUser(12L, "log-cave", "bio-12", "FEMALE", null, null);
+		insertUser(13L, "temp-log", null, null, null, null);
 
 		Instant withdrawnAt = Instant.parse("2026-04-20T00:00:00Z");
-		insertUser(14L, "withdrawn-pot", "bio-14", "FEMALE", null, withdrawnAt);
+		insertUser(14L, "withdrawn-log", "bio-14", "FEMALE", null, withdrawnAt);
 
 		entityManager.clear();
 
-		UserSearchView result = repository.searchUsersByNickname("pot", 0, 20);
+		UserSearchView result = repository.searchUsersByNickname("log", 0, 20);
 
 		assertThat(result.items()).hasSize(4);
 		assertThat(result.items()).extracting(UserSearchView.Item::userId)
 			.containsExactly(10L, 11L, 12L, 13L);
 		assertThat(result.items()).extracting(UserSearchView.Item::nickname)
-			.containsExactly("BangLog", "banglog", "potter", "temp-pot");
+			.containsExactly("BangLog", "banglog", "log-cave", "temp-log");
 		assertThat(result.items()).extracting(UserSearchView.Item::profileImageUrl)
 			.containsExactly("https://cdn.example.com/users/10.jpg", null, null, null);
 		assertThat(result.items()).extracting(UserSearchView.Item::bio)
