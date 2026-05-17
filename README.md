@@ -1,6 +1,6 @@
-# BangPot Backend
+# BangLog Backend
 
-BangPot의 `auth` 기능과 공통 운영 기반을 관리하는 backend 저장소입니다.
+BangLog의 `auth` 기능과 공통 운영 기반을 관리하는 backend 저장소입니다.
 
 ## Stack
 
@@ -34,7 +34,7 @@ BangPot의 `auth` 기능과 공통 운영 기반을 관리하는 backend 저장�
 
 - 모든 요청은 `X-Request-Id`를 재사용하거나 새로 발급받고, 응답 헤더로도 같은 값을 돌려줍니다.
 - 공통 요청 로그에는 `method`, `path`, `status`, `durationMs`가 포함됩니다.
-- `local`은 개발 편의를 위해 `com.bangpot=DEBUG`와 SQL logging을 사용합니다.
+- `local`은 개발 편의를 위해 `com.banglog=DEBUG`와 SQL logging을 사용합니다.
 - `prod`는 운영 로그를 짧고 읽기 쉽게 유지하기 위해 `INFO` 기본값과 SQL logging off 기준을 사용합니다.
 - console log는 `timestamp`, `level`, `service`, `env`, `requestId`, `logger`, `message` 공통 형식을 사용합니다.
 - request log와 auth audit log에는 raw token, cookie, secret, request body를 남기지 않습니다.
@@ -88,13 +88,13 @@ Slack payload에는 raw token, cookie, secret, query string, request body, 개�
 
 `prod`에서는 아래 environment variable을 사용합니다.
 
-- `BANGPOT_OPS_SLACK_ALL_LOG_WEBHOOK_URL`
-- `BANGPOT_OPS_SLACK_ERROR_LOG_WEBHOOK_URL`
+- `BANGLOG_OPS_SLACK_ALL_LOG_WEBHOOK_URL`
+- `BANGLOG_OPS_SLACK_ERROR_LOG_WEBHOOK_URL`
 
 `local`에서 직접 확인하려면 `src/main/resources/application-local-secret.yml`에 아래 값을 추가합니다.
 
 ```yml
-bangpot:
+banglog:
   ops:
     slack:
       all-log-webhook-url: https://hooks.slack.com/services/...
