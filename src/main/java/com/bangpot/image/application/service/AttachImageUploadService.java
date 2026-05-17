@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.bangpot.common.error.ApiErrorField;
 import com.bangpot.common.storage.FileStorage;
 import com.bangpot.image.application.exception.ImageUploadRequestValidationException;
+import com.bangpot.image.application.policy.ImageUploadPolicy;
 import com.bangpot.image.application.port.ImageUploadRepository;
 import com.bangpot.image.application.usecase.AttachImageUploadUseCase;
 import com.bangpot.image.domain.ImageUpload;
@@ -23,8 +24,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AttachImageUploadService implements AttachImageUploadUseCase {
 
+	private static final String UNSUPPORTED_CATEGORY_MESSAGE = "지원하지 않는 이미지 업로드 유형입니다.";
+
 	private final ImageUploadRepository imageUploadRepository;
 	private final FileStorage fileStorage;
+	private final List<ImageUploadPolicy> policies;
 	private final Clock clock;
 
 	@Override
@@ -33,7 +37,6 @@ public class AttachImageUploadService implements AttachImageUploadUseCase {
 		return Result.of(attach(
 			command.userId(),
 			command.category(),
-			command.finalDirectory(),
 			command.uploadIds()
 		));
 	}
@@ -41,25 +44,34 @@ public class AttachImageUploadService implements AttachImageUploadUseCase {
 	private List<String> attach(
 		Long userId,
 		ImageUploadCategory category,
-		String finalDirectory,
 		List<Long> uploadIds
 	) {
 		if (uploadIds == null || uploadIds.isEmpty()) {
 			return List.of();
 		}
 
+		ImageUploadPolicy policy = findPolicy(category);
+		policy.validateAttach(uploadIds);
+
 		Instant now = clock.instant();
 		List<String> imageUrls = new ArrayList<>();
 		for (int index = 0; index < uploadIds.size(); index++) {
 			ImageUpload upload = findUpload(uploadIds.get(index), index);
 			validateAttachable(upload, userId, category, index, now);
-			String finalKey = finalKey(finalDirectory, upload.getTempKey(), index);
+			String finalKey = finalKey(policy.finalDirectory(), upload.getTempKey(), index);
+			upload.attach(finalKey, now);
 			fileStorage.copy(upload.getTempKey(), finalKey);
 			fileStorage.delete(upload.getTempKey());
-			upload.attach(finalKey, now);
 			imageUrls.add(fileStorage.publicUrl(finalKey));
 		}
 		return imageUrls;
+	}
+
+	private ImageUploadPolicy findPolicy(ImageUploadCategory category) {
+		return policies.stream()
+			.filter(policy -> policy.supports(category))
+			.findFirst()
+			.orElseThrow(() -> validationError("category", UNSUPPORTED_CATEGORY_MESSAGE));
 	}
 
 	private ImageUpload findUpload(Long uploadId, int index) {

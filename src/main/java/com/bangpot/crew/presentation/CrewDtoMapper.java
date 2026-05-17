@@ -48,7 +48,7 @@ final class CrewDtoMapper {
 			request.name(),
 			request.description(),
 			request.visibility(),
-			request.imageUrl()
+			request.imageUploadId()
 		);
 	}
 

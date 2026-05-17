@@ -19,7 +19,7 @@ final class CrewDto {
 		@NotBlank(message = "크루명은 비어 있을 수 없습니다.") String name,
 		String description,
 		String visibility,
-		String imageUrl
+		Long imageUploadId
 	) {
 	}
 

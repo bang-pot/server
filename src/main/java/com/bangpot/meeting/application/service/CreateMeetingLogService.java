@@ -36,7 +36,6 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 	private static final String COMPLETED_USER_REQUIRED_MESSAGE = "완료된 사용자만 방탈로그를 작성할 수 있습니다.";
 	private static final String PARTICIPATION_HISTORY_REQUIRED_MESSAGE =
 		"완료된 모임에 참여한 사용자만 방탈로그를 작성할 수 있습니다.";
-	private static final String LOG_PHOTO_DIRECTORY = "log-photos";
 	private static final Set<MeetingParticipationStatus> WRITABLE_HISTORY_STATUSES = Set.of(
 		MeetingParticipationStatus.JOINED,
 		MeetingParticipationStatus.PENDING,
@@ -104,7 +103,6 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 		return attachImageUploadUseCase.handle(AttachImageUploadUseCase.Command.of(
 			command.userId(),
 			ImageUploadCategory.MEETING_LOG_PHOTO,
-			LOG_PHOTO_DIRECTORY,
 			uploadIds(command.photos())
 		)).urls();
 	}

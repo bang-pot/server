@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.bangpot.user.domain.User;
+
 public interface UserRepository {
 
 	Optional<User> findById(Long userId);
@@ -17,6 +18,10 @@ public interface UserRepository {
 	User save(User user);
 
 	boolean updateNickname(Long userId, String nickname);
+
+	default boolean updateProfile(Long userId, String nickname, String profileImageUrl) {
+		throw new UnsupportedOperationException("updateProfile is not supported");
+	}
 
 	void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt);
 }

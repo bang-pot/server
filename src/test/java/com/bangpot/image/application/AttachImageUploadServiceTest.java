@@ -3,6 +3,7 @@ package com.bangpot.image.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.common.storage.FileStorage;
 import com.bangpot.image.application.exception.ImageUploadRequestValidationException;
+import com.bangpot.image.application.policy.MeetingLogPhotoUploadPolicy;
 import com.bangpot.image.application.port.ImageUploadRepository;
 import com.bangpot.image.application.service.AttachImageUploadService;
 import com.bangpot.image.application.usecase.AttachImageUploadUseCase;
@@ -44,13 +46,17 @@ class AttachImageUploadServiceTest {
 		ImageUpload upload = tempUpload(1L, 10L, NOW.plusSeconds(3600));
 		imageUploadRepository.save(upload);
 		FileStorage fileStorage = mock(FileStorage.class);
+		doAnswer(invocation -> {
+			assertThat(upload.getStatus()).isEqualTo(ImageUploadStatus.ATTACHED);
+			assertThat(upload.getFinalKey()).isEqualTo("log-photos/stored.jpg");
+			return null;
+		}).when(fileStorage).copy("temp/log-photos/stored.jpg", "log-photos/stored.jpg");
 		when(fileStorage.publicUrl("log-photos/stored.jpg")).thenReturn("https://cdn.example.com/log-photos/stored.jpg");
 		AttachImageUploadService service = service(imageUploadRepository, fileStorage);
 
 		List<String> photoUrls = service.handle(AttachImageUploadUseCase.Command.of(
 			10L,
 			ImageUploadCategory.MEETING_LOG_PHOTO,
-			"log-photos",
 			List.of(1L)
 		)).urls();
 
@@ -72,7 +78,6 @@ class AttachImageUploadServiceTest {
 		assertThatThrownBy(() -> service.handle(AttachImageUploadUseCase.Command.of(
 			99L,
 			ImageUploadCategory.MEETING_LOG_PHOTO,
-			"log-photos",
 			List.of(1L)
 		))).isInstanceOf(ImageUploadRequestValidationException.class)
 			.satisfies(exception -> assertThat(((ImageUploadRequestValidationException)exception).getFieldErrors())
@@ -92,7 +97,6 @@ class AttachImageUploadServiceTest {
 		assertThatThrownBy(() -> service.handle(AttachImageUploadUseCase.Command.of(
 			10L,
 			ImageUploadCategory.MEETING_LOG_PHOTO,
-			"log-photos",
 			List.of(1L)
 		))).isInstanceOf(ImageUploadRequestValidationException.class)
 			.satisfies(exception -> assertThat(((ImageUploadRequestValidationException)exception).getFieldErrors())
@@ -110,6 +114,7 @@ class AttachImageUploadServiceTest {
 		return new AttachImageUploadService(
 			imageUploadRepository,
 			fileStorage,
+			List.of(new MeetingLogPhotoUploadPolicy()),
 			Clock.fixed(NOW, ZoneOffset.UTC)
 		);
 	}

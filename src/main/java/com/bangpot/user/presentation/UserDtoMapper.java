@@ -29,7 +29,7 @@ final class UserDtoMapper {
 		Long userId,
 		UserDto.UpdateMyProfileRequest request
 	) {
-		return UpdateMyProfileUseCase.Command.of(userId, request.nickname());
+		return UpdateMyProfileUseCase.Command.of(userId, request.nickname(), request.profileImageUploadId());
 	}
 
 	static UserDto.UserProfileResponse toResponse(MyProfileView result) {

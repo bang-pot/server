@@ -51,13 +51,18 @@ public class JpaUserRepository implements UserRepository {
 	public User save(User user) {
 		UserJpaEntity userJpaEntity = userJpaRepository.findById(user.getId())
 			.orElseGet(() -> UserJpaEntity.create(user.getId(), user.getNickname()));
-		userJpaEntity.updateNickname(user.getNickname());
+		userJpaEntity.updateProfile(user.getNickname(), user.getProfileImageUrl());
 		return toDomain(userJpaRepository.save(userJpaEntity));
 	}
 
 	@Override
 	public boolean updateNickname(Long userId, String nickname) {
 		return userJpaRepository.updateNicknameById(userId, nickname) == 1;
+	}
+
+	@Override
+	public boolean updateProfile(Long userId, String nickname, String profileImageUrl) {
+		return userJpaRepository.updateProfileById(userId, nickname, profileImageUrl) == 1;
 	}
 
 	@Override
@@ -70,7 +75,7 @@ public class JpaUserRepository implements UserRepository {
 	}
 
 	private User toDomain(UserJpaEntity userJpaEntity) {
-		return User.create(userJpaEntity.getId(), userJpaEntity.getNickname());
+		return User.rehydrate(userJpaEntity.getId(), userJpaEntity.getNickname(), userJpaEntity.getProfileImageUrl());
 	}
 
 	private String normalizeKeyword(String keyword) {

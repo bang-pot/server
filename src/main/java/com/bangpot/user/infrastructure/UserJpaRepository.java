@@ -36,6 +36,20 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
 		@Param("nickname") String nickname
 	);
 
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+		update UserJpaEntity u
+		set u.nickname = :nickname,
+		    u.profileImageUrl = :profileImageUrl
+		where u.id = :userId
+		  and u.withdrawnAt is null
+		""")
+	int updateProfileById(
+		@Param("userId") Long userId,
+		@Param("nickname") String nickname,
+		@Param("profileImageUrl") String profileImageUrl
+	);
+
 	@Query(
 		value = """
 			select new com.bangpot.user.domain.view.UserSearchView$Item(
