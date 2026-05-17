@@ -51,8 +51,8 @@ jobs:
 
       - name: Verify backend
         env:
-          BANGLOG_TEST_DB_URL: jdbc:postgresql://localhost:5432/banglog_test
-          BANGLOG_TEST_DB_DRIVER: org.postgresql.Driver
-          BANGLOG_TEST_DB_USERNAME: banglog
-          BANGLOG_TEST_DB_PASSWORD: banglog
+          TEST_DB_URL: jdbc:postgresql://localhost:5432/banglog_test
+          TEST_DB_DRIVER: org.postgresql.Driver
+          TEST_DB_USERNAME: banglog
+          TEST_DB_PASSWORD: banglog
         run: ./gradlew lint test build --no-daemon

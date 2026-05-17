@@ -5,9 +5,9 @@ spring:
     import:
       - optional:classpath:application-local-secret.yml
   datasource:
-    url: ${BANGLOG_DB_URL:jdbc:postgresql://localhost:5432/banglog_local}
-    username: ${BANGLOG_DB_USERNAME:postgres}
-    password: ${BANGLOG_DB_PASSWORD:}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/banglog_local}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
   security:
     oauth2:
       client:
@@ -24,12 +24,12 @@ spring:
 
 banglog:
   auth:
-    required-terms-version: ${BANGLOG_AUTH_REQUIRED_TERMS_VERSION:2026-03-25}
+    required-terms-version: ${AUTH_REQUIRED_TERMS_VERSION:2026-03-25}
     frontend:
-      base-url: ${BANGLOG_AUTH_FRONTEND_BASE_URL:http://localhost:3000}
+      base-url: ${AUTH_FRONTEND_BASE_URL:http://localhost:3000}
     jwt:
-      secret: ${BANGLOG_AUTH_JWT_SECRET:local-local-local-local-local-local-secret-12345}
-      secure-cookie: ${BANGLOG_AUTH_JWT_SECURE_COOKIE:false}
+      secret: ${AUTH_JWT_SECRET:local-local-local-local-local-local-secret-12345}
+      secure-cookie: ${AUTH_JWT_SECURE_COOKIE:false}
   ops:
     environment-name: local
   cache:

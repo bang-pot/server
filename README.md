@@ -88,8 +88,8 @@ Slack payload에는 raw token, cookie, secret, query string, request body, 개�
 
 `prod`에서는 아래 environment variable을 사용합니다.
 
-- `BANGLOG_OPS_SLACK_ALL_LOG_WEBHOOK_URL`
-- `BANGLOG_OPS_SLACK_ERROR_LOG_WEBHOOK_URL`
+- `OPS_SLACK_ALL_LOG_WEBHOOK_URL`
+- `OPS_SLACK_ERROR_LOG_WEBHOOK_URL`
 
 `local`에서 직접 확인하려면 `src/main/resources/application-local-secret.yml`에 아래 값을 추가합니다.
 
