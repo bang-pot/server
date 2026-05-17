@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "bangpot.auth.frontend")
+@ConfigurationProperties(prefix = "banglog.auth.frontend")
 public class AuthFrontendProperties {
 
 	private String baseUrl;

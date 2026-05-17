@@ -4,7 +4,7 @@ import java.time.Duration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "bangpot.idempotency")
+@ConfigurationProperties(prefix = "banglog.idempotency")
 public record IdempotencyProperties(
 	boolean enabled,
 	String headerName,

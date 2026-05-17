@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: ${BANGPOT_TEST_DB_URL:jdbc:tc:postgresql:17:///bangpot-test}
-    driver-class-name: ${BANGPOT_TEST_DB_DRIVER:org.testcontainers.jdbc.ContainerDatabaseDriver}
-    username: ${BANGPOT_TEST_DB_USERNAME:}
-    password: ${BANGPOT_TEST_DB_PASSWORD:}
+    url: ${BANGLOG_TEST_DB_URL:jdbc:tc:postgresql:17:///banglog-test}
+    driver-class-name: ${BANGLOG_TEST_DB_DRIVER:org.testcontainers.jdbc.ContainerDatabaseDriver}
+    username: ${BANGLOG_TEST_DB_USERNAME:}
+    password: ${BANGLOG_TEST_DB_PASSWORD:}
     hikari:
       maximum-pool-size: 2
       minimum-idle: 0
@@ -31,7 +31,7 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
-bangpot:
+banglog:
   auth:
     required-terms-version: 2026-03-25
     frontend:

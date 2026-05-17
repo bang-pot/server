@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "bangpot.auth.jwt")
+@ConfigurationProperties(prefix = "banglog.auth.jwt")
 public class AuthJwtProperties {
 
-	private String issuer = "bangpot";
+	private String issuer = "banglog";
 	private String secret;
 	private String cookieName = "access_token";
 	private long accessTokenValiditySeconds = 604800;

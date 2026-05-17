@@ -4,7 +4,7 @@ import java.time.Duration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "bangpot.cache.redis")
+@ConfigurationProperties(prefix = "banglog.cache.redis")
 public record RedisCacheProperties(
 	boolean enabled,
 	Duration defaultTtl,

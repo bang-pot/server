@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "bangpot.storage")
+@ConfigurationProperties(prefix = "banglog.storage")
 public class FileStorageProperties {
 
 	private String publicBaseUrl = "";

@@ -4,23 +4,23 @@
 		scope="context"
 		name="serviceName"
 		source="spring.application.name"
-		defaultValue="bangpot-backend"
+		defaultValue="banglog-backend"
 	/>
 	<springProperty
 		scope="context"
 		name="environmentName"
-		source="bangpot.ops.environment-name"
+		source="banglog.ops.environment-name"
 		defaultValue="unknown"
 	/>
 	<springProperty
 		scope="context"
 		name="allLogSlackWebhookUrl"
-		source="bangpot.ops.slack.all-log-webhook-url"
+		source="banglog.ops.slack.all-log-webhook-url"
 	/>
 	<springProperty
 		scope="context"
 		name="errorLogSlackWebhookUrl"
-		source="bangpot.ops.slack.error-log-webhook-url"
+		source="banglog.ops.slack.error-log-webhook-url"
 	/>
 
 	<property

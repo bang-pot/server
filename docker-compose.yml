@@ -33,15 +33,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: bangpot-backend:latest
+    image: banglog-backend:latest
     restart: unless-stopped
     env_file:
       - .env
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_URL: jdbc:postgresql://db:5432/${DB_NAME}
-      BANGPOT_REDIS_HOST: redis
-      BANGPOT_REDIS_PORT: 6379
+      BANGLOG_REDIS_HOST: redis
+      BANGLOG_REDIS_PORT: 6379
       TZ: Asia/Seoul
     depends_on:
       db:

@@ -22,7 +22,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class RedisCacheConfig {
 
 	@Bean
-	@ConditionalOnProperty(prefix = "bangpot.cache.redis", name = "enabled", havingValue = "true")
+	@ConditionalOnProperty(prefix = "banglog.cache.redis", name = "enabled", havingValue = "true")
 	CacheManager redisCacheManager(
 		RedisConnectionFactory redisConnectionFactory,
 		RedisCacheProperties properties
@@ -50,7 +50,7 @@ public class RedisCacheConfig {
 
 	@Bean
 	@ConditionalOnProperty(
-		prefix = "bangpot.cache.redis",
+		prefix = "banglog.cache.redis",
 		name = "enabled",
 		havingValue = "false",
 		matchIfMissing = true

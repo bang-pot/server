@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @ConditionalOnProperty(
-	prefix = "bangpot.meeting.automatic-transition",
+	prefix = "banglog.meeting.automatic-transition",
 	name = "enabled",
 	havingValue = "true",
 	matchIfMissing = true
@@ -23,7 +23,7 @@ public class MeetingCompletionScheduler {
 
 	private final MeetingCompletionService meetingCompletionService;
 
-	@Scheduled(fixedDelayString = "${bangpot.meeting.automatic-transition.completion-delay-ms:60000}")
+	@Scheduled(fixedDelayString = "${banglog.meeting.automatic-transition.completion-delay-ms:60000}")
 	@Transactional
 	public void run() {
 		meetingCompletionService.completeTargets(BATCH_SIZE);

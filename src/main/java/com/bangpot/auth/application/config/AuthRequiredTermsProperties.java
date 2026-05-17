@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 @Component
-@ConfigurationProperties(prefix = "bangpot.auth")
+@ConfigurationProperties(prefix = "banglog.auth")
 public class AuthRequiredTermsProperties {
 
 	private String requiredTermsVersion = "2026-03-25";
