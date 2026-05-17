@@ -53,6 +53,17 @@ jobs:
           TEST_DB_PASSWORD: banglog
         run: ./gradlew lint test build --no-daemon
 
+      - name: Prepare deploy package
+        run: |
+          mkdir -p deploy-package
+          BOOT_JAR="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | head -n 1)"
+          if [ -z "$BOOT_JAR" ]; then
+            echo "boot jar not found"
+            exit 1
+          fi
+          cp "$BOOT_JAR" deploy-package/app.jar
+          cp Dockerfile docker-compose.yml deploy-package/
+
       - name: Configure SSH
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -84,14 +95,8 @@ jobs:
           EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
         run: |
           rsync -az --delete \
-            --exclude ".git/" \
-            --exclude ".github/" \
-            --exclude ".gradle/" \
-            --exclude ".idea/" \
-            --exclude "build/" \
-            --exclude "src/main/resources/application-local-secret.yml" \
             -e "ssh -i ~/.ssh/ec2_key -p ${EC2_PORT:-22} -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes" \
-            ./ "${EC2_USER}@${EC2_HOST}:${EC2_DEPLOY_PATH}/"
+            deploy-package/ "${EC2_USER}@${EC2_HOST}:${EC2_DEPLOY_PATH}/"
 
       - name: Create prod env file
         env:
