@@ -10,9 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.bangpot.auth.presentation.UnauthenticatedException;
 import com.bangpot.common.idempotency.Idempotent;
@@ -21,7 +19,6 @@ import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
-import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +34,6 @@ class MeetingLogController {
 	private final DeleteMeetingLogUseCase deleteMeetingLogUseCase;
 	private final GetMyMeetingLogUseCase getMyMeetingLogUseCase;
 	private final GetMeetingLogDetailUseCase getMeetingLogDetailUseCase;
-	private final UploadMeetingLogPhotoUseCase uploadMeetingLogPhotoUseCase;
 
 	@PostMapping("/meetings/{meetingId}/logs")
 	@Idempotent
@@ -117,23 +113,6 @@ class MeetingLogController {
 			MeetingLogDtoMapper.toResponse(
 				getMeetingLogDetailUseCase.handle(
 					MeetingLogDtoMapper.toDetailQuery(crewId, logId, requireAuthenticatedUserId(authentication))
-				)
-			)
-		);
-	}
-
-	@PostMapping("/uploads/log-photos")
-	ResponseEntity<MeetingLogDto.MeetingLogPhotoUploadResponse> uploadPhoto(
-		Authentication authentication,
-		@RequestParam("file") MultipartFile file
-	) {
-		return ResponseEntity.ok(
-			MeetingLogDtoMapper.toResponse(
-				uploadMeetingLogPhotoUseCase.handle(
-					UploadMeetingLogPhotoUseCase.Command.of(
-						requireAuthenticatedUserId(authentication),
-						file
-					)
 				)
 			)
 		);

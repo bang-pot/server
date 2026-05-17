@@ -29,7 +29,7 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"원래 작성한 후기입니다.",
-			List.of(CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.jpg", 1024L))
+			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L))
 		));
 
 		var result = updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
@@ -37,8 +37,8 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			10L,
 			"수정한 후기입니다.",
 			List.of(
-				UpdateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/b.png", 2048L),
-				UpdateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/c.jpeg", 2048L)
+				UpdateMeetingLogUseCase.PhotoInput.of(2L),
+				UpdateMeetingLogUseCase.PhotoInput.of(3L)
 			)
 		));
 
@@ -46,8 +46,8 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 10L));
 		assertThat(detail.body()).isEqualTo("수정한 후기입니다.");
 		assertThat(detail.photos()).containsExactly(
-			"https://cdn.example.com/b.png",
-			"https://cdn.example.com/c.jpeg"
+			"https://cdn.example.com/upload-2.jpg",
+			"https://cdn.example.com/upload-3.jpg"
 		);
 		assertThat(meetingLogRepository.findById(created.logId()))
 			.get()
@@ -71,6 +71,7 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			completedUserAccessService,
 			meetingLogRepository,
 			meetingLogPhotoRepository,
+			attachImageUploadUseCase,
 			Clock.fixed(UPDATED_AT, ZoneOffset.UTC)
 		);
 

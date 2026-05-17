@@ -35,10 +35,10 @@ class S3FileStorageSmokeTest {
 			"bangpot-s3-smoke".getBytes()
 		);
 
-		StoredFile stored = storage.store("smoke", file);
+		String key = storage.store("smoke", file);
 		try {
 			HttpClient httpClient = HttpClient.newHttpClient();
-			HttpRequest request = HttpRequest.newBuilder(URI.create(stored.url())).GET().build();
+			HttpRequest request = HttpRequest.newBuilder(URI.create(storage.publicUrl(key))).GET().build();
 			HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
 			assertThat(response.statusCode()).isEqualTo(200);
@@ -46,7 +46,7 @@ class S3FileStorageSmokeTest {
 		} finally {
 			s3Client.deleteObject(DeleteObjectRequest.builder()
 				.bucket(properties.getS3().getBucket())
-				.key(stored.key())
+				.key(key)
 				.build());
 			s3Client.close();
 		}

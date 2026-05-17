@@ -24,7 +24,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"my log",
-			List.of(CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.jpg", 1024L))
+			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L))
 		));
 
 		var detail = getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(meeting.getId(), 10L));
@@ -32,7 +32,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		assertThat(detail.status()).isEqualTo(MyMeetingLogView.Status.EXISTS);
 		assertThat(detail.meetingId()).isEqualTo(meeting.getId());
 		assertThat(detail.authorNickname()).isEqualTo("host");
-		assertThat(detail.photos()).containsExactly("https://cdn.example.com/a.jpg");
+		assertThat(detail.photos()).containsExactly("https://cdn.example.com/upload-1.jpg");
 	}
 
 	@Test

@@ -4,5 +4,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface FileStorage {
 
-	StoredFile store(String category, MultipartFile file);
+	String store(String category, MultipartFile file);
+
+	void copy(String sourceKey, String targetKey);
+
+	void delete(String key);
+
+	String publicUrl(String key);
 }

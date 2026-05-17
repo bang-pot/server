@@ -32,7 +32,7 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"delete target",
-			List.of(CreateMeetingLogUseCase.PhotoInput.of("https://cdn.example.com/a.jpg", 1024L))
+			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L))
 		));
 
 		var result = deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(1L, created.logId(), 10L, null));

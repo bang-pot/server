@@ -7,7 +7,6 @@ import com.bangpot.meeting.application.usecase.DeleteMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.bangpot.meeting.application.usecase.GetMyMeetingLogUseCase;
 import com.bangpot.meeting.application.usecase.UpdateMeetingLogUseCase;
-import com.bangpot.meeting.application.usecase.UploadMeetingLogPhotoUseCase;
 import com.bangpot.meeting.domain.view.MeetingLogDetailView;
 import com.bangpot.meeting.domain.view.MyMeetingLogView;
 
@@ -76,10 +75,6 @@ final class MeetingLogDtoMapper {
 		return new MeetingLogDto.MeetingLogDeleteResponse(result.logId(), result.deletedBy().name());
 	}
 
-	static MeetingLogDto.MeetingLogPhotoUploadResponse toResponse(UploadMeetingLogPhotoUseCase.Result result) {
-		return new MeetingLogDto.MeetingLogPhotoUploadResponse(result.url(), result.sizeBytes());
-	}
-
 	static MeetingLogDto.MyMeetingLogResponse toResponse(MyMeetingLogView result) {
 		return new MeetingLogDto.MyMeetingLogResponse(
 			result.status().name(),
@@ -118,7 +113,7 @@ final class MeetingLogDtoMapper {
 			return List.of();
 		}
 		return photos.stream()
-			.map(photo -> CreateMeetingLogUseCase.PhotoInput.of(photo.url(), photo.sizeBytes()))
+			.map(photo -> CreateMeetingLogUseCase.PhotoInput.of(photo.uploadId()))
 			.toList();
 	}
 
@@ -127,7 +122,7 @@ final class MeetingLogDtoMapper {
 			return List.of();
 		}
 		return photos.stream()
-			.map(photo -> UpdateMeetingLogUseCase.PhotoInput.of(photo.url(), photo.sizeBytes()))
+			.map(photo -> UpdateMeetingLogUseCase.PhotoInput.of(photo.uploadId()))
 			.toList();
 	}
 }

@@ -1,7 +1,11 @@
 package com.bangpot.meeting.application;
 
-import java.time.Instant;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+
 import java.time.Clock;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +22,7 @@ import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.image.application.usecase.AttachImageUploadUseCase;
 import com.bangpot.meeting.application.port.MeetingLogPhotoRepository;
 import com.bangpot.meeting.application.port.MeetingLogQueryRepository;
 import com.bangpot.meeting.application.port.MeetingLogRepository;
@@ -59,6 +64,7 @@ abstract class AbstractMeetingLogServicesTest {
 	protected InMemoryMeetingParticipantRepository meetingParticipantRepository;
 	protected InMemoryMeetingLogRepository meetingLogRepository;
 	protected InMemoryMeetingLogPhotoRepository meetingLogPhotoRepository;
+	protected AttachImageUploadUseCase attachImageUploadUseCase;
 	protected InMemoryMeetingQueryRepository meetingQueryRepository;
 	protected MeetingAccessService meetingAccessService;
 	protected InMemoryMeetingLogQueryRepository meetingLogQueryRepository;
@@ -78,6 +84,14 @@ abstract class AbstractMeetingLogServicesTest {
 		meetingParticipantRepository = new InMemoryMeetingParticipantRepository();
 		meetingLogRepository = new InMemoryMeetingLogRepository(meetingRepository);
 		meetingLogPhotoRepository = new InMemoryMeetingLogPhotoRepository();
+		attachImageUploadUseCase = mock(AttachImageUploadUseCase.class);
+		lenient().when(attachImageUploadUseCase.handle(any()))
+			.thenAnswer(invocation -> {
+				AttachImageUploadUseCase.Command command = invocation.getArgument(0);
+				return AttachImageUploadUseCase.Result.of(command.uploadIds().stream()
+					.map(uploadId -> "https://cdn.example.com/upload-" + uploadId + ".jpg")
+					.toList());
+			});
 		meetingQueryRepository = new InMemoryMeetingQueryRepository(crewRepository, crewMemberRepository);
 		meetingAccessService = new MeetingAccessService(meetingQueryRepository);
 		meetingLogQueryRepository = new InMemoryMeetingLogQueryRepository(
@@ -92,12 +106,14 @@ abstract class AbstractMeetingLogServicesTest {
 			meetingParticipantRepository,
 			meetingLogRepository,
 			meetingLogPhotoRepository,
+			attachImageUploadUseCase,
 			Clock.fixed(NOW, ZoneOffset.UTC)
 		);
 		updateMeetingLogUseCase = new UpdateMeetingLogService(
 			completedUserAccessService,
 			meetingLogRepository,
 			meetingLogPhotoRepository,
+			attachImageUploadUseCase,
 			Clock.fixed(NOW, ZoneOffset.UTC)
 		);
 		deleteMeetingLogUseCase = new DeleteMeetingLogService(
