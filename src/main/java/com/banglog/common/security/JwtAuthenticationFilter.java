@@ -1,0 +1,68 @@
+package com.banglog.common.security;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Optional;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.banglog.auth.application.port.AuthUserRepository;
+import com.banglog.auth.infrastructure.AuthSessionTokenService;
+import com.banglog.auth.infrastructure.config.AuthJwtProperties;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+	private final AuthJwtProperties authJwtProperties;
+	private final AuthSessionTokenService authSessionTokenService;
+	private final AuthUserRepository authUserRepository;
+
+	public JwtAuthenticationFilter(
+		AuthJwtProperties authJwtProperties,
+		AuthSessionTokenService authSessionTokenService,
+		AuthUserRepository authUserRepository
+	) {
+		this.authJwtProperties = authJwtProperties;
+		this.authSessionTokenService = authSessionTokenService;
+		this.authUserRepository = authUserRepository;
+	}
+
+	@Override
+	protected void doFilterInternal(
+		HttpServletRequest request,
+		HttpServletResponse response,
+		FilterChain filterChain
+	) throws ServletException, IOException {
+		resolveAccessToken(request)
+			.flatMap(authSessionTokenService::resolveUserId)
+			.filter(userId -> authUserRepository.findById(userId).isPresent())
+			.ifPresent(userId -> SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken(userId, null, java.util.List.of())
+			));
+
+		filterChain.doFilter(request, response);
+	}
+
+	private Optional<String> resolveAccessToken(HttpServletRequest request) {
+		String authorization = request.getHeader("Authorization");
+		if (authorization != null && authorization.startsWith("Bearer ")) {
+			return Optional.of(authorization.substring(7));
+		}
+
+		Cookie[] cookies = request.getCookies();
+		if (cookies == null) {
+			return Optional.empty();
+		}
+		return Arrays.stream(cookies)
+			.filter(cookie -> authJwtProperties.getCookieName().equals(cookie.getName()))
+			.map(Cookie::getValue)
+			.findFirst();
+	}
+}

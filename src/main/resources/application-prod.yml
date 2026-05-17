@@ -18,4 +18,4 @@ banglog:
 logging:
   level:
     root: INFO
-    com.bangpot: INFO
+    com.banglog: INFO

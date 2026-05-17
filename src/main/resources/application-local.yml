@@ -39,5 +39,5 @@ banglog:
 logging:
   level:
     root: INFO
-    com.bangpot: DEBUG
+    com.banglog: DEBUG
     org.hibernate.SQL: DEBUG
