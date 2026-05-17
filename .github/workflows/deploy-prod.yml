@@ -71,7 +71,9 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
         run: |
-          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" "${EC2_USER}@${EC2_HOST}" \
+          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes \
+            "${EC2_USER}@${EC2_HOST}" \
             "mkdir -p '${EC2_DEPLOY_PATH}'"
 
       - name: Sync project to EC2
@@ -88,7 +90,7 @@ jobs:
             --exclude ".idea/" \
             --exclude "build/" \
             --exclude "src/main/resources/application-local-secret.yml" \
-            -e "ssh -i ~/.ssh/ec2_key -p ${EC2_PORT:-22}" \
+            -e "ssh -i ~/.ssh/ec2_key -p ${EC2_PORT:-22} -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes" \
             ./ "${EC2_USER}@${EC2_HOST}:${EC2_DEPLOY_PATH}/"
 
       - name: Create prod env file
@@ -166,7 +168,9 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
         run: |
-          scp -i ~/.ssh/ec2_key -P "${EC2_PORT:-22}" .env.prod \
+          scp -i ~/.ssh/ec2_key -P "${EC2_PORT:-22}" \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes \
+            .env.prod \
             "${EC2_USER}@${EC2_HOST}:${EC2_DEPLOY_PATH}/.env"
 
       - name: Deploy with Docker Compose
@@ -176,7 +180,9 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
         run: |
-          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" "${EC2_USER}@${EC2_HOST}" <<EOF
+          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes \
+            "${EC2_USER}@${EC2_HOST}" <<EOF
           set -e
           cd '${EC2_DEPLOY_PATH}'
           docker compose -p banglog down --remove-orphans || true
@@ -192,7 +198,9 @@ jobs:
           EC2_DEPLOY_PATH: ${{ secrets.EC2_DEPLOY_PATH }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
         run: |
-          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" "${EC2_USER}@${EC2_HOST}" <<EOF
+          ssh -i ~/.ssh/ec2_key -p "${EC2_PORT:-22}" \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 -o TCPKeepAlive=yes \
+            "${EC2_USER}@${EC2_HOST}" <<EOF
           set -e
           cd '${EC2_DEPLOY_PATH}'
           export SERVER_PORT="${SERVER_PORT:-8080}"
