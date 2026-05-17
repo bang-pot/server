@@ -32,6 +32,8 @@ import com.bangpot.auth.application.config.AuthRequiredTermsProperties;
 import com.bangpot.crew.application.port.CrewQueryRepository;
 import com.bangpot.crew.application.port.CrewRepository;
 import com.bangpot.crew.domain.Crew;
+import com.bangpot.image.application.usecase.AttachImageUploadUseCase;
+import com.bangpot.image.domain.ImageUploadCategory;
 import com.bangpot.meeting.application.port.MeetingQueryRepository;
 import com.bangpot.meeting.application.port.MeetingRepository;
 import com.bangpot.meeting.domain.Meeting;
@@ -102,7 +104,7 @@ class AuthUseCaseServicesTest {
 			authRequiredTermsProperties
 		);
 		getMyProfileUseCase = new GetMyProfileService(userQueryRepository, meetingQueryRepository, crewQueryRepository);
-		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
+		updateMyProfileUseCase = new UpdateMyProfileService(userRepository, new FakeAttachImageUploadUseCase());
 	}
 
 	@Test
@@ -814,6 +816,19 @@ class AuthUseCaseServicesTest {
 
 		public List<Crew> findPublicCrews() {
 			return List.of();
+		}
+	}
+
+	private static final class FakeAttachImageUploadUseCase implements AttachImageUploadUseCase {
+
+		@Override
+		public Result handle(Command command) {
+			if (command.category() != ImageUploadCategory.PROFILE_IMAGE) {
+				throw new IllegalArgumentException("profile image upload expected");
+			}
+			return Result.of(command.uploadIds().stream()
+				.map(uploadId -> "https://cdn.example.com/profile-images/" + uploadId + ".jpg")
+				.toList());
 		}
 	}
 }

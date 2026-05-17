@@ -37,31 +37,29 @@ class ImageUploadControllerTest {
 
 	@Test
 	void uploadsLogPhotoForAuthenticatedUser() throws Exception {
-		var file = new MockMultipartFile("file", "sample.jpg", MediaType.IMAGE_JPEG_VALUE, "image-bytes".getBytes());
+		assertUploadEndpoint(
+			"/api/uploads/log-photos",
+			ImageUploadCategory.MEETING_LOG_PHOTO,
+			"https://banglog-image.s3.ap-northeast-2.amazonaws.com/temp/log-photos/stored-sample.jpg"
+		);
+	}
 
-		when(uploadTemporaryImageUseCase.handle(argThat(command ->
-			command.userId().equals(7L)
-				&& command.category() == ImageUploadCategory.MEETING_LOG_PHOTO
-				&& command.tempDirectory().equals("temp/log-photos")
-				&& command.file().equals(file)
-		)))
-			.thenReturn(UploadTemporaryImageUseCase.Result.of(
-				123L,
-				"https://banglog-image.s3.ap-northeast-2.amazonaws.com/temp/log-photos/stored-sample.jpg",
-				file.getSize()
-			));
+	@Test
+	void uploadsProfileImageForAuthenticatedUser() throws Exception {
+		assertUploadEndpoint(
+			"/api/uploads/profile-images",
+			ImageUploadCategory.PROFILE_IMAGE,
+			"https://banglog-image.s3.ap-northeast-2.amazonaws.com/temp/profile-images/stored-sample.jpg"
+		);
+	}
 
-		mockMvc.perform(
-			multipart("/api/uploads/log-photos")
-				.file(file)
-				.principal(new UsernamePasswordAuthenticationToken(7L, null))
-		)
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.uploadId").value(123))
-			.andExpect(jsonPath("$.url").value(
-				"https://banglog-image.s3.ap-northeast-2.amazonaws.com/temp/log-photos/stored-sample.jpg"
-			))
-			.andExpect(jsonPath("$.sizeBytes").value((int) file.getSize()));
+	@Test
+	void uploadsCrewCoverImageForAuthenticatedUser() throws Exception {
+		assertUploadEndpoint(
+			"/api/uploads/crew-cover-images",
+			ImageUploadCategory.CREW_COVER_IMAGE,
+			"https://banglog-image.s3.ap-northeast-2.amazonaws.com/temp/crew-cover-images/stored-sample.jpg"
+		);
 	}
 
 	@Test
@@ -74,5 +72,34 @@ class ImageUploadControllerTest {
 		)
 			.andExpect(status().isUnauthorized())
 			.andExpect(jsonPath("$.code").value("AUTH_UNAUTHENTICATED"));
+	}
+
+	private void assertUploadEndpoint(
+		String path,
+		ImageUploadCategory category,
+		String expectedUrl
+	) throws Exception {
+		var file = new MockMultipartFile("file", "sample.jpg", MediaType.IMAGE_JPEG_VALUE, "image-bytes".getBytes());
+
+		when(uploadTemporaryImageUseCase.handle(argThat(command ->
+			command.userId().equals(7L)
+				&& command.category() == category
+				&& command.file().equals(file)
+		)))
+			.thenReturn(UploadTemporaryImageUseCase.Result.of(
+				123L,
+				expectedUrl,
+				file.getSize()
+			));
+
+		mockMvc.perform(
+			multipart(path)
+				.file(file)
+				.principal(new UsernamePasswordAuthenticationToken(7L, null))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.uploadId").value(123))
+			.andExpect(jsonPath("$.url").value(expectedUrl))
+			.andExpect(jsonPath("$.sizeBytes").value((int) file.getSize()));
 	}
 }

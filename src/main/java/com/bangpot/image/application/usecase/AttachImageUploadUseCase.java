@@ -11,16 +11,14 @@ public interface AttachImageUploadUseCase {
 	record Command(
 		Long userId,
 		ImageUploadCategory category,
-		String finalDirectory,
 		List<Long> uploadIds
 	) {
 		public static Command of(
 			Long userId,
 			ImageUploadCategory category,
-			String finalDirectory,
 			List<Long> uploadIds
 		) {
-			return new Command(userId, category, finalDirectory, uploadIds);
+			return new Command(userId, category, uploadIds);
 		}
 	}
 

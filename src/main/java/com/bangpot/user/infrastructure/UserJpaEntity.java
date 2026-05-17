@@ -70,6 +70,11 @@ class UserJpaEntity {
 		this.nickname = nickname;
 	}
 
+	void updateProfile(String nickname, String profileImageUrl) {
+		this.nickname = nickname;
+		this.profileImageUrl = profileImageUrl;
+	}
+
 	void withdraw(String anonymizedNickname, Instant withdrawnAt) {
 		this.nickname = anonymizedNickname;
 		this.bio = null;

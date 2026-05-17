@@ -11,16 +11,14 @@ public interface UploadTemporaryImageUseCase {
 	record Command(
 		Long userId,
 		ImageUploadCategory category,
-		String tempDirectory,
 		MultipartFile file
 	) {
 		public static Command of(
 			Long userId,
 			ImageUploadCategory category,
-			String tempDirectory,
 			MultipartFile file
 		) {
-			return new Command(userId, category, tempDirectory, file);
+			return new Command(userId, category, file);
 		}
 	}
 

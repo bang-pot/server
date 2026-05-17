@@ -26,6 +26,19 @@ class UpdateMyProfileServiceTest extends AbstractUserApplicationServiceTest {
 	}
 
 	@Test
+	void updatesProfileImageFromAttachedUpload() {
+		AuthUser authUser = fullUser(7L, "bangpot");
+		authUserRepository.save(authUser);
+		userRepository.save(User.create(7L, "bangpot"));
+
+		updateMyProfileUseCase.handle(UpdateMyProfileUseCase.Command.of(7L, "bangpot", 100L));
+
+		assertThat(userRepository.findById(7L)).get()
+			.extracting(User::getProfileImageUrl)
+			.isEqualTo("https://cdn.example.com/profile-images/100.jpg");
+	}
+
+	@Test
 	void allowsKeepingSameNicknameWithoutDuplicateFailure() {
 		AuthUser authUser = fullUser(7L, "bangpot");
 		authUserRepository.save(authUser);

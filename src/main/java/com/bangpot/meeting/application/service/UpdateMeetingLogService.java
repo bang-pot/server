@@ -26,8 +26,6 @@ public class UpdateMeetingLogService implements UpdateMeetingLogUseCase {
 
 	private static final String COMPLETED_USER_REQUIRED_MESSAGE = "완료된 사용자만 방탈로그를 수정할 수 있습니다.";
 	private static final String AUTHOR_REQUIRED_MESSAGE = "작성자 본인만 방탈로그를 수정할 수 있습니다.";
-	private static final String LOG_PHOTO_DIRECTORY = "log-photos";
-
 	private final CompletedUserAccessService completedUserAccessService;
 	private final MeetingLogRepository meetingLogRepository;
 	private final MeetingLogPhotoRepository meetingLogPhotoRepository;
@@ -60,7 +58,6 @@ public class UpdateMeetingLogService implements UpdateMeetingLogUseCase {
 		return attachImageUploadUseCase.handle(AttachImageUploadUseCase.Command.of(
 			command.userId(),
 			ImageUploadCategory.MEETING_LOG_PHOTO,
-			LOG_PHOTO_DIRECTORY,
 			uploadIds(command.photos())
 		)).urls();
 	}

@@ -137,7 +137,7 @@ class CrewControllerTest {
 			"Crew Alpha",
 			"public crew",
 			null,
-			null
+			300L
 		))).thenReturn(CreateCrewUseCase.Result.of(1L, "Crew Alpha", CrewRole.LEADER));
 
 		mockMvc.perform(
@@ -147,7 +147,8 @@ class CrewControllerTest {
 				.content("""
 					{
 					  "name": "Crew Alpha",
-					  "description": "public crew"
+					  "description": "public crew",
+					  "imageUploadId": 300
 					}
 					""")
 		)

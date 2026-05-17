@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.bangpot.common.storage.FileStorage;
+import com.bangpot.image.application.policy.MeetingLogPhotoUploadPolicy;
 import com.bangpot.image.application.port.ImageUploadRepository;
 import com.bangpot.image.application.service.TemporaryImageUploadService;
 import com.bangpot.image.application.usecase.UploadTemporaryImageUseCase;
@@ -50,7 +52,6 @@ class TemporaryImageUploadServiceTest {
 		UploadTemporaryImageUseCase.Result result = service.handle(UploadTemporaryImageUseCase.Command.of(
 			10L,
 			ImageUploadCategory.MEETING_LOG_PHOTO,
-			"temp/log-photos",
 			file
 		));
 
@@ -78,6 +79,7 @@ class TemporaryImageUploadServiceTest {
 			completedUserAccessService,
 			imageUploadRepository,
 			fileStorage,
+			List.of(new MeetingLogPhotoUploadPolicy()),
 			Clock.fixed(NOW, ZoneOffset.UTC)
 		);
 	}

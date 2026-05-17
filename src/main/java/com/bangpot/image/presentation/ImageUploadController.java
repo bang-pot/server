@@ -19,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api")
 class ImageUploadController {
 
-	private static final String TEMP_LOG_PHOTO_DIRECTORY = "temp/log-photos";
-
 	private final UploadTemporaryImageUseCase uploadTemporaryImageUseCase;
 
 	@PostMapping("/uploads/log-photos")
@@ -28,13 +26,36 @@ class ImageUploadController {
 		Authentication authentication,
 		@RequestParam("file") MultipartFile file
 	) {
+		return upload(authentication, ImageUploadCategory.MEETING_LOG_PHOTO, file);
+	}
+
+	@PostMapping("/uploads/profile-images")
+	ResponseEntity<ImageUploadDto.ImageUploadResponse> uploadProfileImage(
+		Authentication authentication,
+		@RequestParam("file") MultipartFile file
+	) {
+		return upload(authentication, ImageUploadCategory.PROFILE_IMAGE, file);
+	}
+
+	@PostMapping("/uploads/crew-cover-images")
+	ResponseEntity<ImageUploadDto.ImageUploadResponse> uploadCrewCoverImage(
+		Authentication authentication,
+		@RequestParam("file") MultipartFile file
+	) {
+		return upload(authentication, ImageUploadCategory.CREW_COVER_IMAGE, file);
+	}
+
+	private ResponseEntity<ImageUploadDto.ImageUploadResponse> upload(
+		Authentication authentication,
+		ImageUploadCategory category,
+		MultipartFile file
+	) {
 		return ResponseEntity.ok(
 			ImageUploadDtoMapper.toResponse(
 				uploadTemporaryImageUseCase.handle(
 					UploadTemporaryImageUseCase.Command.of(
 						requireAuthenticatedUserId(authentication),
-						ImageUploadCategory.MEETING_LOG_PHOTO,
-						TEMP_LOG_PHOTO_DIRECTORY,
+						category,
 						file
 					)
 				)

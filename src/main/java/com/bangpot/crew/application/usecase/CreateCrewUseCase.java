@@ -15,16 +15,16 @@ public interface CreateCrewUseCase {
 		String name,
 		String description,
 		CrewVisibility visibility,
-		String imageUrl
+		Long imageUploadId
 	) {
 		public static Command of(
 			Long userId,
 			String name,
 			String description,
 			String visibility,
-			String imageUrl
+			Long imageUploadId
 		) {
-			return new Command(userId, name, description, parseVisibility(visibility), imageUrl);
+			return new Command(userId, name, description, parseVisibility(visibility), imageUploadId);
 		}
 
 		private static CrewVisibility parseVisibility(String visibility) {

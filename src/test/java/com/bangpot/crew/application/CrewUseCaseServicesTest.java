@@ -27,6 +27,8 @@ import com.bangpot.crew.domain.Crew;
 import com.bangpot.crew.domain.CrewMember;
 import com.bangpot.crew.domain.CrewRole;
 import com.bangpot.crew.domain.CrewVisibility;
+import com.bangpot.image.application.usecase.AttachImageUploadUseCase;
+import com.bangpot.image.domain.ImageUploadCategory;
 import com.bangpot.user.application.port.UserRepository;
 import com.bangpot.user.application.service.CompletedUserAccessService;
 import com.bangpot.user.domain.User;
@@ -50,7 +52,8 @@ class CrewUseCaseServicesTest {
 		createCrewUseCase = new CreateCrewService(
 			new CompletedUserAccessService(userRepository),
 			crewRepository,
-			crewMemberRepository
+			crewMemberRepository,
+			new FakeAttachImageUploadUseCase()
 		);
 	}
 
@@ -72,6 +75,20 @@ class CrewUseCaseServicesTest {
 		assertThat(crewMemberRepository.findLeaderByCrewId(result.crewId())).get()
 			.extracting(CrewMember::getUserId, CrewMember::getRole)
 			.containsExactly(creator.getId(), CrewRole.LEADER);
+	}
+
+	@Test
+	void createsCrewWithAttachedCoverImage() {
+		AuthUser creator = fullUser(1L, "creator");
+		authUserRepository.save(creator);
+
+		CreateCrewUseCase.Result result = createCrewUseCase.handle(
+			CreateCrewUseCase.Command.of(creator.getId(), "image crew", null, "PUBLIC", 200L)
+		);
+
+		assertThat(crewRepository.findById(result.crewId())).get()
+			.extracting(Crew::getImageUrl)
+			.isEqualTo("https://cdn.example.com/crew-cover-images/200.jpg");
 	}
 
 	@Test
@@ -347,6 +364,19 @@ class CrewUseCaseServicesTest {
 			return membersById.values().stream()
 				.filter(member -> crewId.equals(member.getCrewId()) && member.getRole() == CrewRole.LEADER)
 				.findFirst();
+		}
+	}
+
+	private static final class FakeAttachImageUploadUseCase implements AttachImageUploadUseCase {
+
+		@Override
+		public Result handle(Command command) {
+			if (command.category() != ImageUploadCategory.CREW_COVER_IMAGE) {
+				throw new IllegalArgumentException("unexpected category");
+			}
+			return Result.of(command.uploadIds().stream()
+				.map(uploadId -> "https://cdn.example.com/crew-cover-images/" + uploadId + ".jpg")
+				.toList());
 		}
 	}
 }

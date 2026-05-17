@@ -20,6 +20,8 @@ import com.bangpot.explore.application.port.ThemeFavoriteRepository;
 import com.bangpot.explore.application.port.ThemeFavoriteQueryRepository;
 import com.bangpot.explore.domain.view.MyFavoriteThemesSummaryView;
 import com.bangpot.explore.domain.view.MyFavoriteThemesView;
+import com.bangpot.image.application.usecase.AttachImageUploadUseCase;
+import com.bangpot.image.domain.ImageUploadCategory;
 import com.bangpot.crew.application.port.CrewJoinRequestRepository;
 import com.bangpot.crew.application.port.CrewJoinRequestQueryRepository;
 import com.bangpot.crew.application.port.CrewQueryRepository;
@@ -178,7 +180,7 @@ abstract class AbstractUserApplicationServiceTest {
 			getMyWithdrawalCheckUseCase,
 			Clock.fixed(BASE_TIME, ZoneOffset.UTC)
 		);
-		updateMyProfileUseCase = new UpdateMyProfileService(userRepository);
+		updateMyProfileUseCase = new UpdateMyProfileService(userRepository, new FakeAttachImageUploadUseCase());
 		completedUserAccessService = new CompletedUserAccessService(userRepository);
 	}
 
@@ -297,6 +299,19 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
+		public boolean updateProfile(Long userId, String nickname, String profileImageUrl) {
+			if (withdrawnUserIds.contains(userId)) {
+				return false;
+			}
+			User user = users.get(userId);
+			if (user == null) {
+				return false;
+			}
+			user.updateProfile(nickname, profileImageUrl);
+			return true;
+		}
+
+		@Override
 		public void withdrawById(Long userId, String anonymizedNickname, java.time.Instant withdrawnAt) {
 			withdrawnUserIds.add(userId);
 		}
@@ -337,7 +352,7 @@ abstract class AbstractUserApplicationServiceTest {
 				.map(user -> com.bangpot.user.domain.view.UserProfileView.of(
 					user.getId(),
 					user.getNickname(),
-					null
+					user.getProfileImageUrl()
 				))
 				.orElse(null);
 		}
@@ -1140,6 +1155,19 @@ abstract class AbstractUserApplicationServiceTest {
 
 		UserWithdrawal findByUserId(Long userId) {
 			return withdrawalsByUserId.get(userId);
+		}
+	}
+
+	protected static final class FakeAttachImageUploadUseCase implements AttachImageUploadUseCase {
+
+		@Override
+		public Result handle(Command command) {
+			if (command.category() != ImageUploadCategory.PROFILE_IMAGE) {
+				throw new IllegalArgumentException("unexpected category");
+			}
+			return Result.of(command.uploadIds().stream()
+				.map(uploadId -> "https://cdn.example.com/profile-images/" + uploadId + ".jpg")
+				.toList());
 		}
 	}
 }

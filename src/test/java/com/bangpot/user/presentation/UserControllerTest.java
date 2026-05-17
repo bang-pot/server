@@ -1,6 +1,7 @@
 package com.bangpot.user.presentation;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -864,11 +865,14 @@ class UserControllerTest {
 				.contentType("application/json")
 				.content("""
 					{
-					  "nickname": "new-pot"
+					  "nickname": "new-pot",
+					  "profileImageUploadId": 100
 					}
 					""")
 		)
 			.andExpect(status().isNoContent());
+
+		verify(updateMyProfileUseCase).handle(UpdateMyProfileUseCase.Command.of(77L, "new-pot", 100L));
 	}
 
 	@Test
