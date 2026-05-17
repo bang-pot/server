@@ -93,9 +93,9 @@ jobs:
 
       - name: Create prod env file
         env:
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          BANGLOG_DB_NAME: ${{ secrets.BANGLOG_DB_NAME }}
+          BANGLOG_DB_USERNAME: ${{ secrets.BANGLOG_DB_USERNAME }}
+          BANGLOG_DB_PASSWORD: ${{ secrets.BANGLOG_DB_PASSWORD }}
           BANGLOG_AUTH_JWT_SECRET: ${{ secrets.BANGLOG_AUTH_JWT_SECRET }}
           BANGLOG_AUTH_FRONTEND_BASE_URL: ${{ secrets.BANGLOG_AUTH_FRONTEND_BASE_URL }}
           BANGLOG_AUTH_REQUIRED_TERMS_VERSION: ${{ secrets.BANGLOG_AUTH_REQUIRED_TERMS_VERSION }}
@@ -126,9 +126,9 @@ jobs:
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
         run: |
           cat <<EOF > .env.prod
-          DB_NAME=${DB_NAME}
-          DB_USERNAME=${DB_USERNAME}
-          DB_PASSWORD=${DB_PASSWORD}
+          BANGLOG_DB_NAME=${BANGLOG_DB_NAME}
+          BANGLOG_DB_USERNAME=${BANGLOG_DB_USERNAME}
+          BANGLOG_DB_PASSWORD=${BANGLOG_DB_PASSWORD}
           BANGLOG_AUTH_JWT_SECRET=${BANGLOG_AUTH_JWT_SECRET}
           BANGLOG_AUTH_FRONTEND_BASE_URL=${BANGLOG_AUTH_FRONTEND_BASE_URL}
           BANGLOG_AUTH_REQUIRED_TERMS_VERSION=${BANGLOG_AUTH_REQUIRED_TERMS_VERSION}

@@ -3,16 +3,16 @@ services:
     image: postgres:17
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${BANGLOG_DB_NAME}
+      POSTGRES_USER: ${BANGLOG_DB_USERNAME}
+      POSTGRES_PASSWORD: ${BANGLOG_DB_PASSWORD}
       TZ: Asia/Seoul
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${BANGLOG_DB_USERNAME} -d ${BANGLOG_DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -39,7 +39,7 @@ services:
       - .env
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      BANGLOG_DB_URL: jdbc:postgresql://db:5432/${BANGLOG_DB_NAME}
       BANGLOG_REDIS_HOST: redis
       BANGLOG_REDIS_PORT: 6379
       TZ: Asia/Seoul

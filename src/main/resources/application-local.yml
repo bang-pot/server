@@ -7,7 +7,7 @@ spring:
   datasource:
     url: ${BANGLOG_DB_URL:jdbc:postgresql://localhost:5432/banglog_local}
     username: ${BANGLOG_DB_USERNAME:postgres}
-    password: ${BANGLOG_DB_PASSWORD:${DB_PASSWORD:}}
+    password: ${BANGLOG_DB_PASSWORD:}
   security:
     oauth2:
       client:
