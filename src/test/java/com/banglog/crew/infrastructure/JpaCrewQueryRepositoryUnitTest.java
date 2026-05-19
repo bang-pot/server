@@ -12,12 +12,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
 
 import com.banglog.crew.domain.CrewMemberStatus;
 import com.banglog.crew.domain.CrewRole;
 import com.banglog.crew.domain.CrewStatus;
 import com.banglog.crew.domain.view.CrewMemberAccessView;
 import com.banglog.crew.domain.view.CrewMembersView;
+import com.banglog.meeting.domain.MeetingParticipationStatus;
+import com.banglog.meeting.domain.MeetingStatus;
 
 @ExtendWith(MockitoExtension.class)
 class JpaCrewQueryRepositoryUnitTest {
@@ -37,10 +41,17 @@ class JpaCrewQueryRepositoryUnitTest {
 		when(crewJpaRepository.findCrewMemberItemsByCrewId(
 			1L,
 			CrewMemberStatus.ACTIVE,
-			CrewRole.LEADER
-		)).thenReturn(List.of());
+			CrewRole.LEADER,
+			MeetingStatus.COMPLETED,
+			List.of(
+				MeetingParticipationStatus.JOINED,
+				MeetingParticipationStatus.PENDING,
+				MeetingParticipationStatus.APPROVED
+			),
+			PageRequest.of(0, 20)
+		)).thenReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 20), false));
 
-		Optional<CrewMembersView> result = repository.findCrewMembersViewByCrewIdAndUserId(1L, 2L);
+		Optional<CrewMembersView> result = repository.findCrewMembersViewByCrewIdAndUserId(1L, 2L, 0, 20);
 
 		assertThat(result).get().extracting(CrewMembersView::myRole).isEqualTo(CrewRole.MEMBER);
 		verify(crewJpaRepository, never()).findCrewHubViewByCrewIdAndUserId(

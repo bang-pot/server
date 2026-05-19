@@ -113,13 +113,15 @@ class CrewController {
 	}
 
 	@GetMapping("/{crewId}/members")
-	ResponseEntity<List<CrewDto.CrewMemberResponse>> getCrewMembers(
+	ResponseEntity<CrewDto.CrewMembersResponse> getCrewMembers(
 		@PathVariable Long crewId,
-		Authentication authentication
+		Authentication authentication,
+		@RequestParam(value = "page", defaultValue = "0") @Min(value = 0, message = "page는 0 이상이어야 합니다.") int page,
+		@RequestParam(value = "size", defaultValue = "20") @Min(value = 1, message = "size는 1 이상이어야 합니다.") int size
 	) {
 		return ResponseEntity.ok(CrewDtoMapper.toMemberResponses(
 			getCrewMembersUseCase.handle(
-				CrewDtoMapper.toMembersQuery(crewId, requireAuthenticatedUserId(authentication))
+				CrewDtoMapper.toMembersQuery(crewId, requireAuthenticatedUserId(authentication), page, size)
 			)
 		));
 	}

@@ -35,7 +35,13 @@ public interface CrewQueryRepository {
 		int size
 	);
 
-	Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId);
+	default Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
+		return findCrewMembersViewByCrewIdAndUserId(crewId, userId, 0, 20);
+	}
+
+	default Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId, int page, int size) {
+		return findCrewMembersViewByCrewIdAndUserId(crewId, userId);
+	}
 
 	Optional<CrewPoliciesView> findCrewPoliciesViewByCrewIdAndUserId(Long crewId, Long userId);
 

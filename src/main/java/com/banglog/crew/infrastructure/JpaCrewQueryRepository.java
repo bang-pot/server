@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
 
 import com.banglog.crew.application.port.CrewQueryRepository;
@@ -27,6 +28,8 @@ import com.banglog.crew.domain.view.ExploreCrewCardsView;
 import com.banglog.crew.domain.view.MeetingCreateCrewsView;
 import com.banglog.crew.domain.view.MyCrewsView;
 import com.banglog.crew.domain.view.PublicCrewPreviewView;
+import com.banglog.meeting.domain.MeetingParticipationStatus;
+import com.banglog.meeting.domain.MeetingStatus;
 import com.banglog.user.domain.view.MyWithdrawalCheckView;
 
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,12 @@ import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
 public class JpaCrewQueryRepository implements CrewQueryRepository {
+
+	private static final List<MeetingParticipationStatus> JOINED_PARTICIPATION_STATUSES = List.of(
+		MeetingParticipationStatus.JOINED,
+		MeetingParticipationStatus.PENDING,
+		MeetingParticipationStatus.APPROVED
+	);
 
 	private final CrewJpaRepository crewJpaRepository;
 
@@ -114,21 +123,37 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 	}
 
 	@Override
-	public Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
-		return findCrewMemberAccessByCrewIdAndUserId(crewId, userId).map(access -> CrewMembersView.of(
-			access.myRole(),
-			findCrewMemberItemsIfMember(crewId, access)
-		));
+	public Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId, int page, int size) {
+		return findCrewMemberAccessByCrewIdAndUserId(crewId, userId).map(access -> {
+			Slice<CrewMembersView.Item> items = findCrewMemberItemsIfMember(crewId, access, page, size);
+			return CrewMembersView.of(
+				access.myRole(),
+				items.getContent(),
+				CrewMembersView.Page.of(page, size, items.hasNext())
+			);
+		});
 	}
 
-	private List<CrewMembersView.Item> findCrewMemberItemsIfMember(Long crewId, CrewMemberAccessView access) {
+	private Slice<CrewMembersView.Item> findCrewMemberItemsIfMember(
+		Long crewId,
+		CrewMemberAccessView access,
+		int page,
+		int size
+	) {
 		if (access.myRole() == null) {
-			return List.of();
+			return new SliceImpl<>(
+				List.of(),
+				PageRequest.of(page, size),
+				false
+			);
 		}
 		return crewJpaRepository.findCrewMemberItemsByCrewId(
 			crewId,
 			CrewMemberStatus.ACTIVE,
-			CrewRole.LEADER
+			CrewRole.LEADER,
+			MeetingStatus.COMPLETED,
+			JOINED_PARTICIPATION_STATUSES,
+			PageRequest.of(page, size)
 		);
 	}
 

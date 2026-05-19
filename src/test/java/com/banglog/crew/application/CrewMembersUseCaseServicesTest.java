@@ -77,7 +77,7 @@ class CrewMembersUseCaseServicesTest {
 		crewMemberRepository.save(crewMember(13L, crew.getId(), 1L, CrewRole.MEMBER, NOW.minusSeconds(180)));
 
 		CrewMembersView result = getCrewMembersUseCase.handle(
-			GetCrewMembersUseCase.Query.of(crew.getId(), requester.getId())
+			GetCrewMembersUseCase.Query.of(crew.getId(), requester.getId(), 0, 20)
 		);
 
 		assertThat(result.items()).extracting(CrewMembersView.Item::userId)
@@ -90,6 +90,37 @@ class CrewMembersUseCaseServicesTest {
 		assertThat(result.items().get(0).gender()).isNull();
 		assertThat(result.items().get(0).escapeCount()).isZero();
 		assertThat(result.items().get(1).joinedAt()).isEqualTo("2026-04-10T23:59:00Z");
+		assertThat(result.page()).isEqualTo(CrewMembersView.Page.of(0, 20, false));
+	}
+
+	@Test
+	void returnsCrewMembersPageWithHasNext() {
+		AuthUser requester = fullAuthUser(1L, "requester-provider", "requester");
+		authUserRepository.save(requester);
+		userRepository.save(User.create(1L, "requester"));
+		userRepository.save(User.create(2L, "leader-pot"));
+
+		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
+		crewMemberRepository.save(crewMember(10L, crew.getId(), 2L, CrewRole.LEADER, NOW.minusSeconds(1000)));
+		crewMemberRepository.save(crewMember(11L, crew.getId(), 1L, CrewRole.MEMBER, NOW.minusSeconds(999)));
+		for (long id = 3L; id <= 23L; id++) {
+			authUserRepository.save(fullAuthUser(id, "member-provider-" + id, "member-" + id));
+			userRepository.save(User.create(id, "member-" + id));
+			crewMemberRepository.save(crewMember(10L + id, crew.getId(), id, CrewRole.MEMBER, NOW.minusSeconds(id)));
+		}
+
+		CrewMembersView firstPage = getCrewMembersUseCase.handle(
+			GetCrewMembersUseCase.Query.of(crew.getId(), requester.getId(), 0, 20)
+		);
+		CrewMembersView secondPage = getCrewMembersUseCase.handle(
+			GetCrewMembersUseCase.Query.of(crew.getId(), requester.getId(), 1, 20)
+		);
+
+		assertThat(firstPage.items()).hasSize(20);
+		assertThat(firstPage.items().get(0).role()).isEqualTo(CrewRole.LEADER);
+		assertThat(firstPage.page()).isEqualTo(CrewMembersView.Page.of(0, 20, true));
+		assertThat(secondPage.items()).hasSize(3);
+		assertThat(secondPage.page()).isEqualTo(CrewMembersView.Page.of(1, 20, false));
 	}
 
 	@Test
@@ -102,7 +133,7 @@ class CrewMembersUseCaseServicesTest {
 		crewMemberRepository.save(crewMember(10L, crew.getId(), leader.getId(), CrewRole.LEADER, NOW.minusSeconds(60)));
 
 		CrewMembersView result = getCrewMembersUseCase.handle(
-			GetCrewMembersUseCase.Query.of(crew.getId(), leader.getId())
+			GetCrewMembersUseCase.Query.of(crew.getId(), leader.getId(), 0, 20)
 		);
 
 		assertThat(result.items()).hasSize(1);
@@ -117,7 +148,7 @@ class CrewMembersUseCaseServicesTest {
 		userRepository.save(User.create(99L, "outsider"));
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 
-		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), outsider.getId())))
+		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), outsider.getId(), 0, 20)))
 			.isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -128,7 +159,7 @@ class CrewMembersUseCaseServicesTest {
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 		crewMemberRepository.save(crewMember(10L, crew.getId(), tempUser.getId(), CrewRole.MEMBER, NOW.minusSeconds(60)));
 
-		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), tempUser.getId())))
+		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), tempUser.getId(), 0, 20)))
 			.isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -137,7 +168,7 @@ class CrewMembersUseCaseServicesTest {
 		AuthUser requester = fullAuthUser(1L, "requester-provider", "requester");
 		authUserRepository.save(requester);
 
-		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(999L, requester.getId())))
+		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(999L, requester.getId(), 0, 20)))
 			.isInstanceOf(CrewNotFoundException.class);
 	}
 
@@ -145,7 +176,7 @@ class CrewMembersUseCaseServicesTest {
 	void rejectsCrewMembersForUnknownUser() {
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
 
-		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), 999L)))
+		assertThatThrownBy(() -> getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(crew.getId(), 999L, 0, 20)))
 			.isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -457,20 +488,30 @@ class CrewMembersUseCaseServicesTest {
 		}
 
 		@Override
-		public Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(Long crewId, Long userId) {
+		public Optional<CrewMembersView> findCrewMembersViewByCrewIdAndUserId(
+			Long crewId,
+			Long userId,
+			int page,
+			int size
+		) {
 			if (crewRepository.findById(crewId).isEmpty()) {
 				return Optional.empty();
 			}
 			CrewRole myRole = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
 				.map(CrewMember::getRole)
 				.orElse(null);
-			List<CrewMembersView.Item> items = myRole == null
+			List<CrewMembersView.Item> allItems = myRole == null
 				? List.of()
 				: crewMemberRepository.findAllByCrewId(crewId).stream()
 					.map(this::toItem)
 					.filter(java.util.Objects::nonNull)
 					.toList();
-			return Optional.of(CrewMembersView.of(myRole, items));
+			int fromIndex = Math.min(page * size, allItems.size());
+			int toIndex = Math.min(fromIndex + size + 1, allItems.size());
+			List<CrewMembersView.Item> fetchedItems = allItems.subList(fromIndex, toIndex);
+			boolean hasNext = fetchedItems.size() > size;
+			List<CrewMembersView.Item> pageItems = hasNext ? fetchedItems.subList(0, size) : fetchedItems;
+			return Optional.of(CrewMembersView.of(myRole, pageItems, CrewMembersView.Page.of(page, size, hasNext)));
 		}
 
 		private CrewMembersView.Item toItem(CrewMember member) {
