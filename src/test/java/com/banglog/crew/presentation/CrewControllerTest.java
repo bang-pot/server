@@ -347,7 +347,7 @@ class CrewControllerTest {
 
 	@Test
 	void returnsCrewMembersForJoinedMember() throws Exception {
-		when(getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(1L, 77L)))
+		when(getCrewMembersUseCase.handle(GetCrewMembersUseCase.Query.of(1L, 77L, 1, 20)))
 			.thenReturn(CrewMembersView.of(CrewRole.MEMBER, List.of(
 				CrewMembersView.Item.of(
 					201L,
@@ -369,23 +369,27 @@ class CrewControllerTest {
 					CrewRole.MEMBER,
 					java.time.Instant.parse("2026-04-10T00:00:00Z")
 				)
-			)));
+			), CrewMembersView.Page.of(1, 20, false)));
 
 		mockMvc.perform(
 			get("/api/crews/1/members")
+				.param("page", "1")
 				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
 		)
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].userId").value(201))
-			.andExpect(jsonPath("$[0].nickname").value("leader-pot"))
-			.andExpect(jsonPath("$[0].profileImageUrl").doesNotExist())
-			.andExpect(jsonPath("$[0].bio").doesNotExist())
-			.andExpect(jsonPath("$[0].gender").doesNotExist())
-			.andExpect(jsonPath("$[0].escapeCount").value(0))
-			.andExpect(jsonPath("$[0].role").value("LEADER"))
-			.andExpect(jsonPath("$[0].joinedAt").value("2026-04-11T00:00:00Z"))
-			.andExpect(jsonPath("$[1].userId").value(202))
-			.andExpect(jsonPath("$[1].role").value("MEMBER"));
+			.andExpect(jsonPath("$.items[0].userId").value(201))
+			.andExpect(jsonPath("$.items[0].nickname").value("leader-pot"))
+			.andExpect(jsonPath("$.items[0].profileImageUrl").doesNotExist())
+			.andExpect(jsonPath("$.items[0].bio").doesNotExist())
+			.andExpect(jsonPath("$.items[0].gender").doesNotExist())
+			.andExpect(jsonPath("$.items[0].escapeCount").value(0))
+			.andExpect(jsonPath("$.items[0].role").value("LEADER"))
+			.andExpect(jsonPath("$.items[0].joinedAt").value("2026-04-11T00:00:00Z"))
+			.andExpect(jsonPath("$.items[1].userId").value(202))
+			.andExpect(jsonPath("$.items[1].role").value("MEMBER"))
+			.andExpect(jsonPath("$.pageInfo.page").value(1))
+			.andExpect(jsonPath("$.pageInfo.size").value(20))
+			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
 	}
 
 	@Test

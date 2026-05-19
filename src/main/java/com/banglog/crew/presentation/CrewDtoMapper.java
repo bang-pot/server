@@ -98,12 +98,13 @@ final class CrewDtoMapper {
 		);
 	}
 
-	static GetCrewMembersUseCase.Query toMembersQuery(Long crewId, Long userId) {
-		return GetCrewMembersUseCase.Query.of(crewId, userId);
+	static GetCrewMembersUseCase.Query toMembersQuery(Long crewId, Long userId, int page, int size) {
+		return GetCrewMembersUseCase.Query.of(crewId, userId, page, size);
 	}
 
-	static List<CrewDto.CrewMemberResponse> toMemberResponses(CrewMembersView view) {
-		return view.items().stream()
+	static CrewDto.CrewMembersResponse toMemberResponses(CrewMembersView view) {
+		return new CrewDto.CrewMembersResponse(
+			view.items().stream()
 			.map(item -> new CrewDto.CrewMemberResponse(
 				item.userId(),
 				item.nickname(),
@@ -114,7 +115,13 @@ final class CrewDtoMapper {
 				item.role(),
 				item.joinedAt().toString()
 			))
-			.toList();
+			.toList(),
+			new CrewDto.PageInfoResponse(
+				view.page().page(),
+				view.page().size(),
+				view.page().hasNext()
+			)
+		);
 	}
 
 	static CrewDto.MeetingCreateCrewsResponse toResponse(MeetingCreateCrewsView result) {

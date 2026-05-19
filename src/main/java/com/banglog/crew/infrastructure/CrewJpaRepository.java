@@ -31,6 +31,8 @@ import com.banglog.crew.domain.view.ExploreCrewCardsView;
 import com.banglog.crew.domain.view.MeetingCreateCrewsView;
 import com.banglog.crew.domain.view.MyCrewsView;
 import com.banglog.crew.domain.view.PublicCrewPreviewView;
+import com.banglog.meeting.domain.MeetingParticipationStatus;
+import com.banglog.meeting.domain.MeetingStatus;
 import com.banglog.user.domain.view.MyWithdrawalCheckView;
 
 interface CrewJpaRepository extends JpaRepository<Crew, Long> {
@@ -204,7 +206,22 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 			user.profileImageUrl,
 			user.bio,
 			user.gender,
-			0,
+			(
+				select count(hostMeeting.id)
+				from Meeting hostMeeting
+				where hostMeeting.crewId = :crewId
+				  and hostMeeting.hostUserId = user.id
+				  and hostMeeting.status = :completedMeetingStatus
+			) + (
+				select count(joinedMeeting.id)
+				from MeetingParticipant participant, Meeting joinedMeeting
+				where participant.meetingId = joinedMeeting.id
+				  and participant.userId = user.id
+				  and participant.status in :joinedParticipationStatuses
+				  and joinedMeeting.crewId = :crewId
+				  and joinedMeeting.status = :completedMeetingStatus
+				  and joinedMeeting.hostUserId <> user.id
+			),
 			member.role,
 			member.createdAt
 		)
@@ -217,10 +234,13 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		  case when member.role = :leaderRole then 0 else 1 end asc,
 		  member.createdAt desc
 		""")
-	List<CrewMembersView.Item> findCrewMemberItemsByCrewId(
+	Slice<CrewMembersView.Item> findCrewMemberItemsByCrewId(
 		@Param("crewId") Long crewId,
 		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
-		@Param("leaderRole") CrewRole leaderRole
+		@Param("leaderRole") CrewRole leaderRole,
+		@Param("completedMeetingStatus") MeetingStatus completedMeetingStatus,
+		@Param("joinedParticipationStatuses") List<MeetingParticipationStatus> joinedParticipationStatuses,
+		Pageable pageable
 	);
 
 	@Query("""

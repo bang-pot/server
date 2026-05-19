@@ -26,7 +26,9 @@ public class GetCrewMembersService implements GetCrewMembersUseCase {
 	public CrewMembersView handle(Query query) {
 		CrewMembersView view = crewQueryRepository.findCrewMembersViewByCrewIdAndUserId(
 			query.crewId(),
-			query.userId()
+			query.userId(),
+			query.page(),
+			query.size()
 		).orElseThrow(() -> new CrewNotFoundException(query.crewId()));
 
 		completedUserAccessService.validateCompletedUser(query.userId(), ACCESS_DENIED_MESSAGE);

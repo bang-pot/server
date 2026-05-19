@@ -74,6 +74,12 @@ final class CrewDto {
 	) {
 	}
 
+	record CrewMembersResponse(
+		List<CrewMemberResponse> items,
+		PageInfoResponse pageInfo
+	) {
+	}
+
 	record MeetingCreateCrewResponse(
 		Long crewId,
 		String crewName

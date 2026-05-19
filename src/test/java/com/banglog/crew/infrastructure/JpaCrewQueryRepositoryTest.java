@@ -19,6 +19,9 @@ import com.banglog.crew.domain.ExploreCrewSort;
 import com.banglog.crew.domain.view.CrewMembersView;
 import com.banglog.crew.domain.view.ExploreCrewCardsView;
 import com.banglog.crew.domain.view.MeetingCreateCrewsView;
+import com.banglog.meeting.domain.Meeting;
+import com.banglog.meeting.domain.MeetingParticipant;
+import com.banglog.meeting.domain.MeetingParticipationStatus;
 
 @DataJpaTest
 @Import(JpaCrewQueryRepository.class)
@@ -249,13 +252,82 @@ class JpaCrewQueryRepositoryTest {
 
 		entityManager.clear();
 
-		CrewMembersView result = repository.findCrewMembersViewByCrewIdAndUserId(crew.getId(), 2L).orElseThrow();
+		CrewMembersView result = repository.findCrewMembersViewByCrewIdAndUserId(crew.getId(), 2L, 0, 20).orElseThrow();
 
 		assertThat(result.myRole()).isEqualTo(com.banglog.crew.domain.CrewRole.MEMBER);
 		assertThat(result.items()).extracting(CrewMembersView.Item::userId)
 			.containsExactly(1L, 2L);
 		assertThat(result.items()).extracting(CrewMembersView.Item::nickname)
 			.containsExactly("leader", "member");
+		assertThat(result.page()).isEqualTo(CrewMembersView.Page.of(0, 20, false));
+	}
+
+	@Test
+	void returnsCrewMembersViewByPageWithLeaderFirst() {
+		insertUser(1L, "leader");
+		for (long userId = 2L; userId <= 23L; userId++) {
+			insertUser(userId, "member-" + userId);
+		}
+
+		Crew crew = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		entityManager.persistAndFlush(CrewMember.createLeader(crew.getId(), 1L));
+		for (long userId = 2L; userId <= 23L; userId++) {
+			entityManager.persistAndFlush(CrewMember.createMember(crew.getId(), userId));
+		}
+
+		entityManager.clear();
+
+		CrewMembersView firstPage = repository.findCrewMembersViewByCrewIdAndUserId(crew.getId(), 2L, 0, 20).orElseThrow();
+		CrewMembersView secondPage = repository.findCrewMembersViewByCrewIdAndUserId(crew.getId(), 2L, 1, 20).orElseThrow();
+
+		assertThat(firstPage.items()).hasSize(20);
+		assertThat(firstPage.items().get(0).role()).isEqualTo(com.banglog.crew.domain.CrewRole.LEADER);
+		assertThat(firstPage.page()).isEqualTo(CrewMembersView.Page.of(0, 20, true));
+		assertThat(secondPage.items()).hasSize(3);
+		assertThat(secondPage.items()).extracting(CrewMembersView.Item::role)
+			.containsOnly(com.banglog.crew.domain.CrewRole.MEMBER);
+		assertThat(secondPage.page()).isEqualTo(CrewMembersView.Page.of(1, 20, false));
+	}
+
+	@Test
+	void returnsCrewMembersViewWithCompletedMeetingEscapeCount() {
+		insertUser(1L, "leader");
+		insertUser(2L, "member");
+		insertUser(3L, "other-member");
+
+		Crew crew = entityManager.persist(Crew.create("Alpha Crew", "desc", CrewVisibility.PUBLIC, null));
+		Crew otherCrew = entityManager.persist(Crew.create("Other Crew", "desc", CrewVisibility.PUBLIC, null));
+		entityManager.persistAndFlush(CrewMember.createLeader(crew.getId(), 1L));
+		entityManager.persistAndFlush(CrewMember.createMember(crew.getId(), 2L));
+		entityManager.persistAndFlush(CrewMember.createMember(crew.getId(), 3L));
+		entityManager.persistAndFlush(CrewMember.createLeader(otherCrew.getId(), 1L));
+		entityManager.persistAndFlush(CrewMember.createMember(otherCrew.getId(), 2L));
+
+		persistCompletedMeeting(crew.getId(), 2L, "hosted");
+		Meeting joinedCompleted = persistCompletedMeeting(crew.getId(), 1L, "joined");
+		entityManager.persistAndFlush(MeetingParticipant.join(joinedCompleted.getId(), 2L));
+		Meeting leftCompleted = persistCompletedMeeting(crew.getId(), 1L, "left");
+		entityManager.persistAndFlush(MeetingParticipant.rehydrate(
+			null,
+			leftCompleted.getId(),
+			2L,
+			MeetingParticipationStatus.LEFT,
+			null,
+			null
+		));
+		Meeting recruiting = persistRecruitingMeeting(crew.getId(), 1L, "recruiting");
+		entityManager.persistAndFlush(MeetingParticipant.join(recruiting.getId(), 2L));
+		persistCompletedMeeting(otherCrew.getId(), 2L, "other-crew");
+
+		entityManager.clear();
+
+		CrewMembersView result = repository.findCrewMembersViewByCrewIdAndUserId(crew.getId(), 2L, 0, 20).orElseThrow();
+
+		assertThat(result.items())
+			.filteredOn(item -> item.userId().equals(2L))
+			.singleElement()
+			.extracting(CrewMembersView.Item::escapeCount)
+			.isEqualTo(2);
 	}
 
 	private void insertUser(Long userId, String nickname) {
@@ -280,5 +352,28 @@ class JpaCrewQueryRepositoryTest {
 			.setParameter(3, crew.getId())
 			.executeUpdate();
 		return crew;
+	}
+
+	private Meeting persistCompletedMeeting(Long crewId, Long hostUserId, String suffix) {
+		Meeting meeting = persistRecruitingMeeting(crewId, hostUserId, suffix);
+		meeting.closeRecruitment();
+		meeting.complete();
+		return entityManager.persistAndFlush(meeting);
+	}
+
+	private Meeting persistRecruitingMeeting(Long crewId, Long hostUserId, String suffix) {
+		return entityManager.persistAndFlush(Meeting.create(
+			crewId,
+			hostUserId,
+			"모임 " + suffix,
+			"테마 " + suffix,
+			"장소",
+			"2026-05-20",
+			"10:00",
+			4,
+			null,
+			null,
+			"설명"
+		));
 	}
 }
