@@ -431,8 +431,8 @@ class MeetingControllerTest {
 	@Test
 	void returnsMeetingsForJoinedCrewMember() throws Exception {
 		when(getMeetingsUseCase.handle(GetMeetingsUseCase.Query.of(1L, 77L, 1, 2))).thenReturn(MeetingsView.of(List.of(
-			MeetingsView.Item.of(10L, "Friday Escape", "Time Attack", "Gangnam", "2026-04-20", "19:30", "RECRUITING", "NOT_RECORDED", 4),
-			MeetingsView.Item.of(11L, "Saturday Escape", "Deep Blue", "Hongdae", "2026-04-21", "20:00", "RECRUITING", "NOT_RECORDED", 6)
+			MeetingsView.Item.of(10L, "Friday Escape", "Time Attack", "Gangnam", "2026-04-20", "19:30", "RECRUITING", "NOT_RECORDED", 2L, 4),
+			MeetingsView.Item.of(11L, "Saturday Escape", "Deep Blue", "Hongdae", "2026-04-21", "20:00", "RECRUITING", "NOT_RECORDED", 4L, 6)
 		), MeetingsView.Page.of(1, 2, true)));
 
 		mockMvc.perform(
@@ -447,6 +447,7 @@ class MeetingControllerTest {
 			.andExpect(jsonPath("$.items[0].themeName").value("Time Attack"))
 			.andExpect(jsonPath("$.items[0].status").value("RECRUITING"))
 			.andExpect(jsonPath("$.items[0].result").value("NOT_RECORDED"))
+			.andExpect(jsonPath("$.items[0].participantCount").value(2))
 			.andExpect(jsonPath("$.items[1].meetingId").value(11))
 			.andExpect(jsonPath("$.pageInfo.page").value(1))
 			.andExpect(jsonPath("$.pageInfo.size").value(2))

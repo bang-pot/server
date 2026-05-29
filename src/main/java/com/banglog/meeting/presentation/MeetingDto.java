@@ -62,6 +62,7 @@ final class MeetingDto {
 		String time,
 		String status,
 		String result,
+		Long participantCount,
 		Integer capacity
 	) {
 	}

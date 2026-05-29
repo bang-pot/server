@@ -21,6 +21,7 @@ import com.banglog.meeting.domain.MeetingParticipationStatus;
 import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.MeetingStatus;
 import com.banglog.meeting.domain.view.CrewScheduleView;
+import com.banglog.meeting.domain.view.MeetingsView;
 
 @DataJpaTest
 @Import(JpaMeetingQueryRepository.class)
@@ -266,5 +267,33 @@ class JpaMeetingQueryRepositoryTest {
 			.containsExactly(4L, 2L, 1L);
 		assertThat(result.items()).extracting(CrewScheduleView.Item::isCanceled)
 			.containsExactly(false, false, true);
+	}
+
+	@Test
+	void returnsMeetingItemsWithParticipantCountIncludingHostAndJoinedParticipants() {
+		Crew crew = entityManager.persist(Crew.create("Meeting Crew", "desc", CrewVisibility.PUBLIC, null));
+		Meeting meeting = entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Recruiting", "Theme A", "Hongdae", "2026-04-20", "18:00", 6, null, null, null
+		));
+
+		entityManager.persistAndFlush(MeetingParticipant.join(meeting.getId(), 8L));
+		entityManager.persistAndFlush(
+			MeetingParticipant.rehydrate(null, meeting.getId(), 9L, MeetingParticipationStatus.APPROVED, null, null)
+		);
+		entityManager.persistAndFlush(
+			MeetingParticipant.rehydrate(null, meeting.getId(), 10L, MeetingParticipationStatus.PENDING, null, null)
+		);
+		entityManager.persistAndFlush(
+			MeetingParticipant.rehydrate(null, meeting.getId(), 11L, MeetingParticipationStatus.LEFT, null, null)
+		);
+		entityManager.flush();
+		entityManager.clear();
+
+		MeetingsView result = repository.findMeetingsViewByCrewId(crew.getId(), 0, 20);
+
+		assertThat(result.items()).extracting(MeetingsView.Item::meetingId)
+			.containsExactly(meeting.getId());
+		assertThat(result.items()).extracting(MeetingsView.Item::participantCount)
+			.containsExactly(4L);
 	}
 }

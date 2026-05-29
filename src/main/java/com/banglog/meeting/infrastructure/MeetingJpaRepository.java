@@ -91,6 +91,13 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 			m.meetingTime,
 			concat('', m.status),
 			concat('', m.result),
+			1 + (
+				select count(mp.id)
+				from MeetingParticipant mp
+				where mp.meetingId = m.id
+				  and mp.status in :joinedStatuses
+				  and mp.userId <> m.hostUserId
+			),
 			m.capacity
 		)
 		from Meeting m
@@ -101,6 +108,7 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	Slice<MeetingsView.Item> findMeetingItemsByCrewId(
 		@Param("crewId") Long crewId,
 		@Param("includedStatuses") List<MeetingStatus> includedStatuses,
+		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses,
 		Pageable pageable
 	);
 

@@ -24,6 +24,7 @@ public record MeetingsView(
 		String time,
 		String status,
 		String result,
+		Long participantCount,
 		Integer capacity
 	) {
 
@@ -36,9 +37,10 @@ public record MeetingsView(
 			String time,
 			String status,
 			String result,
+			Long participantCount,
 			Integer capacity
 		) {
-			return new Item(meetingId, title, themeName, place, date, time, status, result, capacity);
+			return new Item(meetingId, title, themeName, place, date, time, status, result, participantCount, capacity);
 		}
 	}
 

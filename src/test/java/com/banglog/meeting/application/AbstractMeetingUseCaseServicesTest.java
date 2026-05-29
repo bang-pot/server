@@ -623,6 +623,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 					meeting.getMeetingTime(),
 					meeting.getStatus().name(),
 					meeting.getResult().name(),
+					1L,
 					meeting.getCapacity()
 				))
 				.toList();
