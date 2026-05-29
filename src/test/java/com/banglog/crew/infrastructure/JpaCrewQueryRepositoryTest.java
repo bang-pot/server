@@ -13,9 +13,11 @@ import org.springframework.context.annotation.Import;
 
 import com.banglog.crew.application.port.CrewQueryRepository;
 import com.banglog.crew.domain.Crew;
+import com.banglog.crew.domain.CrewJoinViewStatus;
 import com.banglog.crew.domain.CrewMember;
 import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.crew.domain.ExploreCrewSort;
+import com.banglog.crew.domain.view.CrewJoinView;
 import com.banglog.crew.domain.view.CrewMembersView;
 import com.banglog.crew.domain.view.ExploreCrewCardsView;
 import com.banglog.crew.domain.view.MeetingCreateCrewsView;
@@ -239,6 +241,18 @@ class JpaCrewQueryRepositoryTest {
 
 		assertThat(result.items()).extracting(MeetingCreateCrewsView.Item::crewName)
 			.containsExactly("Alpha Crew", "Beta Crew");
+	}
+
+	@Test
+	void returnsCrewJoinViewForGuestUser() {
+		Crew crew = entityManager.persist(Crew.create("Guest Crew", "desc", CrewVisibility.PUBLIC, null));
+		entityManager.clear();
+
+		CrewJoinView result = repository.findCrewJoinViewByCrewIdAndUserId(crew.getId(), null).orElseThrow();
+
+		assertThat(result.crewId()).isEqualTo(crew.getId());
+		assertThat(result.name()).isEqualTo("Guest Crew");
+		assertThat(result.myStatus()).isEqualTo(CrewJoinViewStatus.GUEST);
 	}
 
 	@Test

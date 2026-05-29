@@ -68,13 +68,13 @@ public class JpaCrewQueryRepository implements CrewQueryRepository {
 			CrewJoinRequestStatus.PENDING,
 			CrewVisibility.PUBLIC,
 			CrewVisibility.PRIVATE,
-			CrewJoinViewStatus.GUEST,
-			CrewJoinViewStatus.COMPLETION_REQUIRED,
-			CrewJoinViewStatus.MEMBER,
-			CrewJoinViewStatus.PENDING,
-			CrewJoinViewStatus.CAN_REQUEST,
-			CrewJoinViewStatus.PRIVATE_RESTRICTED
-		);
+			CrewJoinViewStatus.GUEST.name(),
+			CrewJoinViewStatus.COMPLETION_REQUIRED.name(),
+			CrewJoinViewStatus.MEMBER.name(),
+			CrewJoinViewStatus.PENDING.name(),
+			CrewJoinViewStatus.CAN_REQUEST.name(),
+			CrewJoinViewStatus.PRIVATE_RESTRICTED.name()
+		).map(CrewJoinViewRow::toView);
 	}
 
 	@Override
