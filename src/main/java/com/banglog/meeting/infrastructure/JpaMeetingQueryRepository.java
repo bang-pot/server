@@ -257,6 +257,7 @@ public class JpaMeetingQueryRepository implements MeetingQueryRepository {
 		Slice<MeetingsView.Item> slice = meetingJpaRepository.findMeetingItemsByCrewId(
 			crewId,
 			INCLUDED_CREATED_MEETING_STATUSES,
+			JOINED_STATUSES,
 			PageRequest.of(page, size)
 		);
 		return MeetingsView.of(

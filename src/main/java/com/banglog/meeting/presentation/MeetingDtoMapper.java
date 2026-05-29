@@ -106,6 +106,7 @@ final class MeetingDtoMapper {
 					item.time(),
 					item.status(),
 					item.result(),
+					item.participantCount(),
 					item.capacity()
 				))
 				.toList(),
