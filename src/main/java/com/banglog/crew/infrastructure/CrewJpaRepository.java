@@ -15,7 +15,6 @@ import jakarta.persistence.LockModeType;
 import com.banglog.crew.domain.Crew;
 import com.banglog.crew.domain.CrewInviteStatus;
 import com.banglog.crew.domain.CrewJoinRequestStatus;
-import com.banglog.crew.domain.CrewJoinViewStatus;
 import com.banglog.crew.domain.CrewMemberStatus;
 import com.banglog.crew.domain.CrewRole;
 import com.banglog.crew.domain.CrewStatus;
@@ -23,7 +22,6 @@ import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.crew.domain.view.CrewHubView;
 import com.banglog.crew.domain.view.CrewInviteCandidateAccessView;
 import com.banglog.crew.domain.view.CrewInviteCandidatesView;
-import com.banglog.crew.domain.view.CrewJoinView;
 import com.banglog.crew.domain.view.CrewMemberAccessView;
 import com.banglog.crew.domain.view.CrewMembersView;
 import com.banglog.crew.domain.view.CrewPoliciesView;
@@ -78,7 +76,7 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 	);
 
 	@Query("""
-		select new com.banglog.crew.domain.view.CrewJoinView(
+		select new com.banglog.crew.infrastructure.CrewJoinViewRow(
 			c.id,
 			case when c.visibility = :privateVisibility and member.id is null then null else c.name end,
 			case when c.visibility = :privateVisibility and member.id is null then null else c.description end,
@@ -110,7 +108,7 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		where c.id = :crewId
 		  and c.status = :activeCrewStatus
 		""")
-	Optional<CrewJoinView> findCrewJoinViewByCrewIdAndUserId(
+	Optional<CrewJoinViewRow> findCrewJoinViewByCrewIdAndUserId(
 		@Param("crewId") Long crewId,
 		@Param("userId") Long userId,
 		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
@@ -118,12 +116,12 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		@Param("pendingJoinRequestStatus") CrewJoinRequestStatus pendingJoinRequestStatus,
 		@Param("publicVisibility") CrewVisibility publicVisibility,
 		@Param("privateVisibility") CrewVisibility privateVisibility,
-		@Param("guestStatus") CrewJoinViewStatus guestStatus,
-		@Param("completionRequiredStatus") CrewJoinViewStatus completionRequiredStatus,
-		@Param("memberStatus") CrewJoinViewStatus memberStatus,
-		@Param("pendingViewStatus") CrewJoinViewStatus pendingViewStatus,
-		@Param("canRequestStatus") CrewJoinViewStatus canRequestStatus,
-		@Param("privateRestrictedStatus") CrewJoinViewStatus privateRestrictedStatus
+		@Param("guestStatus") String guestStatus,
+		@Param("completionRequiredStatus") String completionRequiredStatus,
+		@Param("memberStatus") String memberStatus,
+		@Param("pendingViewStatus") String pendingViewStatus,
+		@Param("canRequestStatus") String canRequestStatus,
+		@Param("privateRestrictedStatus") String privateRestrictedStatus
 	);
 
 	@Query("""
