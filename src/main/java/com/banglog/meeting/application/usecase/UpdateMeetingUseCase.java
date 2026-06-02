@@ -62,8 +62,7 @@ public interface UpdateMeetingUseCase {
 		Integer totalCost,
 		String contactLink,
 		String description,
-		String status,
-		String result
+		String status
 	) {
 		public static Result of(
 			Long meetingId,
@@ -78,8 +77,7 @@ public interface UpdateMeetingUseCase {
 			Integer totalCost,
 			String contactLink,
 			String description,
-			String status,
-			String result
+			String status
 		) {
 			return new Result(
 				meetingId,
@@ -94,8 +92,7 @@ public interface UpdateMeetingUseCase {
 				totalCost,
 				contactLink,
 				description,
-				status,
-				result
+				status
 			);
 		}
 	}

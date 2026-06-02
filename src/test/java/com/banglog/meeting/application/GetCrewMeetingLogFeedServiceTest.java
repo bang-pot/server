@@ -65,11 +65,13 @@ class GetCrewMeetingLogFeedServiceTest {
 					31L,
 					"writer",
 					"Friday Escape",
+					"Deep Blue",
 					"2026-04-12",
 					Instant.parse("2026-04-15T01:00:00Z"),
 					"Quite a fun log body for card rendering.",
 					"https://cdn.example.com/a.jpg",
-					1L
+					1L,
+					"SUCCESS"
 				)
 			),
 			CrewMeetingLogFeedView.Page.of(0, 20, false)
@@ -84,6 +86,7 @@ class GetCrewMeetingLogFeedServiceTest {
 		assertThat(result.items().get(0).excerpt()).isEqualTo("Quite a fun log body for card rendering.");
 		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/a.jpg");
 		assertThat(result.items().get(0).extraPhotoCount()).isEqualTo(1L);
+		assertThat(result.items().get(0).result()).isEqualTo("SUCCESS");
 		assertThat(result.page().hasNext()).isFalse();
 	}
 

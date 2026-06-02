@@ -8,7 +8,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.MeetingStatus;
 import com.banglog.meeting.domain.view.MyJoinedMeetingsView;
 import com.banglog.user.application.usecase.GetMyJoinedMeetingsUseCase;
@@ -32,7 +31,6 @@ class GetMyJoinedMeetingsServiceTest extends AbstractUserApplicationServiceTest 
 						"2026-04-18",
 						"19:00",
 						MeetingStatus.COMPLETED,
-						MeetingResult.SUCCESS,
 						true
 					)
 				),
@@ -53,7 +51,6 @@ class GetMyJoinedMeetingsServiceTest extends AbstractUserApplicationServiceTest 
 		assertThat(result.items().get(0).date()).isEqualTo("2026-04-18");
 		assertThat(result.items().get(0).time()).isEqualTo("19:00");
 		assertThat(result.items().get(0).status()).isEqualTo(MeetingStatus.COMPLETED);
-		assertThat(result.items().get(0).result()).isEqualTo(MeetingResult.SUCCESS);
 		assertThat(result.items().get(0).canWriteReview()).isTrue();
 		assertThat(result.page().hasNext()).isFalse();
 	}

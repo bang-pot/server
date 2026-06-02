@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Clock;
 import java.time.ZoneOffset;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,6 +19,7 @@ import com.banglog.meeting.application.service.CreateMeetingLogService;
 import com.banglog.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.banglog.meeting.domain.MeetingLog;
 import com.banglog.meeting.domain.MeetingParticipationStatus;
+import com.banglog.meeting.domain.MeetingResult;
 
 class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
@@ -29,18 +31,55 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var result = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"정말 재미있었던 방탈출이었어요.",
-			java.util.List.of(
-				CreateMeetingLogUseCase.PhotoInput.of(1L)
-			)
+			"정말 어려웠지만 성공한 방탈출이었습니다.",
+			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L)),
+			"SUCCESS"
 		));
 
 		assertThat(result.logId()).isNotNull();
 		assertThat(result.meetingId()).isEqualTo(meeting.getId());
 		assertThat(meetingLogRepository.findById(result.logId()))
 			.get()
-			.extracting(MeetingLog::getCreatedAt, MeetingLog::getUpdatedAt)
-			.containsExactly(NOW, NOW);
+			.satisfies(log -> {
+				assertThat(log.getCreatedAt()).isEqualTo(NOW);
+				assertThat(log.getUpdatedAt()).isEqualTo(NOW);
+				assertThat(log.getResult()).isEqualTo(MeetingResult.SUCCESS);
+			});
+	}
+
+	@Test
+	void storesLogResultWhenAnyParticipantCreatesLogWithResult() {
+		completedUser(10L, "host");
+		completedUser(11L, "member");
+		var meeting = completedMeeting(1L, 10L, "Deep Blue");
+		participant(meeting.getId(), 11L, MeetingParticipationStatus.JOINED);
+
+		var result = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
+			meeting.getId(),
+			11L,
+			"Member log with personal result.",
+			List.of(),
+			"FAILURE"
+		));
+
+		assertThat(result.meetingId()).isEqualTo(meeting.getId());
+		assertThat(meetingLogRepository.findById(result.logId())).get().extracting("result")
+			.isEqualTo(MeetingResult.FAILURE);
+	}
+
+	@Test
+	void rejectsLogCreationWithoutResult() {
+		completedUser(10L, "host");
+		completedUser(11L, "member");
+		var meeting = completedMeeting(1L, 10L, "Deep Blue");
+		participant(meeting.getId(), 11L, MeetingParticipationStatus.JOINED);
+
+		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
+			meeting.getId(),
+			11L,
+			"Member log should choose personal result.",
+			List.of()
+		))).isInstanceOf(MeetingLogRequestValidationException.class);
 	}
 
 	@Test
@@ -53,8 +92,9 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var result = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			11L,
-			"같이 참여했던 멤버와 기록을 남기고 싶었습니다.",
-			java.util.List.of()
+			"함께 참여했던 멤버는 기록을 남길 수 있습니다.",
+			List.of(),
+			"SUCCESS"
 		));
 
 		assertThat(result.meetingId()).isEqualTo(meeting.getId());
@@ -71,7 +111,8 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			11L,
 			"LEFT 이력은 작성 권한이 없습니다.",
-			java.util.List.of()
+			List.of(),
+			"SUCCESS"
 		))).isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -84,7 +125,8 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"완료 전에 작성할 수 없습니다.",
-			java.util.List.of()
+			List.of(),
+			"SUCCESS"
 		))).isInstanceOf(MeetingLogWriteNotAllowedException.class);
 	}
 
@@ -98,7 +140,8 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			99L,
 			"무관한 사용자는 작성할 수 없습니다.",
-			java.util.List.of()
+			List.of(),
+			"SUCCESS"
 		))).isInstanceOf(AccessDeniedException.class);
 	}
 
@@ -110,14 +153,16 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"첫 기록",
-			java.util.List.of()
+			List.of(),
+			"SUCCESS"
 		));
 
 		assertThatThrownBy(() -> createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
 			"두 번째 기록",
-			java.util.List.of()
+			List.of(),
+			"FAILURE"
 		))).isInstanceOf(MeetingLogAlreadyExistsException.class);
 	}
 
@@ -139,7 +184,8 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"동시에 작성된 방탈로그입니다.",
-			java.util.List.of()
+			List.of(),
+			"SUCCESS"
 		))).isInstanceOf(MeetingLogAlreadyExistsException.class);
 	}
 
@@ -152,14 +198,15 @@ class CreateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"사진 검증 실패",
-			java.util.List.of(
+			List.of(
 				CreateMeetingLogUseCase.PhotoInput.of(null),
 				CreateMeetingLogUseCase.PhotoInput.of(2L),
 				CreateMeetingLogUseCase.PhotoInput.of(3L),
 				CreateMeetingLogUseCase.PhotoInput.of(4L),
 				CreateMeetingLogUseCase.PhotoInput.of(5L),
 				CreateMeetingLogUseCase.PhotoInput.of(6L)
-			)
+			),
+			"SUCCESS"
 		))).isInstanceOf(MeetingLogRequestValidationException.class);
 	}
 

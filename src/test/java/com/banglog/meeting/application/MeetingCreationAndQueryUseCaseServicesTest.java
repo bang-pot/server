@@ -77,7 +77,6 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 		assertThat(result.hostUserId()).isEqualTo(member.getId());
 		assertThat(result.title()).isEqualTo("Friday Escape");
 		assertThat(result.status()).isEqualTo("RECRUITING");
-		assertThat(result.result()).isEqualTo("NOT_RECORDED");
 		assertThat(result.contactLink()).isEqualTo("https://open.kakao.com/o/abc123");
 		assertThat(result.myParticipationStatus()).isEqualTo("JOINED");
 	}

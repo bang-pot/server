@@ -134,6 +134,7 @@ final class UserDtoMapper {
 					item.meetingTitle(),
 					item.meetingDate(),
 					item.createdAt(),
+					item.result().name(),
 					item.excerpt(),
 					item.coverPhotoUrl(),
 					item.photoCount()
@@ -159,7 +160,6 @@ final class UserDtoMapper {
 					item.date(),
 					item.time(),
 					item.status().name(),
-					item.result() == null ? null : item.result().name(),
 					item.canWriteReview()
 				))
 				.toList(),

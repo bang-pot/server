@@ -24,7 +24,8 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"my log",
-			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L))
+			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L)),
+			"SUCCESS"
 		));
 
 		var detail = getMyMeetingLogUseCase.handle(GetMyMeetingLogUseCase.Query.of(meeting.getId(), 10L));
@@ -40,7 +41,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 		var created = createMeetingLogUseCase.handle(
-			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of())
+			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of(), "SUCCESS")
 		);
 
 		MeetingLogDetailView detail = getMeetingLogDetailUseCase.handle(
@@ -58,7 +59,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 		activeCrewMember(1L, 11L);
 		var created = createMeetingLogUseCase.handle(
-			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of())
+			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of(), "SUCCESS")
 		);
 
 		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 11L));
@@ -73,7 +74,7 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		completedUser(11L, "other");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 		var created = createMeetingLogUseCase.handle(
-			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of())
+			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "detail log", List.of(), "SUCCESS")
 		);
 
 		assertThatThrownBy(() -> getMeetingLogDetailUseCase.handle(
@@ -102,7 +103,8 @@ class GetMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"my log",
-			List.of()
+			List.of(),
+			"SUCCESS"
 		));
 		deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(1L, created.logId(), 10L, null));
 

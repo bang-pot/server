@@ -122,6 +122,7 @@ final class UserDto {
 		String meetingTitle,
 		String meetingDate,
 		Instant createdAt,
+		String result,
 		String excerpt,
 		String coverPhotoUrl,
 		Long photoCount
@@ -150,7 +151,6 @@ final class UserDto {
 		String date,
 		String time,
 		String status,
-		String result,
 		boolean canWriteReview
 	) {
 	}

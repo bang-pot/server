@@ -45,11 +45,13 @@ class MeetingLogFeedControllerTest {
 						55L,
 						"writer",
 						"금요일 번개",
+						"Deep Blue",
 						"2026-04-12",
 						Instant.parse("2026-04-15T01:00:00Z"),
 						"정말 재미있었던 기록입니다.",
 						"https://cdn.example.com/a.jpg",
-						1L
+						1L,
+						"SUCCESS"
 					)
 				),
 				CrewMeetingLogFeedView.Page.of(0, 20, false)
@@ -64,10 +66,12 @@ class MeetingLogFeedControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items[0].logId").value(101))
 			.andExpect(jsonPath("$.items[0].meetingId").value(55))
+			.andExpect(jsonPath("$.items[0].themeName").value("Deep Blue"))
 			.andExpect(jsonPath("$.items[0].meetingDate").value("2026-04-12"))
 			.andExpect(jsonPath("$.items[0].excerpt").value("정말 재미있었던 기록입니다."))
 			.andExpect(jsonPath("$.items[0].coverPhotoUrl").value("https://cdn.example.com/a.jpg"))
 			.andExpect(jsonPath("$.items[0].extraPhotoCount").value(1))
+			.andExpect(jsonPath("$.items[0].result").value("SUCCESS"))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
 	}
 

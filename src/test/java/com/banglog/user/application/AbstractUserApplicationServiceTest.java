@@ -663,17 +663,6 @@ abstract class AbstractUserApplicationServiceTest {
 		}
 
 		@Override
-		public int recordResultIfNotRecorded(
-			Long meetingId,
-			Long crewId,
-			Long hostUserId,
-			com.banglog.meeting.domain.MeetingResult result,
-			java.time.Instant updatedAt
-		) {
-			return 0;
-		}
-
-		@Override
 		public MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size) {
 			return createdMeetingsViewsByUserId.getOrDefault(
 				userId,

@@ -54,8 +54,7 @@ public interface CreateMeetingUseCase {
 		String place,
 		String date,
 		String time,
-		String status,
-		String result
+		String status
 	) {
 		public static Result of(
 			Long meetingId,
@@ -65,10 +64,9 @@ public interface CreateMeetingUseCase {
 			String place,
 			String date,
 			String time,
-			String status,
-			String result
+			String status
 		) {
-			return new Result(meetingId, crewId, title, themeName, place, date, time, status, result);
+			return new Result(meetingId, crewId, title, themeName, place, date, time, status);
 		}
 	}
 }

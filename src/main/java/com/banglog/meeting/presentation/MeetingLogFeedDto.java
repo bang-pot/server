@@ -13,11 +13,13 @@ final class MeetingLogFeedDto {
 		Long meetingId,
 		String authorNickname,
 		String meetingTitle,
+		String themeName,
 		String meetingDate,
 		Instant createdAt,
 		String excerpt,
 		String coverPhotoUrl,
-		Long extraPhotoCount
+		Long extraPhotoCount,
+		String result
 	) {
 	}
 

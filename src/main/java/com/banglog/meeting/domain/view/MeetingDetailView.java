@@ -14,7 +14,6 @@ public record MeetingDetailView(
 	String contactLink,
 	String description,
 	String status,
-	String result,
 	String myParticipationStatus
 ) {
 
@@ -32,7 +31,6 @@ public record MeetingDetailView(
 		String contactLink,
 		String description,
 		String status,
-		String result,
 		String myParticipationStatus
 	) {
 		return new MeetingDetailView(
@@ -49,7 +47,6 @@ public record MeetingDetailView(
 			contactLink,
 			description,
 			status,
-			result,
 			myParticipationStatus
 		);
 	}

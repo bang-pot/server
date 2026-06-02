@@ -38,7 +38,6 @@ import com.banglog.meeting.application.service.JoinMeetingService;
 import com.banglog.meeting.application.service.MeetingAccessService;
 import com.banglog.meeting.application.service.MeetingCompletionService;
 import com.banglog.meeting.application.service.MeetingRecruitmentCloseService;
-import com.banglog.meeting.application.service.RecordMeetingResultService;
 import com.banglog.meeting.application.service.ReopenMeetingRecruitmentService;
 import com.banglog.meeting.application.service.UpdateMeetingService;
 import com.banglog.scheduler.meeting.MeetingCompletionScheduler;
@@ -51,7 +50,6 @@ import com.banglog.meeting.application.usecase.CreateMeetingUseCase;
 import com.banglog.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.banglog.meeting.application.usecase.GetMeetingsUseCase;
 import com.banglog.meeting.application.usecase.JoinMeetingUseCase;
-import com.banglog.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.banglog.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.banglog.meeting.application.usecase.UpdateMeetingUseCase;
 import com.banglog.meeting.domain.Meeting;
@@ -92,7 +90,6 @@ abstract class AbstractMeetingUseCaseServicesTest {
 	protected ReopenMeetingRecruitmentUseCase reopenMeetingRecruitmentUseCase;
 	protected CancelMeetingUseCase cancelMeetingUseCase;
 	protected CompleteMeetingUseCase completeMeetingUseCase;
-	protected RecordMeetingResultUseCase recordMeetingResultUseCase;
 
 	@BeforeEach
 	void setUp() {
@@ -177,13 +174,6 @@ abstract class AbstractMeetingUseCaseServicesTest {
 			crewRepository,
 			crewMemberRepository,
 			meetingRepository
-		);
-		recordMeetingResultUseCase = new RecordMeetingResultService(
-			completedUserAccessService,
-			crewRepository,
-			crewMemberRepository,
-			meetingRepository,
-			clock
 		);
 	}
 
@@ -541,26 +531,6 @@ abstract class AbstractMeetingUseCaseServicesTest {
 		}
 
 		@Override
-		public int recordResultIfNotRecorded(
-			Long meetingId,
-			Long crewId,
-			Long hostUserId,
-			com.banglog.meeting.domain.MeetingResult result,
-			java.time.Instant updatedAt
-		) {
-			return findByIdAndCrewId(meetingId, crewId)
-				.filter(meeting -> hostUserId.equals(meeting.getHostUserId()))
-				.filter(meeting -> meeting.getStatus() == MeetingStatus.COMPLETED)
-				.filter(meeting -> meeting.getResult() == com.banglog.meeting.domain.MeetingResult.NOT_RECORDED)
-				.map(meeting -> {
-					meeting.recordResult(result);
-					setField(meeting, "updatedAt", updatedAt);
-					return 1;
-				})
-				.orElse(0);
-		}
-
-		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return 0L;
 		}
@@ -622,7 +592,6 @@ abstract class AbstractMeetingUseCaseServicesTest {
 					meeting.getMeetingDate(),
 					meeting.getMeetingTime(),
 					meeting.getStatus().name(),
-					meeting.getResult().name(),
 					1L,
 					meeting.getCapacity()
 				))
@@ -683,7 +652,6 @@ abstract class AbstractMeetingUseCaseServicesTest {
 					meeting.getContactLink(),
 					meeting.getDescription(),
 					meeting.getStatus().name(),
-					meeting.getResult().name(),
 					meeting.getHostUserId().equals(userId) || hasJoined(meeting.getId(), userId)
 						? "JOINED"
 						: "NOT_JOINED"

@@ -57,6 +57,7 @@ public class JpaMeetingLogQueryRepository implements MeetingLogQueryRepository {
 					source.authorNickname(),
 					source.createdAt(),
 					source.updatedAt(),
+					source.result(),
 					source.body(),
 					photos
 				);
@@ -78,6 +79,7 @@ public class JpaMeetingLogQueryRepository implements MeetingLogQueryRepository {
 					source.authorNickname(),
 					source.createdAt(),
 					source.updatedAt(),
+					source.result(),
 					source.body(),
 					photos
 				);

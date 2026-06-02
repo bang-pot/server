@@ -63,7 +63,8 @@ class MeetingLogControllerTest {
 			55L,
 			7L,
 			"log body",
-			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L))
+			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L)),
+			"SUCCESS"
 		))).thenReturn(CreateMeetingLogUseCase.Result.of(101L, 55L));
 
 		mockMvc.perform(
@@ -73,6 +74,7 @@ class MeetingLogControllerTest {
 				.content("""
 					{
 					  "body": "log body",
+					  "result": "SUCCESS",
 					  "photos": [
 					    { "uploadId": 1 }
 					  ]
@@ -90,7 +92,8 @@ class MeetingLogControllerTest {
 			101L,
 			7L,
 			"updated body",
-			List.of(UpdateMeetingLogUseCase.PhotoInput.of(2L))
+			List.of(UpdateMeetingLogUseCase.PhotoInput.of(2L)),
+			"FAILURE"
 		))).thenReturn(UpdateMeetingLogUseCase.Result.of(101L, 55L));
 
 		mockMvc.perform(
@@ -100,6 +103,7 @@ class MeetingLogControllerTest {
 				.content("""
 					{
 					  "body": "updated body",
+					  "result": "FAILURE",
 					  "photos": [
 					    { "uploadId": 2 }
 					  ]
@@ -158,6 +162,7 @@ class MeetingLogControllerTest {
 				"host",
 				Instant.parse("2026-04-14T03:00:00Z"),
 				Instant.parse("2026-04-14T04:00:00Z"),
+				com.banglog.meeting.domain.MeetingResult.SUCCESS,
 				"log body",
 				List.of("https://cdn.example.com/a.jpg")
 			));
@@ -216,6 +221,7 @@ class MeetingLogControllerTest {
 				"host",
 				Instant.parse("2026-04-14T03:00:00Z"),
 				Instant.parse("2026-04-14T04:00:00Z"),
+				com.banglog.meeting.domain.MeetingResult.SUCCESS,
 				"log body",
 				List.of("https://cdn.example.com/a.jpg")
 			));
@@ -237,6 +243,7 @@ class MeetingLogControllerTest {
 				.content("""
 					{
 					  "body": "log body",
+					  "result": "SUCCESS",
 					  "photos": []
 					}
 					""")

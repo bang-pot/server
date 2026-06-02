@@ -478,17 +478,6 @@ abstract class AbstractMeetingLogServicesTest {
 		}
 
 		@Override
-		public int recordResultIfNotRecorded(
-			Long meetingId,
-			Long crewId,
-			Long hostUserId,
-			com.banglog.meeting.domain.MeetingResult result,
-			java.time.Instant updatedAt
-		) {
-			return 0;
-		}
-
-		@Override
 		public long countCreatedByHostUserId(Long userId) {
 			return 0L;
 		}
@@ -841,6 +830,7 @@ abstract class AbstractMeetingLogServicesTest {
 							user.getNickname(),
 							log.getCreatedAt(),
 							log.getUpdatedAt(),
+							log.getResult(),
 							log.getBody(),
 							meetingLogPhotoRepository.findAllByLogId(log.getId()).stream()
 								.map(MeetingLogPhoto::getPhotoUrl)
@@ -863,6 +853,7 @@ abstract class AbstractMeetingLogServicesTest {
 							user.getNickname(),
 							log.getCreatedAt(),
 							log.getUpdatedAt(),
+							log.getResult(),
 							log.getBody(),
 							meetingLogPhotoRepository.findAllByLogId(log.getId()).stream()
 								.map(MeetingLogPhoto::getPhotoUrl)

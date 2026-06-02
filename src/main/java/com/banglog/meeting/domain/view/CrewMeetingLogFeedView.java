@@ -17,11 +17,13 @@ public record CrewMeetingLogFeedView(
 		Long meetingId,
 		String authorNickname,
 		String meetingTitle,
+		String themeName,
 		String meetingDate,
 		Instant createdAt,
 		String excerpt,
 		String coverPhotoUrl,
-		Long extraPhotoCount
+		Long extraPhotoCount,
+		String result
 	) {
 
 		public static Item of(
@@ -29,22 +31,26 @@ public record CrewMeetingLogFeedView(
 			Long meetingId,
 			String authorNickname,
 			String meetingTitle,
+			String themeName,
 			String meetingDate,
 			Instant createdAt,
 			String excerpt,
 			String coverPhotoUrl,
-			Long extraPhotoCount
+			Long extraPhotoCount,
+			String result
 		) {
 			return new Item(
 				logId,
 				meetingId,
 				authorNickname,
 				meetingTitle,
+				themeName,
 				meetingDate,
 				createdAt,
 				excerpt,
 				coverPhotoUrl,
-				extraPhotoCount
+				extraPhotoCount,
+				result
 			);
 		}
 	}

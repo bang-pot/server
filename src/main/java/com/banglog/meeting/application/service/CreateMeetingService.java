@@ -57,8 +57,7 @@ public class CreateMeetingService implements CreateMeetingUseCase {
 			meeting.getPlace(),
 			meeting.getMeetingDate(),
 			meeting.getMeetingTime(),
-			meeting.getStatus().name(),
-			meeting.getResult().name()
+			meeting.getStatus().name()
 		);
 	}
 }

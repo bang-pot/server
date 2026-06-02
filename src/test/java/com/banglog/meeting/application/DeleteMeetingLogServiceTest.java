@@ -32,7 +32,8 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"delete target",
-			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L))
+			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L)),
+			"SUCCESS"
 		));
 
 		var result = deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(1L, created.logId(), 10L, null));
@@ -55,7 +56,8 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			11L,
 			"member log",
-			List.of()
+			List.of(),
+			"SUCCESS"
 		));
 
 		var result = deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(
@@ -83,7 +85,8 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			11L,
 			"member log",
-			List.of()
+			List.of(),
+			"SUCCESS"
 		));
 
 		assertThatThrownBy(() -> deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(
@@ -107,7 +110,8 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			11L,
 			"member log",
-			List.of()
+			List.of(),
+			"SUCCESS"
 		));
 
 		assertThatThrownBy(() -> deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(
@@ -127,7 +131,8 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			sourceMeeting.getId(),
 			10L,
 			"1번 크루의 방탈로그입니다.",
-			List.of()
+			List.of(),
+			"SUCCESS"
 		));
 
 		assertThatThrownBy(() -> deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(
@@ -146,7 +151,8 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"삭제할 방탈로그입니다.",
-			List.of()
+			List.of(),
+			"SUCCESS"
 		));
 		meetingLogRepository.resetLockTracking();
 
@@ -163,7 +169,8 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"삭제할 방탈로그입니다.",
-			List.of()
+			List.of(),
+			"SUCCESS"
 		));
 		deleteMeetingLogUseCase = new DeleteMeetingLogService(
 			completedUserAccessService,
@@ -192,7 +199,8 @@ class DeleteMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			meeting.getId(),
 			10L,
 			"삭제할 방탈로그입니다.",
-			List.of()
+			List.of(),
+			"SUCCESS"
 		));
 
 		assertThatThrownBy(() -> deleteMeetingLogUseCase.handle(DeleteMeetingLogUseCase.Command.of(

@@ -16,7 +16,9 @@ interface MeetingLogFeedJpaRepository extends JpaRepository<MeetingLog, Long> {
 			m.id as meetingId,
 			u.nickname as authorNickname,
 			m.title as meetingTitle,
+			m.theme_name as themeName,
 			m.meeting_date as meetingDate,
+			ml.result as result,
 			ml.created_at as createdAt,
 			ml.body as body,
 			(
@@ -50,7 +52,11 @@ interface MeetingLogFeedJpaRepository extends JpaRepository<MeetingLog, Long> {
 
 		String getMeetingTitle();
 
+		String getThemeName();
+
 		String getMeetingDate();
+
+		String getResult();
 
 		Object getCreatedAt();
 

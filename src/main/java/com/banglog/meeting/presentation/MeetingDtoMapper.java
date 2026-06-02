@@ -8,7 +8,6 @@ import com.banglog.meeting.application.usecase.CompleteMeetingUseCase;
 import com.banglog.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.banglog.meeting.application.usecase.GetMeetingsUseCase;
 import com.banglog.meeting.application.usecase.JoinMeetingUseCase;
-import com.banglog.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.banglog.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.banglog.meeting.application.usecase.UpdateMeetingUseCase;
 import com.banglog.meeting.domain.view.MeetingDetailView;
@@ -44,8 +43,7 @@ final class MeetingDtoMapper {
 			result.place(),
 			result.date(),
 			result.time(),
-			result.status(),
-			result.result()
+			result.status()
 		);
 	}
 
@@ -85,8 +83,7 @@ final class MeetingDtoMapper {
 			result.totalCost(),
 			result.contactLink(),
 			result.description(),
-			result.status(),
-			result.result()
+			result.status()
 		);
 	}
 
@@ -105,7 +102,6 @@ final class MeetingDtoMapper {
 					item.date(),
 					item.time(),
 					item.status(),
-					item.result(),
 					item.participantCount(),
 					item.capacity()
 				))
@@ -137,7 +133,6 @@ final class MeetingDtoMapper {
 			result.contactLink(),
 			result.description(),
 			result.status(),
-			result.result(),
 			result.myParticipationStatus()
 		);
 	}
@@ -190,16 +185,4 @@ final class MeetingDtoMapper {
 		return new MeetingDto.MeetingStatusChangeResponse(result.meetingId(), result.status());
 	}
 
-	static RecordMeetingResultUseCase.Command toRecordResultCommand(
-		Long crewId,
-		Long meetingId,
-		Long userId,
-		MeetingDto.RecordMeetingResultRequest request
-	) {
-		return RecordMeetingResultUseCase.Command.of(crewId, meetingId, userId, request.result());
-	}
-
-	static MeetingDto.MeetingResultRecordResponse toResponse(RecordMeetingResultUseCase.Result result) {
-		return new MeetingDto.MeetingResultRecordResponse(result.meetingId(), result.result());
-	}
 }

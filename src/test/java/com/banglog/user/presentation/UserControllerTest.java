@@ -301,6 +301,7 @@ class UserControllerTest {
 						"Friday Escape",
 						"2026-04-18",
 						java.time.Instant.parse("2026-04-19T10:15:30Z"),
+						com.banglog.meeting.domain.MeetingResult.SUCCESS,
 						"Too fun to stop writing",
 						"https://cdn.example.com/log-cover.jpg",
 						3L
@@ -345,7 +346,6 @@ class UserControllerTest {
 						"2026-04-18",
 						"19:00",
 						MeetingStatus.COMPLETED,
-						MeetingResult.SUCCESS,
 						true
 					)
 				),
@@ -367,7 +367,6 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[0].date").value("2026-04-18"))
 			.andExpect(jsonPath("$.items[0].time").value("19:00"))
 			.andExpect(jsonPath("$.items[0].status").value("COMPLETED"))
-			.andExpect(jsonPath("$.items[0].result").value("SUCCESS"))
 			.andExpect(jsonPath("$.items[0].canWriteReview").value(true))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
 			.andExpect(jsonPath("$.pageInfo.size").value(20))

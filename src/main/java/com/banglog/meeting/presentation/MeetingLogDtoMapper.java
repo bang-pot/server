@@ -24,7 +24,8 @@ final class MeetingLogDtoMapper {
 			meetingId,
 			userId,
 			request.body(),
-			toPhotoInputs(request.photos())
+			toPhotoInputs(request.photos()),
+			request.result()
 		);
 	}
 
@@ -37,7 +38,8 @@ final class MeetingLogDtoMapper {
 			logId,
 			userId,
 			request.body(),
-			toUpdatePhotoInputs(request.photos())
+			toUpdatePhotoInputs(request.photos()),
+			request.result()
 		);
 	}
 
@@ -87,6 +89,7 @@ final class MeetingLogDtoMapper {
 			result.authorNickname(),
 			result.createdAt(),
 			result.updatedAt(),
+			result.result() == null ? null : result.result().name(),
 			result.body(),
 			result.photos()
 		);
@@ -103,6 +106,7 @@ final class MeetingLogDtoMapper {
 			result.authorNickname(),
 			result.createdAt(),
 			result.updatedAt(),
+			result.result() == null ? null : result.result().name(),
 			result.body(),
 			result.photos()
 		);

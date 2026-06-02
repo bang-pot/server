@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Optional;
 
 import com.banglog.meeting.domain.Meeting;
-import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.view.MyJoinedMeetingsView;
 import com.banglog.meeting.domain.view.MyCalendarView;
 import com.banglog.meeting.domain.view.MyCreatedMeetingsView;
@@ -28,14 +27,6 @@ public interface MeetingRepository {
 	Optional<Meeting> findByIdAndCrewId(Long meetingId, Long crewId);
 
 	Optional<Meeting> findByIdAndCrewIdForUpdate(Long meetingId, Long crewId);
-
-	int recordResultIfNotRecorded(
-		Long meetingId,
-		Long crewId,
-		Long hostUserId,
-		MeetingResult result,
-		Instant updatedAt
-	);
 
 	MyCreatedMeetingsView findMyCreatedMeetingsViewByHostUserId(Long userId, int page, int size);
 
