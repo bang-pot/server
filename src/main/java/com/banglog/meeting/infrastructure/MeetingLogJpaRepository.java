@@ -69,6 +69,7 @@ interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 			u.nickname,
 			ml.createdAt,
 			ml.updatedAt,
+			ml.result,
 			ml.body
 		)
 		from MeetingLog ml, Meeting m, UserJpaEntity u
@@ -95,6 +96,7 @@ interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 			u.nickname,
 			ml.createdAt,
 			ml.updatedAt,
+			ml.result,
 			ml.body
 		)
 		from MeetingLog ml, Meeting m, UserJpaEntity u
@@ -127,6 +129,7 @@ interface MeetingLogJpaRepository extends JpaRepository<MeetingLog, Long> {
 			m.title,
 			m.meetingDate,
 			ml.createdAt,
+			ml.result,
 			case
 				when length(ml.body) > :excerptLimit then substring(ml.body, 1, :excerptLimit)
 				else ml.body

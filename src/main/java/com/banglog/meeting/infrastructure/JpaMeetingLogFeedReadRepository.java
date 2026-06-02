@@ -32,11 +32,13 @@ class JpaMeetingLogFeedReadRepository implements MeetingLogFeedReadRepository {
 				toLong(row.getMeetingId()),
 				row.getAuthorNickname(),
 				row.getMeetingTitle(),
+				row.getThemeName(),
 				row.getMeetingDate(),
 				toInstant(row.getCreatedAt()),
 				toExcerpt(row.getBody()),
 				row.getCoverPhotoUrl(),
-				toExtraPhotoCount(toLong(row.getTotalPhotoCount()))
+				toExtraPhotoCount(toLong(row.getTotalPhotoCount())),
+				row.getResult()
 			))
 			.toList();
 

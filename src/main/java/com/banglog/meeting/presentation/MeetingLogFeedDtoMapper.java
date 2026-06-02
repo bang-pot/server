@@ -15,11 +15,13 @@ final class MeetingLogFeedDtoMapper {
 					item.meetingId(),
 					item.authorNickname(),
 					item.meetingTitle(),
+					item.themeName(),
 					item.meetingDate(),
 					item.createdAt(),
 					item.excerpt(),
 					item.coverPhotoUrl(),
-					item.extraPhotoCount()
+					item.extraPhotoCount(),
+					item.result()
 				))
 				.toList(),
 			new MeetingLogFeedDto.MeetingLogFeedPageInfo(

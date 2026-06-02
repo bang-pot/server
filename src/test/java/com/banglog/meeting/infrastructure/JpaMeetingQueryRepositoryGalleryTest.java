@@ -208,14 +208,15 @@ class JpaMeetingQueryRepositoryGalleryTest {
 
 	private Long insertLog(Long meetingId, Long authorUserId, String body, String createdAt) {
 		entityManager.getEntityManager().createNativeQuery("""
-			insert into meeting_logs (meeting_id, author_user_id, body, created_at, updated_at)
-			values (?, ?, ?, ?, ?)
+			insert into meeting_logs (meeting_id, author_user_id, body, result, created_at, updated_at)
+			values (?, ?, ?, ?, ?, ?)
 			""")
 			.setParameter(1, meetingId)
 			.setParameter(2, authorUserId)
 			.setParameter(3, body)
-			.setParameter(4, java.sql.Timestamp.from(java.time.Instant.parse(createdAt)))
+			.setParameter(4, "SUCCESS")
 			.setParameter(5, java.sql.Timestamp.from(java.time.Instant.parse(createdAt)))
+			.setParameter(6, java.sql.Timestamp.from(java.time.Instant.parse(createdAt)))
 			.executeUpdate();
 
 		return ((Number) entityManager.getEntityManager()
@@ -231,6 +232,7 @@ class JpaMeetingQueryRepositoryGalleryTest {
 				meeting_id,
 				author_user_id,
 				body,
+				result,
 				created_at,
 				updated_at,
 				deleted_at,
@@ -238,17 +240,18 @@ class JpaMeetingQueryRepositoryGalleryTest {
 				deleted_by_role,
 				delete_reason
 			)
-			values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			""")
 			.setParameter(1, meetingId)
 			.setParameter(2, authorUserId)
 			.setParameter(3, body)
-			.setParameter(4, java.sql.Timestamp.from(java.time.Instant.parse(createdAt)))
+			.setParameter(4, "SUCCESS")
 			.setParameter(5, java.sql.Timestamp.from(java.time.Instant.parse(createdAt)))
-			.setParameter(6, java.sql.Timestamp.from(java.time.Instant.parse("2026-04-14T01:00:00Z")))
-			.setParameter(7, authorUserId)
-			.setParameter(8, "AUTHOR")
-			.setParameter(9, null)
+			.setParameter(6, java.sql.Timestamp.from(java.time.Instant.parse(createdAt)))
+			.setParameter(7, java.sql.Timestamp.from(java.time.Instant.parse("2026-04-14T01:00:00Z")))
+			.setParameter(8, authorUserId)
+			.setParameter(9, "AUTHOR")
+			.setParameter(10, null)
 			.executeUpdate();
 
 		return ((Number) entityManager.getEntityManager()

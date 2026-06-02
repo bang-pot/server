@@ -34,6 +34,10 @@ public class MeetingLog {
 	@Column(nullable = false, length = 1000)
 	private String body;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private MeetingResult result;
+
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
@@ -61,6 +65,7 @@ public class MeetingLog {
 		Long meetingId,
 		Long authorUserId,
 		String body,
+		MeetingResult result,
 		Instant createdAt,
 		Instant updatedAt,
 		Instant deletedAt,
@@ -72,6 +77,7 @@ public class MeetingLog {
 		this.meetingId = meetingId;
 		this.authorUserId = authorUserId;
 		this.body = body;
+		this.result = result;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
 		this.deletedAt = deletedAt;
@@ -80,8 +86,8 @@ public class MeetingLog {
 		this.deleteReason = deleteReason;
 	}
 
-	public static MeetingLog create(Long meetingId, Long authorUserId, String body, Instant now) {
-		return new MeetingLog(null, meetingId, authorUserId, body, now, now, null, null, null, null);
+	public static MeetingLog create(Long meetingId, Long authorUserId, String body, MeetingResult result, Instant now) {
+		return new MeetingLog(null, meetingId, authorUserId, body, result, now, now, null, null, null, null);
 	}
 
 	public static MeetingLog rehydrate(
@@ -89,6 +95,7 @@ public class MeetingLog {
 		Long meetingId,
 		Long authorUserId,
 		String body,
+		MeetingResult result,
 		Instant createdAt,
 		Instant updatedAt,
 		Instant deletedAt,
@@ -101,6 +108,7 @@ public class MeetingLog {
 			meetingId,
 			authorUserId,
 			body,
+			result,
 			createdAt,
 			updatedAt,
 			deletedAt,
@@ -110,8 +118,9 @@ public class MeetingLog {
 		);
 	}
 
-	public void edit(String body, Instant updatedAt) {
+	public void edit(String body, MeetingResult result, Instant updatedAt) {
 		this.body = body;
+		this.result = result;
 		this.updatedAt = updatedAt;
 	}
 
@@ -144,6 +153,10 @@ public class MeetingLog {
 
 	public String getBody() {
 		return body;
+	}
+
+	public MeetingResult getResult() {
+		return result;
 	}
 
 	public Instant getCreatedAt() {

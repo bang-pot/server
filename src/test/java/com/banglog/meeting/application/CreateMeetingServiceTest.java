@@ -12,13 +12,12 @@ import com.banglog.crew.domain.CrewMember;
 import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.meeting.application.usecase.CreateMeetingUseCase;
 import com.banglog.meeting.domain.Meeting;
-import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.MeetingStatus;
 
 class CreateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 
 	@Test
-	void createsMeetingWithDefaultStatusAndResultForJoinedMember() {
+	void createsMeetingWithDefaultStatusForJoinedMember() {
 		AuthUser member = fullUser(77L, "member-provider", "member");
 		authUserRepository.save(member);
 		Crew crew = crewRepository.save(Crew.create("Crew Alpha", "public crew", CrewVisibility.PUBLIC, null));
@@ -41,11 +40,9 @@ class CreateMeetingServiceTest extends AbstractMeetingUseCaseServicesTest {
 		assertThat(result.meetingId()).isNotNull();
 		assertThat(result.title()).isEqualTo("Friday Escape");
 		assertThat(result.status()).isEqualTo("RECRUITING");
-		assertThat(result.result()).isEqualTo("NOT_RECORDED");
 
 		Meeting saved = meetingRepository.findById(result.meetingId()).orElseThrow();
 		assertThat(saved.getStatus()).isEqualTo(MeetingStatus.RECRUITING);
-		assertThat(saved.getResult()).isEqualTo(MeetingResult.NOT_RECORDED);
 		assertThat(saved.getHostUserId()).isEqualTo(member.getId());
 		assertThat(saved.getTitle()).isEqualTo("Friday Escape");
 		assertThat(saved.getContactLink()).isEqualTo("https://open.kakao.com/o/abc123");

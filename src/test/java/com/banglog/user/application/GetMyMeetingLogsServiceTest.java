@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.view.MyMeetingLogsView;
 import com.banglog.user.application.usecase.GetMyMeetingLogsUseCase;
 
@@ -29,6 +30,7 @@ class GetMyMeetingLogsServiceTest extends AbstractUserApplicationServiceTest {
 						"Friday Escape",
 						"2026-04-18",
 						Instant.parse("2026-04-19T10:15:30Z"),
+						MeetingResult.SUCCESS,
 						"1234567890".repeat(13),
 						"https://cdn.example.com/log-cover.jpg",
 						3L
@@ -50,6 +52,7 @@ class GetMyMeetingLogsServiceTest extends AbstractUserApplicationServiceTest {
 		assertThat(result.items().get(0).meetingTitle()).isEqualTo("Friday Escape");
 		assertThat(result.items().get(0).meetingDate()).isEqualTo("2026-04-18");
 		assertThat(result.items().get(0).createdAt()).isEqualTo(Instant.parse("2026-04-19T10:15:30Z"));
+		assertThat(result.items().get(0).result()).isEqualTo(MeetingResult.SUCCESS);
 		assertThat(result.items().get(0).excerpt()).hasSize(130);
 		assertThat(result.items().get(0).coverPhotoUrl()).isEqualTo("https://cdn.example.com/log-cover.jpg");
 		assertThat(result.items().get(0).photoCount()).isEqualTo(3L);

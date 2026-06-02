@@ -10,9 +10,11 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.banglog.common.error.ApiErrorField;
 import com.banglog.image.application.usecase.AttachImageUploadUseCase;
 import com.banglog.image.domain.ImageUploadCategory;
 import com.banglog.meeting.application.exception.MeetingLogAlreadyExistsException;
+import com.banglog.meeting.application.exception.MeetingLogRequestValidationException;
 import com.banglog.meeting.application.exception.MeetingLogWriteNotAllowedException;
 import com.banglog.meeting.application.exception.MeetingNotFoundException;
 import com.banglog.meeting.application.port.MeetingLogPhotoRepository;
@@ -24,6 +26,7 @@ import com.banglog.meeting.domain.Meeting;
 import com.banglog.meeting.domain.MeetingLog;
 import com.banglog.meeting.domain.MeetingLogPhoto;
 import com.banglog.meeting.domain.MeetingParticipationStatus;
+import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.MeetingStatus;
 import com.banglog.user.application.service.CompletedUserAccessService;
 
@@ -36,6 +39,8 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 	private static final String COMPLETED_USER_REQUIRED_MESSAGE = "완료된 사용자만 방탈로그를 작성할 수 있습니다.";
 	private static final String PARTICIPATION_HISTORY_REQUIRED_MESSAGE =
 		"완료된 모임에 참여한 사용자만 방탈로그를 작성할 수 있습니다.";
+	private static final String RESULT_REQUIRED_MESSAGE = "방탈 결과를 입력해 주세요.";
+	private static final String RESULT_INVALID_MESSAGE = "방탈 결과는 SUCCESS 또는 FAILURE만 입력할 수 있습니다.";
 	private static final Set<MeetingParticipationStatus> WRITABLE_HISTORY_STATUSES = Set.of(
 		MeetingParticipationStatus.JOINED,
 		MeetingParticipationStatus.PENDING,
@@ -63,9 +68,10 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 		}
 
 		MeetingLogCommandValidator.validate(command.body(), command.photos());
+		MeetingResult logResult = parseRequiredResult(command.result());
 
 		Instant now = clock.instant();
-		MeetingLog savedLog = saveLog(command, now);
+		MeetingLog savedLog = saveLog(command, logResult, now);
 		List<String> photoUrls = attachPhotos(command);
 		meetingLogPhotoRepository.saveAll(toPhotos(savedLog.getId(), photoUrls, now));
 		return Result.of(savedLog.getId(), savedLog.getMeetingId());
@@ -89,10 +95,21 @@ public class CreateMeetingLogService implements CreateMeetingLogUseCase {
 		}
 	}
 
-	private MeetingLog saveLog(Command command, Instant now) {
+	private MeetingResult parseRequiredResult(String result) {
+		if (result == null || result.isBlank()) {
+			throw new MeetingLogRequestValidationException(List.of(new ApiErrorField("result", RESULT_REQUIRED_MESSAGE)));
+		}
+		try {
+			return MeetingResult.valueOf(result);
+		} catch (IllegalArgumentException exception) {
+			throw new MeetingLogRequestValidationException(List.of(new ApiErrorField("result", RESULT_INVALID_MESSAGE)));
+		}
+	}
+
+	private MeetingLog saveLog(Command command, MeetingResult result, Instant now) {
 		try {
 			return meetingLogRepository.save(
-				MeetingLog.create(command.meetingId(), command.userId(), command.body(), now)
+				MeetingLog.create(command.meetingId(), command.userId(), command.body(), result, now)
 			);
 		} catch (DataIntegrityViolationException exception) {
 			throw new MeetingLogAlreadyExistsException(command.meetingId(), command.userId(), exception);

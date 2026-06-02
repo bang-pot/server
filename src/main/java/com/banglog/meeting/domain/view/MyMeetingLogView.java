@@ -14,6 +14,7 @@ public record MyMeetingLogView(
 	String authorNickname,
 	Instant createdAt,
 	Instant updatedAt,
+	com.banglog.meeting.domain.MeetingResult result,
 	String body,
 	List<String> photos
 ) {
@@ -34,6 +35,7 @@ public record MyMeetingLogView(
 		String authorNickname,
 		Instant createdAt,
 		Instant updatedAt,
+		com.banglog.meeting.domain.MeetingResult result,
 		String body,
 		List<String> photos
 	) {
@@ -48,6 +50,7 @@ public record MyMeetingLogView(
 			authorNickname,
 			createdAt,
 			updatedAt,
+			result,
 			body,
 			photos
 		);
@@ -62,7 +65,7 @@ public record MyMeetingLogView(
 	}
 
 	private static MyMeetingLogView missing(Status status) {
-		return new MyMeetingLogView(status, null, null, null, null, null, null, null, null, null, null, List.of());
+		return new MyMeetingLogView(status, null, null, null, null, null, null, null, null, null, null, null, List.of());
 	}
 
 	public record Source(
@@ -75,6 +78,7 @@ public record MyMeetingLogView(
 		String authorNickname,
 		Instant createdAt,
 		Instant updatedAt,
+		com.banglog.meeting.domain.MeetingResult result,
 		String body
 	) {
 	}

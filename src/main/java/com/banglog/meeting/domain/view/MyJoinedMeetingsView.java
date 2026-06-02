@@ -2,7 +2,6 @@ package com.banglog.meeting.domain.view;
 
 import java.util.List;
 
-import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.MeetingStatus;
 
 public record MyJoinedMeetingsView(
@@ -22,7 +21,6 @@ public record MyJoinedMeetingsView(
 		String date,
 		String time,
 		MeetingStatus status,
-		MeetingResult result,
 		boolean canWriteReview
 	) {
 		public static Item of(
@@ -34,7 +32,6 @@ public record MyJoinedMeetingsView(
 			String date,
 			String time,
 			MeetingStatus status,
-			MeetingResult result,
 			boolean canWriteReview
 		) {
 			return new Item(
@@ -46,7 +43,6 @@ public record MyJoinedMeetingsView(
 				date,
 				time,
 				status,
-				result,
 				canWriteReview
 			);
 		}

@@ -16,35 +16,39 @@ import com.banglog.meeting.application.service.UpdateMeetingLogService;
 import com.banglog.meeting.application.usecase.CreateMeetingLogUseCase;
 import com.banglog.meeting.application.usecase.GetMeetingLogDetailUseCase;
 import com.banglog.meeting.application.usecase.UpdateMeetingLogUseCase;
+import com.banglog.meeting.domain.MeetingResult;
 
 class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 
 	private static final Instant UPDATED_AT = NOW.plusSeconds(300);
 
 	@Test
-	void updatesOwnLogAndReplacesPhotos() {
+	void updatesOwnLogAndReplacesPhotosAndResult() {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"원래 작성한 후기입니다.",
-			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L))
+			"Original log.",
+			List.of(CreateMeetingLogUseCase.PhotoInput.of(1L)),
+			"SUCCESS"
 		));
 
 		var result = updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
 			created.logId(),
 			10L,
-			"수정한 후기입니다.",
+			"Updated log.",
 			List.of(
 				UpdateMeetingLogUseCase.PhotoInput.of(2L),
 				UpdateMeetingLogUseCase.PhotoInput.of(3L)
-			)
+			),
+			"FAILURE"
 		));
 
 		assertThat(result.logId()).isEqualTo(created.logId());
 		var detail = getMeetingLogDetailUseCase.handle(GetMeetingLogDetailUseCase.Query.of(1L, created.logId(), 10L));
-		assertThat(detail.body()).isEqualTo("수정한 후기입니다.");
+		assertThat(detail.body()).isEqualTo("Updated log.");
+		assertThat(detail.result()).isEqualTo(MeetingResult.FAILURE);
 		assertThat(detail.photos()).containsExactly(
 			"https://cdn.example.com/upload-2.jpg",
 			"https://cdn.example.com/upload-3.jpg"
@@ -54,6 +58,7 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 			.satisfies(log -> {
 				assertThat(log.getCreatedAt()).isEqualTo(NOW);
 				assertThat(log.getUpdatedAt()).isEqualTo(NOW);
+				assertThat(log.getResult()).isEqualTo(MeetingResult.FAILURE);
 			});
 	}
 
@@ -64,8 +69,9 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"원래 작성한 후기입니다.",
-			List.of()
+			"Original log.",
+			List.of(),
+			"SUCCESS"
 		));
 		updateMeetingLogUseCase = new UpdateMeetingLogService(
 			completedUserAccessService,
@@ -78,8 +84,9 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
 			created.logId(),
 			10L,
-			"수정한 후기입니다.",
-			List.of()
+			"Updated log.",
+			List.of(),
+			"SUCCESS"
 		));
 
 		assertThat(meetingLogRepository.findById(created.logId()))
@@ -91,22 +98,44 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 	}
 
 	@Test
+	void rejectsUpdateWithoutResult() {
+		completedUser(10L, "host");
+		var meeting = completedMeeting(1L, 10L, "Deep Blue");
+		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
+			meeting.getId(),
+			10L,
+			"Original log.",
+			List.of(),
+			"SUCCESS"
+		));
+
+		assertThatThrownBy(() -> updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
+			created.logId(),
+			10L,
+			"Updated log.",
+			List.of()
+		))).isInstanceOf(com.banglog.meeting.application.exception.MeetingLogRequestValidationException.class);
+	}
+
+	@Test
 	void locksLogWhenUpdating() {
 		completedUser(10L, "host");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 		var created = createMeetingLogUseCase.handle(CreateMeetingLogUseCase.Command.of(
 			meeting.getId(),
 			10L,
-			"원래 작성한 후기입니다.",
-			List.of()
+			"Original log.",
+			List.of(),
+			"SUCCESS"
 		));
 		meetingLogRepository.resetLockTracking();
 
 		updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
 			created.logId(),
 			10L,
-			"수정한 후기입니다.",
-			List.of()
+			"Updated log.",
+			List.of(),
+			"SUCCESS"
 		));
 
 		assertThat(meetingLogRepository.findByIdForUpdateCalled()).isTrue();
@@ -118,14 +147,15 @@ class UpdateMeetingLogServiceTest extends AbstractMeetingLogServicesTest {
 		completedUser(11L, "other");
 		var meeting = completedMeeting(1L, 10L, "Deep Blue");
 		var created = createMeetingLogUseCase.handle(
-			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "후기입니다.", List.of())
+			CreateMeetingLogUseCase.Command.of(meeting.getId(), 10L, "Original log.", List.of(), "SUCCESS")
 		);
 
 		assertThatThrownBy(() -> updateMeetingLogUseCase.handle(UpdateMeetingLogUseCase.Command.of(
 			created.logId(),
 			11L,
-			"다른 내용으로 수정 시도",
-			List.of()
+			"Updated by another user.",
+			List.of(),
+			"FAILURE"
 		))).isInstanceOf(AccessDeniedException.class)
 			.hasMessageContaining("작성자 본인만 방탈로그를 수정할 수 있습니다.");
 	}

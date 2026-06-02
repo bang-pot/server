@@ -21,8 +21,6 @@ import lombok.Getter;
 import com.banglog.meeting.application.exception.MeetingEditNotAllowedException;
 import com.banglog.meeting.application.exception.MeetingInvalidStatusTransitionException;
 import com.banglog.meeting.application.exception.MeetingRecruitmentReopenNotAllowedException;
-import com.banglog.meeting.application.exception.MeetingResultAlreadyRecordedException;
-import com.banglog.meeting.application.exception.MeetingResultRecordNotAllowedException;
 
 @Entity
 @Getter
@@ -70,10 +68,6 @@ public class Meeting {
 	@Column(name = "status", nullable = false)
 	private MeetingStatus status;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "result", nullable = false)
-	private MeetingResult result;
-
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt;
 
@@ -97,7 +91,6 @@ public class Meeting {
 		String contactLink,
 		String description,
 		MeetingStatus status,
-		MeetingResult result,
 		Instant createdAt,
 		Instant updatedAt
 	) {
@@ -114,7 +107,6 @@ public class Meeting {
 		this.contactLink = contactLink;
 		this.description = description;
 		this.status = status;
-		this.result = result;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
 	}
@@ -146,7 +138,6 @@ public class Meeting {
 			contactLink,
 			description,
 			MeetingStatus.RECRUITING,
-			MeetingResult.NOT_RECORDED,
 			null,
 			null
 		);
@@ -242,16 +233,6 @@ public class Meeting {
 			throw new MeetingInvalidStatusTransitionException(id, status.name(), MeetingStatus.COMPLETED.name());
 		}
 		status = MeetingStatus.COMPLETED;
-	}
-
-	public void recordResult(MeetingResult targetResult) {
-		if (status != MeetingStatus.COMPLETED) {
-			throw new MeetingResultRecordNotAllowedException(id, status.name());
-		}
-		if (result != MeetingResult.NOT_RECORDED) {
-			throw new MeetingResultAlreadyRecordedException(id, result.name());
-		}
-		result = targetResult;
 	}
 
 	public void edit(

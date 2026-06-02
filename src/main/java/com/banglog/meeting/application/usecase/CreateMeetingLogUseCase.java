@@ -10,10 +10,21 @@ public interface CreateMeetingLogUseCase {
 		Long meetingId,
 		Long userId,
 		String body,
-		List<PhotoInput> photos
+		List<PhotoInput> photos,
+		String result
 	) {
 		public static Command of(Long meetingId, Long userId, String body, List<PhotoInput> photos) {
-			return new Command(meetingId, userId, body, photos);
+			return new Command(meetingId, userId, body, photos, null);
+		}
+
+		public static Command of(
+			Long meetingId,
+			Long userId,
+			String body,
+			List<PhotoInput> photos,
+			String result
+		) {
+			return new Command(meetingId, userId, body, photos, result);
 		}
 	}
 

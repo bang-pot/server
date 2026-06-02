@@ -67,8 +67,7 @@ public class UpdateMeetingService implements UpdateMeetingUseCase {
 			meeting.getTotalCost(),
 			meeting.getContactLink(),
 			meeting.getDescription(),
-			meeting.getStatus().name(),
-			meeting.getResult().name()
+			meeting.getStatus().name()
 		);
 	}
 }

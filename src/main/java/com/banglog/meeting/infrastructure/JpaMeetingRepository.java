@@ -16,7 +16,6 @@ import com.banglog.crew.domain.CrewStatus;
 import com.banglog.meeting.application.port.MeetingRepository;
 import com.banglog.meeting.domain.Meeting;
 import com.banglog.meeting.domain.MeetingParticipationStatus;
-import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.MeetingStatus;
 import com.banglog.meeting.domain.view.MyCalendarView;
 import com.banglog.meeting.domain.view.MyCreatedMeetingsView;
@@ -117,25 +116,6 @@ class JpaMeetingRepository implements MeetingRepository {
 	@Override
 	public Optional<Meeting> findByIdAndCrewIdForUpdate(Long meetingId, Long crewId) {
 		return meetingJpaRepository.findByIdAndCrewIdForUpdate(meetingId, crewId);
-	}
-
-	@Override
-	public int recordResultIfNotRecorded(
-		Long meetingId,
-		Long crewId,
-		Long hostUserId,
-		MeetingResult result,
-		Instant updatedAt
-	) {
-		return meetingJpaRepository.recordResultIfNotRecorded(
-			meetingId,
-			crewId,
-			hostUserId,
-			MeetingStatus.COMPLETED,
-			MeetingResult.NOT_RECORDED,
-			result,
-			updatedAt
-		);
 	}
 
 	@Override

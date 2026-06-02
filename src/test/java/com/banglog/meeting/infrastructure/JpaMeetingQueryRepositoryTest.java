@@ -2,6 +2,7 @@ package com.banglog.meeting.infrastructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import com.banglog.crew.domain.Crew;
 import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.meeting.application.port.MeetingQueryRepository;
 import com.banglog.meeting.domain.Meeting;
+import com.banglog.meeting.domain.MeetingLog;
 import com.banglog.meeting.domain.MeetingParticipant;
 import com.banglog.meeting.domain.MeetingParticipationStatus;
 import com.banglog.meeting.domain.MeetingResult;
@@ -104,21 +106,21 @@ class JpaMeetingQueryRepositoryTest {
 		));
 		hostedSuccess.closeRecruitment();
 		hostedSuccess.complete();
-		hostedSuccess.recordResult(MeetingResult.SUCCESS);
+		entityManager.persist(MeetingLog.create(hostedSuccess.getId(), 7L, "great", MeetingResult.SUCCESS, Instant.parse("2026-04-20T12:00:00Z")));
 
 		Meeting hostedFailure = entityManager.persist(Meeting.create(
 			1L, 7L, "hosted failure", "Theme B", "Seoul", "2026-04-21", "11:00", 4, null, null, "desc"
 		));
 		hostedFailure.closeRecruitment();
 		hostedFailure.complete();
-		hostedFailure.recordResult(MeetingResult.FAILURE);
+		entityManager.persist(MeetingLog.create(hostedFailure.getId(), 7L, "hard", MeetingResult.FAILURE, Instant.parse("2026-04-21T12:00:00Z")));
 
 		Meeting joinedSuccess = entityManager.persist(Meeting.create(
 			1L, 20L, "joined success", "Theme C", "Seoul", "2026-04-22", "12:00", 4, null, null, "desc"
 		));
 		joinedSuccess.closeRecruitment();
 		joinedSuccess.complete();
-		joinedSuccess.recordResult(MeetingResult.SUCCESS);
+		entityManager.persist(MeetingLog.create(joinedSuccess.getId(), 7L, "success", MeetingResult.SUCCESS, Instant.parse("2026-04-22T12:00:00Z")));
 		entityManager.persist(MeetingParticipant.join(joinedSuccess.getId(), 7L));
 
 		Meeting joinedFailure = entityManager.persist(Meeting.create(
@@ -126,7 +128,7 @@ class JpaMeetingQueryRepositoryTest {
 		));
 		joinedFailure.closeRecruitment();
 		joinedFailure.complete();
-		joinedFailure.recordResult(MeetingResult.FAILURE);
+		entityManager.persist(MeetingLog.create(joinedFailure.getId(), 7L, "failure", MeetingResult.FAILURE, Instant.parse("2026-04-23T12:00:00Z")));
 		entityManager.persist(MeetingParticipant.rehydrate(
 			null,
 			joinedFailure.getId(),

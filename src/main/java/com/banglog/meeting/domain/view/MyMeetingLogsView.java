@@ -19,6 +19,7 @@ public record MyMeetingLogsView(
 		String meetingTitle,
 		String meetingDate,
 		Instant createdAt,
+		com.banglog.meeting.domain.MeetingResult result,
 		String excerpt,
 		String coverPhotoUrl,
 		Long photoCount
@@ -31,6 +32,7 @@ public record MyMeetingLogsView(
 			String meetingTitle,
 			String meetingDate,
 			Instant createdAt,
+			com.banglog.meeting.domain.MeetingResult result,
 			String excerpt,
 			String coverPhotoUrl,
 			Long photoCount
@@ -43,6 +45,7 @@ public record MyMeetingLogsView(
 				meetingTitle,
 				meetingDate,
 				createdAt,
+				result,
 				excerpt,
 				coverPhotoUrl,
 				photoCount

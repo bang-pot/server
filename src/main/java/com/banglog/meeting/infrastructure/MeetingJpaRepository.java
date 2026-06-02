@@ -90,7 +90,6 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 			m.meetingDate,
 			m.meetingTime,
 			concat('', m.status),
-			concat('', m.result),
 			1 + (
 				select count(mp.id)
 				from MeetingParticipant mp
@@ -127,7 +126,6 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 			m.contactLink,
 			m.description,
 			concat('', m.status),
-			concat('', m.result),
 			case
 				when m.hostUserId = :userId then 'JOINED'
 				when participant.status in :joinedStatuses then 'JOINED'
@@ -177,27 +175,6 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	Optional<Meeting> findByIdAndCrewIdForUpdate(
 		@Param("id") Long id,
 		@Param("crewId") Long crewId
-	);
-
-	@Modifying(clearAutomatically = true, flushAutomatically = true)
-	@Query("""
-		update Meeting m
-		set m.result = :result,
-		    m.updatedAt = :updatedAt
-		where m.id = :meetingId
-		  and m.crewId = :crewId
-		  and m.hostUserId = :hostUserId
-		  and m.status = :completedStatus
-		  and m.result = :notRecordedResult
-		""")
-	int recordResultIfNotRecorded(
-		@Param("meetingId") Long meetingId,
-		@Param("crewId") Long crewId,
-		@Param("hostUserId") Long hostUserId,
-		@Param("completedStatus") MeetingStatus completedStatus,
-		@Param("notRecordedResult") MeetingResult notRecordedResult,
-		@Param("result") MeetingResult result,
-		@Param("updatedAt") Instant updatedAt
 	);
 
 	@Query("""
@@ -290,7 +267,6 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 			m.meetingDate,
 			m.meetingTime,
 			m.status,
-			case when m.status = :completedStatus then m.result else null end,
 			case
 				when m.status = :completedStatus
 				 and not exists (
@@ -459,11 +435,14 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	);
 
 	@Query("""
-		select count(m)
-		from Meeting m
-		where m.hostUserId = :userId
+		select count(log)
+		from MeetingLog log, Meeting m
+		where log.meetingId = m.id
+		  and log.authorUserId = :userId
+		  and log.deletedAt is null
+		  and m.hostUserId = :userId
 		  and m.status = :completedStatus
-		  and m.result = :successResult
+		  and log.result = :successResult
 		""")
 	long countSuccessfulHostedActivityByUserId(
 		@Param("userId") Long userId,
@@ -472,13 +451,16 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 	);
 
 	@Query("""
-		select count(mp)
-		from MeetingParticipant mp, Meeting m
-		where mp.meetingId = m.id
+		select count(log)
+		from MeetingLog log, MeetingParticipant mp, Meeting m
+		where log.meetingId = m.id
+		  and log.authorUserId = :userId
+		  and log.deletedAt is null
+		  and mp.meetingId = m.id
 		  and mp.userId = :userId
 		  and mp.status in :joinedStatuses
 		  and m.status = :completedStatus
-		  and m.result = :successResult
+		  and log.result = :successResult
 		  and m.hostUserId <> mp.userId
 		""")
 	long countSuccessfulJoinedActivityByUserId(

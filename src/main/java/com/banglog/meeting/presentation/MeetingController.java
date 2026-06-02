@@ -23,7 +23,6 @@ import com.banglog.meeting.application.usecase.CompleteMeetingUseCase;
 import com.banglog.meeting.application.usecase.GetMeetingDetailUseCase;
 import com.banglog.meeting.application.usecase.GetMeetingsUseCase;
 import com.banglog.meeting.application.usecase.JoinMeetingUseCase;
-import com.banglog.meeting.application.usecase.RecordMeetingResultUseCase;
 import com.banglog.meeting.application.usecase.ReopenMeetingRecruitmentUseCase;
 import com.banglog.meeting.application.usecase.UpdateMeetingUseCase;
 
@@ -48,7 +47,6 @@ class MeetingController {
 	private final ReopenMeetingRecruitmentUseCase reopenMeetingRecruitmentUseCase;
 	private final CancelMeetingUseCase cancelMeetingUseCase;
 	private final CompleteMeetingUseCase completeMeetingUseCase;
-	private final RecordMeetingResultUseCase recordMeetingResultUseCase;
 
 	@PostMapping
 	@Idempotent
@@ -187,26 +185,6 @@ class MeetingController {
 		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
 			completeMeetingUseCase.handle(
 				MeetingDtoMapper.toCompleteMeetingCommand(crewId, meetingId, requireAuthenticatedUserId(authentication))
-			)
-		));
-	}
-
-	@PostMapping("/{meetingId}/result")
-	@Idempotent
-	ResponseEntity<MeetingDto.MeetingResultRecordResponse> recordResult(
-		@PathVariable Long crewId,
-		@PathVariable Long meetingId,
-		Authentication authentication,
-		@Valid @RequestBody MeetingDto.RecordMeetingResultRequest request
-	) {
-		return ResponseEntity.ok(MeetingDtoMapper.toResponse(
-			recordMeetingResultUseCase.handle(
-				MeetingDtoMapper.toRecordResultCommand(
-					crewId,
-					meetingId,
-					requireAuthenticatedUserId(authentication),
-					request
-				)
 			)
 		));
 	}
