@@ -78,6 +78,7 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 		assertThat(result.title()).isEqualTo("Friday Escape");
 		assertThat(result.status()).isEqualTo("RECRUITING");
 		assertThat(result.contactLink()).isEqualTo("https://open.kakao.com/o/abc123");
+		assertThat(result.participantCount()).isEqualTo(1L);
 		assertThat(result.myParticipationStatus()).isEqualTo("JOINED");
 	}
 
@@ -109,6 +110,7 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), member.getId())
 		);
 
+		assertThat(result.participantCount()).isEqualTo(1L);
 		assertThat(result.myParticipationStatus()).isEqualTo("NOT_JOINED");
 	}
 
@@ -141,6 +143,7 @@ class MeetingCreationAndQueryUseCaseServicesTest extends AbstractMeetingUseCaseS
 			GetMeetingDetailUseCase.Query.of(crew.getId(), meeting.getId(), member.getId())
 		);
 
+		assertThat(result.participantCount()).isEqualTo(2L);
 		assertThat(result.myParticipationStatus()).isEqualTo("JOINED");
 	}
 

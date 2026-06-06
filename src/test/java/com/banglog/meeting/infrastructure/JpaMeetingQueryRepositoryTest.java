@@ -298,4 +298,35 @@ class JpaMeetingQueryRepositoryTest {
 		assertThat(result.items()).extracting(MeetingsView.Item::participantCount)
 			.containsExactly(4L);
 	}
+
+	@Test
+	void returnsRecruitingMeetingItemsBeforeClosedCompletedAndCanceledItems() {
+		Crew crew = entityManager.persist(Crew.create("Meeting Sort Crew", "desc", CrewVisibility.PUBLIC, null));
+		Meeting closed = entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Closed", "Theme B", "Hongdae", "2026-04-20", "18:00", 4, null, null, null
+		));
+		closed.closeRecruitment();
+		entityManager.persistAndFlush(closed);
+		Meeting completed = entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Completed", "Theme C", "Gangnam", "2026-04-21", "18:00", 4, null, null, null
+		));
+		completed.closeRecruitment();
+		completed.complete();
+		entityManager.persistAndFlush(completed);
+		Meeting canceled = entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Canceled", "Theme D", "Seongsu", "2026-04-22", "18:00", 4, null, null, null
+		));
+		canceled.cancel();
+		entityManager.persistAndFlush(canceled);
+		Meeting recruiting = entityManager.persistAndFlush(Meeting.create(
+			crew.getId(), 7L, "Recruiting", "Theme A", "Jamsil", "2026-04-23", "18:00", 4, null, null, null
+		));
+		entityManager.flush();
+		entityManager.clear();
+
+		MeetingsView result = repository.findMeetingsViewByCrewId(crew.getId(), 0, 20);
+
+		assertThat(result.items()).extracting(MeetingsView.Item::meetingId)
+			.containsExactly(recruiting.getId(), closed.getId(), completed.getId(), canceled.getId());
+	}
 }

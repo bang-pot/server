@@ -422,6 +422,7 @@ class MeetingControllerTest {
 				"2026-04-20",
 				"19:30",
 				4,
+				3L,
 				120000,
 				"https://open.kakao.com/o/abc123",
 				"Please arrive on time",
@@ -440,6 +441,7 @@ class MeetingControllerTest {
 			.andExpect(jsonPath("$.title").value("Friday Escape"))
 			.andExpect(jsonPath("$.themeName").value("Time Attack"))
 			.andExpect(jsonPath("$.status").value("RECRUITING"))
+			.andExpect(jsonPath("$.participantCount").value(3))
 			.andExpect(jsonPath("$.contactLink").value("https://open.kakao.com/o/abc123"))
 			.andExpect(jsonPath("$.myParticipationStatus").value("NOT_JOINED"));
 	}

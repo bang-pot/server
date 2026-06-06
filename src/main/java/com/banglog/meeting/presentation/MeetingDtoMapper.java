@@ -129,6 +129,7 @@ final class MeetingDtoMapper {
 			result.date(),
 			result.time(),
 			result.capacity(),
+			result.participantCount(),
 			result.totalCost(),
 			result.contactLink(),
 			result.description(),
