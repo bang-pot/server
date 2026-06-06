@@ -648,6 +648,7 @@ abstract class AbstractMeetingUseCaseServicesTest {
 					meeting.getMeetingDate(),
 					meeting.getMeetingTime(),
 					meeting.getCapacity(),
+					meetingParticipantRepository.countByMeetingId(meeting.getId()) + 1,
 					meeting.getTotalCost(),
 					meeting.getContactLink(),
 					meeting.getDescription(),

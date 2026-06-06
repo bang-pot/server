@@ -87,6 +87,7 @@ final class MeetingDto {
 		String date,
 		String time,
 		Integer capacity,
+		Long participantCount,
 		Integer totalCost,
 		String contactLink,
 		String description,

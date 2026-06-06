@@ -102,7 +102,14 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 		from Meeting m
 		where m.crewId = :crewId
 		  and m.status in :includedStatuses
-		order by m.meetingDate asc, m.meetingTime asc, m.id asc
+		order by
+			case
+				when m.status = com.banglog.meeting.domain.MeetingStatus.RECRUITING then 0
+				else 1
+			end asc,
+			m.meetingDate asc,
+			m.meetingTime asc,
+			m.id asc
 		""")
 	Slice<MeetingsView.Item> findMeetingItemsByCrewId(
 		@Param("crewId") Long crewId,
@@ -122,6 +129,7 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 			m.meetingDate,
 			m.meetingTime,
 			m.capacity,
+			(count(joinedParticipant.id) + 1),
 			m.totalCost,
 			m.contactLink,
 			m.description,
@@ -133,11 +141,29 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 			end
 		)
 		from Meeting m
+		left join MeetingParticipant joinedParticipant
+		  on joinedParticipant.meetingId = m.id
+		 and joinedParticipant.status in :joinedStatuses
 		left join MeetingParticipant participant
 		  on participant.meetingId = m.id
 		 and participant.userId = :userId
 		where m.crewId = :crewId
 		  and m.id = :meetingId
+		group by
+		  m.id,
+		  m.crewId,
+		  m.hostUserId,
+		  m.title,
+		  m.themeName,
+		  m.place,
+		  m.meetingDate,
+		  m.meetingTime,
+		  m.capacity,
+		  m.totalCost,
+		  m.contactLink,
+		  m.description,
+		  m.status,
+		  participant.status
 		""")
 	Optional<MeetingDetailView> findMeetingDetailView(
 		@Param("crewId") Long crewId,
