@@ -7,6 +7,7 @@ import java.util.List;
 import com.banglog.common.error.ApiErrorField;
 import com.banglog.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.banglog.crew.application.usecase.CancelCrewJoinRequestUseCase;
+import com.banglog.crew.application.usecase.CheckCrewDeletionAvailabilityUseCase;
 import com.banglog.crew.application.usecase.CreateCrewInviteUseCase;
 import com.banglog.crew.application.usecase.CreateCrewUseCase;
 import com.banglog.crew.application.usecase.DeleteCrewUseCase;
@@ -196,6 +197,19 @@ final class CrewDtoMapper {
 
 	static CrewDto.RemoveCrewMemberResponse toResponse(RemoveCrewMemberUseCase.Result result) {
 		return new CrewDto.RemoveCrewMemberResponse(result.crewId(), result.removedUserId());
+	}
+
+	static CheckCrewDeletionAvailabilityUseCase.Query toDeletionAvailabilityQuery(Long crewId, Long leaderUserId) {
+		return CheckCrewDeletionAvailabilityUseCase.Query.of(crewId, leaderUserId);
+	}
+
+	static CrewDto.CrewDeletionAvailabilityResponse toResponse(CheckCrewDeletionAvailabilityUseCase.Result result) {
+		return new CrewDto.CrewDeletionAvailabilityResponse(
+			result.crewId(),
+			result.canDelete(),
+			result.hasOnlyLeader(),
+			result.hasNoUnfinishedMeetings()
+		);
 	}
 
 	static DeleteCrewUseCase.Command toDeleteCommand(

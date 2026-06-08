@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.banglog.auth.presentation.UnauthenticatedException;
 import com.banglog.common.idempotency.Idempotent;
+import com.banglog.crew.application.usecase.CheckCrewDeletionAvailabilityUseCase;
 import com.banglog.crew.application.usecase.CreateCrewUseCase;
 import com.banglog.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.banglog.crew.application.usecase.CancelCrewJoinRequestUseCase;
@@ -62,6 +63,7 @@ class CrewController {
 	private final UpdateCrewVisibilityUseCase updateCrewVisibilityUseCase;
 	private final LeaveCrewUseCase leaveCrewUseCase;
 	private final RemoveCrewMemberUseCase removeCrewMemberUseCase;
+	private final CheckCrewDeletionAvailabilityUseCase checkCrewDeletionAvailabilityUseCase;
 	private final DeleteCrewUseCase deleteCrewUseCase;
 	private final TransferCrewLeadershipUseCase transferCrewLeadershipUseCase;
 	private final RequestCrewJoinUseCase requestCrewJoinUseCase;
@@ -198,6 +200,18 @@ class CrewController {
 		return ResponseEntity.ok(CrewDtoMapper.toResponse(
 			removeCrewMemberUseCase.handle(
 				CrewDtoMapper.toRemoveMemberCommand(crewId, requireAuthenticatedUserId(authentication), targetUserId)
+			)
+		));
+	}
+
+	@GetMapping("/{crewId}/delete-check")
+	ResponseEntity<CrewDto.CrewDeletionAvailabilityResponse> checkCrewDeletionAvailability(
+		@PathVariable Long crewId,
+		Authentication authentication
+	) {
+		return ResponseEntity.ok(CrewDtoMapper.toResponse(
+			checkCrewDeletionAvailabilityUseCase.handle(
+				CrewDtoMapper.toDeletionAvailabilityQuery(crewId, requireAuthenticatedUserId(authentication))
 			)
 		));
 	}

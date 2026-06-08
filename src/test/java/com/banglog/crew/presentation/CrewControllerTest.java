@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.banglog.common.error.ApiErrorResponseFactory;
 import com.banglog.common.error.GlobalApiExceptionHandler;
 import com.banglog.crew.application.exception.DuplicateCrewNameException;
+import com.banglog.crew.application.usecase.CheckCrewDeletionAvailabilityUseCase;
 import com.banglog.crew.application.usecase.CreateCrewUseCase;
 import com.banglog.crew.application.usecase.ApproveCrewJoinRequestUseCase;
 import com.banglog.crew.application.usecase.CancelCrewJoinRequestUseCase;
@@ -123,6 +124,9 @@ class CrewControllerTest {
 
 	@MockitoBean
 	private RemoveCrewMemberUseCase removeCrewMemberUseCase;
+
+	@MockitoBean
+	private CheckCrewDeletionAvailabilityUseCase checkCrewDeletionAvailabilityUseCase;
 
 	@MockitoBean
 	private DeleteCrewUseCase deleteCrewUseCase;
@@ -863,6 +867,23 @@ class CrewControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.crewId").value(1))
 			.andExpect(jsonPath("$.removedUserId").value(201));
+	}
+
+	@Test
+	void checksCrewDeletionAvailabilityForCurrentLeader() throws Exception {
+		when(checkCrewDeletionAvailabilityUseCase.handle(
+			CheckCrewDeletionAvailabilityUseCase.Query.of(1L, 77L)
+		)).thenReturn(CheckCrewDeletionAvailabilityUseCase.Result.of(1L, false, true, false));
+
+		mockMvc.perform(
+			get("/api/crews/1/delete-check")
+				.principal(new UsernamePasswordAuthenticationToken(77L, null, List.of()))
+		)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.crewId").value(1))
+			.andExpect(jsonPath("$.canDelete").value(false))
+			.andExpect(jsonPath("$.hasOnlyLeader").value(true))
+			.andExpect(jsonPath("$.hasNoUnfinishedMeetings").value(false));
 	}
 
 	@Test
