@@ -134,6 +134,14 @@ final class CrewDto {
 	record RemoveCrewMemberResponse(Long crewId, Long removedUserId) {
 	}
 
+	record CrewDeletionAvailabilityResponse(
+		Long crewId,
+		boolean canDelete,
+		boolean hasOnlyLeader,
+		boolean hasNoUnfinishedMeetings
+	) {
+	}
+
 	record DeleteCrewRequest(
 		@NotBlank(message = "삭제할 크루명을 입력해야 합니다.") String crewName
 	) {
