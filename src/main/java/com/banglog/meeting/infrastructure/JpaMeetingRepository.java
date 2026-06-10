@@ -187,12 +187,21 @@ class JpaMeetingRepository implements MeetingRepository {
 
 	@Override
 	public long countCreatedByHostUserId(Long userId) {
-		return meetingJpaRepository.countByHostUserId(userId);
+		return meetingJpaRepository.countByHostUserId(
+			userId,
+			CrewStatus.ACTIVE,
+			INCLUDED_MEETING_STATUSES
+		);
 	}
 
 	@Override
 	public long countJoinedByUserId(Long userId) {
-		return meetingJpaRepository.countJoinedByUserId(userId, JOINED_STATUSES);
+		return meetingJpaRepository.countJoinedByUserId(
+			userId,
+			JOINED_STATUSES,
+			CrewStatus.ACTIVE,
+			INCLUDED_MEETING_STATUSES
+		);
 	}
 
 	@Override

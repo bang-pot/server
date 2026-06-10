@@ -111,6 +111,10 @@ final class UserDtoMapper {
 					item.storeName(),
 					item.regionName(),
 					item.thumbnailUrl(),
+					item.genreName(),
+					item.difficulty(),
+					item.runningTimeMinutes(),
+					item.description(),
 					item.favoriteCount(),
 					item.isFavorite()
 				))
@@ -177,9 +181,12 @@ final class UserDtoMapper {
 				.map(item -> new UserDto.MyCrewItemResponse(
 					item.crewId(),
 					item.crewName(),
+					item.description(),
 					item.visibility().name(),
 					item.leaderNickname(),
-					item.coverImageUrl()
+					item.coverImageUrl(),
+					item.myRole().name(),
+					item.memberCount()
 				))
 				.toList(),
 			new UserDto.MyCrewsPageInfo(
@@ -197,6 +204,11 @@ final class UserDtoMapper {
 					item.joinRequestId(),
 					item.crewId(),
 					item.crewName(),
+					item.description(),
+					item.visibility().name(),
+					item.leaderNickname(),
+					item.coverImageUrl(),
+					item.memberCount(),
 					item.requestedAt(),
 					item.messageSummary()
 				))

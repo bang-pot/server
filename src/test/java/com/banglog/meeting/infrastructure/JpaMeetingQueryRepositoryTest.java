@@ -218,6 +218,50 @@ class JpaMeetingQueryRepositoryTest {
 	}
 
 	@Test
+	void countsOnlyVisibleCreatedMeetingsForProfileSummary() {
+		Crew activeCrew = entityManager.persist(Crew.create("Active Crew", "desc", CrewVisibility.PUBLIC, null));
+		Crew deletedCrew = entityManager.persist(Crew.create("Deleted Crew", "desc", CrewVisibility.PUBLIC, null));
+		deletedCrew.delete();
+		entityManager.persistAndFlush(deletedCrew);
+
+		entityManager.persist(Meeting.create(
+			activeCrew.getId(), 7L, "Active Meeting", "Theme A", "Seoul", "2026-04-20", "10:00", 4, null, null, "desc"
+		));
+		entityManager.persist(Meeting.create(
+			deletedCrew.getId(), 7L, "Hidden Meeting", "Theme B", "Seoul", "2026-04-21", "11:00", 4, null, null, "desc"
+		));
+		entityManager.flush();
+		entityManager.clear();
+
+		long result = repository.countCreatedByHostUserId(7L);
+
+		assertThat(result).isEqualTo(1L);
+	}
+
+	@Test
+	void countsOnlyVisibleJoinedMeetingsForProfileSummary() {
+		Crew activeCrew = entityManager.persist(Crew.create("Active Crew", "desc", CrewVisibility.PUBLIC, null));
+		Crew deletedCrew = entityManager.persist(Crew.create("Deleted Crew", "desc", CrewVisibility.PUBLIC, null));
+		deletedCrew.delete();
+		entityManager.persistAndFlush(deletedCrew);
+
+		Meeting activeMeeting = entityManager.persist(Meeting.create(
+			activeCrew.getId(), 8L, "Active Meeting", "Theme A", "Seoul", "2026-04-20", "10:00", 4, null, null, "desc"
+		));
+		Meeting hiddenMeeting = entityManager.persist(Meeting.create(
+			deletedCrew.getId(), 8L, "Hidden Meeting", "Theme B", "Seoul", "2026-04-21", "11:00", 4, null, null, "desc"
+		));
+		entityManager.persist(MeetingParticipant.join(activeMeeting.getId(), 7L));
+		entityManager.persist(MeetingParticipant.join(hiddenMeeting.getId(), 7L));
+		entityManager.flush();
+		entityManager.clear();
+
+		long result = repository.countJoinedByUserId(7L);
+
+		assertThat(result).isEqualTo(1L);
+	}
+
+	@Test
 	void returnsCrewScheduleItemsWithParticipantCountInDateRange() {
 		Crew crew = entityManager.persist(Crew.create("Schedule Crew", "desc", CrewVisibility.PUBLIC, null));
 		Meeting recruiting = entityManager.persistAndFlush(Meeting.create(

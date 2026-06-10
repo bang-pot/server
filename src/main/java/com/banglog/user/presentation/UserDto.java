@@ -96,6 +96,10 @@ final class UserDto {
 		String storeName,
 		String regionName,
 		String thumbnailUrl,
+		String genreName,
+		Integer difficulty,
+		Integer runningTimeMinutes,
+		String description,
 		Integer favoriteCount,
 		boolean isFavorite
 	) {
@@ -171,9 +175,12 @@ final class UserDto {
 	record MyCrewItemResponse(
 		Long crewId,
 		String crewName,
+		String description,
 		String visibility,
 		String leaderNickname,
-		String coverImageUrl
+		String coverImageUrl,
+		String myRole,
+		Long memberCount
 	) {
 	}
 
@@ -194,6 +201,11 @@ final class UserDto {
 		Long joinRequestId,
 		Long crewId,
 		String crewName,
+		String description,
+		String visibility,
+		String leaderNickname,
+		String coverImageUrl,
+		Long memberCount,
 		String requestedAt,
 		String messageSummary
 	) {

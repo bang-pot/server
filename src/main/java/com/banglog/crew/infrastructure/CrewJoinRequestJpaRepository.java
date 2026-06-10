@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.banglog.crew.domain.CrewJoinRequest;
 import com.banglog.crew.domain.CrewJoinRequestStatus;
+import com.banglog.crew.domain.CrewRole;
 import com.banglog.crew.domain.CrewMemberStatus;
 import com.banglog.crew.domain.CrewStatus;
 import com.banglog.crew.domain.CrewVisibility;
@@ -118,10 +119,24 @@ interface CrewJoinRequestJpaRepository extends JpaRepository<CrewJoinRequest, Lo
 			cjr.id as joinRequestId,
 			c.id as crewId,
 			c.name as crewName,
+			c.description as description,
+			c.visibility as visibility,
+			leaderUser.nickname as leaderNickname,
+			c.imageUrl as coverImageUrl,
+			(
+				select count(cm.id)
+				from CrewMember cm
+				where cm.crewId = c.id
+				  and cm.status = :activeMemberStatus
+			) as memberCount,
 			cjr.createdAt as requestedAt,
 			cjr.message as message
-		from CrewJoinRequest cjr, Crew c
+		from CrewJoinRequest cjr, Crew c, CrewMember leaderMember, UserJpaEntity leaderUser
 		where cjr.crewId = c.id
+		  and leaderMember.crewId = c.id
+		  and leaderUser.id = leaderMember.userId
+		  and leaderMember.role = :leaderRole
+		  and leaderMember.status = :activeMemberStatus
 		  and cjr.userId = :userId
 		  and cjr.status = :pendingStatus
 		  and c.status = :activeCrewStatus
@@ -133,6 +148,8 @@ interface CrewJoinRequestJpaRepository extends JpaRepository<CrewJoinRequest, Lo
 		@Param("pendingStatus") CrewJoinRequestStatus pendingStatus,
 		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
 		@Param("publicVisibility") CrewVisibility publicVisibility,
+		@Param("leaderRole") CrewRole leaderRole,
+		@Param("activeMemberStatus") CrewMemberStatus activeMemberStatus,
 		Pageable pageable
 	);
 
@@ -140,6 +157,11 @@ interface CrewJoinRequestJpaRepository extends JpaRepository<CrewJoinRequest, Lo
 		Long getJoinRequestId();
 		Long getCrewId();
 		String getCrewName();
+		String getDescription();
+		CrewVisibility getVisibility();
+		String getLeaderNickname();
+		String getCoverImageUrl();
+		Long getMemberCount();
 		Instant getRequestedAt();
 		String getMessage();
 	}

@@ -27,6 +27,10 @@ class GetMyFavoriteThemesServiceTest extends AbstractUserApplicationServiceTest 
 						"Seoul Escape",
 						"서울",
 						"https://cdn.example.com/theme-901.jpg",
+						"공포",
+						3,
+						90,
+						"깊은 바닷속 비밀을 추적하는 테마입니다.",
 						12,
 						true
 					)
@@ -45,6 +49,10 @@ class GetMyFavoriteThemesServiceTest extends AbstractUserApplicationServiceTest 
 		assertThat(result.items().get(0).storeName()).isEqualTo("Seoul Escape");
 		assertThat(result.items().get(0).regionName()).isEqualTo("서울");
 		assertThat(result.items().get(0).thumbnailUrl()).isEqualTo("https://cdn.example.com/theme-901.jpg");
+		assertThat(result.items().get(0).genreName()).isEqualTo("공포");
+		assertThat(result.items().get(0).difficulty()).isEqualTo(3);
+		assertThat(result.items().get(0).runningTimeMinutes()).isEqualTo(90);
+		assertThat(result.items().get(0).description()).isEqualTo("깊은 바닷속 비밀을 추적하는 테마입니다.");
 		assertThat(result.items().get(0).favoriteCount()).isEqualTo(12);
 		assertThat(result.items().get(0).isFavorite()).isTrue();
 		assertThat(result.page().page()).isEqualTo(0);

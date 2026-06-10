@@ -9,10 +9,11 @@ import org.springframework.stereotype.Repository;
 import com.banglog.crew.application.port.CrewJoinRequestQueryRepository;
 import com.banglog.crew.domain.CrewJoinRequestStatus;
 import com.banglog.crew.domain.CrewMemberStatus;
+import com.banglog.crew.domain.CrewRole;
 import com.banglog.crew.domain.CrewStatus;
+import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.crew.domain.view.CrewJoinRequestManagementAccessView;
 import com.banglog.crew.domain.view.CrewJoinRequestsView;
-import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.crew.domain.view.MyPendingCrewsView;
 import com.banglog.crew.domain.view.PendingCrewJoinRequestsView;
 
@@ -74,6 +75,8 @@ public class JpaCrewJoinRequestQueryRepository implements CrewJoinRequestQueryRe
 				CrewJoinRequestStatus.PENDING,
 				CrewStatus.ACTIVE,
 				CrewVisibility.PUBLIC,
+				CrewRole.LEADER,
+				CrewMemberStatus.ACTIVE,
 				PageRequest.of(page, size)
 			);
 
@@ -83,6 +86,11 @@ public class JpaCrewJoinRequestQueryRepository implements CrewJoinRequestQueryRe
 					row.getJoinRequestId(),
 					row.getCrewId(),
 					row.getCrewName(),
+					row.getDescription(),
+					row.getVisibility(),
+					row.getLeaderNickname(),
+					row.getCoverImageUrl(),
+					row.getMemberCount(),
 					row.getRequestedAt().toString(),
 					summarizeMessage(row.getMessage())
 				))

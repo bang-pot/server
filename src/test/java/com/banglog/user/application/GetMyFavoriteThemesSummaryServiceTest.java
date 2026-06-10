@@ -28,6 +28,10 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 						"Seoul Escape",
 						"서울",
 						"https://cdn.example.com/theme-101.jpg",
+						null,
+						null,
+						null,
+						null,
 						13,
 						true
 					),
@@ -37,6 +41,10 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 						"Busan Escape",
 						"부산",
 						"https://cdn.example.com/theme-102.jpg",
+						null,
+						null,
+						null,
+						null,
 						11,
 						true
 					),
@@ -46,6 +54,10 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 						"Incheon Escape",
 						"인천",
 						"https://cdn.example.com/theme-103.jpg",
+						null,
+						null,
+						null,
+						null,
 						9,
 						true
 					),
@@ -55,6 +67,10 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 						"Daegu Escape",
 						"대구",
 						"https://cdn.example.com/theme-104.jpg",
+						null,
+						null,
+						null,
+						null,
 						7,
 						true
 					),
@@ -64,6 +80,10 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 						"Daejeon Escape",
 						"대전",
 						"https://cdn.example.com/theme-105.jpg",
+						null,
+						null,
+						null,
+						null,
 						5,
 						true
 					),
@@ -73,6 +93,10 @@ class GetMyFavoriteThemesSummaryServiceTest extends AbstractUserApplicationServi
 						"Gwangju Escape",
 						"광주",
 						"https://cdn.example.com/theme-106.jpg",
+						null,
+						null,
+						null,
+						null,
 						3,
 						true
 					)

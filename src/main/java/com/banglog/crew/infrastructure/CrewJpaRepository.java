@@ -296,19 +296,29 @@ interface CrewJpaRepository extends JpaRepository<Crew, Long> {
 		select new com.banglog.crew.domain.view.MyCrewsView$Item(
 			c.id,
 			c.name,
+			c.description,
 			c.visibility,
 			leaderUser.nickname,
-			c.imageUrl
+			c.imageUrl,
+			member.role,
+			count(activeMember.id)
 		)
-		from CrewMember member, Crew c, CrewMember leaderMember, UserJpaEntity leaderUser
-		where member.crewId = c.id
-		  and leaderMember.crewId = c.id
-		  and leaderUser.id = leaderMember.userId
-		  and member.userId = :userId
+		from Crew c
+		join CrewMember member
+		  on member.crewId = c.id
+		join CrewMember leaderMember
+		  on leaderMember.crewId = c.id
+		join UserJpaEntity leaderUser
+		  on leaderUser.id = leaderMember.userId
+		left join CrewMember activeMember
+		  on activeMember.crewId = c.id
+		 and activeMember.status = :activeMemberStatus
+		where member.userId = :userId
 		  and member.status = :activeMemberStatus
 		  and c.status = :activeCrewStatus
 		  and leaderMember.role = :leaderRole
 		  and leaderMember.status = :activeMemberStatus
+		group by c.id, c.name, c.description, c.visibility, c.imageUrl, leaderUser.nickname, member.role
 		order by c.name asc, c.id asc
 		""")
 	Slice<MyCrewsView.Item> findMyCrewsViewByMemberUserId(

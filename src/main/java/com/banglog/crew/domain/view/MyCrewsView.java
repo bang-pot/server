@@ -2,6 +2,7 @@ package com.banglog.crew.domain.view;
 
 import java.util.List;
 
+import com.banglog.crew.domain.CrewRole;
 import com.banglog.crew.domain.CrewVisibility;
 
 public record MyCrewsView(
@@ -15,18 +16,24 @@ public record MyCrewsView(
 	public record Item(
 		Long crewId,
 		String crewName,
+		String description,
 		CrewVisibility visibility,
 		String leaderNickname,
-		String coverImageUrl
+		String coverImageUrl,
+		CrewRole myRole,
+		Long memberCount
 	) {
 		public static Item of(
 			Long crewId,
 			String crewName,
+			String description,
 			CrewVisibility visibility,
 			String leaderNickname,
-			String coverImageUrl
+			String coverImageUrl,
+			CrewRole myRole,
+			Long memberCount
 		) {
-			return new Item(crewId, crewName, visibility, leaderNickname, coverImageUrl);
+			return new Item(crewId, crewName, description, visibility, leaderNickname, coverImageUrl, myRole, memberCount);
 		}
 	}
 

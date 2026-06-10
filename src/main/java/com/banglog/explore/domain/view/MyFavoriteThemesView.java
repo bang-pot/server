@@ -16,6 +16,10 @@ public record MyFavoriteThemesView(
 		String storeName,
 		String regionName,
 		String thumbnailUrl,
+		String genreName,
+		Integer difficulty,
+		Integer runningTimeMinutes,
+		String description,
 		Integer favoriteCount,
 		boolean isFavorite
 	) {
@@ -25,10 +29,26 @@ public record MyFavoriteThemesView(
 			String storeName,
 			String regionName,
 			String thumbnailUrl,
+			String genreName,
+			Integer difficulty,
+			Integer runningTimeMinutes,
+			String description,
 			Integer favoriteCount,
 			boolean isFavorite
 		) {
-			return new Item(themeId, themeName, storeName, regionName, thumbnailUrl, favoriteCount, isFavorite);
+			return new Item(
+				themeId,
+				themeName,
+				storeName,
+				regionName,
+				thumbnailUrl,
+				genreName,
+				difficulty,
+				runningTimeMinutes,
+				description,
+				favoriteCount,
+				isFavorite
+			);
 		}
 	}
 
