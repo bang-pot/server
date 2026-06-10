@@ -42,10 +42,10 @@ import com.banglog.user.application.usecase.SearchUsersUseCase;
 import com.banglog.user.application.usecase.UpdateMyProfileUseCase;
 import com.banglog.user.application.usecase.WithdrawMyAccountUseCase;
 import com.banglog.user.application.exception.WithdrawalNotAllowedException;
+import com.banglog.crew.domain.CrewRole;
 import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.crew.domain.view.MyCrewsView;
 import com.banglog.crew.domain.view.MyPendingCrewsView;
-import com.banglog.meeting.domain.MeetingResult;
 import com.banglog.meeting.domain.MeetingStatus;
 import com.banglog.meeting.domain.view.MyCalendarView;
 import com.banglog.meeting.domain.view.MyMeetingLogsView;
@@ -262,6 +262,10 @@ class UserControllerTest {
 						"Seoul Escape",
 						"서울",
 						"https://cdn.example.com/theme-901.jpg",
+						"공포",
+						3,
+						90,
+						"깊은 바닷속 비밀을 추적하는 테마입니다.",
 						12,
 						true
 					)
@@ -281,6 +285,10 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[0].storeName").value("Seoul Escape"))
 			.andExpect(jsonPath("$.items[0].regionName").value("서울"))
 			.andExpect(jsonPath("$.items[0].thumbnailUrl").value("https://cdn.example.com/theme-901.jpg"))
+			.andExpect(jsonPath("$.items[0].genreName").value("공포"))
+			.andExpect(jsonPath("$.items[0].difficulty").value(3))
+			.andExpect(jsonPath("$.items[0].runningTimeMinutes").value(90))
+			.andExpect(jsonPath("$.items[0].description").value("깊은 바닷속 비밀을 추적하는 테마입니다."))
 			.andExpect(jsonPath("$.items[0].favoriteCount").value(12))
 			.andExpect(jsonPath("$.items[0].isFavorite").value(true))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
@@ -381,9 +389,12 @@ class UserControllerTest {
 					MyCrewsView.Item.of(
 						31L,
 						"Alpha Crew",
+						"Every Tuesday escape crew",
 						CrewVisibility.PUBLIC,
 						"leader-pot",
-						"https://cdn.example.com/crew-alpha.jpg"
+						"https://cdn.example.com/crew-alpha.jpg",
+						CrewRole.MEMBER,
+						4L
 					)
 				),
 				MyCrewsView.Page.of(0, 20, false)
@@ -398,9 +409,12 @@ class UserControllerTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.items[0].crewId").value(31))
 			.andExpect(jsonPath("$.items[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.items[0].description").value("Every Tuesday escape crew"))
 			.andExpect(jsonPath("$.items[0].visibility").value("PUBLIC"))
 			.andExpect(jsonPath("$.items[0].leaderNickname").value("leader-pot"))
 			.andExpect(jsonPath("$.items[0].coverImageUrl").value("https://cdn.example.com/crew-alpha.jpg"))
+			.andExpect(jsonPath("$.items[0].myRole").value("MEMBER"))
+			.andExpect(jsonPath("$.items[0].memberCount").value(4))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))
 			.andExpect(jsonPath("$.pageInfo.size").value(20))
 			.andExpect(jsonPath("$.pageInfo.hasNext").value(false));
@@ -415,6 +429,11 @@ class UserControllerTest {
 						101L,
 						31L,
 						"Alpha Crew",
+						"Every Tuesday escape crew",
+						CrewVisibility.PUBLIC,
+						"leader-pot",
+						"https://cdn.example.com/crew-alpha.jpg",
+						4L,
 						"2026-04-17T09:30:00Z",
 						"I want to join this crew"
 					)
@@ -432,6 +451,11 @@ class UserControllerTest {
 			.andExpect(jsonPath("$.items[0].joinRequestId").value(101))
 			.andExpect(jsonPath("$.items[0].crewId").value(31))
 			.andExpect(jsonPath("$.items[0].crewName").value("Alpha Crew"))
+			.andExpect(jsonPath("$.items[0].description").value("Every Tuesday escape crew"))
+			.andExpect(jsonPath("$.items[0].visibility").value("PUBLIC"))
+			.andExpect(jsonPath("$.items[0].leaderNickname").value("leader-pot"))
+			.andExpect(jsonPath("$.items[0].coverImageUrl").value("https://cdn.example.com/crew-alpha.jpg"))
+			.andExpect(jsonPath("$.items[0].memberCount").value(4))
 			.andExpect(jsonPath("$.items[0].requestedAt").value("2026-04-17T09:30:00Z"))
 			.andExpect(jsonPath("$.items[0].messageSummary").value("I want to join this crew"))
 			.andExpect(jsonPath("$.pageInfo.page").value(0))

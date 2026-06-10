@@ -33,6 +33,10 @@ interface ThemeFavoriteJpaRepository extends JpaRepository<ThemeFavorite, Long> 
 			s.name,
 			s.region,
 			t.posterImageUrl,
+			t.genre,
+			t.difficulty,
+			t.runningTimeMinutes,
+			t.description,
 			t.favoriteCount,
 			true
 		)

@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.crew.domain.view.MyPendingCrewsView;
 import com.banglog.user.application.usecase.GetMyPendingCrewsUseCase;
 import com.banglog.user.domain.User;
@@ -25,6 +26,11 @@ class GetMyPendingCrewsServiceTest extends AbstractUserApplicationServiceTest {
 						101L,
 						11L,
 						"Alpha Crew",
+						"Alpha description",
+						CrewVisibility.PUBLIC,
+						"leader-pot",
+						null,
+						3L,
 						"2026-04-17T09:30:00Z",
 						"같이 운동하고 싶습니다"
 					)
@@ -41,6 +47,10 @@ class GetMyPendingCrewsServiceTest extends AbstractUserApplicationServiceTest {
 		assertThat(result.items().get(0).joinRequestId()).isEqualTo(101L);
 		assertThat(result.items().get(0).crewId()).isEqualTo(11L);
 		assertThat(result.items().get(0).crewName()).isEqualTo("Alpha Crew");
+		assertThat(result.items().get(0).description()).isEqualTo("Alpha description");
+		assertThat(result.items().get(0).visibility()).isEqualTo(CrewVisibility.PUBLIC);
+		assertThat(result.items().get(0).leaderNickname()).isEqualTo("leader-pot");
+		assertThat(result.items().get(0).memberCount()).isEqualTo(3L);
 		assertThat(result.items().get(0).requestedAt()).isEqualTo("2026-04-17T09:30:00Z");
 		assertThat(result.items().get(0).messageSummary()).isEqualTo("같이 운동하고 싶습니다");
 		assertThat(result.page().hasNext()).isFalse();

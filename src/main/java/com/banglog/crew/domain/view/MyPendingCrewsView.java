@@ -2,6 +2,8 @@ package com.banglog.crew.domain.view;
 
 import java.util.List;
 
+import com.banglog.crew.domain.CrewVisibility;
+
 public record MyPendingCrewsView(
 	List<MyPendingCrewsView.Item> items,
 	MyPendingCrewsView.Page page
@@ -14,6 +16,11 @@ public record MyPendingCrewsView(
 		Long joinRequestId,
 		Long crewId,
 		String crewName,
+		String description,
+		CrewVisibility visibility,
+		String leaderNickname,
+		String coverImageUrl,
+		Long memberCount,
 		String requestedAt,
 		String messageSummary
 	) {
@@ -21,10 +28,26 @@ public record MyPendingCrewsView(
 			Long joinRequestId,
 			Long crewId,
 			String crewName,
+			String description,
+			CrewVisibility visibility,
+			String leaderNickname,
+			String coverImageUrl,
+			Long memberCount,
 			String requestedAt,
 			String messageSummary
 		) {
-			return new Item(joinRequestId, crewId, crewName, requestedAt, messageSummary);
+			return new Item(
+				joinRequestId,
+				crewId,
+				crewName,
+				description,
+				visibility,
+				leaderNickname,
+				coverImageUrl,
+				memberCount,
+				requestedAt,
+				messageSummary
+			);
 		}
 	}
 

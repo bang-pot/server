@@ -536,22 +536,34 @@ interface MeetingJpaRepository extends JpaRepository<Meeting, Long> {
 
 	@Query("""
 		select count(m)
-		from Meeting m
-		where m.hostUserId = :userId
+		from Meeting m, Crew c
+		where m.crewId = c.id
+		  and m.hostUserId = :userId
+		  and c.status = :activeCrewStatus
+		  and m.status in :includedStatuses
 		""")
-	long countByHostUserId(@Param("userId") Long userId);
+	long countByHostUserId(
+		@Param("userId") Long userId,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("includedStatuses") List<MeetingStatus> includedStatuses
+	);
 
 	@Query("""
 		select count(mp)
-		from MeetingParticipant mp, Meeting m
+		from MeetingParticipant mp, Meeting m, Crew c
 		where mp.meetingId = m.id
+		  and m.crewId = c.id
 		  and mp.userId = :userId
 		  and mp.status in :joinedStatuses
 		  and m.hostUserId <> :userId
+		  and c.status = :activeCrewStatus
+		  and m.status in :includedMeetingStatuses
 		""")
 	long countJoinedByUserId(
 		@Param("userId") Long userId,
-		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses
+		@Param("joinedStatuses") List<MeetingParticipationStatus> joinedStatuses,
+		@Param("activeCrewStatus") CrewStatus activeCrewStatus,
+		@Param("includedMeetingStatuses") List<MeetingStatus> includedMeetingStatuses
 	);
 
 	@Query("""

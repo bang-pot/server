@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.banglog.crew.application.port.CrewQueryRepository;
+import com.banglog.crew.domain.CrewRole;
 import com.banglog.crew.domain.CrewVisibility;
 import com.banglog.crew.domain.view.MyCrewsView;
 import com.banglog.crew.domain.view.PublicCrewPreviewView;
@@ -102,8 +103,26 @@ class GetHomeServiceTest {
 			7L,
 			MyCrewsView.of(
 				List.of(
-					MyCrewsView.Item.of(11L, "Alpha Crew", CrewVisibility.PUBLIC, "leader-a", null),
-					MyCrewsView.Item.of(12L, "Beta Crew", CrewVisibility.PRIVATE, "leader-b", null)
+					MyCrewsView.Item.of(
+						11L,
+						"Alpha Crew",
+						"Alpha description",
+						CrewVisibility.PUBLIC,
+						"leader-a",
+						null,
+						CrewRole.MEMBER,
+						3L
+					),
+					MyCrewsView.Item.of(
+						12L,
+						"Beta Crew",
+						"Beta description",
+						CrewVisibility.PRIVATE,
+						"leader-b",
+						null,
+						CrewRole.MEMBER,
+						2L
+					)
 				),
 				MyCrewsView.Page.of(0, 5, false)
 			)

@@ -778,9 +778,12 @@ abstract class AbstractUserApplicationServiceTest {
 				.map(crew -> MyCrewsView.Item.of(
 					crew.getId(),
 					crew.getName(),
+					crew.getDescription(),
 					crew.getVisibility(),
 					findLeaderNickname(crew.getId()),
-					crew.getImageUrl()
+					crew.getImageUrl(),
+					findRole(crew.getId(), userId),
+					countActiveMembers(crew.getId())
 				))
 				.toList();
 			boolean hasNext = items.size() > size;
@@ -817,6 +820,18 @@ abstract class AbstractUserApplicationServiceTest {
 				.flatMap(userRepository::findById)
 				.map(User::getNickname)
 				.orElse(null);
+		}
+
+		private CrewRole findRole(Long crewId, Long userId) {
+			return crewMemberRepository.findAllByUserId(userId).stream()
+				.filter(crewMember -> crewId.equals(crewMember.getCrewId()))
+				.map(CrewMember::getRole)
+				.findFirst()
+				.orElse(CrewRole.MEMBER);
+		}
+
+		private long countActiveMembers(Long crewId) {
+			return crewMemberRepository.findAllByCrewId(crewId).size();
 		}
 	}
 
